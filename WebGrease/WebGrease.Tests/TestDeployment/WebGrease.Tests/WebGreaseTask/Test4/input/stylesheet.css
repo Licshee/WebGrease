@@ -1,0 +1,35 @@
+﻿.pink {
+    color: pink;
+}
+
+.blue {
+    color: blue;
+}
+
+.purple {
+    color: purple;   
+}
+
+body > div.pink > div {
+    color: pink;
+}
+
+body > div.pink > div.red {
+    color: red;
+}
+
+.red {
+    color: red;   
+}
+
+.bg.pink,
+  #toc .heading.slate,
+  #toc .heading.slate a {
+    font-size: 10px;
+}
+
+.bg.red,
+  #toc .heading.slate,
+  #toc .heading.slate a {
+    font-size: 12px;
+}

@@ -1,0 +1,23 @@
+﻿.weaErr
+{
+    margin-left : 5px;
+}
+.weaSPSErr
+{
+    margin-left : 5px;
+}
+
+.weaToday
+{
+    margin-left : 5px;
+    font-weight : bold;
+}
+
+.weaToday .address
+{
+    text-overflow: ellipsis;
+    max-width: 8.5em;
+    overflow: hidden;
+    white-space: nowrap;
+    float: left;
+}

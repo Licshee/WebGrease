@@ -1,0 +1,11 @@
+﻿@import "foo.css";
+@import url("bar.css") foo,bar,bee,gee;
+@import url("foobar.css");
+@import url("barfoo.css");
+@import "foo.css";
+@import "\0000E9 dition.css";
+@import "\d800\dc00.css";
+@import "\0928 \093f \0924 \093f \0928 .css";
+@import "नितिन.css?foo=1&bar=2";
+@import url("\0000E9 dition.css");
+@import url("*.css");

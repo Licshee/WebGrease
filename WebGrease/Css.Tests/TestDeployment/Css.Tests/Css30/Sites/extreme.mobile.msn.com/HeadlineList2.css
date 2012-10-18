@@ -1,0 +1,32 @@
+﻿/*
+Alternate Headline List layout for cited headlines
+*/
+
+ul.hllist2
+{
+  border-bottom: solid 0.0834em #e6e6e6; /* 1px equivalent @ 12px font size */
+}
+
+ul.hllist2 li
+{
+  min-height: 5em; /* 60px equivalent  @ 12px font size */
+}
+
+ul.hllist2 li .hl figure figcaption
+{
+  padding-top: 0.615em; /* 8px equivalent @ 13px font size */
+}
+
+ul.hllist2 li .hl cite
+{
+  font-size: 133.333%;  /* 16px equivalent @ 13px font size */
+  font-weight: bold;
+  line-height: 1.5em; /* 24px equivalent @ 16px font size */
+}
+
+/* HeadlineList items are horizontal when within a carousel */
+.carousel .hllist2 li,
+.slideshow .hllist2 li
+{
+  border-bottom: none;
+}

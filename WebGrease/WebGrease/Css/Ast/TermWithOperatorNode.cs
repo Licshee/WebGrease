@@ -1,0 +1,57 @@
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TermWithOperatorNode.cs" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   expr
+//   term [ operator term ]*
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+
+namespace WebGrease.Css.Ast
+{
+    using System.Diagnostics.Contracts;
+    using Visitor;
+
+    /// <summary>expr
+    /// term [ operator term ]*</summary>
+    public sealed class TermWithOperatorNode : AstNode
+    {
+        /// <summary>Initializes a new instance of the TermWithOperatorNode class</summary>
+        /// <param name="op">Operator string</param>
+        /// <param name="termNode">Term object</param>
+        public TermWithOperatorNode(string op, TermNode termNode)
+        {
+            Contract.Requires(termNode != null);
+
+            if (string.IsNullOrWhiteSpace(op))
+            {
+                op = CssConstants.SingleSpace.ToString();
+            }
+
+            // Member Initialization
+            this.Operator = op;
+            this.TermNode = termNode;
+        }
+
+        /// <summary>
+        /// Gets the Operator string
+        /// </summary>
+        /// <value>Operator string</value>
+        public string Operator { get; private set; }
+
+        /// <summary>
+        /// Gets the term value
+        /// </summary>
+        /// <value>TermNode value</value>
+        public TermNode TermNode { get; private set; }
+
+        /// <summary>Defines an accept operation</summary>
+        /// <param name="nodeVisitor">The visitor to invoke</param>
+        /// <returns>The modified AST node if modified otherwise the original node</returns>
+        public override AstNode Accept(NodeVisitor nodeVisitor)
+        {
+            return nodeVisitor.VisitTermWithOperatorNode(this);
+        }
+    }
+}

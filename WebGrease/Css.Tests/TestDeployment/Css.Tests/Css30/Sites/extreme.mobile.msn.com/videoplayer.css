@@ -1,0 +1,174 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="videoplayer.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles for videoplayer in the new extreme video website.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.video_player 
+{
+    background: #fff;
+    height: 72px;
+    overflow: hidden;
+    position: relative;
+    width: 128px;
+}
+
+.video_player video 
+{
+    display: block;
+}
+
+.video_player_inner 
+{
+    height: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+.video_control_container 
+{
+    background-color: rgba(0,0,0,.85);
+    bottom: -20px;
+    opacity: 0;
+    position: absolute;
+    text-align: center;
+    z-index: 3;
+}
+
+.video_play_thumb 
+{
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 1;
+}
+
+.video_play_thumb img 
+{
+    height: 100%;
+    width: 100%;
+}
+
+.video_play_splash 
+{
+    height: 72px;
+    left: 50%;
+    margin-left: -15px;
+    margin-top: -15px;
+    position: absolute;
+    top: 50%;
+    width: 72px;
+    z-index: 2;
+}
+
+/* dont show play icon on IPad when playing video because click event can't be tracked when native controls are on... */
+.ready .video_play_splash,
+.desktop .paused .video_play_splash,
+.pausedicon
+{
+    background: transparent url(/statics/video/i/player/videoplay_icon.png) no-repeat 0 0;
+}
+
+/* make ad msg visible only during ad */
+.admedia .video_admsg_container 
+{
+    display: block;
+}
+
+/* make ad msg invisible for Android */
+.android .admedia .video_admsg_container,
+.videomedia .video_admsg_container 
+{
+    display: none;
+}
+
+.video_admsg_container 
+{
+    color: #fff;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 2;
+}
+
+.video_admsg_txt 
+{
+    background-color: rgba(0,0,0,.6);
+    font-size: 10px;  
+    left: 0;
+    position: absolute;
+    top : 0;
+}
+
+.video_play_esc
+{
+    background-color: rgba(0,0,0,.6);
+    border-radius: 15px;
+    color: #FFF;
+    display: none;
+    font-size: 22px;
+    font-weight: bold;
+    height: 40px;
+    left: 50%;
+    line-height: 40px;
+    margin-left: -200px;
+    position: absolute;
+    top: 25%;
+    -webkit-border-radius: 15px;
+    text-align: center;
+    width: 400px;
+    z-index: 3;
+}
+
+.video_image 
+{
+    background: url(/statics/video/i/player/video-controls.png);
+    background-repeat: no-repeat;
+    position: absolute;
+}
+
+.video_text 
+{
+    color: #fff;
+    position: absolute;
+}
+
+.video_handle
+{
+    z-index: 4;
+}
+
+.video_error
+{
+    background-color: rgba(0,0,0,.6);
+    color: #fff;
+    display: none;
+    font-size: 14px;
+    font-weight: bold;
+    height: 72px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    position: absolute;
+    text-align: center;
+    top: 0;
+    /* The height and width need to match the image size in $\MsnMobile\Main\Dev\Extreme\Controls\MSNMobileVideoControls\Models\Blue\Constants.cs */
+    width: 128px;
+    z-index: 3;
+}
+
+.noselect
+{
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    user-select: none;
+}
+

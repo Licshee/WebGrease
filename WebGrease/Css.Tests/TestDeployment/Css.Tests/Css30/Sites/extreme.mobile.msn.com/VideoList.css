@@ -1,0 +1,68 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="VideoList.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//    Styles for VideoList control
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+ul.videolist
+{
+  border-bottom: solid 0.0834em #e6e6e6;  /* 1px equivalent @ 12px font size */
+}
+
+ul.videolist li, 
+ul.videolist li.first
+{
+  border-top: solid 0.0834em #e6e6e6;  /* 1px equivalent @ 12px font size */
+  display: block;
+  padding: 0.333em 0;  /* equivalent to 4px @ 12px font-size */
+  width: 100%;
+}
+
+ul.videolist li.first
+{
+  border-top-color: #ccc;
+  padding-top: 0;
+}
+
+ul.videolist article img, 
+ul.videolist article figcaption span, 
+ul.videolist article figcaption time
+{
+  float: left;
+}
+
+/* applies to provider/duration/datetime elements */
+ul.videolist article figcaption
+{
+  font-size: 91.667%;  /* equivalent to 11px @ 12px font-size */
+  line-height: 1.182em;  /* equivalent to 13px @ 11px font-size */
+  margin-left: 12.273em;  /* 135px equivalent @ 11px font-size */
+  min-height: 6.545em;  /* 72px equivalent @ 11px font-size */
+}
+
+/* overrides for the video link */
+ul.videolist article figcaption a
+{
+  color: #333;
+  display: block;
+  font-size: 136.364%;  /* equivalent to 15px @ 11px font-size */
+  line-height: 1.067em;  /* equivalent to 16px @ 15px font-size */
+  min-height: 2.133em;  /* equivalent to 32px @ 15px font-size */
+  padding-top: 0.2em;  /* equivalent to 3px @ 15px font-size */
+}
+
+ul.videolist article figcaption cite
+{
+  display: block;
+  padding: 0.273em 0 0.545em 0;  /* 3px 0 6px 0 equivalent @ 11px font-size */
+}
+
+ul.videolist article figcaption time
+{
+  margin-left: 0.818em;  /* 8px equivalent @ 11px font-size */
+}

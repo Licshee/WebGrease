@@ -1,0 +1,44 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TheaterList.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styling for lists of theaters on Theaters page
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+ul.theaters
+{
+  border-bottom: solid 0.0834em #e6e6e6;  /* 1px equivalent @ 12px font size */
+}
+
+.theaters li
+{
+  border-top: solid 0.0834em #e6e6e6;  /* 1px equivalent @ 12px font size */
+  clear: both;
+  min-height: 2.833em; /* 34px equivalent @ 12px font size */
+}
+
+.theaters li.first
+{
+  border: none;
+}
+
+.theaters li a
+{
+  display: block;
+  padding: 0.667em 0 0.667em 0; /* 8 0 8 0px equivalent @ 12px font size */
+}
+
+.theaters li a span
+{
+  color: #333;
+  font-size: 133.333%; /* 16px equivalent @ 12px font size */
+}
+
+.theaters li a p
+{
+  margin: 0;
+}

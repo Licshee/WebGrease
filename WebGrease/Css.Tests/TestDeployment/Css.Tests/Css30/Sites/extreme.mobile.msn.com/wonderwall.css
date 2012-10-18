@@ -1,0 +1,87 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="hub.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles needed for the wonderwall tiles and sliding behavior associated with the wonderwall treatment.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.hub
+{
+    padding-top: 0.5em; /*6px @ 12px*/
+    position: relative; 
+    overflow: hidden;
+}
+
+.no-touch .hub
+{
+    overflow-x: scroll;
+}
+
+.no-overflowscroll .hub
+{
+    overflow: auto;
+}
+
+.no-touch #navbottom
+{
+    margin-top: -1.167em; /*14px @ 12px*/
+    padding-top: 0.833em; /*10px @ 12px*/
+    background-color: #000;
+}
+
+.no-overflowscroll .hub,
+.hub .wonderwall
+{
+    width: 108em; /* 1296px equivalent @ 12px font size */
+}
+
+.hub .wonderwall ul
+{
+  width: 36em;  /* 432px equivalent @ 12px font size */
+}
+
+.hub .wonderwall figure
+{
+    background-color: #333;
+    margin: 0;
+}
+
+.hub .wonderwall figcaption
+{
+    background-color: rgba(0,0,0,.5);
+    bottom: 0;
+    box-sizing: border-box;
+    font-size: 91.667%;  /* 11px equivalent @ 12px font size */
+    padding: 0;
+    position: absolute;
+    width: 100%;
+}
+
+.hub .wonderwall figcaption span{
+    display: block;
+    padding: 0.455em 0.364em;  /* 5px 4px equivalent @ 11px font size */
+}
+
+.hub .wonderwall img
+{
+    display: block;
+}
+
+.hub .wonderwall ul,
+.hub .wonderwall li
+{
+    display: block;
+    float:left;
+    margin: 0;
+    padding: 0;
+}
+
+.hub .wonderwall li
+{
+    margin: 0 0.167em 0.167em 0; /* 0 2px 2px 0 equivalent @ 12px font size */
+    position: relative;
+}

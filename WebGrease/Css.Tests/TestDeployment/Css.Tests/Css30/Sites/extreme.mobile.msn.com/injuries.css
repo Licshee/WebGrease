@@ -1,0 +1,40 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="injuries.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Injuries page under teams using datatable control.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#injuries thead th,
+#injuries tbody td
+{
+  text-align: left;
+}
+
+/* Don't wrap */
+#injuries tbody td:first-child,
+#injuries tbody td.player
+{
+  white-space: nowrap;
+}
+
+#injuries thead th:last-child,
+#injuries tbody td:last-child
+{
+  width: 100%;  
+}
+ 
+#injuries table thead th:first-child,
+#injuries table tbody td:first-child
+{
+  width: auto;  
+}
+
+#injuries table tfoot td
+{
+  border-top-color: #ccc;
+}

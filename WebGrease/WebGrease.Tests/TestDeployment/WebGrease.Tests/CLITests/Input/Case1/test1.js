@@ -1,0 +1,6 @@
+﻿(
+    function ($)
+    {
+        document.write($);
+    }
+)(jQuery);

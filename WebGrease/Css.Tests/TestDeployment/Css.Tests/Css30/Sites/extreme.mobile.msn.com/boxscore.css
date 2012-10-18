@@ -1,0 +1,105 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="boxscore.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Boxscore feature styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.boxscore
+{
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.boxscore thead th
+{
+  background-color: #e4e9f0;
+  border-bottom: 0.091em solid #b3c2d8; /* 1px equivalent @ 11px font size */
+  color: #000;
+  font-weight: normal;
+  padding: 0.182em 0.182em 0.091em; /* 2px 2px 1px 2px equivalent @ 11px font size */
+}
+
+.boxscore thead th.first
+{
+  border-bottom-width: 0.0834em; /* 1px equivalent @ 12px font size */
+  font-size: 109.091%; /*12px @ 11px font size */
+  padding: 0.083em 0.167em 0; /* 1px 2px 0 2px equivalent @ 12px font size */
+}
+
+.boxscore tbody th
+{
+  padding-left: 0;
+}
+
+.boxscore th, 
+.boxscore td
+{
+  font-size: 91.667%;
+  min-width: 1.091em; /* 12px equivalent @ 11px font size */
+  padding: 0 0.182em; /* 0 2px equivalent @ 11px font size */
+  text-align: center;
+}
+
+
+.boxscore tbody th,
+.boxscore thead th.first
+{
+  text-align: left;
+  width: 100%;  
+}
+
+.boxscore thead th.bottom
+{
+  background: #e4e9f0 url('/statics/common/i/blue/inning_bottom.png') no-repeat 0.333em 50%; /* 4px equivalent @ 12px font size */
+  padding-left: 1.25em; /* 15px equivalent @ 12px font size */
+}
+
+.boxscore thead th.top
+{
+  background: #e4e9f0 url('/statics/common/i/blue/inning_top.png') no-repeat 0.333em 50%; /* 4px equivalent @ 12px font size */
+  padding-left: 1.25em; /* 15px equivalent @ 12px font size */
+}
+
+.boxscore tbody .runs
+{
+  border-left: 0.091em solid #b3c2d8; /* 1px equivalent @ 11px font size */
+}
+
+.boxscore .runs,
+.boxscore .hits,
+.boxscore .errors
+{
+  background-color: #e4e9f0;
+  min-width: 1.091em; /* 12px equivalent @ 11px font size */
+  padding: 0.182em 0.182em 0.091em; /* 2px 2px 1px 2px equivalent @ 11px font size */
+}
+
+.boxscore .runs
+{
+  padding-left: 0.364em; /* 4px equivalent @ 11px font size */
+}
+
+.boxscore .errors
+{
+  padding-right: 0.364em; /* 4px equivalent @ 11px font size */
+}
+
+.boxscore tbody tr th
+{
+  font-weight: normal;
+}
+
+.boxscore tbody tr.high th
+{
+  font-weight: bold;
+}
+
+.boxscore tbody tr td
+{
+  border-top: 0;
+}

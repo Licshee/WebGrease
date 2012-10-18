@@ -1,0 +1,22 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="whatsnearby.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styling for what's near by on Theater Details Page
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+ul.nearby li
+{
+  border-bottom: solid 0.0834em #e6e6e6;  /* 1px equivalent @ 12px font size */
+}
+
+ul.nearby li a
+{
+  display: block;
+  font-size: 116.667%;  /* 14px equivalent @ 12px font size */
+  padding: 0.857em 0; /* 12px 0 equivalent @ 14px font size */
+}

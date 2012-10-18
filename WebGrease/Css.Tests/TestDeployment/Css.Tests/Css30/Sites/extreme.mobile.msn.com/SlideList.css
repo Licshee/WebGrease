@@ -1,0 +1,55 @@
+﻿/*
+Default layout of full screen slide show
+*/
+
+.slidelist
+{
+  background-color: #000;
+  color: #fff;
+}
+
+.slidelist li figure
+{
+  margin: 0 -0.75em; /* -8px at 12px font size, overrides container default margin */
+}
+
+.slidelist figure img
+{
+  display: block;
+  margin: 0 auto;
+}
+
+.slidelist figcaption
+{
+  background-color: #333;
+  background-color: rgba(0,0,0,0.6);
+  color: #fff;
+  display: block;
+  min-width: 100%;
+  padding: 0.75em 0; /* 8px at 12px font size */
+}
+
+.slidelist figcaption cite
+{
+  display: block;
+  font-size: 83.333%; /* 10px at 12px font size */
+  margin-top: 0.75em; /* 8px at 12px font size */
+}
+
+.slidelist figcaption span
+{
+  display: block;
+  font-size: 116.667%; /* 14px at 12px font size */
+  font-weight: bold;
+}
+
+.slidelist figcaption .richtext
+{
+  font-size: 116.667%; /* 14px at 12px font size */
+  margin-top: 1.714em;
+}
+
+.slidelist figcaption .richtext span
+{
+  font-size: 100%;
+}

@@ -1,0 +1,16 @@
+/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="article.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Page-specific style for sports article page.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.page-nflarticle #news,
+.page-cfbarticle #news
+{
+  margin-bottom: 2.667em; /* 32px @ 12px base */
+}

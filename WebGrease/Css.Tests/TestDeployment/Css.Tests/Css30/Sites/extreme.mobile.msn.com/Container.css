@@ -1,0 +1,171 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Container.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Default container styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.coa2 
+{
+  margin-bottom: 1em; /* 12px @ 12px font size*/
+}
+
+.coa2 .h2
+{
+  border-bottom: solid 0.250em #0b397f; /* 3px equivalent @ 12px font size */
+  clear: both;
+  margin: 0 0.667em; /*0 8px*/
+  position: relative;
+}
+
+.coa2 .h2 > a,
+.coa2 .h2 > span
+{
+  background-color: transparent;
+  color: #333;
+  display: block;
+  margin-right: 2.5em; /* 30px equivalent @ 12px font size */
+  padding: 1.083em 0 0.0834em 0; /* 13px 0 1px 0 @ 12px font size*/
+}
+
+.coa2 .h3
+{
+  margin: 0;
+  padding: 0;
+}
+
+.coa2 .h3 > a,
+.coa2 .h3 > span
+{
+  color: #333;
+  display: block;
+}
+
+.co .br .error
+{
+  margin-left: 0; 
+}
+
+.js .cogr .coa2 .h3
+{
+  border-bottom: solid 0.250em #0b397f; /* 3px equivalent @ 12px font size */
+  clear: both;
+  font-size: 100%;
+  font-weight: bold;
+  line-height: normal;
+  padding: 1.083em 0 0.0834em 0; /* 13px 0 1px 0 @ 12px font size*/
+}
+
+.coa2 .more
+{
+  clear: both;
+  color: #555;
+  float: right;
+  padding: 0.333em 0.667em 0.25em 2.333em; /* 4px 8px 3px 28px @ 12px font size*/
+}
+
+.coa1 .br,
+.coa2 .br
+{
+  margin: 0 0.667em; /*0 8px @ 12px font size*/
+}
+
+.coa2 .hr
+{
+  border-bottom: solid 0.0834em #ccc;  /* 1px @ 12px font size*/
+}
+
+/* tab bar */
+.js .cogr
+{
+  margin: 0 0.667em; /*0 8px*/
+}
+
+.js .cogr .br
+{
+  margin: 0; /* branches within container groups don't get left/right margin */
+}
+
+.js .cogr ul.cotb,
+.coa2 .h2
+{
+  font-size: 100%;
+  font-weight: bold;
+  line-height: normal;
+}
+
+.js .cogr ul.cotb
+{
+  border-bottom: solid 0.0834em #0b397f; /*1 px */
+  background-color: #f1f1f1;
+  width: 100%;
+} 
+
+.js .cogr ul.cotb li
+{
+  float: left;
+}
+
+/* unselected tab */
+.js .cogr ul.cotb li a, 
+.js .cogr ul.cotb li span
+{
+  display: block;
+  float: left;
+  min-width: 3.333em; /* 40px @ 12px font size*/
+  text-align: center;
+}
+
+.js .cogr ul.cotb li a
+{
+  background-color: #f1f1f1;
+  border-width: 0 0.0834em;/* 0 1px */
+  border-color: #fff;
+  border-style: solid;
+  color: #666;
+  padding: 0.5em 0.833em 0.167em 0.833em; /* 6px 10px 2px 10px @ 12px font size*/
+  text-decoration: none;
+}
+
+.js .cogr ul.cotb li.tabsel a
+{
+  color: #333;
+}
+
+/* selected tab */
+.js .cogr ul.cotb li.tabsel span
+{ 
+  background-color: #fff;
+  border-color: #0b397f;
+  border-style: solid;
+  border-width: 0.333em 0.0834em 0 0.0834em; /* 4px 1px 0px 1px @ 12px font size*/
+  bottom: -0.0834em; /* -1px @ 12px font size*/
+  color: #333;
+  margin-left: -0.0834em; /* -1px @ 12px font size*/
+  margin-top: -0.333em; /* -4px @ 12px font size*/
+  padding: 0.417em 0.75em 0.333em 0.75em;
+  position: relative;
+}
+
+.js .cogr ul.cotb li.tabsel span a
+{
+  background-color: #fff;
+  border-width: 0;
+  color: #333;
+  padding: 0;
+  text-decoration: none;
+}
+
+.js .cogr ul.cotb li.first a
+{
+  border-left: 0;
+}
+
+.js .cogr ul.cotb li.last a
+{
+  border-right: 0;
+}

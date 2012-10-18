@@ -1,0 +1,172 @@
+﻿/*
+ * On the bowls page, we disable the conference selector, turn it to the overall background color, 
+ * and remove the chevron and text.
+ */
+.disabled
+{
+    background: #FFF;
+    color: #FFF;
+    border: 1px solid #FFF;
+}
+
+.schedHeader
+{
+    font-weight: bold;
+}
+
+/* Styling for the Sports Scores table */
+.scoresTable
+{
+    margin-top: 3px;
+    background-color: #EEF3F8;
+    font-size: 80%;
+    font-family: Arial;
+    color: #333333;
+}
+
+/*
+ * Bowl games (and possibly others) display a header and a detail row for each game.
+ */
+ 
+.scoresTable .headerCell
+{
+    text-align: center;
+    color: #666;
+    font-size: 110%;
+    font-weight: bold;
+    padding: 3px 0px;
+}
+
+.scoresTable .headerRow
+{
+    background-color: #DCE5EE;
+    padding: 5px 0;
+    border-top: 1px solid #B3C0CC;
+}
+
+/*
+ * Games that are in-progress are styled with a different background color palette, making them easier to find while scrolling.
+ *
+ * Rather than using two classes (e.g. .headerRow and .inProgress), I've chosen to merge the classes, as CSS' decision-rules 
+ *  while selecting multiple classes vary from browser to browser.
+ */
+ 
+.scoresTable .headerRowInProgress
+{
+    background-color: #DCF2DE;
+    padding: 5px 0;
+    border-top: 1px solid #6ED264;
+}
+
+.scoresTable .detailsRow
+{
+    padding: 5px 0;
+    background-color: #EEF3F8;
+    border-bottom: 1px solid #B3C0CC;
+}
+
+.scoresTable .gameRow
+{
+    padding: 5px 0;
+    background-color: #EEF3F8;
+    border-top: 1px solid #B3C0CC;
+    border-bottom: 1px solid #B3C0CC;
+}
+
+.scoresTable .gameRowInProgress
+{
+    padding: 5px 0;
+    background-color: #EEF8F1;
+    border-top: 1px solid #B3C0CC;
+    border-bottom: 1px solid #B3C0CC;
+}
+
+.scoresTable .detailsRowInProgress
+{
+    padding: 5px 0;
+    background-color: #EEF9F1;
+    border-bottom: 1px solid #6ED264;
+}
+
+/*
+ * Since Scores is a table-based layout, we must pick widths for all of the columns
+ * or allow them to size themselves within the table based on their contents.  This
+ * results in some unsightly changes from week-to-week (or day-to-day) when certain
+ * weeks lack information or have longer/shorter team aliases.
+ *
+ * The width values below were chosen based on ad-hoc testing and (will be) tuned
+ * as required through work with the design team.
+ */
+.scoresTable .status
+{
+    text-align: center;
+    background-color: #DCE5EE;
+    width: 30%;
+    color: #666;
+}
+
+.scoresTable .statusInProgress
+{
+    text-align: center;
+    background-color: #DCF2DE;
+    width: 30%;
+    color: #666;
+}
+
+.scoresTable .homeCell
+{
+    padding: 5px 8px 5px 5px;
+    width: 12%;
+}
+
+.scoresTable .awayCell
+{
+    padding: 5px 8px 5px 5px;
+    width: 12%;
+}
+
+.scoresTable .winner
+{
+    width: 18%;
+    font-weight: bold;
+}
+
+.scoresTable .loser
+{
+    width: 18%;
+}
+
+.scoresTable .indicator
+{
+    width: 5%;
+}
+
+.scoresTable .dateRow
+{
+    border-top: 1px solid #FFF;
+    background-color: #FFF;
+    text-align: center;
+}
+
+.scoresTable .padRow, .scoresTable .scoreSpacer
+{
+    line-height: 3px;
+    height: 3px;
+    border-left: 1px solid #FFF;
+    border-right: 1px solid #FFF;
+    background-color: #FFF;
+}
+
+.scoresTable .scoreSpacer
+{
+    border-top: 1px solid #FFF;
+    height: 24px;
+    line-height: 24px;
+}
+
+.scoresTable .error
+{
+    padding: 5px;
+    background-color: #FFF;
+    text-align: center;
+}

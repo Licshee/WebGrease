@@ -1,0 +1,63 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="standings2.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   MLB Game Team Standings control styles
+//   Used on the Gametrax preview page, just below the nav bar, and the lineup page just below the team tabs.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+ 
+.standings2
+{
+  float: left;
+  width: 50%; /* force the standings content to wrap, rather than the box itself */
+}
+
+.standings2 h4
+{
+  margin: 0;
+}
+
+.standings2 h4 span
+{
+  display: block;
+  font-size: 116.667%; /* 14px */
+  line-height: 1.143em; /* 16px equivalent @ 14px font size */
+  padding: 0 0.063em; /* 0 1px equivalent @ 14px font size */
+}
+
+.standings2 p
+{
+  margin: 0;
+}
+
+.standings2.away
+{
+  float: right;
+}
+
+.standings2.away *
+{
+  text-align: right;
+}
+
+.standings2 sup
+{
+  font-size: 100%;
+  font-weight: normal;
+  vertical-align: baseline;
+}
+
+.standings2 h4 .city,
+.standings2 h4 abbr
+{
+  display: none;
+}
+
+#teamcompare .standings2 .logo
+{
+  background-image: none;
+}

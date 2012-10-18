@@ -1,0 +1,50 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="myteamslist.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles for the my teams list control.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#myteams.coa2 .h2 > a,
+#myteams.coa2 .h2 > span
+{
+  background: transparent url('/statics/common/i/blue/favorites_on_button.png') no-repeat 100% 100%;
+  display: inline-block;
+  margin-right: 0; /*resetting since no attribution is used here*/
+  padding-right: 1.833em; /*22px equivalent @ 12px font size - width of favorites icon*/
+}
+
+.myteams a,
+.myteams .college
+{
+  background-color: #f1f1f1;
+  border: 0.0834em solid #ccc;
+  color: #333;
+  display: block;
+  font-weight: bold;
+  min-width: 7.417em; /* 89px equivalent @ 12px font size */
+  padding: 0.5em 0 0.583em 0; /* 6px 0 7px 0 equivalent @ 12px font size */
+  text-align: center; 
+}
+
+.myteams a span
+{
+  display: block;
+}
+
+.myteams a span.city,
+.myteams .add
+{
+  font-weight: normal;
+}
+
+/* For tiles with only one line of text */
+.myteams .add,
+.myteams .college
+{
+  padding: 1.75em 0 0.583em 0; /* 21px 0 7px 0 equivalent @ 12px font size */
+}

@@ -1,0 +1,328 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6257263E-2961-41FC-A8FA-634CFA859E75}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Microsoft.WebGrease.Tests</RootNamespace>
+    <AssemblyName>WebGrease.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseAndSigned|AnyCPU'">
+    <OutputPath>bin\ReleaseAndSigned\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisLogFile>bin\Release\WebGrease.Tests.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
+    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Build.Framework" />
+    <Reference Include="Microsoft.Build.Utilities.v4.0" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Moq">
+      <HintPath>..\packages\Moq.4.0.10827\lib\NET40\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <CodeAnalysisDependentAssemblyPaths Condition=" '$(VS100COMNTOOLS)' != '' " Include="$(VS100COMNTOOLS)..\IDE\PrivateAssemblies">
+      <Visible>False</Visible>
+    </CodeAnalysisDependentAssemblyPaths>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AjaxMinHooks.cs" />
+    <Compile Include="AssemblerActivityTest.cs" />
+    <Compile Include="CLITests.cs" />
+    <Compile Include="IncludeEngineTest.cs" />
+    <Compile Include="WebGreaseTaskTests.cs" />
+    <Compile Include="MainActivityTest.cs" />
+    <Compile Include="MinifyCssTests.cs" />
+    <Compile Include="MinifyJSActivityTest.cs" />
+    <Compile Include="MinifyCssActivityTest.cs" />
+    <Compile Include="CssLocalizationActivityTest.cs" />
+    <Compile Include="JSLocalizationActivityTest.cs" />
+    <Compile Include="ResourcesResolutionActivityTest.cs" />
+    <Compile Include="FileHasherActivityTest.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SassEngineTest.cs" />
+    <Compile Include="TempFile.cs" />
+    <Compile Include="TestDeploymentPaths.cs" />
+    <Compile Include="WebGreaseConfigurationTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\base.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\fill.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\full.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\vars.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\stylesheet2.css" />
+    <None Include="packages.config" />
+    <None Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Configuration\sample1.webgrease.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Configuration\sample1.webgrease.config" />
+    <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\include.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder2\include4.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder2\include5.other.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder\include3.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder\include2.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\test1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\base.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\fill.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\full.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\stylesheet1.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\imports\test\base.scss" />
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\sample1.webgrease.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\withDefaults.webgrease.config" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\stylesheet2.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\base.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\stylesheet2.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\vars.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\fill.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\full.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\stylesheet1.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\base.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\fill.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\full.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\stylesheet1.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\vars.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test3\input\errorStylesheet.scss" />
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test3\test3.webgrease.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\test2.webgrease.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\test1.webgrease.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\..\Ref\Antlr\Runtime\antlr-dotnet-tool-3.3.1.7705_src\antlr\main\runtime\CSharp3\Sources\Antlr3.Runtime\Antlr3.Runtime_vs2010.csproj">
+      <Project>{8FDC0A87-9005-4D5A-AB75-E55CEB575559}</Project>
+      <Name>Antlr3.Runtime_vs2010</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WebGrease.Build\WebGrease.Build.csproj">
+      <Project>{0B335917-CF6E-418A-BF4E-2870D25B660E}</Project>
+      <Name>WebGrease.Build</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WebGrease.Preprocessing.Include\WebGrease.Preprocessing.Include.csproj">
+      <Project>{72B8FDED-86A4-4814-B8BF-24A556CF7831}</Project>
+      <Name>WebGrease.Preprocessing.Include</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WebGrease.Preprocessing.Sass\WebGrease.Preprocessing.Sass.csproj">
+      <Project>{6726D4BF-AC42-49C4-9646-B2ADB0F5FB5B}</Project>
+      <Name>WebGrease.Preprocessing.Sass</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WebGrease\WebGrease.csproj">
+      <Project>{E853D38C-EFD5-495E-853B-69FFE19FA199}</Project>
+      <Name>WebGrease</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WG\WG.csproj">
+      <Project>{ab452f99-0829-408d-9154-fe6e1da5459a}</Project>
+      <Name>WG</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestDeployment\AjaxMin\Input\BasicTest.css" />
+    <Content Include="TestDeployment\AjaxMin\Input\BasicTest.js" />
+    <Content Include="TestDeployment\AjaxMin\Input\ErrorReachedTest.css" />
+    <Content Include="TestDeployment\AjaxMin\Input\ErrorReachedTest.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\stylesheet1.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case1\test1.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case1\test1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case2\images\bar.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case2\images\bullet-media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case2\images\foo.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case2\images\lazy1.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case2\images\lazy2.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case2\images\media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case2\SpriteTest.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\FileHasherActivityTest\Input\C1\tree.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyJSActivityTest\Input\Case1\test1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case1\script2.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case1\script1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case2\a\script1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case2\b\c\script3.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case2\b\script2.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case3\a\script1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case3\b\c\notinclude4.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case3\b\c\script3.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case3\b\script2.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case3\d\e\script5.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case3\d\script6.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\CssLocalizationActivityTest\Input\input1.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case1\ExcludeByKeys.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case2\LowerCaseValidation.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case3\HackValidation.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case4\HackValidation.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case5\OptimizationTest.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case6\images\lazy2.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case6\images\lazy1.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case6\images\bar.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case6\images\bullet-media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case6\images\foo.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case6\images\media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case6\SpriteTest.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\FileHasherActivityTest\Input\C1\052x052.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\FileHasherActivityTest\Input\C1\C3\060x060.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\FileHasherActivityTest\Input\C2\070x070.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\css\css1.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\css\novm.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\css\onlym.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\css\onlyv.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\i\00\media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\js\js1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\js\novm.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\js\onlym.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\js\onlyv.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\css\css1.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\css\css2.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\i\01\breadcrumb.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\i\01\bullet-media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\i\01\bullet.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\i\01\pipe.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\i\Level1\Level2\Level3\bullet-media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\js\jquery-1.4.2.min.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\js\js1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\js\js2.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\css\css1.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\css\novm.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\css\onlym.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\css\onlyv.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\i\00\media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\js\js1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\js\novm.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\js\onlym.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\js\onlyv.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\css\css1.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\css\css2.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\i\01\breadcrumb.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\i\01\bullet-media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\i\01\bullet.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\i\01\pipe.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\i\Level1\Level2\Level3\bullet-media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\js\jquery-1.4.2.min.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\js\js1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\js\js2.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\css\1_mobile.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\css\2_mobile.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\css\mypage\mypage.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\css\mypage\mypage_ie.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\css\singlefile.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\js\async\jasync.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\js\mypage\mypage.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\JSLocalizationActivityTest\Input\input1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyJSActivityTest\Input\Case2\test1.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestDeployment\WebGrease.Tests\CssLocalizationActivityTest\Input\imagesLog.xml">
+      <SubType>Designer</SubType>
+    </Content>
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\CssLocalizationActivityTest\Input\ToolsLogs\Resources\Locales\en-us.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\Resources\css\locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\Resources\css\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\Resources\css\themes\01-black.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\Resources\css\themes\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\Resources\js\locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\App\Site1\Resources\js\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\Resources\css\locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\Resources\css\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\Resources\css\themes\01-black.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\Resources\css\themes\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\Resources\js\locales\en-ca.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\Resources\js\locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Content\F1\Resources\js\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\Resources\css\locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\Resources\css\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\Resources\css\themes\01-black.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\Resources\css\themes\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\Resources\js\locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\App\Site1\Resources\js\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\css\locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\css\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\css\themes\01-black.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\css\themes\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\js\locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\js\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\Resources\css\Locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\Resources\css\Locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\Resources\css\Themes\blue.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\Resources\css\Themes\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\Resources\css\Themes\red.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\Resources\js\Locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\Resources\js\Locales\fr-ca.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Content\Resources\js\Locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\JSLocalizationActivityTest\Input\ToolsLogs\Resources\Locales\en-us.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\ResourcesResolutionActivityTest\Input\Content\F1\Resources\css\themes\01-black.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\ResourcesResolutionActivityTest\Input\Content\F1\Resources\css\themes\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\ResourcesResolutionActivityTest\Input\Content\App\Site1\Resources\css\themes\01-black.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\ResourcesResolutionActivityTest\Input\Content\App\Site1\Resources\css\themes\generic-generic.resx" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

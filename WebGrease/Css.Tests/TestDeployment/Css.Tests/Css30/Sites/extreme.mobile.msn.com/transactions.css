@@ -1,0 +1,40 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="transactions.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Transactions page under teams using datatable control.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#transactions thead th,
+#transactions tbody td
+{
+  text-align: left;
+}
+
+/* Don't wrap */
+#transactions tbody td:first-child,
+#transactions tbody td.player
+{
+  white-space: nowrap;
+}
+
+#transactions th:last-child,
+#transactions td:last-child
+{
+  width: 100%;  
+}
+ 
+#transactions table thead th:first-child,
+#transactions table tbody td:first-child
+{
+  width: auto;  
+}
+
+#transactions table tfoot td
+{
+  border-top-color: #ccc;
+}

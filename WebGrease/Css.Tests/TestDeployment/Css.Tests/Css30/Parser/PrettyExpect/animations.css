@@ -1,0 +1,95 @@
+﻿@keyframes 'bounce'
+{
+  from,25%
+  {
+    top:100px;
+    animation-timing-function:ease-out
+  }
+  25%
+  {
+    top:50px;
+    animation-timing-function:ease-in
+  }
+  50%
+  {
+    top:100px;
+    animation-timing-function:ease-out
+  }
+  75%
+  {
+    top:75px;
+    animation-timing-function:ease-in
+  }
+  to
+  {
+    top:100px
+  }
+}
+@-webkit-keyframes 'RtC'
+{
+  from
+  {
+    left:500px
+  }
+  to
+  {
+    left:0px
+  }
+}
+@-webkit-keyframes 'CtL'
+{
+  from
+  {
+    left:0px
+  }
+  to
+  {
+    left:-500px
+  }
+}
+@-webkit-keyframes 'LtC'
+{
+  from
+  {
+    left:-500px
+  }
+  to
+  {
+    left:0px
+  }
+}
+@-webkit-keyframes 'CtR'
+{
+  from
+  {
+    left:0px
+  }
+  to
+  {
+    left:500px
+  }
+}
+.slRtC
+{
+  -webkit-animation-name:'RtC';
+  -webkit-animation-duration:0.5s
+}
+.slCtL
+{
+  -webkit-animation-name:'CtL';
+  -webkit-animation-duration:0.5s
+}
+.slLtC
+{
+  -webkit-animation-name:'LtC';
+  -webkit-animation-duration:0.5s
+}
+.slCtR
+{
+  -webkit-animation-name:'CtR';
+  -webkit-animation-duration:0.5s
+}
+.slHide
+{
+  left:-5000px
+}

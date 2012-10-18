@@ -1,0 +1,184 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="teamlogos_15x.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   MLB Team Logos at 1.5x
+//   
+//   Styles for devices that support 1.5 pixel resolution, such as Windows Phone 7 because our viewport is 
+//   set to width=device-width and WP7 maps this to 320, but the device is actually 480 wide, meaning that 
+//   our background images need to be 1.5 bigger otherwise WP7 enlarges them which results in distortion
+//   
+//   Generally these adjustments only apply to background images
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+footer[role="contentinfo"] .logo,
+section[role="main"] .logo
+{
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
+.l_als
+{
+  background-image: url('/statics/sports/i/mlb/l/als_15x.png');
+}
+
+.l_ari
+{
+  background-image: url('/statics/sports/i/mlb/l/ari_15x.png');
+}
+
+.l_atl
+{
+  background-image: url('/statics/sports/i/mlb/l/atl_15x.png');
+}
+
+.l_bal
+{
+  background-image: url('/statics/sports/i/mlb/l/bal_15x.png');
+}
+
+.l_bos
+{
+  background-image: url('/statics/sports/i/mlb/l/bos_15x.png');
+}
+
+.l_chc
+{
+  background-image: url('/statics/sports/i/mlb/l/chc_15x.png');
+}
+
+.l_cws
+{
+  background-image: url('/statics/sports/i/mlb/l/cws_15x.png');
+}
+
+.l_cin
+{
+  background-image: url('/statics/sports/i/mlb/l/cin_15x.png');
+}
+
+.l_cle
+{
+  background-image: url('/statics/sports/i/mlb/l/cle_15x.png');
+}
+
+.l_col
+{
+  background-image: url('/statics/sports/i/mlb/l/col_15x.png');
+}
+
+.l_det
+{
+  background-image: url('/statics/sports/i/mlb/l/det_15x.png');
+}
+
+.l_fla
+{
+  background-image: url('/statics/sports/i/mlb/l/fla_15x.png');
+}
+
+.l_hou
+{
+  background-image: url('/statics/sports/i/mlb/l/hou_15x.png');
+}
+
+.l_kc
+{
+  background-image: url('/statics/sports/i/mlb/l/kc_15x.png');
+}
+
+.l_laa
+{
+  background-image: url('/statics/sports/i/mlb/l/laa_15x.png');
+}
+
+.l_lad
+{
+  background-image: url('/statics/sports/i/mlb/l/lad_15x.png');
+}
+
+.l_mil
+{
+  background-image: url('/statics/sports/i/mlb/l/mil_15x.png');
+}
+
+.l_min
+{
+  background-image: url('/statics/sports/i/mlb/l/min_15x.png');
+}
+
+.l_nls
+{
+  background-image: url('/statics/sports/i/mlb/l/nls_15x.png');
+}
+
+.l_nym
+{
+  background-image: url('/statics/sports/i/mlb/l/nym_15x.png');
+}
+
+.l_nyy
+{
+  background-image: url('/statics/sports/i/mlb/l/nyy_15x.png');
+}
+
+.l_oak
+{
+  background-image: url('/statics/sports/i/mlb/l/oak_15x.png');
+}
+
+.l_phi
+{
+  background-image: url('/statics/sports/i/mlb/l/phi_15x.png');
+}
+
+.l_pit
+{
+  background-image: url('/statics/sports/i/mlb/l/pit_15x.png');
+}
+
+.l_sd
+{
+  background-image: url('/statics/sports/i/mlb/l/sd_15x.png');
+}
+
+.l_sea
+{
+  background-image: url('/statics/sports/i/mlb/l/sea_15x.png');
+}
+
+.l_sf
+{
+  background-image: url('/statics/sports/i/mlb/l/sf_15x.png');
+}
+
+.l_stl
+{
+  background-image: url('/statics/sports/i/mlb/l/stl_15x.png');
+}
+
+.l_tb
+{
+  background-image: url('/statics/sports/i/mlb/l/tb_15x.png');
+}
+
+.l_tex
+{
+  background-image: url('/statics/sports/i/mlb/l/tex_15x.png');
+}
+
+.l_tor
+{
+  background-image: url('/statics/sports/i/mlb/l/tor_15x.png');
+}
+
+.l_was
+{
+  background-image: url('/statics/sports/i/mlb/l/was_15x.png');
+}

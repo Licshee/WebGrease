@@ -1,0 +1,83 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="movielist.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styling for lists of movies on Entertaiment
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.movies li
+{
+  border-top: solid 0.0834em #e6e6e6;
+  padding: 0.333em 0 0.667em 0;
+}
+
+.movies li.first,
+.carousel .movies li
+{
+  border: none;
+}
+
+.movies li.last
+{
+  border-bottom: solid 0.0834em #e6e6e6;
+}
+
+.movies li,
+.movies article
+{
+  display: block;
+  float: left;
+  width: 100%;
+}
+
+.carousel .movies li
+{
+  float: left;
+  padding-top: 0;
+  padding-bottom: 0;
+  width: auto;
+}
+
+.carousel .movies article
+{
+  float: none;
+  width: auto;
+}
+
+.carousel .movie figure img 
+{
+  padding-top: 0;
+}
+
+.carousel .movies article h3
+{
+  display: inline-block;
+  font-size: 100%;
+}
+
+.carousel .movies .movie .comma,
+.carousel .movies .movie .duration,
+.carousel .movies .movie .genre,
+.carousel .movies .movie .label,
+.carousel .movies .movie .mpaa.rating
+{
+  display: none;
+}
+
+.carousel .movie .stars
+{
+  display: inline-block;
+}
+
+.movies.showtimes .movie .critic.rating,
+.movies.showtimes .movie .genre,
+.movies.showtimes .movie .mpaa.rating,
+.movies.showtimes .movie .comma,
+.movies.showtimes .movie .duration
+{
+    display: none;
+}

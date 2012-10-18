@@ -1,0 +1,93 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="dailyforecastlist.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Daily Forecast List control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* Set up the basics for each list item */
+ol.dailyforecast li
+{
+    border-bottom: solid 0.0834em #e6e6e6;  /* 1px equivalent @ 12px font size */
+    color: #888;
+    display: block;
+    float: left;
+    font-size: 100%;    /* 12px equivalent */
+    overflow: hidden;
+    width: 100%;
+}
+
+/* Don't need a top border because container's heading has bottom border */
+ol.dailyforecast li.first
+{
+    border-top: none;
+}
+
+/* Format the day of week and temp */
+ol.dailyforecast li .date abbr,
+ol.dailyforecast li .temp
+{
+    color: #333;
+    font-size: 116.666%;    /* 14px equivalent */
+}
+
+/* Format the date */
+ol.dailyforecast li .date span
+{
+    display: block;
+}
+
+/* Make the temperatures and precipitation right aligned */
+ol.dailyforecast li .details p
+{
+    margin: 0;
+    text-align: right;
+}
+
+/* Format the left column */
+ol.dailyforecast li .date
+{
+    float: left;
+    padding: 1.333em 0;     /* 16px equivalent @ 12px font size */
+    width: 20.394%;         /* 62/304 */
+}
+
+/* Format the image column */
+ol.dailyforecast li img
+{
+    float: left;
+    padding: 1.333em 1em 0 0;   /* 16px equivalent @ 12px font size */
+}
+
+/* Format the forecast column */
+ol.dailyforecast li .forecast
+{
+    color: #333;
+    float: left;
+    font-size: 116.666%;    /* 14px equivalent */
+    padding: 1.143em 0;     /* 16px equivalent @ 14px font size */
+    width: 34.210%;         /* 104/304 */
+}
+
+/* Format the right column */
+ol.dailyforecast li .details
+{
+    float: left;
+    padding: 1.333em 0 0 0;     /* 16px equivalent @ 12px font size */
+    width: 30.921%;             /* 94/304 */
+}
+
+/* Format the citation */
+#dailyforecast cite
+{
+    clear: both;
+    color: #888;
+    display: block;
+    font-size: 100%;        /* 12px equivalent */
+    padding: 1em 0 4em 0;   /* 12px & 48 px equivalent @ 12px font size */
+}
+ 

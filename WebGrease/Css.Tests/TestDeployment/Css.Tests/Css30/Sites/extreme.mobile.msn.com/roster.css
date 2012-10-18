@@ -1,0 +1,56 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="roster.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   roster page under teams using datatable control.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#roster thead th,
+#roster tbody td
+{
+  text-align: left;
+}
+
+/* Don't wrap player names */
+#roster tbody td.player
+{
+  white-space: nowrap;
+}
+
+/* Collapse columns to fit content */
+#roster table thead th,
+#roster table tbody td
+{
+  width: auto;  
+}
+
+#roster thead .photo
+{
+  visibility: hidden;
+}
+
+#roster table tbody td.photo
+{
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+#roster table tbody td.photo img
+{
+  float: left;
+}
+
+/* Needed to collapse columns to fit content */
+#roster table tbody td.pos
+{
+  width: 100%;  
+}
+
+#roster table tfoot td 
+{
+  border-top-color: #ccc;
+}

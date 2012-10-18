@@ -1,0 +1,188 @@
+﻿/*
+body>*
+{
+  -webkit-backface-visibility: hidden;
+  -webkit-box-sizing: border-box;
+  display: none;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  -webkit-transform: translate3d(0,0,0) rotate(0) scale(1);
+  min-height: 420px!important;
+}
+*/
+
+.in,
+.out
+{
+  -webkit-animation-duration: 350ms;
+  -webkit-animation-timing-function: ease-in-out;
+}
+
+.cube
+{
+  -webkit-animation-duration: 0.55s;
+}
+
+.cube.in
+{
+  -webkit-animation-name: cubeinfromright;
+  -webkit-transform-origin: 0 50%;
+}
+
+.cube.in.reverse
+{
+  -webkit-animation-name: cubeinfromleft;
+  -webkit-transform-origin: 100% 50%;
+}
+
+.cube.out
+{
+  -webkit-animation-name: cubeouttoleft;
+  -webkit-transform-origin: 100% 50%;
+}
+
+.cube.out.reverse
+{
+  -webkit-animation-name: cubeouttoright;
+  -webkit-transform-origin: 0 50%;
+}
+
+.dissolve.in
+{
+  -webkit-animation-name: fadein;
+}
+
+.dissolve.out
+{
+  -webkit-animation-name: fadeout;
+}
+
+.fade.in
+{
+  -webkit-animation-name: fadein;
+  z-index: 10;
+}
+
+.fade.out
+{
+  z-index: 0;
+}
+
+.flip
+{
+  -webkit-animation-duration: .65s;
+}
+
+.flip.in
+{
+  -webkit-animation-name: flipinfromleft;
+}
+
+.flip.out
+{
+  -webkit-animation-name: flipouttoleft;
+}
+
+.flip.in.reverse
+{
+  -webkit-animation-name: flipinfromright;
+}
+
+.flip.out.reverse
+{
+  -webkit-animation-name: flipouttoright;
+}
+
+.pop
+{
+  -webkit-transform-origin: 50% 50%;
+}
+
+.pop.in
+{
+  -webkit-animation-name: popin;
+  z-index: 10;
+}
+
+.pop.in.reverse
+{
+  z-index: 0;
+  -webkit-animation-name: dontmove;
+}
+
+.pop.out.reverse
+{
+  -webkit-animation-name: popout;
+  z-index: 10;
+}
+
+.slide.in
+{
+  -webkit-animation-name: slideinfromright;
+}
+
+.slide.out
+{
+  -webkit-animation-name: slideouttoleft;
+}
+
+.slide.in.reverse
+{
+  -webkit-animation-name: slideinfromleft;
+}
+
+.slide.out.reverse
+{
+  -webkit-animation-name: slideouttoright;
+}
+
+.slideup.in
+{
+  -webkit-animation-name: slideup;
+  z-index: 10;
+}
+
+.slideup.in.reverse
+{
+  -webkit-animation-name: dontmove;
+  z-index: 0;
+}
+
+.slideup.out
+{
+  -webkit-animation-name: dontmove;
+  z-index: 0;
+}
+
+.slideup.out.reverse
+{
+  -webkit-animation-name: slidedown;
+  z-index: 10;
+}
+
+.swap
+{
+  -webkit-animation-duration: .7s;
+  -webkit-transform: perspective(800);
+}
+
+.swap.in
+{
+  -webkit-animation-name: swapinfromright;
+}
+
+.swap.in.reverse
+{
+  -webkit-animation-name: swapinfromleft;
+}
+
+.swap.out
+{
+  -webkit-animation-name: swapouttoleft;
+}
+
+.swap.out.reverse
+{
+  -webkit-animation-name: swapouttoright;
+}

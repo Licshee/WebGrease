@@ -1,0 +1,39 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="charactermenu.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   CharacterMenu control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.menu
+{
+    display: block;
+}
+
+.menu li,
+.menu li a,
+.menu li span
+{
+    display: block;
+    float: left;
+}
+
+.menu li a,
+.menu li span.selected
+{
+    padding: 0.333em 1.667em; /* 4px 20px equivalent @ 12px font size */
+}
+
+.menu li span
+{
+    padding: 0.333em 0; /* 4px equivalent @ 12px font size */
+}
+
+.menu li span.selected
+{
+    font-weight: bold;
+}

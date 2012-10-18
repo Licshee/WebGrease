@@ -1,0 +1,85 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Reviews.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styling for list of reviews on Movie Details page
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+ul.reviews
+{
+  border-bottom: solid 0.0834em #e6e6e6;  /* 1px equivalent @ 12px font size */
+}
+
+.reviews li
+{
+  border-top: solid 0.0834em #e6e6e6;  /* 1px equivalent @ 12px font size */
+  padding: 1em 0; /* 12px 0 equivalent @ 12px font size */
+}
+
+.reviews li.first
+{
+  border: none;
+}
+
+.reviews .stars
+{
+  background: transparent url('/statics/common/i/blue/stars.png') no-repeat 0 50%;
+  color: transparent;
+  display: inline-block;
+  height: 0.833em; /* 10px equivalent @ 12px font size */
+  line-height: 0.833em; /* 10px equivalent @ 12px font size */
+  width: 5.417em; /* 65px equivalent @ 12px font size */
+}
+
+.reviews .half .stars
+{
+  background-image: url('/statics/common/i/blue/stars_half.png');
+}
+
+.reviews .r7 .stars,
+.reviews .r8 .stars
+{
+  background-position: -1.083em 50%; /* -13px equivalent @ 12px font size */
+}
+
+.reviews .r6 .stars,
+.reviews .r5 .stars
+{
+  background-position: -2.167em 50%; /* -26px equivalent @ 12px font size */
+}
+
+.reviews .r4 .stars,
+.reviews .r3 .stars
+{
+  background-position: -3.25em 50%; /* -39px equivalent @ 12px font size */
+}
+
+.reviews .r2 .stars,
+.reviews .r1 .stars
+{
+  background-position: -4.333em 50%; /* -52px equivalent @ 12px font size */
+}
+
+.reviews h3
+{
+  color: #333;
+  font-size: 133.333%; /* 16px equivalent @ 12px font size */
+  font-weight:normal;
+  margin: 0.375em 0 0 0; /* 6px 0 0 0 equivalent @ 16px font size */
+}
+
+.reviews p
+{
+  line-height: 1.333em; /* 16px @ 12px base font size */    
+  margin: 0.417em 0 0 0; /* 5px 0 0 0 equivalent @ 12px font size */
+}
+
+.reviews .author
+{
+  color: #888;
+  font-size: 91.667%; /* 11px equivalent @ 12px font size */
+}

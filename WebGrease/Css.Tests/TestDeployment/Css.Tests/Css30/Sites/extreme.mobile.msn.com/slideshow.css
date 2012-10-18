@@ -1,0 +1,191 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Slideshow.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for slideshow markup elements.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+article[role="main"].gallery header
+{
+  margin: 1em 0;
+  position: relative;
+  width: 100%;
+}
+
+article[role="main"].gallery header h1
+{
+  margin-right: 100px;
+}
+
+article[role="main"].gallery header .sponsor img
+{
+  top: 0;
+}
+
+article[role="main"].gallery div.richtext
+{
+  font-size: 125%;
+}
+
+#page .gallery article figcaption h2
+{
+  float: none;
+  font-size: 125%;
+  font-weight: bold;
+  margin: 0 55px 0 0;
+}
+
+#page .gallery article figcaption h2,
+article[role="main"].gallery
+{
+  color: #555;
+  color: rgb(85,85,85);
+}
+
+.gallery ol.slides,
+.gallery ol.slides li,
+.gallery ol.slides figure
+{
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gallery ol.slides figure figcaption
+{
+  clear: both;
+  padding-top: 10px;
+}
+
+.gallery ol.slides figure article
+{
+  clear: both;
+  padding-top: 8px;
+}
+
+.gallery .swipeable a.img,
+.gallery .swipeable img 
+{
+  display: block;
+  float: left;
+}
+
+.gallery .swipeable img /* REVIEW:  Remove once image service and/or editorial provides images of correct dimensions, as it will not be necessary */
+{
+  height: 175px;
+  width: auto;
+}
+
+.gallery .swipeable a.img img
+{
+  display: inline;
+}
+
+.gallery .swipeable .prev span,
+.gallery .swipeable .next span
+{
+  background-color: #333;
+  background-color: rgba(204,204,204,0.80);
+  bottom: 0;
+  display: block;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 2;
+}
+
+.gallery ol.slides li h2,
+.gallery .swipeable .prev,
+.gallery .swipeable .next,
+.gallery .swipeable .cprtp
+{
+  float: left;
+  position: relative;
+}
+
+.gallery ol.slides li span.slidx
+{
+  color: #999;
+  color: rgb(153,153,153);
+  float: right;
+  padding-top: 2px;
+  word-spacing: 2px;
+}
+
+.gallery ol.slides li span.slidx b
+{
+  color: #333;
+  color: rgb(51,51,51);
+}
+
+.gallery .viewport
+{
+  margin: 0 auto 5px auto;
+  position: relative;
+}
+
+.gallery .swipeable
+{
+  margin: 0 auto;
+  position: relative;
+  width: 100%;
+}
+
+.swipeable .prev,
+.swipeable .next
+{
+    overflow: hidden;
+    width: 25%;
+}
+
+.swipeable .prev
+{
+    margin-right: 1px;
+}
+
+.swipeable .next
+{
+    margin-left: 1px;
+}
+
+.swipeable .cprtp
+{
+    overflow: hidden;
+    width : 48%;
+}
+
+/* Scroll thumbs styling for no-touch case, padding is given to enable enough space for fingers to toggle */
+.no-touch .gallery .viewport > .next,
+.no-touch .gallery .viewport > .prev
+{
+  background: transparent url('/statics/common/i/hp_lg.png') no-repeat 0 0;
+  display: block;
+  height: 38px;
+  position: absolute;
+  top: 68px; /* 1/2 slide height - 1/2 button height */ 
+  width: 38px;
+  z-index: 100;
+}
+
+/* Needs to be calculated at show slide event */
+.no-touch .gallery .viewport > .next
+{
+  background-position: -160px 0;
+  right: 0;
+}
+
+.no-touch .gallery .viewport > .prev
+{
+  background-position: -43px 0;
+  left: 0;
+}
+
+.no-touch .gallery .swipeable .prev span,
+.no-touch .gallery .swipeable .next span
+{
+  background: transparent url('/statics/common/i/transp_dark.png') repeat 0 0;
+}

@@ -1,0 +1,195 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="site_ie7.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for IE7 browser in the new blue sports website.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* used to clear floats */
+.co:after,
+.co a.more:after,
+.coa2 .h2:after,
+.js .cogr ul.cotb:after,
+.article section:after,
+.header:after,
+.hl:after,
+.hllist3:after,
+nav:after,
+nav.global ul:after,
+nav.date ul:after,
+.standings:after,
+.standings2:after,
+.slideshow ul.triple:after,
+.carousel:after,
+.carousel ul:after,
+.carousel ol:after,
+ul.players:after,
+.gtfield ul:after,
+.teamlist ul:after,
+.teamlist ul li:after,
+#myteamslink a:after,
+.gamescore:after,
+.gamescore .game:after,
+.myteams a.add:after,
+#standings .br:after
+{
+  zoom: 1;
+}
+
+/* IE7 does not support rgba opacity, so we use transparent image instead */
+#infopane .hl figure figcaption,
+.slidelist figcaption,
+.gtfield ul,
+.gtfield .starttime
+{
+  background: transparent url('/statics/common/i/blue/infopane_background.png') repeat 0 0;
+}
+
+/*Required to hide the ball/strike/out count on gametrax*/
+.gtfield ul li span
+{
+  height: 2.727em; /* 30px equivalent @ 11px font size */  
+  overflow: hidden;
+  text-indent: 18.182em; /* 200px equivalent @ 11px font size */
+}
+
+.slideshow ul.pages li
+{
+  border-width: 0;
+  height: 0.583em; /* 7px equivalent @ 12px font size */
+  width: 0.583em; /* 7px equivalent @ 12px font size */
+}
+
+/* Game Score overrides for IE 7 */
+.gamescore
+{
+  min-height: 3.25em; /* 39px @ 12px font size */
+}
+
+.gamescore div.game
+{
+  border-bottom: none;
+  border-top: none;
+}
+
+.gamescore div.game thead tr td span.status
+{
+  left: 0;
+  margin: 0; 
+  min-height: 0;
+  position: absolute;
+  top: 0.292em; /* 7px @ 24px font size */
+  width: 100%;
+}
+
+.gamescore div.game.present thead tr td span.status span
+{
+  margin: 0;
+  position: static;
+}
+
+.gamescore div.game.present thead tr td span.status time
+{
+  display: none;
+}
+
+.gamescore div.game.present thead tr td span.status span.segment
+{
+  display: block;
+  text-align: center;
+  width: 100%;
+}
+
+.gamescore div.game thead tr td span.status .delayed
+{
+  line-height: 1.875em;     /* 45px @ 24px (16px*150%) font size  */
+}
+
+.gamescore div.game tbody tr.home td.first
+{
+  display: block;
+  position: absolute;
+  right: 0;
+  width: 5em; /* 120px @ 24px (16px*150%) font size */
+}
+
+.gamescore div.game tbody tr.away td.first
+{
+  display: block;
+  left: 0;
+  position: absolute;
+  width: 5em; /* 120px @ 24px (16px*150%) font size */
+}
+
+.gamescore div.game tbody tr.home td.last
+{
+  display: block;
+  position: absolute;
+  right: 5.417em; /* 130px @ 24px (16px*150%) font size */
+}
+
+.gamescore div.game tbody tr.away td.last
+{
+  display: block;
+  left: 5.417em; /* 130px @ 24px (16px*150%) font size */
+  position: absolute;
+}
+
+.gamescore .team td.last
+{
+  top: 0.5em; /* 12px equivalent @ 24px (16px*150%) font size */ 
+}
+
+/* WP7 does not get search border on right sides if width of text box is 100% */
+#search #q 
+{
+  width: 95%;
+}
+
+/*WP7 needs block, float for the borders to work, and width for margins to be accurately encapsulated (to prevent width outside the viewport in li's) */
+.teamlist ul
+{
+  display: block;
+  float: left;
+  width: 100%;
+}
+
+.teamlist ul li,
+.teamlist ul li a.logo
+{
+  display: block;
+  float: left;
+}
+
+.moretab a
+{
+  margin-top: -0.083em; /* -1px equivalent @ 11px font size */
+}
+
+.ads > *
+{
+  display: block;
+  margin-bottom: 1em;
+}
+
+.carousel ul
+{
+  display: block;
+  width: 100%;
+}
+
+.carousel ul li
+{
+  display: block;
+  float: left;  /* workaround since display:table not supported on IE7 */
+}
+
+.carousel .games .game table
+{
+  white-space: nowrap;
+  width: 6.75em; /* 81px equivalent @ 12px font size. Note: IE 7 does not support more than 2 degrees of precision; WP7 uses 6.66 for 6.667, so we round up to 81 pixels here. */
+}

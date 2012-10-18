@@ -1,0 +1,38 @@
+﻿/*
+Default layout of headline list as reflected on lifestyle and mlb lastest news
+*/
+
+ul.hllist
+{
+  border-bottom: solid 0.0834em #e6e6e6; /* 1px equivalent @ 12px font size */
+}
+
+ul.hllist li
+{
+  border-top: solid 0.0834em #e6e6e6; /* 1px equivalent @ 12px font size */
+  min-height: 5em; /* 60px equivalent  @ 12px font size */
+  padding-bottom: 0.5em; /* 6px equivalent  @ 12px font size */
+  padding-top: 0.5em; /* 6px equivalent  @ 12px font size */
+}
+
+ul.hllist li a
+{
+  display: block;
+  padding: 0.25em 0;  /* 4px 0 equivalent @ 16px font size */
+}
+
+/* HeadlineList items are horizontal when within a carousel */
+.carousel .hllist li,
+.slideshow .hllist li
+{
+  border-top: none;
+  min-height: auto;
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.carousel .hllist,
+.slideshow .hllist
+{
+  border-bottom: none;
+} 

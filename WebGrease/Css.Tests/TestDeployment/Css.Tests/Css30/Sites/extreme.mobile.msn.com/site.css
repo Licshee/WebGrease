@@ -1,0 +1,141 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="site.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for pages in the new blue sports website.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* SAFELY DEFINE HTML5 ELEMENTS */
+article,
+aside,
+figure,
+figcaption,
+footer,
+header,
+nav,
+section,
+time
+{
+  display: block;
+  margin: 0; /* note: newer browsers are applying margins and paddings for new HTML5 tags, we want to reset to 0 */
+  padding: 0;
+}
+
+/* note: Using html body selector for specificity because some devices still get common device override CSS files that increase the font size */
+html body 
+{
+  background-color: #fff;
+  color: #555;
+  font-family: arial, sans-serif;
+  font-size: 75%;
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: none;
+  font-size-adjust: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+cite
+{
+  font-style: normal;
+}
+
+li,
+ol,
+ul
+{
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+a
+{
+  background-color: transparent;
+  color: #555;
+  text-decoration: none;
+}
+
+a img,
+abbr 
+{
+  border: none;
+}
+
+noscript
+{
+  background-color: transparent;
+  color: #f00;
+  display: block;
+  font-weight: bold;
+}
+
+section[role="main"],
+footer[role="contentinfo"]
+{
+  clear: both;
+}
+
+.error
+{
+  margin-left: 0.417em; /* 5px equivalent @ 12px font size */
+  margin-top: 0.417em; /* 5px equivalent @ 12px font size */
+}
+
+.error404
+{
+  margin-left: 0.333em; /* 4px equivalent @ 12px font size */
+}
+
+.hidden
+{
+  display: none;
+}
+
+.loading
+{
+  background: transparent url('/statics/common/i/blue/loading.gif') no-repeat 50% 50%;
+  display: block;
+  height: 8.333em; /* 100px equivalent @ 12px font size */
+  padding: 0.417em 0; /* 5px 0 equivalent @ 12px font size */
+}
+
+/* used to clear floats */
+.co:after,
+.co a.more:after,
+.coa2 .h2:after,
+.js .cogr ul.cotb:after,
+.article section:after,
+.header:after,
+.hl:after,
+.hllist3:after,
+nav:after,
+nav.global ul:after,
+nav.date ul:after,
+.standings:after,
+.standings2:after,
+.slideshow ul.triple:after,
+.carousel:after,
+.carousel ul:after,
+.carousel ol:after,
+ul.players:after,
+.gtfield ul:after,
+.teamlist ul:after,
+.teamlist ul li:after,
+#myteamslink a:after,
+.gamescore:after,
+.gamescore .game:after,
+.myteams a.add:after,
+#standings .br:after
+{
+  clear: both;
+  content: ".";
+  display: block;
+  height: 0;
+  visibility: hidden;
+}

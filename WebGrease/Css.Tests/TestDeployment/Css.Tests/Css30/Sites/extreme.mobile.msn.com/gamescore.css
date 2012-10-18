@@ -1,0 +1,233 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="gamescore.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Gamescores control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.gamescore
+{
+  background-color: #f1f1f1;
+  border: 0.0834em solid #ccc; /* 1px equivalent @ 12px font size */ 
+  border-width: 0.0834em 0;
+  float: left;
+  margin-top: 0.667em; /* 8px equivalent @ 12px font size */
+  width: 100%;
+}
+
+.gamescore .game
+{
+  border: 0.063em solid #fff; /* 1px equivalent @ 16px font size */ 
+  border-width: 0.063em 0;
+  float: left;
+  font-size: 133.333%; /* 16px font size */
+  line-height: 1.125em; /* 18 equivalent @ 16px font size */
+  position: relative;
+  width: 100%;
+}
+
+.gamescore .game table
+{
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.gamescore .status
+{
+  height: 100%;
+  left: 50%;
+  line-height: 2.5em; /* 40px equivalent @ 16px font size */
+  margin: 0 -2.188em; /* 35px equivalent @ 16px font size */ 
+  min-height: 2.25em; /* 36px equivalent @ 16px font size */ 
+  position: absolute;
+  text-align: center;
+  top: 0;
+  width: 4.375em; /* 70px equivalent @ 16px font size */ 
+}
+
+.gamescore .present .status .delayed,
+.gamescore .present .status .suspended
+{
+  line-height: 2.5em; /* 40px equivalent @ 16px font size */
+}
+
+.gamescore .present .status
+{
+  left: 50%;
+  line-height: normal;
+  margin: 0 -2.188em; /* 35px equivalent @ 16px font size */ 
+  position: absolute;
+  width: 4.375em; /* 70px equivalent @ 16px font size */ 
+}
+
+.gamescore .status sup,
+.gamescore .status .segment
+{
+  font-size: 0.688em; /* 11px equivalent @ 16px font size */
+}
+
+.gamescore .status .segment
+{
+  bottom: 0.182em;  /* 2px equivalent @ 11px font size */
+  margin: 0 -4.091em; /* 35px equivalent @ 11px font size */ 
+  text-transform: uppercase;
+  width: 6.364em; /* 70px equivalent @ 11px font size */ 
+}
+
+.gamescore .status .inning
+{
+  display: block;
+}
+
+.gamescore tbody tr
+{
+  display: block;
+  padding: 0 0.25em; /* 0px 4px equivalent @ 16px font size */
+}
+
+.gamescore table thead th, 
+.gamescore table tbody td
+{
+  padding: 0; 
+  border: 0;
+}
+
+.gamescore table thead th.first,
+.gamescore table tbody td.first
+{
+  width: auto;  
+}
+
+/*Present and Past views away team. Futures view away team.*/
+.gamescore tbody tr.away, 
+.gamescore tbody tr.away td.first,
+.gamescore tbody tr.away td.last,
+.gamescore .future span.away
+{
+  float: left;
+  text-align: left;  
+} 
+
+/*Present and Past views home team. Futures view home team.*/
+.gamescore tbody tr.home, 
+.gamescore tbody tr.home td.first,
+.gamescore tbody tr.home td.last,
+.gamescore .future span.home
+{
+  float: right;
+  text-align: right;  
+} 
+
+ /*home team, team name*/
+.gamescore tbody tr.home td.first span, 
+.gamescore .future span.home
+{
+  margin-right: 0.25em; /* 4px equivalent @ 16px font size */
+  padding-left: 0;
+  padding-right: 2.75em; /* 44px equivalent @ 16px font size */
+  text-align: right;  
+}
+
+ /*away team, team name*/
+.gamescore tbody tr.away td.first span,
+.gamescore .future span.away
+{
+  margin-left: 0.25em; /* 4px equivalent @ 16px font size */
+  padding-left: 2.75em; /* 44px equivalent @ 16px font size */
+}
+
+/*team, both away and home*/
+.gamescore tbody td,
+.gamescore tbody td span,
+.gamescore .future span
+{
+  display: block;
+  line-height: 2.375em; /* 38px equivalent @ 16px font size */
+  text-align: left;
+}
+
+.gamescore .future span
+{
+  text-align: center;
+}
+
+.gamescore tbody .home .first span,
+.gamescore .future span.home
+{
+  background-position: 100% 50%;
+}
+
+.gamescore .future span.away
+{
+  background-position: 0 50%;
+}
+
+ /*team names are always not bolded*/
+.gamescore tbody .team td.first
+{
+  font-weight: normal;
+}
+
+/* teams score (both away and home)*/
+.gamescore .team td.last
+{
+  background-color: #fff;
+  border: 0.063em solid #ccc;  /* 1px equivalent @ 16px font size */
+  font-weight: bold;
+  line-height: 1.375em; /* 22px equivalent @ 16px font size */ 
+  margin: 0.5em 0.25em 0 0.25em; /* 8px 4pxpx equivalent @ 16px font size */ 
+  padding: 0 0.25em; /* 0 4px equivalent @ 16px font size */ 
+  width: 1.188em; /* 19px equivalent @ 16px font size */ 
+}
+
+.gamescore .future p
+{
+  margin: 0;
+}
+
+.gamescore thead tr.headers,
+.gamescore .future .scheduled,
+.gamescore .future .host,
+.gamescore .future time,
+.gamescore .present time,
+.gamescore .past time
+{
+  display: none;
+}
+
+.gamescore thead td > *
+{
+  display: block;
+  text-align: center;
+}
+
+.gamescore time
+{
+  text-align: center;
+}
+
+ /*Future game: Show the team name & logo*/
+.gamescore .future time span.away,
+.gamescore .future time span.home
+{
+  display: inline;
+  padding: 0;
+  float: none;
+}
+
+.gamescore .future.game
+{
+  display: inline-block;
+  width: 100%;
+}
+
+.gamescore .logo
+{
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}

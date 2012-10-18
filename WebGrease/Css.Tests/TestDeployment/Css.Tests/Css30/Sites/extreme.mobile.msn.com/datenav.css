@@ -1,0 +1,52 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="datenav.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The nav styles specific for DateNav control.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+nav.date ul
+{
+  border-bottom: solid 0.0834em #ccc; /* 1px @ 12px font size */
+  border-top: solid 0.0834em #ccc; /* 1px @ 12px font size */
+  display: block;
+  width: 100%;
+}
+
+nav.date li
+{
+  display: block;
+  float: left;
+  font-weight: bold;
+  text-align: center;
+  width: 33%;
+}
+
+nav.date li.first
+{
+  font-weight: normal;
+  text-align: left;
+}
+
+nav.date li.last
+{
+  float: right;
+  font-weight: normal;
+  text-align: right;
+}
+
+nav.date a,
+nav.date span
+{
+  display: block;
+  padding: 1.333em 0.75em;  /* 16px 8px @ 12px font size, min finger height= 44px = (16 top + 12 text + 16 bottom) */
+}
+
+nav.date span.selected
+{
+  color: #000;
+}

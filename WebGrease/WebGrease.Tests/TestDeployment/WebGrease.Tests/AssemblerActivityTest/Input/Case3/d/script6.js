@@ -1,0 +1,1 @@
+﻿var name = "script6.js";

@@ -1,0 +1,64 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TheaterShowTimes.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   TheaterShowTimes control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+.theaters li
+{
+    border-top: 0.0834em solid #e6e6e6; /* 1px @ 12px font size */
+}
+
+.theaters li.first
+{
+    border-top: none;
+}
+
+.theaters li.last
+{
+    border-bottom: 0.0834em solid #e6e6e6; /* 1px @ 12px font size */
+}
+
+.theaters a
+{
+    display: block;
+    padding: 1.333em 0 1.333em 0; /* 16px 0px 16px 0px @ 12px font size */    
+}
+
+.theaters h4
+{
+    color: #333;
+    font-size: 133.333%; /* 16px @ 12px font size */
+    font-weight: normal;
+    margin: 0 0 0.167em 0; /* 0px 0px 2px 0px @ 12px font size */ 
+}
+
+.theaters li ul li
+{
+    border: none;
+    display: inline;
+}
+
+.theaters li ul time
+{
+    color: #555;    
+    display: inline;
+}
+
+.theaters li ul span
+{
+    color: #555;    
+    display: inline-block;
+    text-align: center;
+    width: 0.833em; /* 10px @ 12px font size */
+}
+
+.theaters .showtimes
+{
+    display: inline-block;
+    margin-top: 0.333em; /* 4px @ 12px font size */
+}

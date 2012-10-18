@@ -1,0 +1,33 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="BlogPost.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styling for blog post
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.blogpost h3
+{
+  color: #333;
+  font-size: 133.333%;  /* 16px @ 12px base font size */
+  font-weight: normal;
+  line-height: 1.063em; /* 17px @ 16px base font size */    
+  margin: 0;
+}
+
+.blogpost .richtext
+{
+  line-height: 1.167em; /* 14px @ 12px base font size */    
+  margin: 0;
+  padding-top: 0.5em; /* 6px @ 12px base font size */    
+}
+
+.blogpost time
+{
+  color: #888;
+  font-size: 91.667%; /* 11px equivalent @ 12px font size */
+  padding-top: 0.545em; /* 6px equivalent @ 11px font size */
+}

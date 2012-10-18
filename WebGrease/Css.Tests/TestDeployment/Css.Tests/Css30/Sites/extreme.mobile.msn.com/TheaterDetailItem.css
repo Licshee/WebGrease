@@ -1,0 +1,50 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TheaterDetailItem.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   TheaterDetailItem control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.theater
+{
+  min-height: 5.833em; /* 70px @ 12px base font size */
+  padding: 0.75em 0 0 0; /* 9px 0 0px 0 @ 12px base font size */
+}
+
+.theater h1
+{
+  color: #333;
+  font-size: 183.333%;  /* 22px @ 12px base font size */
+  font-weight: normal;
+  margin: 0;
+}
+
+.theater p
+{
+  margin: 0 0 0.75em 0; /* 0 0 9px 0 @ 12px base font size */
+}
+
+.theater .phonenumber,
+.theater .directions
+{
+  background-position: 0 50%;
+  background-repeat: no-repeat;
+  display: inline-block;
+  min-height: 1.5em; /* 18px @ 12px base font size */
+  padding: 0.5em 0 0.5em 1.833em; /* 6px 0 6px 22px @ 12px base font size */
+}
+
+.theater .phonenumber
+{
+  background-image: url('/statics/common/i/blue/phone.png');
+}
+
+.theater .directions
+{
+  background-image: url('/statics/common/i/blue/map.png');
+  margin-left: 1.333em; /* 16px @ 12px base font size */
+}

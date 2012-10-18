@@ -1,0 +1,87 @@
+﻿p { border: solid red }
+p {
+  border-top: solid red;
+  border-right: solid red;
+  border-bottom: solid red;
+  border-left: solid red;
+  border-image: none;
+}
+blockquote {
+  border-color: red;
+  border-left: double;
+  color: black
+}
+test
+{
+    border-radius: 4em;
+    border-top-left-radius:     4em;
+    border-top-right-radius:    4em;
+    border-bottom-right-radius: 4em;
+    border-bottom-left-radius:  4em;
+    border-radius: 2em 1em 4em / 0.5em 3em;
+    border-top-left-radius:     2em 0.5em;
+    border-top-right-radius:    1em 3em;
+    border-bottom-right-radius: 4em 0.5em;
+    border-bottom-left-radius:  1em 3em;
+}
+DIV {
+    background: black;
+    color: white;
+    border-radius: 1em;
+    padding: 1em }
+test
+{
+    box-sizing: border-box;
+    width: 6em;
+    height: 2.5em;
+    border-radius: 0.5em 2em 0.5em 2em;
+    box-sizing: border-box;
+    width: 6em;
+    height: 2em;
+    border-radius: 0.5em 2em 0.5em 2em
+}
+DIV.standout {
+    width: 13em;
+    height: 8em;
+    border: solid black 1em;
+    border-radius: 7.5em 5em }
+DIV {
+  border: double orange 1em;
+  border-image: url("border.png") 27 round stretch;
+ }
+.notebox {
+      border: double orange;
+      /* must set 'border' shorthand first, otherwise it erases 'border-image' */
+      border-image: url("border.png") 30 round;
+      /* but other 'border' properties can be set after */
+      border-width: thin thick;
+    }
+.sidebar .notebox {
+      box-shadow: 0 0 5px gray;
+      border-radius: 5px;
+      border: none; /* turn off all borders */
+      /* 'border' shorthand resets 'border-image' */
+    }
+test
+{
+    border:5px solid blue;
+background-color:orange;
+width: 144px;
+height: 144px;
+box-shadow:
+  rgba(0,0,0,0.4)
+  10px 10px;
+  box-shadow:
+  rgba(0,0,0,0.4)
+  10px 10px
+  inset;
+  box-shadow:
+  rgba(0,0,0,0.4)
+  10px 10px 0
+  10px; /* spread */
+  box-shadow:
+  rgba(0,0,0,0.4)
+  10px 10px 0
+  10px /* spread */
+  inset;
+}

@@ -1,0 +1,13 @@
+#foo
+{
+    /* Should fail validation but minify */
+    msncolor:'blue';
+    background: url(hash(/f1/i/01/pipe.gif)) no-repeat;
+}
+
+#foo2
+{
+    /* Should fail validation but minify */
+    msncolor:'blue';
+    background: url(hash(/f1/i/01/pipe.gif)) no-repeat;
+}

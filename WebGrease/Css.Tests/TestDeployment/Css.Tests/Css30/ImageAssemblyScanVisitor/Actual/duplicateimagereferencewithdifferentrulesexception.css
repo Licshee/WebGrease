@@ -1,0 +1,9 @@
+#selector
+{
+  background:url(foo.gif) no-repeat;
+}
+
+#selector
+{
+  background:url(foo.gif) repeat;
+}

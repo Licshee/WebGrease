@@ -1,0 +1,73 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="lookup.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The form lookup treatment.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.lookup
+{
+    display: block;
+    float: left;
+    width: 100%;
+}
+
+.lookup label
+{
+    color: #333;
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.167em;
+}
+
+.lookup div
+{
+    border: 0.0834em solid #7c0e82;
+    float: left;
+    position: relative;
+    width: 100%;
+}
+
+.lookup input,
+.lookup input[type="search"] /*Needed to override the default styles of webkit search textboxes*/
+{
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+    -webkit-border-radius: 0;
+    border: none !important;
+    display: block;
+    font-size: 116.667%; /* 14px @ 12px */
+    line-height: normal;
+}
+
+.lookup input.text
+{
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0.429em 2.429em 0.429em 0.286em; /* 8 34 7 4px @ 14px */
+    width: 100%;
+}
+
+.lookup input.text::-webkit-input-placeholder 
+{
+    -webkit-tap-highlight-color: rgba(0,0,0,0);
+   font-style: italic;
+}
+
+.lookup input.button
+{
+    background-color: #7c0e82;
+    color: #fff;
+    height: 2.071em; /*29 @ 14*/
+    margin: 0;
+    padding: 0.429em 0.214em 0.357em 0.214em;  /* 6 3 5 3px @ 14*/
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 2.143em; /*30 @ 14*/
+}

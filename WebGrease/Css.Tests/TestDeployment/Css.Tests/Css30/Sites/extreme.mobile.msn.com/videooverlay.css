@@ -1,0 +1,14 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="videooverlay.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles for video overlay icon
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+.video /* video Overlay */
+{
+  background: transparent url('/statics/common/i/video.png') no-repeat 0 0;
+}

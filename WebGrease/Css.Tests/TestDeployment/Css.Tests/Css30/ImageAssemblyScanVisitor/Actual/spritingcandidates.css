@@ -1,0 +1,393 @@
+#foo
+{
+	/* Should not match, We don't support the multiple images in a single rule yet */
+    background: url(flower.png), url(ball.png), url(grass.png) no-repeat;
+}
+.picture
+{
+	/* Should not match, this is a data uri image. */
+    background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAABnRSTlMAAAAAAABupgeRAAAABmJLR0QA%2FwD%2FAP%2BgvaeTAAAAEUlEQVR42mP4%2F58BCv7%2FZwAAHfAD%2FabwPj4AAAAASUVORK5CYII%3D) no-repeat;
+}
+@page
+{
+  background:url(/i/0.jpeg) left top no-repeat
+}
+#b1
+{
+  background:url(/i/1.gif) no-repeat
+}
+#b2
+{
+  background:url(/i/2.gif) no-repeat 0mm -0.0mm
+}
+#b3
+{
+  background:url(/i/3.gif) no-repeat 50% 0
+}
+#b4
+{
+  background:url(/i/4.gif) no-repeat 0px 0px
+}
+#b5
+{
+  background:url(/i/5.gif) no-repeat 0mm 0px
+}
+#b6
+{
+  background:url(/i/6.gif) no-repeat 50% 0px
+}
+#b7
+{
+  background:url(/i/7.gif) no-repeat 0 20px
+}
+#b8
+{
+  background:url(/i/8.gif) no-repeat 0mm 20px
+}
+#b9
+{
+  background:url(/i/9.gif) no-repeat 50% 20px
+}
+#b10
+{
+  background:url(/i/10.gif) no-repeat 0px -20px
+}
+#b11
+{
+  background:url(/i/11.gif) no-repeat 0mm -20px
+}
+#b12
+{
+  background:url(/i/12.gif) no-repeat 50% -20px
+}
+#b13
+{
+  background:url(/i/13.gif) no-repeat -20px -20px
+}
+#b14
+{
+  background:url(/i/14.gif) no-repeat 0mm top
+}
+#b15
+{
+  background:url(/i/15.gif) no-repeat 100% 0
+}
+#b16
+{
+  background:url(/i/16.gif) no-repeat 0 top
+}
+#b17
+{
+  background:url(/i/17.gif) no-repeat 0ex 0ex
+}
+#b18
+{
+  background:url(/i/18.gif) no-repeat 100% 0px
+}
+#b19
+{
+  background:url(/i/19.gif) no-repeat 0em 0
+}
+#b20
+{
+  background:url(/i/20.gif) no-repeat 0ex 0px
+}
+#b21
+{
+  background:url(/i/21.gif) no-repeat 100% 20px
+}
+#b22
+{
+  background:url(/i/22.gif) no-repeat 0em 0px
+}
+#b23
+{
+  background:url(/i/23.gif) no-repeat 0ex 20px
+}
+#b24
+{
+  background:url(/i/24.gif) no-repeat 100% -20px
+}
+#b25
+{
+  background:url(/i/25.gif) no-repeat 0em 20px
+}
+#b26
+{
+  background:url(/i/26.gif) no-repeat 0ex top
+}
+#b27
+{
+  background:url(/i/27.gif) no-repeat 100% top
+}
+#b28
+{
+  background:url(/i/28.gif) no-repeat 0em -20px
+}
+#b29
+{
+  background:url(/i/29.gif) no-repeat 20px 0ex
+}
+#b30
+{
+  background:url(/i/30.gif) no-repeat top
+}
+#b31
+{
+  background:url(/i/31.gif) no-repeat 0em top
+}
+#b32
+{
+  background:url(/i/32.gif) no-repeat 20px 0px
+}
+#b33
+{
+  background:url(/i/33.gif) no-repeat left 0
+}
+#b34
+{
+  background:url(/i/34.gif) no-repeat 0em 50px
+}
+#b35
+{
+  background:url(/i/35.png) no-repeat 20px 20px
+}
+#b36
+{
+  background:url(/i/36.png) no-repeat left 0px
+}
+#b37
+{
+  background:url(/i/37.png) no-repeat 0px 0
+}
+#b38
+{
+  background:url(/i/38.png) no-repeat 20px -20px
+}
+#b39
+{
+  background:url(/i/39.png) no-repeat left 20px
+}
+#b40
+{
+  background:url(/i/40.png) no-repeat 0px 0px
+}
+#b41
+{
+  background:url(/i/41.png) no-repeat 20px top
+}
+#b42
+{
+  background:url(/i/42.png) no-repeat left -20px
+}
+#b43
+{
+  background:url(/i/43.gif) no-repeat 0px 20px
+}
+#b44
+{
+  background:url(/i/44.gif) no-repeat -20px 0
+}
+#b45
+{
+  background:url(/i/45.gif) no-repeat left top
+}
+#b46
+{
+  background:url(/i/46.gif) no-repeat 0 -20px
+}
+#b47
+{
+  background:url(/i/47.gif) no-repeat -20px 0px
+}
+#b48
+{
+  background:url(/i/48.gif) no-repeat right 0
+}
+#b49
+{
+  background:url(/i/49.gif) no-repeat 0px top
+}
+#b50
+{
+  background:url(/i/50.gif) no-repeat -20px 20px
+}
+#b51
+{
+  background:url(/i/51.gif) no-repeat right 0px
+}
+#b52
+{
+  background:url(/i/52.gif) no-repeat 0px -50px
+}
+#b53
+{
+  background:url(/i/53.gif) no-repeat -20px -20px
+}
+#b54
+{
+  background:url(/i/54.gif) no-repeat right 20px
+}
+#b55
+{
+  background:url(/i/55.gif) no-repeat 0% 0
+}
+#b56
+{
+  background:url(/i/56.gif) no-repeat -20px top
+}
+#b57
+{
+  background:url(/i/57.gif) no-repeat right -20px
+}
+#b58
+{
+  background:url(/i/58.gif) no-repeat 0% 0px
+}
+#b59
+{
+  background:url(/i/59.gif) no-repeat 0in 0
+}
+#b60
+{
+  background:url(/i/60.gif) no-repeat right top
+}
+#b61
+{
+  background:url(/i/61.gif) no-repeat 0% 20px
+}
+#b62
+{
+  background:url(/i/62.gif) no-repeat 0in 0px
+}
+#b63
+{
+  background:url(/i/63.gif) no-repeat center 0
+}
+#b64
+{
+  background:url(/i/64.gif) no-repeat 0% -20px
+}
+#b65
+{
+  background:url(/i/65.gif) no-repeat 0in 20px
+}
+#b66
+{
+  background:url(/i/66.gif) no-repeat center 0px
+}
+#b67
+{
+  background:url(/i/67.gif) no-repeat 0% top
+}
+#b68
+{
+  background:url(/i/68.gif) no-repeat 0in -20px
+}
+#b69
+{
+  background:url(/i/69.gif) no-repeat center 20px
+}
+#b70
+{
+  background:url(/i/70.gif) no-repeat 0cm 0
+}
+#b71
+{
+  background:url(/i/71.gif) no-repeat 0in top
+}
+#b72
+{
+  background:url(/i/72.gif) no-repeat center -20px
+}
+#b73
+{
+  background:url(/i/73.gif) no-repeat 0cm 0px
+}
+#b74
+{
+  background:url(/i/74.gif) no-repeat 20pt 0
+}
+#b75
+{
+  background:url(/i/75.gif) no-repeat center top
+}
+#b76
+{
+  background:url(/i/76.gif) no-repeat 0cm 20px
+}
+#b77
+{
+  background:url(/i/77.gif) no-repeat 20pt 0px
+}
+#b78
+{
+  background:url(/i/78.gif) no-repeat 0pc 0
+}
+#b79
+{
+  background:url(/i/79.gif) no-repeat 0cm -20px
+}
+#b80
+{
+  background:url(/i/80.gif) no-repeat 20pt 20px
+}
+#b81
+{
+  background:url(/i/longimage.gif) no-repeat
+}
+#b82
+{
+  background:url(/i/82.gif) no-repeat 0cm top
+}
+#b83
+{
+  background:url(/i/83.gif) no-repeat 20pt -20px
+}
+#b84
+{
+  background:url(/i/84.gif) no-repeat 0mm 0
+}
+#b85
+{
+  background:url(/i/85.gif) no-repeat top left
+}
+#b86
+{
+  background:url(/i/86.gif) no-repeat top right
+}
+#b87
+{
+  background:url(/i/87.gif) no-repeat top center
+}
+#b88
+{
+  background:url(/i/88.gif) no-repeat left 0
+}
+#b89
+{
+  background:url(/i/89.gif) no-repeat left -100px
+}
+#b90
+{
+  background:url(/i/90.gif) no-repeat left -200px
+}
+#b91
+{
+  background:url(/i/91.gif) no-repeat top 0
+}
+#b92
+{
+  background:url(/i/92.gif) no-repeat top -100px
+}
+#b93
+{
+  background:url(/i/93.gif) no-repeat top -200px
+}
+#b94
+{
+  background-image:url(/i/94.gif);
+  background-attachment:scroll;
+  background-repeat:no-repeat;
+  background-position:50% top;
+}

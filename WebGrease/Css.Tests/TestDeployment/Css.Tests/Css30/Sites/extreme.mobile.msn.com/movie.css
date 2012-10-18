@@ -1,0 +1,124 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="movie.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styling for MovieSynopsis on Entertaiment
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.movie
+{
+  line-height: 1.167em; /*14px*/
+}
+ 
+.movie figure img
+{
+  float: left;
+  padding: 0.333em 0.5em 0 0; /*3px 6px*/
+}
+
+.movie h3
+{
+  color: #333;    
+  font-size: 133.333%; /* 16px @12px font base */
+  font-weight:normal;
+  line-height: 1.25em; /* 20px */
+  margin: 0;
+  padding: 0 0 0.375em; /* 0 0 0 6px*/
+}
+
+.page-moviedetails .movie h3
+{
+    font-size: 166.666%; /* 20px @12px font base */
+    line-height: 1.25em; /* 25px */
+    padding: 0 0 0.3em; /*0 0 0 6px*/    
+}
+
+.movie div,
+.movie abbr
+{
+  margin: 0;
+  padding: 0 0 0.167em; /*0 0 2px*/
+}
+
+.movie .duration
+{
+  display: inline-block;
+}
+
+.movie .stars
+{
+  background: transparent url('/statics/common/i/blue/stars.png') no-repeat 0 50%;
+  color: transparent;
+  display: inline-block;
+  height: 0.833em; /* 10px*/
+  line-height: 0.833em; /* 10px*/
+  width: 5.417em; /*65px*/
+}
+
+.movie .half .stars
+{
+  background-image: url('/statics/common/i/blue/stars_half.png');
+}
+
+.movie .r7 .stars,
+.movie .r8 .stars
+{
+  background-position: -1.083em 50%; /*-13px*/
+}
+
+.movie .r6 .stars,
+.movie .r5 .stars
+{
+  background-position: -2.167em 50%; /*-26px*/
+}
+
+.movie .r4 .stars,
+.movie .r3 .stars
+{
+  background-position: -3.25em 50%; /*-39px*/
+}
+
+.movie .r2 .stars,
+.movie .r1 .stars
+{
+  background-position: -4.333em 50%; /*-52px*/
+}
+
+.movie .showtimes
+{
+    margin-top: 1.667em; /*20px*/
+}
+
+.movie .showtimes li
+{
+    border: none;
+    float: left;
+    padding: 0;
+    width: auto;
+}
+
+.movie .showtimes time
+{
+    display: inline;
+    white-space: nowrap;
+}
+
+.movie .showtimes span
+{
+    display: inline-block;
+    text-align: center;
+    width: 0.833em; /*10px*/
+}
+
+.movie .richtext
+{
+  clear: both;
+  color: #333;
+  font-size: 125%;  /* 15px equivalent @ 12px font size */
+  line-height: 1.4em;  /* 21px equivalent @ 15px font size */
+  padding: 0.8em 0 0.333em 0;  /* 12px 0 5px 0 equivalent @ 15px font size */
+}

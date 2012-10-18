@@ -1,0 +1,10 @@
+@page     
+{ 
+  margin: 2cm 
+}
+
+@page :left 
+{
+  margin-left: 4cm;
+  margin-right: 3cm;
+}

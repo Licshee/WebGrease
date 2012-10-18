@@ -1,0 +1,26 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="movieresults.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styles for Movie results page
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.page-movieresults h1.h1
+{
+    font-size: 166.666%; /* 20px equivalent @ 12px font size */
+    margin: 0.8em 0 0.2em 0; /* 16px 0px 4px 0px equivalent @ 20px font size */
+}
+
+.page-movieresults .movies li.first
+{
+    border-top: solid 0.0834em #ccc; /* 1px equivalent @ 12px font size */
+}
+
+.page-movieresults .movies.nomore
+{
+    margin-bottom: 1.667em; /* 20px @ 12px base font size */
+}

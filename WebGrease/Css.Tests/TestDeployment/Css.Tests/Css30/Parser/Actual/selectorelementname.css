@@ -1,0 +1,35 @@
+﻿|div
+{
+}
+
+ns|div
+{
+}
+
+*
+{
+}
+
+|*
+{
+}
+
+ns|*
+{
+}
+
+div
+{
+}
+
+div #ul .li [ns|someattr="www.msn.com"] ::foo(test1 + test2) :not(bar)
+{
+}
+
+html, a , div, span
+{
+}
+
+a html + div > li
+{
+}

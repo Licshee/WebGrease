@@ -1,0 +1,125 @@
+/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="fullscreenslideshow.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styles for Full screen slide show using SlideList as a base.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+html body
+{
+  background-color: #000;
+  color: #fff;
+  position: relative; /* reference for absolutely positioned slide captions */
+}
+
+/* "More Galleries" container adjustments */
+#slideshow
+{
+  margin-bottom: 0; /* Get rid of the container default bottom margin */
+}
+
+#slideshowbranch
+{
+  position: static;  /*Override the relative position from the listbehaviors.css*/
+}
+
+#slideshowbranch ul li.slide
+{
+    margin: 0 auto;
+}
+
+#slideshowcontent .h2 > a,
+#slideshowcontent .h2 > span,
+#slideshowcontent .hl figure figcaption a,
+#slideshowcontent .breadcrumb a span
+{
+  color: #fff; /* Defaults assume dark text on white background */
+}
+
+/* "More Galleries" slot adjustments - overrides of slidelist */
+
+/* Slide index n of N*/
+#slideshowcontent figcaption .slidenumber
+{
+  float: right;
+  padding-right: 0.75em; /* 8px @ 12px fontsize*/
+}
+
+#slideshowcontent figcaption div.richtext,
+#slideshowcontent figcaption span
+{
+  margin-left: 0.571em; /* 8px @ 14px fontsize*/
+}
+
+#slideshowcontent figcaption cite
+{
+  margin-left: 0.8em; /* 8px @ 10px fontsize*/
+}
+
+#slideshowcontent figcaption
+{
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+#slideshowcontent figcaption.tapped
+{
+  -webkit-transition: top 0.3s ease;
+  transition: top 0.3s ease;
+}
+
+/* Last Slide adjustments */
+/* "More Galleries" container adjustments */
+#slideshowcontent .coa2 .h2,
+#slideshowcontent .coa2 .br
+{
+  margin: 0 0.583em; /* 7px @ 12px fontsize*/
+}
+
+ #slideshowcontent li.last.slide
+{
+  margin: 0;
+  width: auto;
+}
+
+/* "More Galleries" slot adjustments */
+#slideshowcontent li.last.slide figure 
+{
+  margin: 0; 
+}
+
+#slideshowcontent li.last.slide figure figcaption
+{
+  background: transparent;
+  padding: 0;
+}
+
+/* "More Galleries" Footer/Breadcrumb/Nav adjustments */
+#slideshowcontent footer
+{
+  margin-top: 2em; 
+}
+
+#slideshowcontent .breadcrumb span
+{
+  color: #666;
+  font-weight: bold;
+}
+
+#slideshowcontent .breadcrumb a span
+{
+  font-weight: normal;
+}
+
+#slideshowcontent .breadcrumb a.msn
+{
+  background-image: url('/statics/common/i/blue/logo_msn_white.png');
+}
+
+#slideshowcontent .breadcrumb a.fox
+{
+  background-image: url('/statics/common/i/blue/logo_fox_white.png');
+}

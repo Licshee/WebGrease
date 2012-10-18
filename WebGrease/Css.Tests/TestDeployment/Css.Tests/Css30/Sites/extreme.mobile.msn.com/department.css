@@ -1,0 +1,129 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="department.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for department pages.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+section.dept
+{
+  margin: 0;
+}
+
+section h2
+{
+  display: none;
+}
+
+section.dept ul
+{
+  border-top: solid 1px #e6e6e6;
+  border-top-color: rgb(230,230,230);
+  list-style-type: none;
+  margin: 0 8px 12px 8px;
+  padding: 0;
+}
+
+section.dept ul li
+{
+  border-bottom: solid 1px #e6e6e6;
+  border-bottom-color: rgb(230,230,230);
+  list-style-type: none;
+  margin: 0;
+  min-height: 60px; /* 60px image height + 10px top padding + 10px bottom padding */
+  overflow: auto;
+  padding: 10px 0;
+}
+
+section.dept ul li figure img
+{
+  float: left;
+}
+
+section.dept ul li figure figcaption
+{
+  color: #888;
+  color: rgb(136,136,136);
+  font-size: 108.333%;
+  margin-left: 70px;
+}
+
+section.dept ul li figure figcaption p
+{
+  margin: 0;
+  padding: 0;
+}
+
+#videos ul li figure figcaption
+{
+  margin-left: 90px;
+}
+
+section.dept ul li figure figcaption a,
+section.dept ul li figure figcaption a:link,
+section.dept ul li figure figcaption a:visited,
+section.dept ul li figure figcaption a:hover,
+section.dept ul li figure figcaption a:active
+{
+  background-color: transparent;
+  color: #333;
+  color: rgb(51,51,51);
+  font-size: 126.923%;
+}
+
+section.dept ul li figure figcaption p
+{
+  background-color: transparent;
+  color: #999;
+  color: rgb(153,153,153);
+  margin-top: 0;
+}
+
+nav.dept ul
+{
+  width: 10000px;
+}
+
+nav.dept ul
+{
+  display: block;
+  list-style-type: none;
+  margin: 0;
+  padding: 9px 5px; /*To fit the navtab in the windows. Removed the margin around li's and added the right and left padding to the ul.*/
+}
+
+nav.dept li,
+aside h2
+{
+  display: inline;
+  font-size: 158.333%; 
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+nav.dept li
+{
+  font-size: 166.667%
+}
+
+nav.dept li a,
+nav.dept li a:link,
+nav.dept li a:visited
+{
+  color: #888;
+  color: rgb(136,136,136);
+  padding: 0 3px;
+}
+
+nav.dept li a:hover,
+nav.dept li a:active,
+nav.dept li a.selected
+{
+  color: #000;
+  color: rgb(0,0,0);
+}

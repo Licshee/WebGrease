@@ -1,0 +1,63 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="infopane.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for the infopane instance of the headline list control.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#infopane
+{
+  clear: both;
+}
+
+#infopane .hl
+{
+  width: 25.333em; /* 304px equivalent @ 12px font size TODO: good enough for MLB, but we need a more flexible approach long term */
+}
+
+#infopane .hl figure
+{
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+#infopane .hl figure img
+{
+  display: block;
+  float: none;
+}
+
+#infopane .hl figure figcaption
+{
+  background-color: #333;
+  background-color: rgba(0,0,0,0.6);
+  bottom: 0;
+  color: #fff;
+  left: 0;
+  margin: 0;
+  padding: 0.462em 0 0.308em 0; /* 6px 0 4px 0 @ 13px */
+  position: absolute;
+  width: 100%;
+}
+
+#infopane .hl figure figcaption a 
+{
+  color: #fff;
+  display: block;
+  font-size: 153.846%;
+  line-height: 1em;
+  margin: 0 0.2em; /* 4px @ 20px font size equivalent */
+  padding: 0;
+}
+
+#infopane .hl figure figcaption div,
+#infopane .hl figure figcaption p
+{
+  margin: 0.231em 0.308em 0 0.308em; /* 3px 4px @ 13px font size equivalent */
+  padding: 0;
+}

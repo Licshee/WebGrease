@@ -1,0 +1,112 @@
+/* f1 css1 */
+#f1css1
+{
+    background: url(hash(/f1/i/01/breadcrumb.gif)) no-repeat;
+}
+
+#f1css1_theme_key1
+{
+    border-width: %theme_key1%;
+    background: url(hash(/f1/i/01/breadcrumb.gif)) no-repeat;
+}
+
+#f1css1_theme_key2
+{
+    border-width: %theme_key2%;
+    background: url(hash(/f1/i/01/breadcrumb.gif)) no-repeat;
+}
+
+#f1css1_theme_key3
+{
+    border-width: %theme_key3%;
+}
+
+#f1css1_theme_key4
+{
+    border-width: %theme_key4%;
+}
+
+#f1css1_theme_key5
+{
+    border-width: %theme_key5%;
+}
+
+#f1css1_theme_key6
+{
+    border-width: %theme_key6%;
+}
+
+#f1css1_theme_key7
+{
+    border-width: %theme_key7%;
+}
+
+#f1css1_theme_key8
+{
+    border-width: %theme_key8%;
+}
+
+#f1css1_theme_key9
+{
+    border-width: %theme_key9%;
+}
+
+#f1css1_theme_key10
+{
+    border-width: %theme_key10%;
+}
+
+#f1css1_locale_key1
+{
+    border-width: %locale_key1%;
+}
+
+#f1css1_locale_key2
+{
+    border-width: %locale_key2%;
+}
+
+#f1css1_locale_key3
+{
+    border-width: %locale_key3%;
+}
+
+#f1css1_locale_key4
+{
+    border-width: %locale_key4%;
+}
+
+#f1css1_locale_key5
+{
+    border-width: %locale_key5%;
+}
+
+#f1css1_locale_key6
+{
+    border-width: %locale_key6%;
+}
+
+#f1css1_locale_key7
+{
+    border-width: %locale_key7%;
+}
+
+#f1css1_locale_key8
+{
+    border-width: %locale_key8%;
+}
+
+#f1css1_locale_key9
+{
+    border-width: %locale_key9%;
+}
+
+#f1css1_locale_key10
+{
+    border-width: %locale_key10%;
+}
+
+#intl
+{
+    font-family: %font-family%;
+}

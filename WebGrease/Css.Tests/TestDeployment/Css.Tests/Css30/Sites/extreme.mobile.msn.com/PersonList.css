@@ -1,0 +1,66 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="PersonList.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for people list on celebrities a-z page.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+ul.people,
+.people li
+{
+  display: block;
+  list-style:none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+ul.people
+{
+  margin: 0.75em 0; /* 8px equivalent @ 12px font size */
+}
+
+/*
+    Resolves BUG 1142242
+    Overrides hasmore styles for the celebrities list, since it 
+    uses the charmenu to paginate through the list instead of a tab, 
+    which is defined in listbehaviors.css
+*/
+.co ul.people.hasmore
+{
+    border-bottom: 0.0834em solid #666; /* 1px equivalent @ 12px font size */
+}
+
+.people li
+{
+  border-top: 0.0834em solid #333;
+  float: left;
+}
+
+.people .person figure
+{
+  margin: 0;
+  padding: 0;
+}
+
+.people .person figure img,
+.people .person figure figcaption
+{
+  display: block;
+}
+
+.people .person figcaption 
+{
+  font-size: 116.667%;
+  line-height: 2.857em; /* 40px equivalent @ 14px font size */
+  margin-left: 4.143em; /* 58px equivalent @ 14px font size */
+}
+
+.people .person figure img
+{
+  float: left;
+}

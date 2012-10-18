@@ -1,0 +1,34 @@
+﻿.foo
+{
+    background-image:url(http://foo.com/bar.gif);
+}
+
+@media print {
+  body { font-size: 10pt }
+}
+
+@page :left 
+{
+  margin-left: 4cm;
+  margin-right: 3cm;
+}
+
+@media print {
+  div { font-size: 10pt }
+}
+
+.bar
+{
+    background-image:url(http://foo.com/bar.gif);
+}
+
+@page :right 
+{
+  margin-left: 4cm;
+  margin-right: 3cm;
+}
+
+.bar
+{
+    background-image:url(http://foo.com/bar.gif);
+}

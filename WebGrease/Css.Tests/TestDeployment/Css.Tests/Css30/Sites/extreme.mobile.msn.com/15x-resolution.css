@@ -1,0 +1,151 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="15x-resolution.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//    Styles for devices that support 1.5 pixel resolution, such as Windows Phone 7 because our viewport is 
+//    set to width=device-width and WP7 maps this to 320, but the device is actually 480 wide, meaning that 
+//    our background images need to be 1.5 bigger otherwise WP7 enlarges them which results in distortion
+//    Generally these adjustments only apply to background images
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* note: Using html body selector for specificity because some devices still get common device override CSS files that increase the font size */
+html body 
+{
+  font-size: 112.5%; /* (75% * 1.5) because WP7 isn't 320 pixels wide, it's 480 */
+}
+
+.header a.channel /* because the channel text is aligned relative to a background image, margin needs adjustment for WP7 */
+{
+  margin-top: 0.059em; /* 1px equivalent @ 17px font size */
+}
+
+.loading 
+{
+  background-image: url('/statics/common/i/blue/loading_15x.gif');
+}
+
+.header a.msn,
+.breadcrumb a.msn
+{
+  background-image: url('/statics/common/i/blue/logo_msn_15x.png');
+}
+
+.header a.search
+{
+  background-image: url('/statics/common/i/blue/search_hourglass_15x.png');
+}
+
+.header a.partner,
+.breadcrumb a.fox
+{
+  background-image: url('/statics/common/i/blue/logo_fox_15x.png');
+}
+
+.no-touch .touchfallback .next
+{
+  background-image: url('/statics/common/i/blue/arrow_right_with_opacity_15x.png');
+}
+
+.no-touch .touchfallback .prev
+{
+  background-image: url('/statics/common/i/blue/arrow_left_with_opacity_15x.png');
+}
+
+.games .favorite .game
+{
+  background-image: url('/statics/common/i/blue/team_favorite_15x.png');
+}
+
+.games .past.game .high td.first,
+.games2 tr.high td.first
+{
+  background-image: url('/statics/common/i/blue/team_winning_15x.png');
+}
+
+.games .present .bottom,
+.boxscore thead th.bottom
+{
+  background-image: url('/statics/common/i/blue/inning_bottom_15x.png');
+}
+
+.games .present .top,
+.boxscore thead th.top
+{
+  background-image: url('/statics/common/i/blue/inning_top_15x.png');
+}
+
+.hllist3 li .hl figure
+{
+  background-image: url('/statics/common/i/blue/gallery_stack_15x.png');
+}
+
+.gtfield
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_field_15x.png');
+}
+
+.gtfield .balls span
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_balls_15x.png');
+}
+
+.gtfield .outs span
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_outs_15x.png');
+}
+
+.gtfield .strikes span
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_strikes_15x.png');
+}
+
+.gtfield .on
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_manonbase_15x.png');
+}
+
+.gtfieldmini
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_field_mini_15x.png');
+}
+
+.gtfieldmini .on
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_manonbase_mini_15x.png');
+}
+
+#slideshowcontent .breadcrumb a.msn
+{
+  background-image: url('/statics/common/i/blue/logo_msn_white_15x.png');
+}
+
+#slideshowcontent .breadcrumb a.fox
+{
+  background-image: url('/statics/common/i/blue/logo_fox_white_15x.png');
+}
+
+.games2 .fav,
+.standings3 .fav,
+.teamlist ul li .fav,
+#myteamslink a,
+#myteams.coa2 .h2 > a,
+#myteams.coa2 .h2 > span
+{
+  background-image: url('/statics/common/i/blue/favorites_on_button_15x.png');
+}
+
+.standings3 .add,
+.teamlist ul li .add
+{
+  background-image: url('/statics/common/i/blue/favorites_off_button_15x.png');
+}
+
+.standings3 .pending,
+.teamlist ul li .pending
+{
+  background-image: url('/statics/common/i/blue/favorites_pending_button_15x.png');
+}

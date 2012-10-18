@@ -1,0 +1,42 @@
+﻿#fieldFootball
+{
+	background: #273910 url('/statics/sports/i/field_lrg.png') left 33px no-repeat;
+	height: 218px;
+	width: 475px;
+}
+
+#fieldFootballMask
+{
+	padding: 0px 52px 0 53px;
+	height: 136px;
+}
+
+#currentPlayStatus
+{
+	font-size: 70%;
+}
+
+.homeState .ballIndicator
+{
+	top: 61px;
+}
+
+.awayState .ballIndicator
+{
+	top: 61px;
+}
+
+.logoAwayOnField, .logoHomeOnField
+{
+	top: 91px;
+}
+
+.logoAwayOnField
+{
+	left: 15px;
+}
+
+.logoHomeOnField
+{
+	right: 15px;
+}

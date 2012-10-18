@@ -1,0 +1,47 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="stats.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Player Stats page style overrides.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#playerstats tbody td:last-child
+{
+  background-color: #f1f1f1;
+}
+
+#playerstats div.cotb,
+#playerstats .h2,
+#playerstats .carousel .h3,
+#playerstats .br
+{
+  margin: 0 0.667em;
+}
+
+#playerstats,
+#playerstats .carousel
+{
+  margin: 0;
+}
+
+/* Overrides for default Carousel margins */
+#playerstats .carousel .players p
+{
+  margin: 0 0 0 3.833em; /*46px equivalent @ 12px font size, width of image*/
+}
+
+#playerstats .carousel .players .stat
+{
+  margin: 0 0 0 2.875em; /*46px equivalent @ 16px font size, width of image*/
+}
+
+#playerstats .carousel .players h4
+{
+  margin: 0 0 0.182em 4.182em; /* 0 0 2px 46px equivalent @ 11px font size, width of image */
+}
+
+

@@ -1,0 +1,16 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="ad.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Ad styling.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.ads
+{
+  margin-top: 0.333em; /* 4px @ 12px base font size */
+  text-align: center;
+}

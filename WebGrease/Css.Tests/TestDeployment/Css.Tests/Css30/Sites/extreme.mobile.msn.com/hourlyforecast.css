@@ -1,0 +1,50 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="hourlyforecast.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Hourly Forecast control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#hourlyforecast
+{
+  margin-bottom: 1em; /* 12px equivalent @ 12px font size */
+}
+
+.hourly
+{
+  border-bottom: 0.0834em solid #ccc;  /* 1px equivalent @ 12px font size */
+  border-top : 0.0834em solid #ccc;  /* 1px equivalent @ 12px font size */
+  display: table;
+  padding-right: 4.333em; /* 52px @ 12px fong size padding on the right to signify end of list */
+}
+  
+.hourly li 
+{
+  border-right: 0.0834em solid #ccc;  /* 1px equivalent @ 12px font size */
+  display: table-cell;
+  padding: 0.667em 1em; /* 8 12px equivalent @ 12px font size */
+  text-align: center;
+  width: 2.833em /* 34px equivalent @ 12px font size */
+}
+
+.hourly span
+{
+  color: #333;
+  display: block;
+  white-space: nowrap;
+}
+
+.hourly .hour
+{
+  padding-bottom: 0.333em;  /* 4px equivalent @ 12px font size */
+}
+
+.hourly .temperature
+{
+  font-size: 116.667%;  /* 14px equivalent @ 12px font size */
+  padding-top: 0.429em; /* 6px equivalent @ 14px font size */
+}

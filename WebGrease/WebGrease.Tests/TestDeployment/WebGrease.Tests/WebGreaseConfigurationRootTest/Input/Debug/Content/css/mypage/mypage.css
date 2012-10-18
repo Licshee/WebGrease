@@ -1,0 +1,19 @@
+body
+{
+    background-color: %page_background%
+}
+
+.media
+{
+    padding-left: 20px;
+}
+
+.primarycolor
+{
+    color: %sample_primarycolor%
+}
+
+.secondarycolor
+{
+    color: %sample_secondarycolor%
+}

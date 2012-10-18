@@ -1,0 +1,122 @@
+﻿.mlbteams
+{
+    clear: both;
+}
+
+.mlbteams .myteamstar
+{
+    background: url("/statics/common/i/personalization.png") no-repeat scroll -179px 0 transparent;
+    width: 17px;
+    height: 17px;
+    float: right;
+}
+
+.mlbteams ul
+{
+    clear: left;
+}
+
+.mlbteams .myteams
+{
+    padding: 0.1em 0.2em;
+    float: right;
+    clear: left;
+}
+
+.mlbteams .myteamstext
+{
+    float: left;
+    padding-right: 0.2em;
+}
+
+.mlbteams .favbutton
+{
+    padding: 0.1em 0 0.1em 0.2em;
+    background: url("/statics/common/i/personalization.png") no-repeat scroll -85px 0 transparent;
+    height: 35px;
+    margin-top: 6px;
+    text-align: center;
+    vertical-align: middle;
+    width: 35px;
+    float: right;
+}
+
+.mlbteams li
+{
+    list-style-type: none;
+    padding: 0.5em 0.5em;
+}
+
+.mlbteams .title
+{    
+    font-weight:bold;
+    background-color: #F1F1F1;
+    color: #666;
+    border-color: #FFF;
+    border-style: solid;
+    border-width:3px 1px 0 1px;   
+}
+
+.mlbteams .title a
+{
+    color: #666;
+}
+
+.mlbteams .sel
+{
+    font-weight:bold;
+    background-color: #FFFFFF;
+    border-color: #003399;
+    border-style: solid;
+    border-width:3px 1px 0 1px;
+}
+
+.mlbteams .sel a
+{
+    color: #333;
+}
+
+.mlbteams .tabs
+{
+    clear: both;
+    float: left;
+    width: 100%;
+    list-style-type: none;
+    padding: 0 0 0 0.5em;
+    border-bottom:1px solid #003399;
+    margin: 0 0 0.8em 0;
+    line-height: normal;
+}
+
+.mlbteams .myteams
+{
+    float: right;
+    color: #6699FF;
+    font-weight: bold;
+}
+
+.mlbteams ul
+{
+    clear: left;
+    border-bottom:1px solid #EBEBEB;
+}
+
+.mlbteams .logo img
+{
+    padding: 0 0.3em;
+}
+
+.mlbteams .tabcontent
+{
+    clear: both;
+}
+
+.mlbteams ul.teams li
+{
+    clear: both;
+}
+
+.mlbteams li.title
+{
+    float: left;
+}

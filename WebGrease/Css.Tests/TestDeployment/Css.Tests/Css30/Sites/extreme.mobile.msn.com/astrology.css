@@ -1,0 +1,38 @@
+﻿.astro
+{
+}
+.astroFtr
+{
+	text-align: center;
+}
+
+.astroFtr a
+{
+	color: #333333;
+}
+
+.astroFtr hr
+{
+	border: 1px solid #ececec;
+}
+.astroImg
+{
+	vertical-align: top;
+	padding-top:8px;
+	padding-right: 9px;
+}
+.astroTitle
+{
+	font-weight: bold;
+	color: #333333;
+}
+.astroTitle td
+{
+	padding-bottom: 10px;
+}
+.astroBdy
+{	
+	color: #666666;
+	text-align: justify;
+	padding-bottom:10px;
+}

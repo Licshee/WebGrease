@@ -1,0 +1,1 @@
+﻿:not(*){}:not(foo){}:not(#bar){}:not(.foo1){}:not([a]){}:not(:ps(ps1)){}

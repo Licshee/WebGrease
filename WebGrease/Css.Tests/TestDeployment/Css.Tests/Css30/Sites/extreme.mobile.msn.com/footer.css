@@ -1,0 +1,52 @@
+﻿.footer
+{
+  background-color: #e5e5e5;
+  border-top: solid 0.091em #ccc; /* 1px equivalent @ 11px font size */
+  clear: both;
+  color: #555;
+  font-size: 91.667%; /* 11px equivalent */
+  line-height: 1.364em; /* 15px equivalent */
+  margin-top: 0.364em; /* 0.364em = 4px equivalent @ 11px font size */
+  padding: 0.273em 0; /* 0.455em = 5px equivalent @ 11px font size */
+  text-align: center;
+}
+
+.footer a,
+.footer p
+{
+  background-color: #e5e5e5;
+  color: #555;
+}
+
+.footer p
+{
+  margin: 0.273em 0 0 0; /* 0.364em = 4px equivalent @ 11px font size */
+}
+
+.footer span
+{
+  color: #999;
+  margin: 0 0.273em; /* 0.455em = 5px equivalent @ 11px font size */
+}
+
+.footer .experience
+{
+  font-weight: bold;
+}
+
+.footer .experience span
+{
+  margin-left: 0.545em; /* 0.909em = 10px equivalent @ 11px font size */
+}
+
+.footer a
+{
+  display: inline;
+  font-weight: normal;
+  margin: 0 0.273em; /* 0.455em = 5px equivalent @ 11px font size */
+}
+
+.footer img
+{
+  vertical-align: middle;
+}

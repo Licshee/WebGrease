@@ -1,0 +1,635 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{5999ACB9-5E2D-411F-A3F2-083733A97957}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Css.Tests</RootNamespace>
+    <AssemblyName>Css.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SourceAnalysisTreatErrorsAsWarnings>false</SourceAnalysisTreatErrorsAsWarnings>
+    <SourceAnalysisOverrideSettingsFile Condition="'$(SourceAnalysisOverrideSettingsFile)' == ''">..\Settings.StyleCop</SourceAnalysisOverrideSettingsFile>
+    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\MinimumRecommendedRulesAndTreatWarningsAsErrors.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>..\MinimumRecommendedRulesAndTreatWarningsAsErrors.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseAndSigned|AnyCPU'">
+    <OutputPath>bin\ReleaseAndSigned\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisLogFile>bin\Release\Css.Tests.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
+    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>..\MinimumRecommendedRulesAndTreatWarningsAsErrors.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Msn.Web.Build.Sdk">
+      <HintPath>..\..\Ref\LegacyCssParser\Msn.Web.Build.Sdk.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <CodeAnalysisDependentAssemblyPaths Condition=" '$(VS100COMNTOOLS)' != '' " Include="$(VS100COMNTOOLS)..\IDE\PrivateAssemblies">
+      <Visible>False</Visible>
+    </CodeAnalysisDependentAssemblyPaths>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Css30\SelectorValidationOptimizationVisitorTest.cs" />
+    <Compile Include="Css30\ValidateLowercaseVisitorTest.cs" />
+    <Compile Include="Css30\FloatOptimizationVisitorTest.cs" />
+    <Compile Include="Css30\ExcludePropertyVisitorTest.cs" />
+    <Compile Include="Css30\ImageAssemblyUpdateVisitorTest.cs" />
+    <Compile Include="Css30\ImageAssemblyScanVisitorTest.cs" />
+    <Compile Include="Css30\OptimizationVisitorTest.cs" />
+    <Compile Include="Css30\StylesheetNodeTest.cs" />
+    <Compile Include="Css21\BackwardCompatTest.cs" />
+    <Compile Include="TestSuite\PrettyPrintVerifier.cs" />
+    <Compile Include="TestSuite\MinificationVerifier.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Css30\SitesParseTest.cs" />
+    <Compile Include="TestSuite\TestDeploymentPaths.cs" />
+    <Compile Include="Css30\HacksSupportTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\money.msn.com\money.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.hotmail.com\inboxall.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_CookieSharingPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_CookieSharingPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_CookieSharingPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_HomePage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_HomePage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_HomePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_TodayLegacyPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_TodayLegacyPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_TodayLegacyPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_TodayPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_TodayPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_TodayPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_WorldWidePage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_WorldWidePage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_en-us_WorldWidePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_GetGenericServiceFeed.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_GetGenericServiceFeed_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_GetGenericServiceFeed_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\en-us\css\02-blue_en-us_Site_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_CEPIntl_DialogPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_CEPIntl_DialogPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_CEPIntl_DialogPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_CEPIntl_GetGenericServiceFeed.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_CEPIntl_GetGenericServiceFeed_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_CEPIntl_GetGenericServiceFeed_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_DialogPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_DialogPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_DialogPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_HomePage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_HomePage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_HomePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_TodayLegacyPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_TodayLegacyPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_TodayLegacyPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_TodayPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_TodayPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_TodayPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_WorldWidePage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_WorldWidePage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_he-il_WorldWidePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\he-il\css\02-blue_he-il_Site_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\hp.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_pollsfeature_layout.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_CEPIntl_DialogPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_CEPIntl_DialogPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_CEPIntl_DialogPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_CEPIntl_GetGenericServiceFeed.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_CEPIntl_GetGenericServiceFeed_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_CEPIntl_GetGenericServiceFeed_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_DialogPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_DialogPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_DialogPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_HomePage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_HomePage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_HomePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_TodayLegacyPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_TodayLegacyPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_TodayLegacyPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_TodayPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_TodayPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_TodayPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_WorldWidePage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_WorldWidePage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_en-sg_WorldWidePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_DialogPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_DialogPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_DialogPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_HomePage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_HomePage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_HomePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_TodayLegacyPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_TodayLegacyPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_TodayLegacyPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_TodayPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_TodayPage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_TodayPage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_WorldWidePage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_WorldWidePage_ie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_WorldWidePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\Actual\ExcludeByKeys.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\Actual\ExcludeByValues.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\MinifiedExpect\ExcludeByKeys.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\MinifiedExpect\ExcludeByValues.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\PrettyExpect\ExcludeByKeys.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\PrettyExpect\ExcludeByValues.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\FloatOptimizationVisitor\Actual\optimizefloat.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\FloatOptimizationVisitor\MinifiedExpect\optimizefloat.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\FloatOptimizationVisitor\PrettyExpect\optimizefloat.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\duplicatebackgroundformatexception.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\duplicateimagereferencewithdifferentrulesexception.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\repeatedpropertynameexception.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\spritingcandidates.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\spritingcandidateswithbuckets.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\spritingcandidateswithignore.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\toomanylengthsexception.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css.lazyload.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarations.css.lazyload.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarations.css.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarationsfirstposition.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarationsfirstposition.css.lazyload.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarationsfirstposition.css.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarationssecondposition.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarationssecondposition.css.lazyload.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarationssecondposition.css.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\media.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\media.css.lazyload.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\media.css.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\page.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\page.css.lazyload.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\page.css.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorlongdeclarations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorshorthanddeclarations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorshorthanddeclarationsfirstposition.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorshorthanddeclarationssecondposition.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\media.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\page.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorlongdeclarations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorshorthanddeclarations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorshorthanddeclarationsfirstposition.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorshorthanddeclarationssecondposition.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\media.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\page.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\00\07E0B955CE73F92A8C57C7028C7D01.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\02\3118D8F3781159C8341246BBF2B4CA.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\03\69A3A49A93A636AB2E9235F2237F36.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\03\6F2735128705FA1DDB4EC8DCB6C8D4.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\04\FFC8C25183A0417929E9018C1AF1E6.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\05\81760C7995FF06E5DA90B410911C39.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\07\A4EA06FFE2DE5F67E9488805CB8DE2.jpg" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\09\4EBDF19A1CE03CCE12E11926256422.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\10\CEC0E500D4F1DFB9FD49B862D6E305.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\17\EC45F1D537E781DED5DBD86005B509.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\19\445BFDD43C8AAE850576449F729FE4.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\1A\57011FE37F98BE0EE74CE87A62BA9B.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\1A\8288967C9E2176A1D6A565E8DD63E9.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\1B\EC486D6028461EAAE488C9B60CD9CA.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\1D\CB43BE1B6276EF7ABA365C42AEEE8A.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\1F\1D803820104806C85999C54A3D8C22.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\23\23CA1E2CEEBEA8DEE064EFE4F036C0.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\2C\F090A88B3662C79074C856EBCF5EFE.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\2E\12A0766D0F9357483AFE5FC972764E.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\30\9DC3E3095901347BACF34800857794.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\31\10E88C8213553D5817995D5886CF34.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\31\577D733D035EFFF04160AA5B294FBD.jpg" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\32\5472601571F31E1BF00674C368D335.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\35\F380A1443598F51063E7019F77D4C8.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\37\CCAFE09280A7F4061AC8F73CA8C4E2.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\37\D878E2C069E469060C634A7E6ABA09.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\3D\12F809749A445AE090C6EC0E7745BF.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\3D\EC3EE1E8F2BACD8F6E1DA013FE021A.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\3F\0D1034492B6F732AEBA7F4F427AC8D.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\40\12152B4007C8696FF0049C17E9D361.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\40\D5B9C0A4BD8B962A5AFC78A38AFD9B.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\43\2581C582E9C17FEF56D895517F7A9A.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\44\0E5DD55D0A5818DD9873E755E7DBD3.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\45\BB2EBB89312DFD65664632E691A996.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\46\91A27DE572836E1BBBD623627BE31F.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\49\C8A0668D679FCC3132C600ADAFDDFA.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\4A\E34E67E1C4C04BDE3F5750506B7CE0.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\4B\A9299FF2AF37C4DB76BF94D2689FDF.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\4E\D35472875129B5F237A5B1E38DD10A.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\51\417C1E02F9189BD6AD72092A3C17FC.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\54\6E62B4310B46A0B031F519E51BA1AE.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\55\42B030E6F20F71978A9CE91B2F28D5.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\56\1869B8D1C5447163A3B04789FB4BAA.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\58\FB9653BC7EFBF8CAAE7BA78EE34176.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\5C\14E7F37C92E3DE9D5E3C1CEA83A481.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\5C\DFC900414F72012633D5324DEF5521.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\61\DD81C6A7CE48A62807C910200728BF.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\62\668852D9828B8574A7A7AAF1C11470.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\63\B7DBF541B6F0CFEE07FF4578D3E17C.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\68\8A333A7FAC11BD40239FB52E5D8713.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\6B\23C5D0A48E1A13066CBED2A108EA93.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\6E\BBD1FC82D95D1FB04853D23783C14F.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\6F\47391686037786BD2E5A0738F865CC.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\70\15DD42EC768C7AE7881E0BB5EE3B1B.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\72\2D020A3033EEA68112CD504D3B8B19.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\73\238640414DF9961D07E26451F5BB2E.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\73\8EB2FFAFAEC7B338C994AAAFA42B6D.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\74\980798384B98F311BB7E25A36936E6.jpg" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\77\C3C017EE8A0E515F0C58AED0043497.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\7D\162DCB953F7A117871AF649D9C8C9F.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\80\594FA6215B657B7C72200ADF21D0D8.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\81\3094F4E91345FEAA1879679A2B0C96.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\82\269434C27C20913FC4CD0407CC4932.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\82\AAD198FE948572219D39D1749BDCAE.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\85\9A57945D95350D19A6FE7FC266B644.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\87\9BC20F8C47B1A98EE61F97A1F9A0F0.jpg" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\88\32E7184589D4777E096E5043FBEE5A.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\8B\4F40133A0B65D41381AC050DDCCAC5.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\8D\E0E94125FAA30229E91D906636612C.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\90\984B28EB7B00EF1AE2AA9E7DF269A0.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\93\84C690CA0DE3A514E1E16CE1F7A05D.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\93\F3BE98DA99FA27B1615F7089901381.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\94\1ED42AA44D8EB78B02B7FF60394F39.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\96\D83B2240539F9F3FD11F83C6844205.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\97\9164A45E41D2CDBECA77A80CFC7AB7.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\99\56F94B959A4BF2D03911CFCC9D3D8C.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\9B\12E5D920D1E1D924444A6E796AA970.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\9E\46EDC8C6083CBF69A51D9C069770D1.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\9E\7BB8EFDECE54A0025B4D220DC8AE4F.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\9E\85711D274AC18AC31528B69DFC3A0D.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\9F\BA2547B71ABE8679A252AB80A849D3.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A0\17AF9B2AD610154B96158B210121F8.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A1\D33CD41E98F7107DAE141CEDA22FD8.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A1\F9C70C12286CD7F6919A3636F3DD4B.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A4\8DA8F053E5F5B2EB58F01230D10E3A.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A4\AEBB2C8A3ED49B04FB90BB50301566.jpg" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A5\13721023C2BA909660AFAA5030D10F.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A7\55E7D1E1873822A719BA6DF871796C.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A9\357B4478D7DDAAC7653E4D0EC3EB5D.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\A9\9192403A9665576C002D6C93F707A9.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\AA\8128CC4F95610F1FC61E96661E8749.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\AE\CAA2416C175258B752695F99AC753E.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\AF\5966640DCA908ED79B48375B663235.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\AF\7BC8E549B26FC767C876C6B9154D42.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\B1\948BF8E3D6EDADDE873E26F633E7CB.jpg" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\B1\E67204C3B81165FFD22833C7F8D889.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\B2\0903AAE45B9DF514F32C9F3B784020.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\B7\A95AA45E1997667100CA5B96B2A387.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\B9\3DE4C6D1B35941EEA3411A1753AF0C.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\BC\69F0DE1437D0056CC40D635C2E3CBE.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\BD\2623C200ACF81537B4C22A21DB4F34.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\BE\E173CCB4AC4185FF1B1325C9053922.jpg" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\C2\CE05AB95B67D48CA188005F2D324A2.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\C2\E0DFF84D072469886D35AFF7442F9D.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\C4\9BD6066A2EEDAB9A52863F5493595F.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\C5\9A091E6DBBFB03ED88EE62C5FD4179.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\C5\E71F3D0196A7CAB0B24ABEDC3C4C7D.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\CF\62B63E3916CA74DAF0085F7916E8C8.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\CF\A73F6F2B099D49EFDA44AEEDAEE2D5.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\D2\D18A4E36CE14D7C371DD69509C13AA.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\D5\DF5D9B4EFD5CFF9122942A67A1EEC5.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\DA\81F80578DA156A467FD769D9D27337.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\DE\BECF744632666127591D7DE2BE3514.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\DF\7B92C1E280F6D04D91ED52696687E5.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\DF\854F4951FCBF6C450892031DA153B1.ico" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\E3\0F8AA98A2243C755379CBB06AD9CDB.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\E3\11650036E855344EB520E1458C9811.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\E4\A6598D0823FD1E4AB9A172E720DB36.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\E6\1F36CE8D2C6D8E284995A39ECBBC45.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\E6\8C8756E408BE8E280885CC5AE1BC81.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\EA\DFF9D622BE9F4386E2ABB9818C1D29.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\EB\0B5ABF0C6F86C5055DAE1B2A84DA6C.jpg" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\EB\9A415ECC33C5736FB6E45163D7E416.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\F8\614595FBA50D96389708A4135776E4.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\FB\F017D9E8CC630C5E02659B6EAF35FA.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\FC\B28B0D88DB9BD46EAA0BC92DDEA7B3.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\FD\4355E4969BC7E34459E03C464B4A1B.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\FF\2CB27734FC64380D96FF021210B768.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\FF\7BEA808C4999F6C8B5F50AF23CF725.gif" />
+    <Content Include="TestDeployment\Css.Tests\Css30\i\FF\FA134E11C3EB51172B8C565507FAC1.png" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadCharset.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadImport.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadMedia.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadMediaWithUpperCaseRuleset.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadPage.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadRulesetWithUppercaseDeclarationKey.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadRulesetWithUppercaseDeclarationValue.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadRulesetWithUppercaseSelector.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\Intl.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\Actual\Ruleset.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\MinifiedExpect\Ruleset.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\PrettyExpect\Ruleset.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\animations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\background.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\border.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\charset1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\charset2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\colors.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\document.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\functions.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\important.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\datauri.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\declarationwithfuncterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\declarationwithhexterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\declarationwithmultiplenumberterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\declarationwithnumberterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\declarationwithstringterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\fontface.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\gradient.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\import1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\media1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\media2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\namespace.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\page1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\rulesetmediapageunordered.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\selectorall.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\selectorelementname.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\selectorelementnameandattrib.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\selectorelementnameandclass.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\selectorelementnameandhash.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\selectorelementnameandnegation.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\selectorelementnameandpseudo.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\animations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\background.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\border.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\charset1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\charset2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\colors.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\datauri.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\declarationwithfuncterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\declarationwithhexterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\declarationwithmultiplenumberterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\declarationwithnumberterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\declarationwithstringterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\document.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\fontface.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\functions.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\gradient.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\import1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\important.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\media1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\media2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\namespace.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\page1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\rulesetmediapageunordered.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\selectorall.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\selectorelementname.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\selectorelementnameandattrib.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\selectorelementnameandclass.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\selectorelementnameandhash.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\selectorelementnameandnegation.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\selectorelementnameandpseudo.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\animations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\background.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\border.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\charset1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\charset2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\colors.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\datauri.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\declarationwithfuncterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\declarationwithhexterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\declarationwithmultiplenumberterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\declarationwithnumberterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\declarationwithstringterm.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\document.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\fontface.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\functions.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\gradient.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\import1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\important.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\media1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\media2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\namespace.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\page1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\rulesetmediapageunordered.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\selectorall.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\selectorelementname.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\selectorelementnameandattrib.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\selectorelementnameandclass.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\selectorelementnameandhash.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\selectorelementnameandnegation.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\selectorelementnameandpseudo.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Actual\RemoveSelectors.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Hacks\Hack1.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Hacks\Hack2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Hacks\Hack3.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Hacks\Hack4.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Hacks\Hack5.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Hacks\Hack6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Hacks\Hack7.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\Hacks\Hack8.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\MinifiedExpect\RemoveSelectors.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\SelectorValidationOptimizationVisitor\PrettyExpect\RemoveSelectors.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\bing.com\serpall_c.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\15x-resolution.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\ad.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\ads.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\alertlist.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\animations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\animations_all.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\article.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\astrology.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\band.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\bandhi.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\BlogPost.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\BlogPostList.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\boxscore.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\branding.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\BreadCrumb.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\BreakingNews.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\carousel.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\charactermenu.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\clpCtnr.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\collapsedtck.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\combine.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\Container.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\copyright.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\CurrentConditions.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\CurrentConditionsSkyCodes.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\dailyforecastlist.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\datatable.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\datenav.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\department.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\double-resolution.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\expandcollapse.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\footer.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\fullscreenslideshow.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gamescore.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gamesegments.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gametrax.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gametraxBasketball.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gametraxBasketball_lrg.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gametraxFootball.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gametraxFootball_lrg.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gametraxmini.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gametraxShared.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\gametrax_OLD.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\header.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\Headline.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\HeadlineList.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\HeadlineList2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\HeadlineList3.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\HeadlineList4.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\headlines.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\hitlist.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\hourlyforecast.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\hub.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\InfoPane.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\injuries.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\keyframes.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\keyframes_all.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\linklist.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\listbehaviors.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\ListCtrl.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\locationselection.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\lookup.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\mlbplayerlist.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\mlbteams.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\money.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\moreondepartment.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\movie.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\moviedetails.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\movielist.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\movieresults.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\myteamslist.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\nav.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\news.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\overlay.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\PageHeading.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\pagination.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\personalization.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\PersonList.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\rankings.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\reviews.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\roster.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\schedule.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\scores.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\search.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\searchcontrol.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\site.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\site2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\site_ie7.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\slideAnim.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\SlideList.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\slideshow.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\sports.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\standings.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\standings2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\standings3.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\stats.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\stbf.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\TabControl.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\team.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\teaminfo.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\teamlist.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\teamlogos.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\teamlogos_15x.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\teamlogos_2x.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\TheaterDetailItem.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\TheaterList.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\TheaterShowTimes.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\ticker.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\ticker2.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\tickermenu.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\topboxoffice.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\transactions.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\videohl.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\VideoList.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\videooverlay.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\videoplayer.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\watch.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\watchvideo.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\weather.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\weatherSummary.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\whatsnearby.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\extreme.mobile.msn.com\wonderwall.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\facebook.com\5v9Z8fiJCtx.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\VSTeam\apple.com.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\VSTeam\hacks.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\VSTeam\jquery-combined.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\VSTeam\jqueryMobile-combined.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Sites\xbox.com\gridlayout.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <Shadow Include="Test References\WebGrease.accessor" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Ref\Antlr\Runtime\antlr-dotnet-tool-3.3.1.7705_src\antlr\main\runtime\CSharp3\Sources\Antlr3.Runtime\Antlr3.Runtime_vs2010.csproj">
+      <Project>{8FDC0A87-9005-4D5A-AB75-E55CEB575559}</Project>
+      <Name>Antlr3.Runtime_vs2010</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WebGrease\WebGrease.csproj">
+      <Project>{E853D38C-EFD5-495E-853B-69FFE19FA199}</Project>
+      <Name>WebGrease</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Css.Tests.dll.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\..\Ref\StyleCop 4.6\StyleCop.Targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,114 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="nav.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The global nav styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#navtop,
+#navbottom,
+nav.global
+{
+  clear: both;
+  position: relative;
+ -webkit-tap-highlight-color: rgba(0,0,0,0);
+  width: 100%;
+}
+
+#navtop
+{
+  left: 100%;
+  -webkit-transition: left 0.5s ease 1.5s; /* 1.5 second delay to allow page to load */
+  transition: left 0.5s ease 1.5s;
+}
+
+.js #navtop
+{
+  left: auto;
+}
+
+nav.global a, 
+nav.global span
+{
+  color: #777;
+  display: block;
+  font-size: 200%; /*24px equiv*/
+  padding: 0.375em 0.333em; /*9px 8px equivalent at 24px font size - NOTE top and bottom must be equal for next/prev button placement */
+  white-space: nowrap;
+}
+
+.no-touch nav.global a, /* no touch case reduces font size to avoid prev/next buttons */
+.no-touch nav.global span
+{
+  font-size: 166.67%; /*20px @ 12px font size*/
+  padding: 0.45em 0.3em; /*9px 6px equivalent at 20px font size - NOTE top and bottom must be equal for next/prev button placement */
+  white-space: nowrap; /* forces the nav item to not wrap */
+}
+
+nav.global span.selected
+{
+  color: #000;
+}
+
+nav.global ul 
+{
+  position: relative;
+}
+
+nav.nested.global
+{
+  height: 5.75em; /* 69px equivalent @ 12px font size */
+} 
+
+nav.global ul ul
+{
+  left: 0;
+  position: absolute;
+  top: 3.5em; /* 42px equivalent @ 12px font size */
+}
+
+nav.global ul ul a,
+nav.global ul ul span,
+.no-touch nav.global ul ul a, /* no touch case reduces font size to avoid prev/next buttons */
+.no-touch nav.global ul ul span
+{
+  border-left: solid 0.091em #777; /* 1px equivalent at 11px font size */
+  color: #555;
+  font-size: 91.667%; /* 11px equivalent at 12px font size */
+  line-height: 1em; /* 11px equivalent @ 11px font size */
+  margin: 0.727em 0; /* 8px 0 equivalent @ 11px font size */
+  padding: 0 1.091em; /* 0 12px equivalent @ 11px font size */
+}
+
+nav.global ul ul li:first-child a,
+nav.global ul ul li:first-child span,
+.no-touch nav.global ul ul li:first-child a, /* no touch case reduces font size to avoid prev/next buttons */
+.no-touch nav.global ul ul li:first-child span
+{
+  border-left: none;
+  padding-left: 0.727em; /* 8px equivalent @ 11px font size */
+}
+
+nav.global ul ul span.selected,
+.no-touch nav.global ul ul span.selected
+{
+  color: #083980;
+  font-weight: bold;
+}
+
+nav.global ul.carousellist li.last
+{
+  margin-right: 2em; /* 24px equivalent @ 12px font size */
+}
+
+/*Re-style link highlights for webkit*/
+#navtop a,
+#navbottom a,
+nav.global a
+{
+ -webkit-tap-highlight-color: rgba(0,0,0,0.25);
+}

@@ -1,0 +1,178 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="teamlogos.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   MLB Team Logos at 1x
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+footer[role="contentinfo"] .logo,
+section[role="main"] .logo
+{
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
+.l_als
+{
+  background-image: url('/statics/sports/i/mlb/l/als.png');
+}
+
+.l_ari
+{
+  background-image: url('/statics/sports/i/mlb/l/ari.png');
+}
+
+.l_atl
+{
+  background-image: url('/statics/sports/i/mlb/l/atl.png');
+}
+
+.l_bal
+{
+  background-image: url('/statics/sports/i/mlb/l/bal.png');
+}
+
+.l_bos
+{
+  background-image: url('/statics/sports/i/mlb/l/bos.png');
+}
+
+.l_chc
+{
+  background-image: url('/statics/sports/i/mlb/l/chc.png');
+}
+
+.l_cws
+{
+  background-image: url('/statics/sports/i/mlb/l/cws.png');
+}
+
+.l_cin
+{
+  background-image: url('/statics/sports/i/mlb/l/cin.png');
+}
+
+.l_cle
+{
+  background-image: url('/statics/sports/i/mlb/l/cle.png');
+}
+
+.l_col
+{
+  background-image: url('/statics/sports/i/mlb/l/col.png');
+}
+
+.l_det
+{
+  background-image: url('/statics/sports/i/mlb/l/det.png');
+}
+
+.l_fla
+{
+  background-image: url('/statics/sports/i/mlb/l/fla.png');
+}
+
+.l_hou
+{
+  background-image: url('/statics/sports/i/mlb/l/hou.png');
+}
+
+.l_kc
+{
+  background-image: url('/statics/sports/i/mlb/l/kc.png');
+}
+
+.l_laa
+{
+  background-image: url('/statics/sports/i/mlb/l/laa.png');
+}
+
+.l_lad
+{
+  background-image: url('/statics/sports/i/mlb/l/lad.png');
+}
+
+.l_mil
+{
+  background-image: url('/statics/sports/i/mlb/l/mil.png');
+}
+
+.l_min
+{
+  background-image: url('/statics/sports/i/mlb/l/min.png');
+}
+
+.l_nls
+{
+  background-image: url('/statics/sports/i/mlb/l/nls.png');
+}
+
+.l_nym
+{
+  background-image: url('/statics/sports/i/mlb/l/nym.png');
+}
+
+.l_nyy
+{
+  background-image: url('/statics/sports/i/mlb/l/nyy.png');
+}
+
+.l_oak
+{
+  background-image: url('/statics/sports/i/mlb/l/oak.png');
+}
+
+.l_phi
+{
+  background-image: url('/statics/sports/i/mlb/l/phi.png');
+}
+
+.l_pit
+{
+  background-image: url('/statics/sports/i/mlb/l/pit.png');
+}
+
+.l_sd
+{
+  background-image: url('/statics/sports/i/mlb/l/sd.png');
+}
+
+.l_sea
+{
+  background-image: url('/statics/sports/i/mlb/l/sea.png');
+}
+
+.l_sf
+{
+  background-image: url('/statics/sports/i/mlb/l/sf.png');
+}
+
+.l_stl
+{
+  background-image: url('/statics/sports/i/mlb/l/stl.png');
+}
+
+.l_tb
+{
+  background-image: url('/statics/sports/i/mlb/l/tb.png');
+}
+
+.l_tex
+{
+  background-image: url('/statics/sports/i/mlb/l/tex.png');
+}
+
+.l_tor
+{
+  background-image: url('/statics/sports/i/mlb/l/tor.png');
+}
+
+.l_was
+{
+  background-image: url('/statics/sports/i/mlb/l/was.png');
+}

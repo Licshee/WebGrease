@@ -1,0 +1,19 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="PageHeading.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for a landing page's <h1> heading with the intentional classname of "h1", 
+//   which is unique to the PageHeading control.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+h1.h1
+{
+  font-size: 183.333%;  /* 22px equivalent @ 12px font size */
+  font-weight: normal;
+  line-height: 1.5em; /* 33px equivalent @ 22px font size */
+  margin: 0.409em 0.364em 0.136em 0.364em;  /* 9px 8px 3px 8px equivalent @ 22px font size */
+}

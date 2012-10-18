@@ -1,0 +1,13 @@
+﻿@import "fo\
+o.css";
+@import url("bar.css") foo, bar, bee, gee;
+@import url("foobar.css");
+@import url("b\
+arfoo.css");
+@import "foo.css";
+@import "\0000E9 dition.css";
+@import "\d800\dc00.css"; /* Surrogate Pairs */
+@import "\0928 \093f \0924 \093f \0928 .css"; /* Nitin.css in Hindi encoded*/
+@import "नितिन.css?foo=1&bar=2"; /* Nitin.css in Hindi */
+@import url("\0000E9 dition.css");
+@import url("*.css");

@@ -1,0 +1,71 @@
+﻿/*
+Default layout of all headlines
+*/
+
+.hl cite
+{
+  background-color: #e5eaf1;
+  color: #0b397f;
+  display: block;
+  font-size: 150%;
+  padding: 0;
+}
+
+.hl figure img
+{
+  float: left;
+}
+
+.hl figure figcaption
+{
+  color: #888;
+  font-size: 108.333%; /* 13px equivalent @ 12px font size*/
+  margin-left: 8.692em; /* 113px equivalent @ 13px font size */
+}
+
+.hl figure figcaption p
+{
+  margin: 0;
+  padding: 0;
+}
+
+.hl figure figcaption a
+{
+  background-color: transparent;
+  color: #333;
+  font-size: 123.077%;  /* 16px equivalent @ 13px font size */
+  line-height: 1.063em; /* 17px equivalent @ 16px font size */
+}
+
+.hl figure figcaption p
+{
+  background-color: transparent;
+  color: #999;
+  margin-top: 0;
+}
+
+/* Headlines are adjusted when within a carousel */
+.carousel .hl
+{
+  background-color: #ededed;
+}
+
+.carousel .hl figure img
+{
+  display: block;
+  float: none;
+}
+
+.carousel .hl figcaption
+{
+  background-color: #fff;
+  margin-left: 0;
+  padding-top: 0.167em; /* 2px equivalent @ 12px font size */
+}
+
+.carousel .hl figcaption,
+.carousel .hl figcaption a
+{
+  font-size: 100%;
+  line-height: 1em;
+}

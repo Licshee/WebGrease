@@ -1,0 +1,11 @@
+﻿#foo
+{
+    name1: "%cssIntl%";
+    name2: "%cssKey1%";
+    name3: "%cssKey2%";
+    background: url(hash(/app/channelsite_en-us/images/00/media1.gif));
+    background: url(/app/channelsite_en-us/images/00/media2.gif);
+    background: url('/app/channelsite_en-us/images/00/media3.gif');
+    background: url("/app/channelsite_en-us/images/00/media4.gif");
+    background: url(http://www.msn.com/msn.gif);
+}

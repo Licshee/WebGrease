@@ -1,0 +1,152 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="CurrentConditionsSkyCodes.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Current Conditions styling for skycode-specific aspects.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* Default background in case the skycode specified does not match a style */
+#currentconditions .bg
+{
+  background-color: #3095ce;
+  background-image: url('/statics/weather/i/6_fair.jpg');
+}
+
+#currentconditions .bg.neutral
+{
+  background-color: #fff;
+  background-image: none;
+}
+
+#currentconditions .skycode15.day,
+#currentconditions .skycode43.day
+{
+  background-color: #4d8db7;
+  background-image: url('/statics/weather/i/1_blowingsnow.jpg');
+}
+
+#currentconditions .skycode15.night,
+#currentconditions .skycode43.night
+{
+  background-color: #1a3458;
+  background-image: url('/statics/weather/i/2_blowingsnow_pm.jpg');
+}
+
+#currentconditions .skycode9.day,
+#currentconditions .skycode24.day,
+#currentconditions .skycode26.day,
+#currentconditions .skycode28,
+#currentconditions .skycode39
+{
+  background-color: #3c9ac5;
+  background-image: url('/statics/weather/i/3_cloudy.jpg');
+}
+
+#currentconditions .skycode9.night,
+#currentconditions .skycode24.night,
+#currentconditions .skycode26.night,
+#currentconditions .skycode27
+{
+  background-color: #0e2d52;
+  background-image: url('/statics/weather/i/4_cloudy_pm.jpg');
+}
+
+#currentconditions .skycode19,
+#currentconditions .skycode21
+{
+  background-color: #947f3e;
+  background-image: url('/statics/weather/i/5_dust.jpg');
+}
+
+#currentconditions .skycode23.day,
+#currentconditions .skycode25.day,
+#currentconditions .skycode30,
+#currentconditions .skycode32,
+#currentconditions .skycode34,
+#currentconditions .skycode36
+{
+  background-color: #3095ce;
+  background-image: url('/statics/weather/i/6_fair.jpg');
+}
+
+#currentconditions .skycode23.night,
+#currentconditions .skycode25.night,
+#currentconditions .skycode29,
+#currentconditions .skycode31,
+#currentconditions .skycode33
+{
+  background-color: #0c2441;
+  background-image: url('/statics/weather/i/7_fair_pm.jpg');
+}
+
+#currentconditions .skycode20.day,
+#currentconditions .skycode22.day
+{
+  background-color: #9ba1a7;
+  background-image: url('/statics/weather/i/8_fog.jpg');
+}
+
+#currentconditions .skycode20.night,
+#currentconditions .skycode22.night
+{
+  background-color: #1a293a;
+  background-image: url('/statics/weather/i/9_fog_pm.jpg');
+}
+
+#currentconditions .skycode11.day
+{
+  background-color: #4d6c7e;
+  background-image: url('/statics/weather/i/10_rain.jpg');
+}
+
+#currentconditions .skycode11.night,
+#currentconditions .skycode45.night
+{
+  background-color: #1d3351;
+  background-image: url('/statics/weather/i/11_rain_pm.jpg');
+}
+
+#currentconditions .skycode5.day,
+#currentconditions .skycode6.day,
+#currentconditions .skycode7.day,
+#currentconditions .skycode10.day,
+#currentconditions .skycode13.day,
+#currentconditions .skycode16.day,
+#currentconditions .skycode18.day,
+#currentconditions .skycode41
+{
+  background-color: #4398c8;    
+  background-image: url('/statics/weather/i/12_scatteredflurries.jpg');
+}
+
+#currentconditions .skycode5.night,
+#currentconditions .skycode6.night,
+#currentconditions .skycode7.night,
+#currentconditions .skycode10.night,
+#currentconditions .skycode13.night,
+#currentconditions .skycode16.night,
+#currentconditions .skycode18.night,
+#currentconditions .skycode46.night
+{
+  background-color: #283f5f;
+  background-image: url('/statics/weather/i/13_scatteredflurries_pm.jpg');
+}
+
+#currentconditions .skycode4.day,
+#currentconditions .skycode37,
+#currentconditions .skycode38
+{
+  background-color: #4d6472;
+  background-image: url('/statics/weather/i/14_thunderstorms.jpg');
+}
+
+#currentconditions .skycode4.night,
+#currentconditions .skycode47
+{
+  background-color: #1c314d;
+  background-image: url('/statics/weather/i/15_thunderstorms_pm.jpg');
+}

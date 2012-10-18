@@ -1,0 +1,73 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="search.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Search form and autosuggest styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#search, /* search form is intially hidden, shown via JavaScript */
+#search label, /* we don't display the label, it's only there for accessibility */
+#searchsubmit  /* we don't display the input[type=submit], it's only there for handling return */
+{
+  display: none;
+}
+
+#search div.fields
+{
+  border: solid 0.0834em #ccc; /* 0.0834em = 1px equivalent @ 12px font size - additional precision for Android */
+  margin: 0.75em 0.75em 0 0.75em; /* 0.75em = 8px equivalent @ 12px font size */
+  padding-bottom: 0.167em; /* 2px equivalent @ 12px font size */
+  position: relative; /* so that autosuggest positions against this element */
+}
+
+#search #q
+{
+  border: 0;
+  color: #333;
+  font-size: 116.667%; /* 14px equivalent @ 12px font size */
+  outline: none;
+  padding: 0.286em; /* 0.286em = 4px equivalent @ 14px font size */
+  -webkit-appearance: none;
+  width: 100%;
+}
+
+#search.active
+{
+  display: block; /* REVIEW: To do - animation */
+}
+
+/*
+The following are search autosuggest styles against this HTML structure:
+<div id="sw_as">
+  <div id="sa_as">
+    <div id="sa_as3" class="sw_b3">
+      <ul id="as_drw">
+        <li class="sa_sg sa_sgAS">
+          <div class="sa_tm">
+            ipod <strong>touch</strong>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+*/
+
+#sw_as ul 
+{
+  margin: 0 0.75em; /* 9px equivalent @ 12px font size, 9px = 8px standard gutter plus 1 px for border */
+}
+
+#sw_as ul li 
+{
+  background-color: #fff;
+  color: #09a1d9;
+  border: solid 0.071em #ccc; /* 1px equivalent @ 14px font size */
+  border-top: 0;
+  font-size: 116.667%; /* 14px equivalent */
+  padding: 0.5em 0.286em; /* 7px 4px equivalent @ 14px font size */
+}

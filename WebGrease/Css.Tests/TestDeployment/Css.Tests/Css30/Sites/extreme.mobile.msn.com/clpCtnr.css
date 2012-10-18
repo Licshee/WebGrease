@@ -1,0 +1,58 @@
+﻿.clpCtnr
+{
+    margin: 28px 0px 11px 0px;
+    padding: 0 0px 0 0px;
+    border-bottom: solid 3px #3399cc;
+    font-weight: bold;
+}
+.clpCtnrCaption
+{
+    padding-bottom: 3px;
+    line-height: 14px;
+}
+
+.clpCtnrCaption:focus
+{
+    outline: none;
+}
+
+.clpCtnrCaption:hover
+{
+    cursor: pointer;
+}
+
+.clpCtnrTgl
+{
+    float: right;
+    width: 60px;
+    position: relative;
+    top: 2px;
+}
+
+.clpCtnrTgl:focus
+{
+    outline: none;
+}
+
+.clpCtnrTgl:hover
+{
+    cursor: pointer;
+}
+
+.clpCtnrTgl div
+{
+    display: block;
+    width: 17px;
+    height: 14px;
+    float: right;
+}
+
+.clpCtnrShow
+{
+    background: url('/statics/common/i/hp.png') -148px -12px no-repeat;
+}
+
+.clpCtnrHide
+{
+    background: url('/statics/common/i/hp.png') -131px -12px no-repeat;
+}

@@ -1,0 +1,36 @@
+.sw_logo
+{
+    padding-left: 4px;
+    width: 120px;
+}
+.msnlogo
+{
+    height: 43px;
+    width: 115px;
+    background: url('/statics/common/i/hp_lg.png') -664px -0px no-repeat;
+}
+input.sw_qbox
+{
+    border: 0;
+    -webkit-appearance: none;
+    color: #333;
+    font-size: 106%;
+    vertical-align: middle;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    position: relative;
+}
+input.sw_qbtn
+{
+    background-color: #EB7C00;
+    background-image: url(/statics/common/i/hp_lg.png);
+    background-position: 0px 0px;
+    background-repeat: no-repeat;
+    border: none;
+    cursor: pointer;
+    height: 42px;
+    width: 40px;
+    margin: 1px;
+    vertical-align: middle;
+}

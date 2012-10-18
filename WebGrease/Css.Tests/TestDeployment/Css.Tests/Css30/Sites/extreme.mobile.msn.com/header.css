@@ -1,0 +1,71 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="header.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for header elements.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+.header
+{
+  display: block;
+  margin-top: 0.5em; /* 6px equivalent @ 12px font size */
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  width: 100%;
+}
+
+.header a.channel
+{
+  color: #083980;
+  display: block;
+  float: left;
+  font-size: 141.667%; /* 17px equivalent @ 12px font size */
+  padding: 0.706em 0 0 0.471em; /* 12px 0 0 8px equivalent @ 17px font size*/
+  vertical-align: middle;
+}
+
+.header a.msn
+{
+  background: transparent url('/statics/common/i/blue/logo_msn.png') no-repeat 0 0;
+  float: right;
+  height: 2.833em; /* 34px equivalent @ 12px font size */
+  margin: 0.167em 0.75em 0 0; /* 3px 9px 0 0 equivalent @ 12px font size */
+  width: 5.25em; /* 63px  equivalent @ 12px font size */
+}
+
+.header a.partner
+{
+  background: transparent url('/statics/common/i/blue/logo_fox.png') no-repeat 0 0;
+  display: block;
+  float: left;
+  height: 2.833em; /* 34px equivalent @ 12px font size */
+  margin: 0 0 0 0.75em; /* 0 0 0 9px equivalent @ 12px font size */
+  width: 4.667em; /* 56px equivalent @ 12px font size */
+}
+
+.header a.search
+{
+  background: transparent url('/statics/common/i/blue/search_hourglass.png') no-repeat center center;
+  border: solid 0.0834em #ccc; /* 1px equivalent @ 12px font size - additional precision for Android */
+  display: block;
+  float: right;
+  height: 2.333em; /* 28px equivalent @ 12px font size */
+  margin: 0 0.75em; /* 0 8px equivalent @ 12px font size */
+  width: 2.333em; /* 28px equivalent @ 12px font size */
+}
+
+.header a.msn span,
+.header a.partner span,
+.header a.search span
+{
+  display: none;
+  opacity: 0;
+}
+
+/*Re-style link highlights for webkit*/
+.header a
+{
+ -webkit-tap-highlight-color: rgba(0,0,0,0.25);
+}

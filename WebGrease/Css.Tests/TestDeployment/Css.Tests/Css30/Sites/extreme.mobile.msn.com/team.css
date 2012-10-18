@@ -1,0 +1,15 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="team.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Team page overrides.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#gamescore .fav
+{
+    display: none;
+}

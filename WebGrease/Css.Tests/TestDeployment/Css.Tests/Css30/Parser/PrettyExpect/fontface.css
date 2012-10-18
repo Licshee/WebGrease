@@ -1,0 +1,59 @@
+﻿@charset 'iso-8859-1';
+@import url("bar.css") foo,bar,bee,gee;
+@import url("foo.css");
+@font-face
+{
+  font-family:Delicious;
+  src:url('Delicious-Roman.otf')
+}
+@media print
+{
+  body
+  {
+    font-size:10pt
+  }
+}
+@-webkit-keyframes 'RtC'
+{
+  from
+  {
+    left:500px
+  }
+  to
+  {
+    left:0px
+  }
+}
+@font-face
+{
+  font-family:MyFont;
+  src:url(http://mysite/fonts/MyFont.ttf) format("embedded-opentype")
+}
+p
+{
+  font-family:MyFont,serif
+}
+@font-face
+{
+  font-family:MyFont;
+  src:url(http://mysite/fonts/MyFont.ttf);
+  unicode-range:U+0-7F
+}
+@font-face
+{
+  font-family:STIXGeneral;
+  src:local(STIXGeneral),url(/stixfonts/STIXGeneral.otf);
+  unicode-range:U+000-49F,U+2000-27FF,U+2900-2BFF,u+1d400-1d7ff
+}
+@font-face
+{
+  font-family:BBCBengali;
+  src:url(fonts/BBCBengali.ttf) format("opentype");
+  unicode-range:U+00-FF,U+980-9FF
+}
+@font-face
+{
+  font-family:'Ampersand';
+  src:local('HoeflerText-BlackItalic'),local('AGaramondPro-BoldItalic'),local('MinionPro-BoldIt'),local('AdobeHebrew-BoldItalic');
+  unicode-range:U+26
+}

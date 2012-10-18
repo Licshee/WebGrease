@@ -1,0 +1,42 @@
+﻿/* Headline List Layout 3
+Slideshow Gallery layout floated 
+*/
+
+ul.hllist3
+{
+  margin: .5em -0.0834em 0 -0.0834em; /* 6px -1px 0 -1px @ 12px font size */
+}
+
+.hllist3 li
+{
+  display: block;
+  float: left;
+  margin: 0 0.0834em; /* 0 1px @ 12px font size */
+}
+
+.hllist3 li .hl figure
+{
+  background: transparent url('/statics/common/i/blue/gallery_stack.png') no-repeat 0 0;
+  width: 8.333em; /* 100px @ 12px font size - width of gallery_stack.png */
+}
+
+.hllist3 li .hl figure figcaption
+{
+  margin: 0.769em 0 0.615em 0; /* 10px 0 8px 0 @ 13px font size - spec calls for 4px 0 but does not account for background image positioning */
+  min-height: 3.692em; /* 48px at 13px font size - height of the list items (plus figcaption margin) with 4 lines of text at font: Arial 11px/12px.  */
+}
+
+.hllist3 li .hl figure figcaption a
+{
+  display: block;
+  font-size: 84.615%; /* 11px @ 13px font size */
+  line-height: 1.091em; /* 12px @ 11px font size */
+}
+
+.hllist3 li .hl figure img
+{
+  display: block;
+  float: none; /* because headlines default to floated image */
+  margin: 0;
+  padding: 0.0834em 0 0 0.0834em; /* 1px @ 12px font size */
+}

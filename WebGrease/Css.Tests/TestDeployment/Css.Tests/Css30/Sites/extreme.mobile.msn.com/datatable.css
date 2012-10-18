@@ -1,0 +1,68 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="datatable.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Default DataTable control styles. First item is left aligned. All right columns are right aligned.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+table
+{
+  border-collapse: collapse;
+  width: 100%;  
+}
+
+table thead th
+{
+  border-bottom: 0.091em solid #ccc; /* 1px equivalent @ 11px font size */
+  font-size: 91.667%; /* 11px font size @ 12px base */
+  padding: 1.455em 0.909em 0.273em 0.909em; /* 16px 10px 3px 10px equivalent @ 11px font size */
+  text-align: right;
+}
+
+table tbody th, 
+table tbody td
+{
+  padding: 0.833em; /* 10px equivalent @ 12px font size */
+  text-align: right;
+}
+
+table tbody td
+{
+  border-top: 0.0834em solid #ebebeb;
+}
+
+table tbody tr:first-child td
+{
+  border-top: 0;
+}
+ 
+table thead th:first-child,
+table tbody td:first-child
+{
+  padding-left: 0;
+  text-align: left;
+  width: 100%;  
+}
+
+table thead th:last-child,
+table tbody td:last-child
+{
+  padding-right: 0;
+}
+
+table tfoot td
+{
+  border-top: 0.0834em solid #ebebeb;
+  padding: 0.833em; /* 10px equivalent @ 12px font size */
+  text-align: center;
+}
+
+table tfoot time
+{
+  font-size: 91.667%;
+  line-height: 1.75em;
+}

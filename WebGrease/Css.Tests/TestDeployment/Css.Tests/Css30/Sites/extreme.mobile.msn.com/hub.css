@@ -1,0 +1,186 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Hub.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for the Hub page.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+body #page /*override overflow-x: hidden for #page element only on the hub page.*/
+{
+  overflow-x: auto;
+}
+
+#hub
+{
+  overflow-x: hidden;
+}
+
+#hub ul 
+{
+  height: 394px;
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 1182px;
+}
+
+#hub ul li
+{
+  float: left;
+  list-style-type: none;
+  margin: 0 1px 0 0;
+  padding: 0;
+  width: 130px;
+}
+
+#hub ul li.wide
+{
+  width: 328px;
+}
+
+#hub ul li a 
+{
+  color: #fff;
+  color: rgb(255,255,255);
+  clear: left;
+  display: block;
+  margin-bottom: 1px;
+}
+
+#hub ul li .small
+{
+  clear: none;
+  float: left;
+  z-index: 2; /* Place the smaller tiles on top of the larger figure */
+}
+
+#hub ul li .small + .small
+{
+  margin-left: 2px;
+}
+
+#hub ul li a img
+{
+  display: block;
+}
+
+#hub ul li figure
+{
+  margin: 0 0 -2px 0;
+  padding: 0;
+  position: relative;
+}
+
+#hub ul li figcaption
+{
+  background-color: #333;
+  background-color: rgba(0,0,0,0.75);
+  bottom: 3px;
+  color: #fff;
+  color: rgb(255,255,255);
+  left: 0;
+  margin: 0;
+  max-height: 2.6em;
+  overflow: hidden;
+  padding: 5px 0;
+  position: absolute;
+  width: 100%;
+}
+
+#hub ul li figcaption a,
+#hub ul li figcaption div,
+#hub ul li figcaption p
+{
+  margin: 0 3px;
+  padding: 0;
+}
+
+#hub ul li figcaption a
+{
+  font-weight: bold;
+  margin-top: 3px;
+}
+
+#hub ul li img 
+{
+  height: 130px; /* REVIEW:  Remove once image service and/or editorial provides images of correct dimensions, as it will not be necessary */
+}
+
+#hub ul li.wide img
+{
+  height: 195px; /* REVIEW:  Remove once image service and/or editorial provides images of correct dimensions, as it will not be necessary */
+}
+
+#hub ul li a.small img
+{
+  height: 64px;  /* REVIEW:  Remove once image service and/or editorial provides images of correct dimensions, as it will not be necessary */
+}
+
+#hub ul li .small + figure .cprt
+{
+  top: 65px; /* 64px image height + 1px margin */
+}
+
+#hub ul li .cprt.show
+{
+  width: 100px; /* 130px image width - 15px padding on each side */
+}
+
+#hub ul li.wide .cprt.show
+{
+  width: 298px; /* 328px image width - 15px padding on each side */
+}
+
+/* Video Overlay Css
+/* Small image video overlay */
+#hub .small .video
+{
+  height: 22px;         /* height of video icon */
+  position: absolute;
+  right: 23px;          /* width is 64px, half that is 32, minus half of icon(11). ie 32-11 = 23px */
+  top: 23px;            /* height is 64px, half that is 32, minus half of icon(11). ie 32-11 = 23px */
+  width: 22px;          /* width of video icon */
+  z-index: 3;  
+}
+
+#hub a.video
+{
+  background-position: 100% 100%;
+  padding-right: 22px; /* width of the video icon */  
+}
+
+/* Department Links */
+#hub a.dept 
+{
+  background-color: #a60f55;
+  background-color: rgb(166,15,85);
+  color: #fff;
+  color: rgb(255,255,255);
+  font-size: 141.667%;
+  height: 64px;
+  position: relative;
+}
+
+#hub a.dept span
+{
+  display: block;
+  position: absolute;
+  right: 15px;
+  top: 22px;
+}
+
+.no-touch #hub
+{
+  overflow-x: scroll; /* the browser handles scrolling because there are no touch events */
+  position: relative; /* ensures that the hub scrolls as one solid block */
+}
+
+.no-overflowscroll body #page,
+.no-overflowscroll body #hub
+{
+  overflow-x: visible; /* the browser does not support scroll value of overflow (Android 2.3 and below), so the whole page scrolls */
+}

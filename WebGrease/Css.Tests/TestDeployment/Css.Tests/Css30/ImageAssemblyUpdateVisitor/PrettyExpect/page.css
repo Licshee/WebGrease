@@ -1,0 +1,18 @@
+@page:left
+{
+  background-repeat:no-repeat;
+  background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
+  background-position:10px 200px
+}
+@page:right
+{
+  background-repeat:no-repeat;
+  background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
+  background-position:-10px -200px
+}
+#test3
+{
+  background-repeat:no-repeat;
+  background-position:0%;
+  background-image:url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif)
+}

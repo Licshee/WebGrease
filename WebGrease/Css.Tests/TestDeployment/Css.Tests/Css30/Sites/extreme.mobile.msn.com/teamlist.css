@@ -1,0 +1,80 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="teamlist.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   TeamList styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.teamlist h4
+{
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 0.333em; /* 4px equivalent @ 12px font size */
+}
+
+.teamlist ul
+{
+  border-bottom: solid 0.0834em #ccc;
+  border-top: solid 0.0834em #ccc;
+  margin-bottom: 2em; /* 24px equivalent @ 12px font size */
+}
+
+.teamlist ul li
+{
+  border-top: solid 0.0834em #ebebeb;
+  display: block;
+}
+
+.teamlist ul li.first
+{
+  border-top: none;
+}
+
+.teamlist ul li a.logo
+{
+  background-position: 0 center !important;
+  display: inline-block;
+  font-size: 116.667%; /* 14px equivalent at 12px font size */
+  line-height: 2.857em; /* 40px equivalent at 14px font size */
+  padding-left: 3.429em; /* 48px equivalent at 14px font size */
+}
+
+.teamlist ul li a span
+{
+  display: none;
+}
+
+.teamlist ul li .fav,
+#myteamslink a
+{
+  background: transparent url('/statics/common/i/blue/favorites_on_button.png') no-repeat 100% 50%;
+  display: block;
+  float: right;
+}
+
+.teamlist ul li .fav
+{
+  min-height: 3.333em; /* 40px equivalent at 12px font size */
+  min-width: 3.333em; /* 40px equivalent at 12px font size */
+}
+
+/*Inherits from .teamlist ul li .fav*/
+.teamlist ul li .add
+{
+  background-image: url('/statics/common/i/blue/favorites_off_button.png');
+}
+
+.teamlist ul li .pending
+{
+  background-image: url('/statics/common/i/blue/favorites_pending_button.png');
+}
+
+#myteamslink a
+{
+  background-position: 0 50%;
+  padding: 0.5em 0 0.5em 2.083em; /* 6px 0 6px 25px equivalent at 12px font size */
+}

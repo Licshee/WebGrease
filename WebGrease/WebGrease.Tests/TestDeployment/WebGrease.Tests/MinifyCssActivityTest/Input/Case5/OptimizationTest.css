@@ -1,0 +1,32 @@
+﻿div
+{
+    color: white; /* This should win. */
+    background: red;
+}
+
+div
+{
+    background: blue;
+    background: white; /* This should win. */
+}
+
+.redundantrulesc
+{
+  height:4em;
+  height:4em /* This should win. */
+}
+
+#foo
+{
+    /* Should be removed. NOOP */
+}
+
+#foo
+{
+    /* Should be removed. NOOP */
+}
+
+.bar
+{
+    /* Should be removed. NOOP */
+}

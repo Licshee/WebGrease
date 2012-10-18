@@ -1,0 +1,35 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="branding.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Logos and branding for Lifestyle.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.sw_logo
+{
+  padding-left: 8px;
+}
+.sw_logo a
+{
+  display: inline-block;  
+}
+.channel
+{
+  color: #a60f55;
+  color: rgb(166,15,85);
+  font-size: 133.333%;
+  margin-top: 10px;
+  padding: 2px 0;
+}
+
+.msnlogo
+{
+  background: transparent url('/statics/lifestyle/i/hp.png') no-repeat -451px 2px;
+  float: left;
+  height: 32px;
+  width: 70px;
+}

@@ -1,0 +1,125 @@
+﻿/* css style - sports ticker */
+.cstMainDiv
+{
+	height: 47px;	
+	border: 3px;
+	border-color: #869CB2;	
+	border-style:solid;
+	padding: 0px 0px 0px 0px;
+	font-family: Tahoma, Verdana;
+}
+.cstGames
+{
+	background-color: #FFFFFF;	
+}
+.cstTable
+{
+	width: 100%;
+	height: 44px;
+	margin-top:3px;	
+}
+.cstTable table
+{
+	width: 100%;
+}
+.cstGTImg
+{
+	background: url(/statics/sports/i/st/cstMiddle.png) 0px 0px repeat-x;
+}
+.pctGTImg
+{	
+	background: url(/statics/sports/i/st/pctMiddle.png) 0px 0px repeat-x;
+}
+.cstGameTile
+{	
+	width: 100%;
+	height: 44px;
+	cursor: pointer;
+	background-color: #FFFFFF;	
+}
+.cstWinnerTeam
+{
+	text-align: right;
+	width: 5%;	
+	height: 38px;
+}
+.cstTeamName
+{
+	color: #60758B;
+	text-align: left;
+	font-size: 70%;
+	width: 17%;	
+	height: 38px;		
+}
+.cstTeamScore
+{
+	color: #60758B;
+	text-align: center;
+	font-size: 70%;
+	width: 8%;
+	height: 38px;	
+}
+.cstGameStatus
+{
+	color: #60758B;
+	text-align: center;
+	font-size: 70%;
+	width: 32%;
+	height: 38px;	
+}
+.cstPgStatus
+{
+	font-size: 65%;
+}
+.cstSeparator
+{
+	color: #60758B;
+	width: 1%;
+	height: 38px;	
+}
+.cstLeftScroll
+{
+	background: url(/statics/sports/i/st/larrow.png) 0px 0px no-repeat;
+	background-color: #FFFFFF;
+	width: 10%;
+	cursor: pointer;
+	height: 30px;
+	padding-top: 1px;	
+}
+.cstRightScroll
+{
+	background: url(/statics/sports/i/st/rarrow.png) 0px 0px no-repeat;	
+	background-color: #FFFFFF;
+	width: 10%;
+	cursor: pointer;
+	height: 30px;
+	padding-top: 1px;		
+}
+.cstRtContainer
+{
+	background: url(/statics/sports/i/st/rtCt.png) 0px 0px no-repeat;
+	width: 3%;
+	height: 38px;
+	padding-top: 1px;
+}
+.cstLtContainer
+{
+	background: url(/statics/sports/i/st/ltCt.png) 0px 0px no-repeat;
+	width: 2%;
+	height: 38px;
+	padding-top: 1px;
+}
+.pctRtCt
+{
+	background: url(/statics/sports/i/st/rtPct.png) 0px 0px no-repeat;
+	width: 3%;
+	height: 38px;
+	padding-top: 1px;
+}
+.pctLtCt
+{
+	background: url(/statics/sports/i/st/ltPct.png) 0px 0px no-repeat;
+	width: 2%;
+	height: 38px;
+	padding-top: 1px;
+}

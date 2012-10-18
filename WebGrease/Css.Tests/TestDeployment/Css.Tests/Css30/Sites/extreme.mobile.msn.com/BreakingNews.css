@@ -1,0 +1,17 @@
+﻿.BreakingNews
+{
+    background-color: #cd2027;
+    color: #ffffff;
+    padding: 9px 9px 7px 9px;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+.BreakingNews p
+{
+    text-align: center;
+}
+.BreakingNews span
+{
+    font-weight: bold;
+    color: #ffffff;
+}

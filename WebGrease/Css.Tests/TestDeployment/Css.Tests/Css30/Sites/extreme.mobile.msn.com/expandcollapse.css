@@ -1,0 +1,17 @@
+.co .h2 .collapsed,
+.co .h2 .expanded
+{
+ background: transparent url('/statics/common/i/blue/container_collapse.png') no-repeat right 1.5em;
+ bottom: 0;
+ height: 2.5em; /* 30px equivalent @ 12px font size */
+ margin-right: 0;
+ padding: 0;
+ position: absolute;
+ right: 0;
+ width: 2.5em; /* 30px equivalent @ 12px font size */
+}
+
+.co .h2 .collapsed
+{
+ background-image: url('/statics/common/i/blue/container_expand.png');
+}

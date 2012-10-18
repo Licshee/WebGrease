@@ -1,0 +1,11 @@
+﻿div:before
+{
+    content: counters(test, ".", lower-roman);
+    counter-increment: test;
+    counter-reset: test;
+}
+
+body
+{
+  color: rgb(      255,0, 0)   ;
+}

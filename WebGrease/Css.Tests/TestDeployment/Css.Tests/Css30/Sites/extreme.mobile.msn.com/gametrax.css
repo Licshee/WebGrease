@@ -1,0 +1,202 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="gametrax.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles for Gametrax pages
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* Gametrax field styles */
+.gtfield
+{
+  background: #324626 url('/statics/sports/i/mlb/gametrax_field.png') no-repeat 0 0;
+  color: #fff;
+  font-size: 91.667%; /* 11px */
+  line-height: 1.364; /* 15px equivalent @ 11px font size */
+  margin: 0 auto; /* centers element */
+  min-height: 26.364em; /* 290px equivalent @ 11px font size. Height of field image */
+  position: relative;
+  width: 27.636em; /* 304px equivalent @ 11px font size. Width of field image */
+}
+
+.gtfield > *
+{
+  margin: 0;
+  padding: 0 0.727em; /* 0 8px equivalent @ 11px font size  */
+}
+
+.gtfield cite,
+.gtfield .field
+{
+  font-weight: bold;
+  line-height: 2.182em; /* 24px equivalent @ 11px font size */
+  padding-top: 0.364em; /* 4px equivalent @ 11px font size */  
+}
+
+/* Current Gametrax styles */
+.gtfield ul
+{
+  background-color: #000;
+  background-color: rgba(0,0,0,0.45);
+  display: block;
+  float: left;
+  padding: 0;
+  width: 100%;
+}
+
+.gtfield ul li
+{
+  display: block;
+  float: left;
+  line-height: 2.909em; /* 32px equivalent @ 11px font size */  
+  margin: 0;
+  padding: 0;
+  width: 33%;
+}
+
+.gtfield ul li.strikes
+{
+  text-align: center;
+  width: 34%;
+}
+
+.gtfield ul .balls
+{
+  margin-left: 0.571em;
+}
+
+.gtfield ul .outs
+{
+  float: right;
+  margin-right: 0.571em;
+  text-align: right;
+  width: auto;
+}
+
+.gtfield ul li span
+{
+  color: transparent;
+  display: inline-block;
+  line-height: 2.727em; /* 30px equivalent @ 11px font size */  
+  margin-left: 0.545em; /* 6px equivalent @ 11px font size */ 
+}
+
+.gtfield .balls span
+{
+  background: transparent url('/statics/sports/i/mlb/gametrax_balls.png') no-repeat -4.727em 50%; /* -52px equivalent @ 11px font size */ 
+  width: 4.545em; /* 50px equivalent @ 11px font size */ 
+}
+
+.gtfield .outs span
+{
+  background: transparent url('/statics/sports/i/mlb/gametrax_outs.png') no-repeat -3.545em 50%; /* 39px equivalent @ 11px font size */ 
+  width: 3.455em; /* 38px equivalent @ 11px font size */ 
+}
+
+.gtfield .strikes span
+{
+  background: transparent url('/statics/sports/i/mlb/gametrax_strikes.png') no-repeat -3.545em 50%; /* 39px equivalent @ 11px font size */ 
+  width: 3.455em; /* 38px equivalent @ 11px font size */ 
+}
+
+.gtfield .balls.count4 span,
+.gtfield .outs.count3 span,
+.gtfield .strikes.count3 span
+{
+  background-position: 0 50%;
+}
+
+.gtfield .balls.count3 span,
+.gtfield .outs.count2 span,
+.gtfield .strikes.count2 span
+{
+  background-position: -1.182em 50%; /* 13px equivalent @ 11px font size */ 
+}
+
+.gtfield .balls.count2 span,
+.gtfield .outs.count1 span,
+.gtfield .strikes.count1 span
+{
+  background-position: -2.364em 50%; /* 26px equivalent @ 11px font size */
+}
+
+.gtfield .balls.count1 span
+{
+  background-position: -3.545em 50%; /* 39px equivalent @ 11px font size */
+}
+
+.gtfield dd
+{
+  margin: 0;
+}
+
+.gtfield .on
+{
+  background: transparent url('/statics/sports/i/mlb/gametrax_manonbase.png') no-repeat 0 0;
+  height: 3.091em; /* 34px equivalent @ 11px font size */
+  left: 25em;  /* 275px equivalent @ 11px font size */
+  position: absolute;
+  top: 12.727em; /* 140px equivalent @ 11px font size */
+  width: 1.273em; /* 14px equivalent @ 11px font size */
+}
+
+.gtfield .second
+{
+  left: 19.636em;  /* 216px equivalent @ 11px font size */
+  top: 7.091em; /* 78px equivalent @ 11px font size */
+}
+
+.gtfield .third
+{
+  left: 14.091em; /* 155px equivalent @ 11px font size */
+  top: 12.727em; /* 140px equivalent @ 11px font size */
+}
+
+.gtfield h4
+{
+  color: #a1d1a6;
+  padding-top: 0.455em; /* 5px equivalent @ 11px font size */
+}
+
+.gtfield ol,
+.gtfield dd
+{
+  margin-bottom: 0.636em; /* 7px equivalent @ 11px font size */
+}
+
+.gtfield dt
+{
+  color: #a1d1a6;
+  font-weight: bold;
+}
+
+.gtfield ol li
+{
+  list-style-type: decimal;
+  margin-left: 1.455em; /* 16px equivalent @ 11px font size */
+}
+
+.gtfield cite
+{
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+/* Future Gametrax styles */
+.gtfield .starttime
+{
+  background-color: #000;
+  background-color: rgba(0,0,0,.45);
+  font-size: 127.273%; /* 14px equivalent @ 11px font size */
+  line-height: 2.286em; /* 32px equivalent @ 14px font size */ 
+  padding: 0 0.571em; /* 0 8px equivalent @ 14px font size */ 
+}
+
+.gtfield .starttime time
+{
+  display: inline;
+}

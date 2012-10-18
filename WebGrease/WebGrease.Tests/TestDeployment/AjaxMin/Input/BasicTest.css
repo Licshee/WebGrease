@@ -1,0 +1,13 @@
+﻿/*
+    this is an unimportant comment
+*/
+
+body
+{
+    color: Fuchsia; /* always changes to #f0f */
+}
+
+a:active
+{
+	/*! this is an important comment */ color: blue;
+}

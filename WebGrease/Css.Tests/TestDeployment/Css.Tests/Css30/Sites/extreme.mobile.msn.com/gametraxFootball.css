@@ -1,0 +1,133 @@
+﻿#fieldWrapper
+{
+	background-color: #384F18;
+}
+
+#fieldFootball
+{
+	text-align: left;
+	background: #273910 url('/statics/sports/i/field.png') left 33px no-repeat;
+	height: 164px;
+	width: 314px;
+	position: relative;
+	margin: 0 2px;
+	display: inline-block;
+}
+
+#fieldFootballMask
+{
+	padding: 0px 42px 0 41px;
+	height: 82px;
+	border-top: 1px solid #FFF;
+	border-bottom: 1px solid #FFF;
+	margin-bottom: 3px;
+}
+
+#currentPlayStatus
+{
+	padding: 4px 0;
+	color: #FFF;
+	font-size: 80%;
+	height: 25px;
+}
+
+#currentPlayStatus .timeouts
+{
+	font-size: 70%;
+}
+
+#currentStateDisplay
+{
+	height: 100%;
+	display: block;
+	position: relative;
+}
+
+.awayState
+{
+	border-left: 1px solid #0000FF;
+	border-right: 1px solid #FFFF00;
+}
+
+.homeState
+{
+	border-left: 1px solid #FFFF00;
+	border-right: 1px solid #0000FF;
+}
+
+.homeState .ballIndicator
+{
+	position: absolute;
+	top: 33px;
+	float: right;
+	right: -8px;
+}
+
+.awayState .ballIndicator
+{
+	position: relative;
+	top: 33px;
+	left: -10px;
+}
+
+#lastPlay
+{
+	padding: 0 6px;
+	color: #FFF;
+	font-size: 70%;
+}
+
+#lastPlay strong
+{
+	color: #E3E502;
+}
+
+#preGameInfo
+{
+	background-color: #FFF;
+	border: 1px solid #000;
+	color: #000;
+	font-size: 80%;
+	padding: 5px;
+	margin: 5px 20px 0px 20px;
+	font-weight: bold;
+	text-align: center;
+}
+
+.weaInfo img
+{
+	position: relative;
+	top: 3px;
+}
+
+.logoAwayOnField, .logoHomeOnField
+{
+	float: left;
+	top: 63px;
+	position: absolute;
+}
+
+.logoAwayOnField
+{
+	left: 8px;
+}
+
+.logoHomeOnField
+{
+	right: 8px;
+}
+
+.fantasyFootball
+{
+    margin-top: 8px;
+    margin-bottom: 4px;
+    line-height: 40px;
+    color: #326db6;
+    font-weight: bold;
+    text-align: right;
+}
+
+.matchup
+{
+	background-color: #496821;
+}

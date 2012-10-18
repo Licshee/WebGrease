@@ -1,0 +1,51 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="tickermenu.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styles for Ticker menu.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* Override the display 'table-row' from ".carousel ul". */
+.carousel .menu
+{
+  display: block;
+}
+
+/* Override the styles inherited from ".carousel ul li". */
+.carousel .menu li
+{
+  display: inline;
+  padding: 0;
+}
+
+.menu li a,
+.menu li span
+{
+  display: inline-block;
+}
+
+.menu li
+{
+  font-size: 91.667%; /* 11px equivalent @ 12px font size */
+}
+
+.menu li a,
+.menu li span.selected
+{
+  padding: 1.091em; /* 12px equivalent @ 11px font size */
+}
+
+.menu li span
+{
+  padding: 1.091em 0; /* 12px 0 equivalent @ 11px font size */
+}
+
+.menu li span.selected
+{
+  color: #333;
+  font-weight: bold;
+}

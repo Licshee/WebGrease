@@ -1,0 +1,33 @@
+﻿.foo
+{
+    border: 0;
+    border: 1px;
+    border: 2%;
+    margin: 3cm;
+    margin: 4mm;
+    height: 5in;
+    border: 6pt;
+    border: 7pc;
+    margin: 8em;
+    border: 9ex;
+    border: 10deg;
+    padding: 11rad;
+    border: 12grad;
+    border: 13s;
+    border: 14ms;
+    border: 15hz;
+    border: 16khz;
+    margin: +17px;
+    border: -18px;
+    border: 1.9%;
+    border: .20%;
+    border: 0 !important;
+    width: 1vw;
+    height: 2vh;
+    border: 3vmin;
+    width: 4rem;
+    width: 5ch;
+    azimuth: 0.6turn;
+    voice-volume: -6dB;
+    voice-pitch: -3.5st;
+}

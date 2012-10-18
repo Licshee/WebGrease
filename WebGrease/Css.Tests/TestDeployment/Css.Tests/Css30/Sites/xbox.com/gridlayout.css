@@ -1,0 +1,64 @@
+﻿/* Container of 24 columns with 5 pixel spacing for 955 pixel total width */
+.container
+{
+	width: 955px;
+	margin: 0 auto;
+}
+
+.grid-1, .grid-2, .grid-3, .grid-4, .grid-5, .grid-6, .grid-7, .grid-8, .grid-9, .grid-10, .grid-11, .grid-12,
+.grid-13, .grid-14, .grid-15, .grid-16, .grid-17, .grid-18, .grid-19, .grid-20, .grid-21, .grid-22, .grid-23, .grid-24 
+{
+	display: inline;
+	float: left;
+	margin-right: 5px;
+}
+
+.lastgridchild
+{
+	margin-right: 0;
+}
+
+/* Use these classes to set the width of a column. */
+.grid-1 { width: 35px; }
+.grid-2 { width: 75px; }
+.grid-3 { width: 115px; }
+.grid-4 { width: 155px; }
+.grid-5 { width: 195px; }
+.grid-6 { width: 235px; }
+.grid-7 { width: 275px; }
+.grid-8 { width: 315px; }
+.grid-9 { width: 355px; }
+.grid-10 { width: 395px; }
+.grid-11 { width: 435px; }
+.grid-12 { width: 475px; }
+.grid-13 { width: 515px; }
+.grid-14 { width: 555px; }
+.grid-15 { width: 595px; }
+.grid-16 { width: 635px; }
+.grid-17 { width: 675px; }
+.grid-18 { width: 715px; }
+.grid-19 { width: 755px; }
+.grid-20 { width: 795px; }
+.grid-21 { width: 835px; }
+.grid-22 { width: 875px; }
+.grid-23 { width: 915px; }
+.grid-24 { width: 955px; margin: 0; }
+
+/* Clearing floats without extra markup
+   Based on How To Clear Floats Without Structural Markup by PiE
+   [http://www.positioniseverything.net/easyclearing.html] */
+.clearfix:after, .container:after {
+  content: "\0020"; 
+  display: block; 
+  height: 0; 
+  clear: both; 
+  visibility: hidden;
+  overflow:hidden; 
+}
+.clearfix, .container { display: block; }
+
+/* Regular clearing
+   apply to column that should drop below previous ones. */
+.clear { clear:both; }
+.left { float: left; }
+.right { float: right; }

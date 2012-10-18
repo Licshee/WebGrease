@@ -1,0 +1,30 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="hitlist.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styles for the Hitlist page
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* 6px padding for image, assuming 56px image*/
+.page-hitlist .hl figure figcaption
+{
+  margin-left: 4.923em; /* 64px @ 13px base font size*/
+}
+
+/* Adding padding above and below the movie news list items */
+.page-hitlist ul.hllist li
+{
+    padding: 0.5em 0; /* 6px 0 @ 12px base font size */
+}
+
+/* Bump up figcaption font size */
+.page-hitlist ul.hllist li figcaption a
+{
+    font-size: 123.077%; /* 16px @ 13px base font size */
+    line-height: 1em; /* 16px @ 16px base font size */
+    padding: 0.25em 0; /* 6px 0 @ 16px base font size */    
+}

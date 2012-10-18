@@ -1,0 +1,33 @@
+@media only screen and (color) and (device-aspect-ratio:16/9)
+{
+  #test1
+  {
+    background-repeat:no-repeat;
+    background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
+    background-position:10px 200px
+  }
+  #test2
+  {
+    background-repeat:no-repeat;
+    background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
+    background-position:-10px -200px
+  }
+  #test3
+  {
+    background-repeat:no-repeat;
+    background-position:0%;
+    background-image:url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif)
+  }
+}
+#test4
+{
+  background-repeat:no-repeat;
+  background-position:-10px;
+  background-image:url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif)
+}
+#test5
+{
+  background-repeat:no-repeat;
+  background-position:10px;
+  background-image:url(../../i/03/69A3A49A93A636AB2E9235F2237F36.gif)
+}

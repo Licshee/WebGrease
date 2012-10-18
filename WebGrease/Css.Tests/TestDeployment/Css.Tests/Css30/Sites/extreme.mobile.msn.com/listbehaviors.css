@@ -1,0 +1,218 @@
+﻿.carousel
+{
+  overflow: visible;
+}
+
+.js .carousel,
+.js .slideshow
+{
+  overflow: hidden;
+}
+
+.carousel,
+.slideshow
+{
+  position: relative;
+  width: 100%;
+  z-index: 20;
+}
+
+.slideshow ul
+{
+  display: block;
+  width: 100%;
+}
+
+.carousel ul
+{
+  display: table-row; /* prevents tiles from wrapping */
+}
+
+.carousel ul li
+{
+  display: table-cell; /* prevents tiles from wrapping */
+  padding: 0 0.333em 0.333em 0; /* 4px equivalent @ 12px font size */
+  vertical-align: top;
+}
+
+.coa2 .br.carousel,
+.coa2 .br.slideshow 
+{
+  margin: 0;
+}
+
+.coa2 .br.carousel p,
+.coa2 .br.slideshow p
+{
+  margin-left: 0.667em; /*8px @ 12px font size - Resets left margin when carousel or slideshow treatments don't work (while inheriting the top and bottom margins).*/
+  margin-right: 0.667em; 
+}
+
+
+.coa2 .br.carousel + div.hr,
+#tickerbranch div.hr
+{
+  border-bottom: solid 0.0834em #ebebeb; /* 1px @ 12px font size */
+  display: block;
+  margin: 0 0.667em; /* 0 0.667em = 0 8px @ 12px font size */
+}
+
+.slideshow ul li.slide
+{
+  display: none;
+  margin: 0 8px;   /* needs to be in px due to bug 1095918 : Dragging the inforpane shows image on the below the infopane */
+  /* the next line is needed to keep the slide centered */
+  width: 25.333em; /* 304px equivalent @ 12px font size, should be calculated by JavaScript, set to width of LI's slide */
+}
+
+.no-touch .slideshow ul li.slide,
+.drag-override .slideshow ul li.slide
+{
+  margin: 0 auto;
+}
+
+.slideshow ul li.slide.curr,
+.slideshow ul.triple li.slide.prev,
+.slideshow ul.triple li.slide.next
+{
+  display: block;
+}
+
+/* float all slides left to make the list horizontal in triple mode */
+.slideshow ul.triple li.slide
+{
+  float: left;
+}
+
+/* CSS for Tap (no touch) */
+.no-touch .touchfallback
+{
+  height: 0;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 10;
+}
+
+.no-touch .touchfallback .prev,
+.no-touch .touchfallback .next
+{
+  display: block;
+  font-size: 100%;
+  height: 3.333em; /* 40px equivalent @ 12px font size, size of asset, it is updated to correct height set in JavaScript */
+  padding: 0;
+  width: 3.333em; /* 40px equivalent @ 12px font size, size of asset, it is updated to correct height set in JavaScript */
+  z-index: 30;
+}
+
+.no-touch .touchfallback .next
+{
+  background: transparent url('/statics/common/i/blue/arrow_right_with_opacity.png') no-repeat center center;
+  float: right;
+}
+
+.no-touch .touchfallback .prev
+{
+  background: transparent url('/statics/common/i/blue/arrow_left_with_opacity.png') no-repeat center center;
+  float: left;
+}
+
+/* hide the previous button on first slide,
+   hide the next button on last slide 
+*/
+.no-touch .first .touchfallback .prev,
+.no-touch .last .touchfallback .next
+{
+  display: none;
+}
+
+.no-touch .touchfallback span
+{
+  display: none;
+  font-size: 100%;
+  opacity: 0;
+  padding: 0;
+}
+
+/* Show Page as dots */
+.slideshow ul.pages
+{
+  clear: both;
+  margin: 0 auto;
+  padding: 0.833em 0; /* 10px equivalent @ 12px font size */
+  width: 8.333em; /* default, updated via JavaScript which sets to the sum of the page LI's widths */
+}
+
+.slideshow ul.pages li
+{
+  background-color: #ccc;
+  border: solid 0.0834em #ccc; /* 1px equivalent @ 12px font size */
+  border-radius: 0.5em; /* 6px equivalent @ 12px font size */
+  float: left;
+  height: 0.5em; /* 6px equivalent @ 12px font size */
+  margin: 0 0.333em; /* 4px equivalent @ 12px font size */
+  padding: 0;
+  width: 0.5em; /* 6px equivalent @ 12px font size */
+}
+
+/* Dot corresponding to selected page */
+.slideshow ul.pages li.sel
+{
+  background-color: #000;
+  border-color: #000;
+}
+
+/* Show Page as 1 of N */
+.slideshow p.pages
+{
+  clear: both;
+  float: left;
+  padding: 0.833em; /* 10px equivalent @ 12px font size */
+}
+
+/* CSS for inline more tab */
+.moretab 
+{
+  border-top: 0.0834em solid #ccc; /* 1px equivalent @ 12px font size */
+  margin: 2.083em 0 1.25em; /* 25px 0 15px equivalent @ 12px font size */
+  text-align: center;
+}
+
+/* Need the extra specificity to override the ul.hllist border style.*/
+.co ul.hasmore
+{
+  border-bottom: none;
+}
+
+.hasmore li.first
+{
+  border-top: none;
+}
+
+/*applying moretab to list instead of inline text. Therefore, the tab should be flush to the content.*/
+.hasmore + .moretab 
+{
+  margin-top: 0;
+}
+
+/*Separate from the border styles due to rounding differences between Android and iOS*/
+.moretab a
+{
+  background-color: #fff;
+  display: inline-block;
+  margin-top: -0.167em; /* -2px equivalent @ 11px font size */
+}
+
+.moretab a span
+{
+  border: solid 0.091em #ccc;
+  border-bottom-right-radius: 0.333em; /* 4px equivalent @ 11px font size */
+  border-bottom-left-radius: 0.333em; /* 4px equivalent @ 11px font size */
+  border-top: none;
+  display: inline-block;
+  font-size: 91.667%; /* 11px equivalent */
+  margin: 0.182em 0; /* 2px equivalent @ 11px font size */
+  min-width: 8.167em; /* 98px equivalent @ 11px font size */
+  padding: 0.182em 0.636em; /* 2px 7px equivalent @ 11px font size */
+}

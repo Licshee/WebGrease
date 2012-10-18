@@ -1,0 +1,9 @@
+.slRtC{-webkit-animation-name:'RtC';-webkit-animation-duration:0.5s;}
+.slCtL{-webkit-animation-name:'CtL';-webkit-animation-duration:0.5s;}
+.slLtC{-webkit-animation-name:'LtC';-webkit-animation-duration:0.5s;}
+.slCtR{-webkit-animation-name:'CtR';-webkit-animation-duration:0.5s;}
+.slHide{left:-5000px;}
+@-webkit-keyframes 'RtC'{from {left:500px;} to {left:0px;}}
+@-webkit-keyframes 'CtL'{from {left:0px;} to {left:-500px;}}
+@-webkit-keyframes 'LtC'{from {left:-500px;} to {left:0px;}}
+@-webkit-keyframes 'CtR'{from {left: 0px;} to {left: 500px;}}

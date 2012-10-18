@@ -1,0 +1,7 @@
+@media print
+{
+    #fooPrint
+    {
+        color: Red;
+    }
+}

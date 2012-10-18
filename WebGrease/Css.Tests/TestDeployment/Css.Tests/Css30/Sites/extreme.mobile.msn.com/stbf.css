@@ -1,0 +1,84 @@
+﻿/* css style - sports ticker for Motorola bf*/
+.stSP
+{
+    text-align: center;
+    overflow: hidden;
+    clear: both;
+    border-bottom: solid 1px #DADADA;
+    padding-top: 4px; 
+    padding-bottom: 4px;
+    height: 59px;
+    min-width: 310px;
+}
+.stChevL
+{
+    background: url('/statics/sports/i/st/stbf.png') no-repeat -128px 0px;
+}
+.stChevR
+{
+    background: url('/statics/sports/i/st/stbf.png') no-repeat -102px 0px;
+}
+.stTabH
+{
+    background: url('/statics/sports/i/st/stbf.png') no-repeat -251px 0px;
+    color: #FFFFFF;    
+}
+.stTabOn
+{
+    background: url('/statics/sports/i/st/stbf.png') no-repeat -165px 0px;
+    color: #60758B;    
+}
+.stArrL
+{
+    background: #FFFFFF url('/statics/sports/i/st/stbf.png') no-repeat -6px 0;
+    width: 19px;
+    height: 59px;
+    display: block;
+}
+.stArrR
+{
+    background: #FFFFFF url('/statics/sports/i/st/stbf.png') no-repeat -59px 0;
+    width: 19px;
+    height: 59px;
+    display: block;    
+}
+.stGT
+{
+    background: url('/statics/sports/i/st/stbf.png') no-repeat 0px -63px;
+    width: 80px;
+    height: 59px;
+    color: #60758B;
+    cursor: pointer;
+    float: left;
+    margin: 0px 1px 0px 1px;
+}
+.stPGT
+{
+    background: url('/statics/sports/i/st/stbf.png') no-repeat -80px -63px;
+    width:80px;
+    height:59px;    
+    color:#60758B;
+    cursor:pointer;
+    float:left;
+    margin: 0px 1px 0px 1px;
+}
+.stSb
+{
+    background: url('/statics/sports/i/st/stbf.png') no-repeat -161px -63px;
+    cursor: pointer;
+    width: 93px;
+    height: 24px;
+    vertical-align: middle;
+    padding-top:1px;
+    display: block;
+}
+.stEd
+{
+    background: url('/statics/sports/i/st/stbf.png') no-repeat -253px -63px;
+    cursor: pointer;
+    width: 86px;
+    height: 24px;
+    padding-right: 1px;
+    vertical-align: middle;
+    display: block;
+}

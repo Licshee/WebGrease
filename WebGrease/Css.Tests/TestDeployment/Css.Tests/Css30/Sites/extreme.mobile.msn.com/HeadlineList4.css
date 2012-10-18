@@ -1,0 +1,20 @@
+﻿/*
+Headline List Layout 4 as reflected on an mlb team page "Team Report"
+*/
+
+ul.hllist4
+{
+  border-bottom: solid 0.0834em #e6e6e6; /* 1px equivalent @ 12px font size */
+}
+
+ul.hllist4 li
+{
+  border-top: solid 0.0834em #e6e6e6; /* 1px equivalent @ 12px font size */
+  min-height: 3em; /* 3em = 36px equivalent  @ 12px font size */
+  padding: 0.615em 0; /* 0.615em = 8 equivalent  @ 12px font size */
+}
+
+ul.hllist4 .hl figure figcaption
+{
+  margin: 1em 0 0 0; /* 1em = 12px equivalent  @ 12px font size */
+}

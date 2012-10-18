@@ -1,0 +1,150 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="CurrentConditions.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Current Conditions styling for content.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#currentconditions .alert
+{
+  background: transparent url('/statics/weather/i/weatheralert_red.png') no-repeat 0.667em 50%; /* 8px @ 12px font size */
+  color: #ad0000;
+  display: block;
+  margin: 0 0.667em; /* 0 8px @ 12px font size */
+  padding: 1em 0 1em 2.5em; /* 12px 0 12px 30px @ 12px font size */
+  text-decoration: underline;
+  text-transform: uppercase;  
+}
+
+#currentconditions .status
+{
+  margin-left: 0.667em;    /* 8px @ 12px font size */
+}
+
+#currentconditions .bg
+{
+  background-position: center;
+  background-repeat: no-repeat;  
+  height: 12.167em; /* 146px @ 12px base */
+  margin-bottom: 1em; /* 12px @ 12px base */  
+  width: 100%;
+}
+
+.currentconditions
+{
+  color: #fff;    
+  margin-left: auto;
+  margin-right: auto;    
+  width: 26.667em; /* 320px @ 12px base */
+}
+
+.neutral .currentconditions
+{  
+  color: #000;
+}
+
+.currentconditions .skyconditions
+{
+  float: left;    
+  margin: 1em 0 0 0.667em; /* 12px 0 0 8px @ 12px base */
+  width: 7.5em; /* 90px @ 12px base */
+}
+
+.currentconditions .temperature
+{
+  float: left;
+  margin-top: 1.75em; /* 21px @ 12px base */
+  width: 7.333em; /* 88px @ 12px base */
+}
+
+.currentconditions .details
+{
+  float: left;
+  margin-top: 2em; /* 24px @ 12px base */
+  width: 11em; /* 132px @ 12px base */
+}
+
+.currentconditions .skyconditions img
+{
+  height: 6.667em; /* 80px @ 12px base */
+  margin: 0 0 0.833em 0.5em; /* 0 0 10px 6px @ 12px base */        
+  width: 6.667em; /* 80px @ 12px base */
+}
+
+.currentconditions .skyconditions figcaption
+{   
+  font-size: 108.333%; /* 13px @ 12px base */
+  line-height: 1.154em; /* 15px @ 13px base */
+  width: 7.077em;
+  text-align: center;
+}
+
+.currentconditions .temperature .currenttemp
+{
+  font-size: 375%; /* 45px @ 12px base */
+  line-height: 1em; /* 45px @ 45px base */
+}
+
+.currentconditions .temperature .highlowtemp
+{
+  font-size: 133.333%; /* 16px @ 12px base */
+  margin-left: 0.125em; /* 2px @ 16px base */
+}
+
+.currentconditions .temperature .highlowtemp .separator
+{
+  margin: 0 0.250em; /* 0 4px @ 16px base */
+}
+
+.currentconditions .details .fccontrol
+{
+  color: #ccc;
+  font-size: 116.667%; /* 14px @ 12px base */
+  margin-bottom: 1.071em; /* 15px @ 14px base */
+}
+
+.neutral .currentconditions .details .fccontrol .active
+{  
+  color: #000;
+}
+
+.currentconditions .details .fccontrol .active
+{
+  color: #fff;
+  font-weight: bold;
+}
+
+.currentconditions .details .fccontrol a
+{
+  color: #ccc;
+}
+
+.currentconditions .details .fccontrol .fahrenheit
+{
+  padding: 0.857em 0.571em 0.857em 0.857em; /* 12px 8px 12px 12px @ 14px base */
+}
+
+.currentconditions .details .fccontrol .celsius
+{
+  padding: 0.857em 0.857em 0.857em 0.571em; /* 12px 12px 12px 8px @ 14px base */
+}
+
+.currentconditions .details .precip,
+.currentconditions .details .humidity,
+.currentconditions .details .uv,
+.currentconditions .details .wind
+{
+  display: block;
+  line-height: 1.417em; /* 17px @ 12px base */
+  margin-left: 1em; /* 12px @ 12px base */
+}
+
+/* To keep edge wind case from wrapping: eg. 112 km/ph WSW */
+.currentconditions .details .wind
+{
+  letter-spacing: -0.15px;
+}

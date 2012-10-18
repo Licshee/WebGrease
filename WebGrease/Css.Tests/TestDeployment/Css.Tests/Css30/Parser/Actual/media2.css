@@ -1,0 +1,27 @@
+﻿@media print {
+  body { font-size: 10pt }
+}
+
+@page     
+{ 
+  margin: 2cm 
+}
+
+@media print {
+  @page {
+    size: 8.5in 11in;
+  }
+  .foo {
+    height: 11in!important;
+  }
+}
+
+@media print {
+  * { color:#000; }
+  @page { margin:.5cm }
+  p,h2,h3 { orphans:3; widows:3 }
+}
+
+@media screen, print {
+  body { line-height: 1.2; }
+}

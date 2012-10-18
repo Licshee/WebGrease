@@ -1,0 +1,68 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="rankings.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Rankings Control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+ul.rankings
+{
+  display: block;
+  width: 100%;
+}
+
+.rankings li
+{
+  background-color: #e4e9f0;
+  border: 0.0834em solid #b3c2d8;
+  display: block;
+  float: left; 
+  height: 5.667em; /* 68px equivalent @ 12px font size */
+  min-width: 9.833em; /* 118px equivalent @ 12px font size */    
+  position: relative;
+  text-align: center;
+}
+
+.rankings li h4
+{
+  color: #0b397f;
+  line-height: 1.167em; /* 14px equivalent @ 12px font size */    
+  margin: 0;
+  padding: 0.333em 0.667em 0 0.667em; /* 4px 8px 0 8px @ 12px font size*/
+}
+
+.rankings li small
+{
+  color: #555;
+  display: block;
+  font-size: 100%; /* resets small font-size from browser default to 12px */
+  font-weight: normal;
+}
+
+.rankings li .stat
+{
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.rankings li .rank
+{
+  bottom: 0.15em; /* 3px @ 20px font size*/
+  color: #0b397f;
+  font-size: 1.667em; /* 20px @ 12px font size*/
+  font-weight: normal;
+  left: 0.4em; /* 8px @ 20px font size*/
+  right: 0.4em; /* 8px @ 20px font size*/
+  position: absolute;
+  text-align: left;
+}
+
+.rankings li .ordinal
+{
+  text-align: center;
+}

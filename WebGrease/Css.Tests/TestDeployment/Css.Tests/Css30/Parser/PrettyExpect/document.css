@@ -1,0 +1,37 @@
+@-moz-document url-prefix()
+{
+  .ui-select .ui-btn select
+  {
+    opacity:.0001
+  }
+}
+@document url("http://www.w3.org/Style/CSS/")
+{
+  #summary
+  {
+    background:yellow;
+    color:black
+  }
+}
+@document url-prefix("http://www.w3.org/Style/CSS/")
+{
+  #summary
+  {
+    background:yellow;
+    color:black
+  }
+}
+@document domain("w3.org")
+{
+  body
+  {
+    font-size:16px!important
+  }
+}
+@document regexp("http://www.w3.org/TR/\\d{4}/[^/]*-CSS2-\\d{8}/")
+{
+  body
+  {
+    font-size:20px!important
+  }
+}

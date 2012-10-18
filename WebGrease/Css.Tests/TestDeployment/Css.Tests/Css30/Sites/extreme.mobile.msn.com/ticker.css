@@ -1,0 +1,10 @@
+﻿/* css style for IE Win7- sports ticker */
+.stMainDiv
+{
+    font-family: Tahoma, Verdana;
+    font-size: 100%;
+    border: 3px;
+    border-color: #6F869D;
+    border-style: solid;
+    height: 163px;    
+}

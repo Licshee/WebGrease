@@ -1,0 +1,83 @@
+﻿.ListItem
+{
+    text-align: left;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+.ListItem img
+{
+    cursor: pointer;
+}
+.ListItem ul
+{
+    list-style-type: none;
+}
+.ListItem ul li
+{
+    cursor: pointer;
+    margin-bottom: 7px;
+}
+.ListItem ul li div.bullet
+{
+    background: url('/statics/common/i/hp.png') -169px -13px no-repeat;
+    width: 5px;
+    height: 7px;
+    margin-top: 0.4em;
+}
+.ListItem ul li div.text
+{
+    padding-left: 8px;
+}
+.ListNoImageCSS, .ListLandscapeCSS, .ListPotraitCSS
+{
+    position: absolute;
+    width: 100%;
+    font-size: 1em;
+}
+.ListNoImageCSSTitle, .ListPotraitCSSTitle, .ListLandscapeCSSTitle
+{
+    cursor: pointer;
+    width: auto;
+    height: auto;
+}
+
+.ListPotraitCSSimgClass
+{
+    float: left;
+    padding-right: 12px;
+}
+.ListPotraitCSSTitle
+{
+    font-size: 1.285em;
+    padding-bottom: 9px;
+}
+.ListPotraitCSSAbstract
+{
+    color: #666666;
+}
+.ListLandscapeCSSimgClass
+{
+    margin: 0 auto;
+}
+.ListLandscapeCSSTitle
+{
+    font-size: 1.285em;
+    padding-bottom: 10px;
+    padding-top: 11px;
+}
+.ListLandscapeCSSAbstract
+{
+    color: #666666;
+}
+
+.ListNoImageCSSTitle
+{
+    font-size: 2em;
+    padding-bottom: 13px;
+}
+.ListNoImageCSSAbstract
+{
+    font-size: 1.571em;
+    color: #666666;
+}

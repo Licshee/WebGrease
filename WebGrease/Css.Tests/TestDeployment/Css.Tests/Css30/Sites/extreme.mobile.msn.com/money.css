@@ -1,0 +1,53 @@
+﻿.mny
+{
+    padding: 0px 5px;
+}
+
+.mny td
+{
+    line-height: 28px;
+    padding: 0 3px;
+    text-align: right;
+    color: #333333;
+}
+
+.mny td.pos
+{
+    color: #006600;
+}
+
+.mny td.neg
+{
+    color: #CC0000;
+}
+
+.mny .posImg, .mny .negImg
+{
+    background: url('/statics/common/i/hp.png') -132px -0px no-repeat;
+    display: block;
+    width: 13px;
+    height: 10px;
+    margin: 0.25em 0 0.25em 1em;
+}
+
+.mny .negImg
+{
+    overflow: hidden;
+    background: url('/statics/common/i/hp.png')  -145px -0px no-repeat;    
+}
+
+.mny td.tkr
+{
+    text-align: left;
+}
+
+.mny tr.sep
+{
+    border-top: 1px solid #E1E1E1;
+    margin-bottom: 0.643em;
+}
+
+.mnyErr
+{
+    margin-left : 5px;
+}

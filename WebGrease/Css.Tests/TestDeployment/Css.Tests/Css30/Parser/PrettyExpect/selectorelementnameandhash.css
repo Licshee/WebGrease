@@ -1,0 +1,24 @@
+﻿html #foo #bar
+{
+
+}
+ns|html #foo1 #bar1
+{
+
+}
+* #foo1
+{
+
+}
+ns|* #foo2
+{
+
+}
+|* #foo3
+{
+
+}
+#bar #moo
+{
+
+}

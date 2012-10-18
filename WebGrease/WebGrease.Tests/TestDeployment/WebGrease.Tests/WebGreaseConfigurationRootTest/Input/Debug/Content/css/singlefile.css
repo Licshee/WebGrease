@@ -1,0 +1,26 @@
+body
+{
+    background-color: %page_background%
+}
+
+.media
+{
+    background: url(%sample_media%) no-repeat;
+    padding-left: 20px;
+}
+
+.bullet
+{
+    background: url(%sample_bullet%) no-repeat;
+    padding-left: 20px;
+}
+
+.primarycolor
+{
+    color: %sample_primarycolor%
+}
+
+.secondarycolor
+{
+    color: %sample_secondarycolor%
+}

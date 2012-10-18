@@ -1,0 +1,182 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="locationselection.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles for locationselection overlay control
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+div.lochost
+{
+    display: block;
+    margin: 0.083em 0.571em 2em 0.571em;    /* 1px 6px 24px 6px @ 12px font size */
+}
+
+ul.loclist, ul.disamb
+{
+    list-style-type: none;
+}
+
+ul.loclist li, ul.disamb li
+{
+    border-bottom: 0.0834em solid #e6e6e6;      /* 1px @ 12px font size */
+    color: #555;
+    display: list-item;
+}
+
+ul.loclist li
+{
+    display: block;
+    float: left;
+    font-size: 116.667%;        /* 14px @ 12px font size */
+    min-height: 2.857em;        /* 40px @ 14px font size */
+    width: 100%;
+}
+
+ul.loclist li.first
+{
+    border-top: none;
+}
+
+ul.loclist li.locgps .err
+{
+  color: #ad0000;
+  display: block;
+  font-size: 85.714%;          /* 12px @ 14px font size */
+  padding-bottom: 1em;         /* 12px @ 12px font size */
+  padding-top: 1em;            /* 12px @ 12px font size */
+}
+
+ul.loclist li a
+{
+  display: block;
+  line-height: 2.857em;        /* 40px @ 14px font size */
+}
+
+ul.loclist li.locgps a
+{
+    padding-left: 1.786em;
+    background: transparent url('/statics/common/i/blue/locateme.png') no-repeat center left;
+}
+#locsearch
+{
+    margin: 0;
+}
+
+ul.loclist li div.locsearchfields
+{
+    border: 0.0834em solid #666;
+    float: left;
+    width: 100%;
+}
+
+.lochost input
+{
+    -webkit-appearance:none;
+    -webkit-border-radius:0;
+    border-radius:0;
+}
+
+#locsearchtxt
+{
+    border: 0;
+    display: block;
+    float: left;
+    font-size: 100%;    /* 14px @ 13 px font size */
+    height: 2em;    /* 26px @ 13px font size */
+    margin: 0;
+    outline: none;
+    padding: 0;
+    padding-left: 0.462em;     /* 6px @ 13px font size */
+    margin-top: 0.077em;     /* 1px @ 13px font size */
+    width: 80%;
+}
+
+#locsearchsubmit
+{
+    background-color: #666;
+    border: 0;
+    color: #fff;
+    float: right;
+    margin: 0;
+    line-height: 1.692em;    /* 22px @ 13px font size */
+    padding: 0.538em 0.385em 0.615em 0.615em;     /* 7px 5px 8px 8px @ 13px font size */
+}
+
+ul.loclist li.loclookup
+{
+  border-bottom: none;
+  margin-bottom: 1em;
+}
+
+ul.loclist div.locselheader
+{
+    clear: both;
+    color: #555;
+    display: block;
+    font-size: 85.714%;         /* 12px @ 14px font size */
+    margin: 0.917em 0 0.250em 0;      /* 11px 0 1px 0 @ 12px font size */
+    padding: 0;
+}
+
+
+/* Disambiguator specific styles */
+ul.disamb li 
+{
+  border: none;
+  line-height: 2.333em;        /* 28px @ 12px font size */
+}
+
+ul.disamb li.searchresult
+{
+  line-height: 2.667em;        /* 32px @ 12px font size */
+}
+
+ul.disamb li.last a
+{
+  padding-bottom: 0.667em;    /* 8px @ 12 px font size */
+}
+
+ul.disamb p.status
+{
+  color: #ad0000;
+  margin: 0;
+  padding: 0;
+}
+
+ul.disamb li a
+{
+  display: block;
+  float: left;
+  text-decoration: underline;
+  width: 100%;
+}
+
+#locindicator
+{
+    border-bottom: 0.0834em solid #ccc; /* 1px */
+    border-top: 0.0834em  solid #ccc; /* 1px */
+    text-align:right;
+    margin: 0 0.667em 0 0.667em; /* 0 8px 0 8px */
+    padding: 0.667em 0.167em 0.667em 0;  /* 8px 2px 8px 0 */
+}
+
+/* location indicator within a container branch */
+.coa2 #locindicator
+{
+    margin: 0.333em 0 0 0; /*4px 0 0 0*/
+}
+
+#locindicator a.overlayActivator
+{
+    background: transparent url('/statics/common/i/blue/arrow_down.png') no-repeat center right;
+    padding: 0 1.333em; /*0 16px*/
+}
+
+#locindicator a.overlayActivator.active
+{
+    background-image: url('/statics/common/i/blue/arrow_up.png');
+}

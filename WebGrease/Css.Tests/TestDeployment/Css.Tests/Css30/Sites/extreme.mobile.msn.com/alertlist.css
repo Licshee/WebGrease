@@ -1,0 +1,57 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="alertlist.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Alert List control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+ul.alerts
+{
+  margin-bottom: 3.333em; /* 40px @ 12px base font size */
+}
+
+ul.alerts li
+{
+  margin-top: 1.833em;  /* 22px @ 12px base font size */
+}
+
+ul.alerts li.first
+{
+  margin-top: 1.333em; /* 16px @ 12px base font size */
+}
+
+.alert h3
+{
+  background: url('/statics/weather/i/weatheralert_white.png') no-repeat 0.667em 50% #ad0000; /* 8px @ 12px font size */
+  color: #fff;
+  font-size: 100%;  /* 12px @ 12px base font size */
+  padding: 0.667em 0 0.667em 2.5em; /* 8px 0 8px 30px @ 12px font size */
+  text-transform: uppercase;  
+}
+
+.alert .source
+{
+  color: #333;
+  margin-top: 1em;  /* 12px @ 12px base font size */
+}
+
+.alert .richtext
+{
+  line-height: 1.333em; /* 16px @ 12px base font size */ 
+  margin-top: 1em;  /* 12px @ 12px base font size */      
+}
+
+.alert .time
+{
+  color: #888;
+  display: block;
+}
+
+article.alert .moretab
+{
+  margin: 0.667em 0 0;  /* 8px 0 0 equivalent @ 12px font size */
+}

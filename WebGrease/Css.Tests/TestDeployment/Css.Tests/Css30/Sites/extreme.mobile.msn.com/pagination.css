@@ -1,0 +1,38 @@
+﻿.pagination
+{
+    height: 42px;
+    margin: 7px 0px 8px 0px;
+}
+.pagination ul li a
+{
+    background: url('/statics/common/i/hp_lg.png') 0px 0px no-repeat;
+    display: block;
+    float: left;
+}
+.pagination ul li a.previous
+{
+    height: 42px;
+    width: 38px;
+    background-position: -42px -0px;
+}
+.pagination ul li a.pause
+{
+    height: 42px;
+    width: 38px;
+    background-position: -81px -0px;
+    margin-left: 10px;
+}
+.pagination ul li a.play
+{
+    height: 42px;
+    width: 38px;
+    background-position: -120px -0px;
+    margin-left: 10px;
+}
+.pagination ul li a.next
+{
+    height: 42px;
+    width: 38px;
+    background-position: -159px -0px;
+    margin-left: 10px;
+}

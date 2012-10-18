@@ -1,0 +1,55 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="gamesegments.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Game Segments. Also known as Play by Play.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.playbyplay > ol > li
+{
+  position: relative;
+}
+
+.playbyplay h4
+{
+  border-bottom: 0.25em solid #0b397f; /* 3px equivalent @ 12px font size */
+  margin: 0;
+}
+
+.playbyplay table
+{
+  display: block;
+  margin-top: -2.5em; /* 30px equivalent @ 12px font size */
+  position: absolute;
+  top: 50%;
+}
+
+.playbyplay table thead th
+{
+  font-weight: normal;
+  padding-top: 3.333em; /* 40px equivalent @ 12px font size */
+}
+
+.playbyplay table tbody td
+{
+  font-weight: bold;
+}
+
+.playbyplay ol ol
+{
+  min-height: 7.5em; /* 90px equivalent @ 12px font size */
+}
+
+.playbyplay ol li
+{
+  padding: 0.333em 0; /* 4px 0 equivalent @ 12px font size */
+}
+
+.playbyplay ol li li
+{
+  padding: 0.333em 0 0.333em 4em; /* 4px 0 4px 48px equivalent @ 12px font size */
+}

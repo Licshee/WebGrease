@@ -1,0 +1,3 @@
+﻿/* this file contains keyframes that are actually in use.  see keyframes_all.css for all available animations */
+/* note that the cruncher currently fails on @ syntax, so this is crunched in source */
+@-webkit-keyframes slideinfromright { from {-webkit-transform:translateX(100%);} to {-webkit-transform:translateX(0);}}

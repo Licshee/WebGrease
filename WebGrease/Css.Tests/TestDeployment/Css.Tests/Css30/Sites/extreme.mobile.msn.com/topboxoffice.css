@@ -1,0 +1,34 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="topboxoffice.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styles for the Top Box Office page
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* Clear up left padding of first table column */
+.page-topboxoffice table tbody td:first-child
+{
+    padding-left: 0;
+}
+
+/* Adding padding above and below the movie news list items */
+.page-topboxoffice table thead
+{
+    display: none;
+}
+
+/* Right align gross profit and prevent it from wrapping to next line and*/
+.page-topboxoffice table tbody td.profit
+{
+    text-align: right;
+    white-space: nowrap;
+}
+
+.page-topboxoffice table
+{
+    margin-bottom: 1.667em; /* 20px @ 12px base font size */
+}

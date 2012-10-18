@@ -1,0 +1,94 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="standings3.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   MLB Game Team Standings control styles
+//   Used on teams pages.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#standings .br
+{
+  border-bottom: 0.0834em solid #ccc;
+  border-top: 0.0834em solid #ccc;
+  float: left;
+  margin-top: 1em; /* 12px equivalent @ 12px font size */
+  width: 100%;
+}
+
+.standings3
+{
+  background-color: #f1f1f1;
+  border-bottom: 0.0834em solid #fff;
+  border-top: 0.0834em solid #fff;
+  float: left;
+  width: 100%;
+}
+
+.standings3 h1
+{
+  color: #333;
+  float: left;
+  font-size: 100%;
+  height: 3.333em; /* height of team logo, 40px equivalent @ 12px font size */
+  margin: 0 0 0 0.667em; /* 8px equivalent @ 12px font size */
+}
+
+.standings3 h1 span
+{
+  display: block;
+  float: left;
+  font-size: 133.333%; /* 16px */
+  line-height: 1.125em; /* 18px equivalent @ 16px font size */
+  padding: 0.063em 0.063em 0 2.875em; /* 1px 1px 0 46px equivalent @ 16px font size */
+}
+
+.standings3 h1 span span
+{
+  float: none;
+  font-size: 100%;
+  font-weight: normal;
+  padding-left: 0;
+}
+
+.standings3 .fav
+{
+  background: transparent url('/statics/common/i/blue/favorites_on_button.png') no-repeat 0 0;
+  display: block;
+  float: left;
+  height: 1.833em; /* 22px equivalent at 12px font size */
+  width: 2em; /* 24px equivalent at 12px font size */
+  margin: 1.333em 0.667em 0 0.667em; /* 16px 9px 0 9px equivalent at 12px font size */
+}
+
+.standings3 .add
+{
+  background-image: url('/statics/common/i/blue/favorites_off_button.png');
+}
+
+.standings3 .pending
+{
+  background-image: url('/statics/common/i/blue/favorites_pending_button.png');
+}
+
+.standings3 p
+{
+  clear: right;
+  float: right;
+  font-size: 116.667%; /* 14px */
+  line-height: 1.286em; /* 18px equivalent @ 14px font size */
+  margin: 0;
+  padding-right: 0.571em; /* 8px equivalent @ 14px font size */
+  text-align: right;
+  white-space: nowrap;
+}
+
+.standings3 h1 abbr,
+.standings3 .fav span
+{
+  display: none;
+}
+

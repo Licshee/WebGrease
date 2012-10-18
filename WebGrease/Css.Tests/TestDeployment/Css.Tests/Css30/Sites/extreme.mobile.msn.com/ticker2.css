@@ -1,0 +1,142 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="ticker2.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Layout for ticker as appearing in scores page.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.games2 li,
+.gamecenter.games2 .game
+{
+  border-bottom: solid 1px #ebebeb;
+  clear: both;
+  float: left;
+  padding: 0.333em 0; /* 4px 0 @ 12px font size */
+  position: relative;
+  width: 100%;
+}
+
+.games2 .fav
+{
+  background: transparent url('/statics/common/i/blue/favorites_on_button.png') no-repeat 100% 100%;
+  display: inline-block;
+  float: none;
+  height: 1.375em; /* 22px equivalent at 16px font size */
+  margin: 0 0 -0.25em 0.563em; /* 0 0 -4px 9px equivalent at 16px font size */
+  width: 1.375em; /* 22px equivalent at 16px font size */
+}
+
+.games2 li.last
+{
+  border-color: #ccc;
+}
+
+.games2 tbody td,
+.games2 .future .logo
+{
+  font-size: 133.333%; /* 16px @ 12px font size */
+  white-space: nowrap;
+}
+
+.games2 .logo
+{
+  background-position: 0 center !important;
+  clear: left;
+  display: block;
+  float: left;
+  height: 2.5em;
+  line-height: 2.5em; /* 40px equivalent @ 16px font size */
+  margin-left: 0.625em; /* 10px equivalent @ 16px font size to allow for team_winning background image */
+  min-height: 2.5em; /* 40px equivalent @ 16px font size */
+  padding: 0 0 0 3em; /* 0 0 0 48px equivalent @ 16px font size */
+}
+
+.games2 table
+{
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.games2 .status
+{
+  font-size: 91.667%; /* 11px @ 12px font size */
+  position: absolute;
+  margin-top: -1.242em; /* half of 2 lines of text, 28px. Used for vertical centering. */
+  right: 0;
+  text-align: right;
+  top: 50%;
+}
+
+.games2 .present .status,
+.games2 .future .status
+{
+  margin-top: -1.364em; /* half of 2 lines of text. Used for vertical centering. */
+}
+
+.gamecenter .games .fav,
+.games2 .fav span,
+.games2 .add,
+.games2 .pending,
+.games2 thead tr.headers,
+.games2 .present time,
+.games2 .future .scheduled,
+.games2 .future span.host,
+.games2 .game .status time .dayonly,
+.games2 .game .status .postponed + time,
+.games2 .game .status .suspended + time,
+.games2 .game .status .delayed + time,
+.games2 .game .status .cancelled + time
+{
+  display: none;
+}
+
+.games2 .present .inning
+{
+  display: block;
+}
+
+.games2 tbody tr.winning td
+{
+  font-weight: bold;
+}
+
+.games2 tbody td.first
+{
+  width: 33%;
+}
+
+.games2 tbody td.last
+{
+  padding-left: 16%;
+  width: 67%;
+}
+
+.games2 .past tr.winning td.first
+{
+  background: transparent url('/statics/common/i/blue/team_winning.png') no-repeat 0 50%;
+}
+
+.games2 .future p
+{
+  float: right;
+  margin-top: 3em; /* 33px @ 11px font size */
+  text-align: right;
+  width: 50%;
+}
+
+.games2 .final
+{
+  color: #c00200;
+  font-weight: bold;
+}
+
+time.updated
+{
+  font-size: 91.667%; /* 11px @ 12px font size */
+  line-height: 3.091em; /* 34px equivalent @ 11px font size */
+  text-align: center;
+}

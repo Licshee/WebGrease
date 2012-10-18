@@ -1,0 +1,49 @@
+﻿.TabContainer
+{
+    text-transform: uppercase;
+    margin: 0px 0 11px 0px;
+    border-bottom: 1px solid #39c;    
+    padding-bottom: 6px;
+    padding-top:12px;
+}
+.TabContainer ul
+{
+    margin-left: -3px;
+    list-style-type: none;
+}
+
+.TabContainer ul li
+{
+    display: inline;
+}
+.TabContainer ul li:focus, .TabContainer ul li.activate:focus
+{
+    outline: none;
+}
+.TabContainer li a
+{
+    padding: 8px 10px 6px 10px;
+    background-color: #ececec;
+    margin-left: 3px;
+    text-decoration: none;
+}
+.TabContainer li.activate
+{
+    background-color: #fff;
+}
+
+.TabContainer li.activate a
+{
+    background-color: #fff;
+    position: relative;
+    border-left: 1px solid #39c;
+    border-right: 1px solid #39c;
+    border-top: 3px solid #39c;
+    top: 1px;
+    padding-top: 9px;
+}
+
+.TabContainerFont
+{
+    font-size: 0.9em;
+}

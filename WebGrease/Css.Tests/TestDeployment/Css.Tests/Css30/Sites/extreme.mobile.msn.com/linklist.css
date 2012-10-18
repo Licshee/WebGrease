@@ -1,0 +1,52 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="linklist.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for linklist markup elements.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+aside.linklist
+{
+  border-bottom: solid 1px #ccc;
+  border-bottom-color: rgb(204,204,204);
+  font-size: 116.667%;
+  padding: 1.25em 0 1em 0;
+}
+
+aside.linklist ul,
+aside.linklist li
+{
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+aside.linklist li
+{
+  background: transparent url('/statics/lifestyle/i/bullet.png') no-repeat 1px 0.8em;
+  margin: 0 8px;
+  padding: 0.357em 0 0.357em 9px;
+}
+
+aside.linklist a,
+aside.linklist a:link,
+aside.linklist a:visited,
+aside.linklist a:hover,
+aside.linklist a:active
+{
+  color: #0071bc;
+  color: rgb(0,113,188);
+}
+
+aside.linklist h2 
+{
+  color: #666;
+  color: rgb(102,102,102);
+  font-size: 100%;
+  margin: 0 8px 3px 8px;
+  padding: 0;
+}

@@ -1,0 +1,30 @@
+﻿.media
+{
+  background:url(images/bullet-media.gif) no-repeat;
+  padding-left:20px
+}
+.bullet
+{
+  background:url(images/media.gif) no-repeat;
+  padding-left:20px
+}
+.bullet1
+{
+  background:url(images/foo.jpg) no-repeat;
+  padding-left:20px
+}
+.bullet2
+{
+  background:url(images/bar.jpg) no-repeat;
+  padding-left:20px
+}
+.bullet3
+{
+  background:url(images/lazy1.jpg) no-repeat;
+  padding-left:20px
+}
+.bullet4
+{
+  background:url(images/lazy2.jpg) no-repeat;
+  padding-left:20px
+}

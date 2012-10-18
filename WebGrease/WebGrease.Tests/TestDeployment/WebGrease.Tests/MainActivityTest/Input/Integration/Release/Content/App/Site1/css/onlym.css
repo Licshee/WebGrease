@@ -1,0 +1,5 @@
+#foo
+{
+    /* Should fail validation but minify */
+    msncolor:'blue';
+}

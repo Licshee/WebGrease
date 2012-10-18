@@ -1,0 +1,213 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="teamlogos_2x.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   MLB Team Logos at 2x
+//   
+//   Styles for devices that support double pixel resolution
+//   Generally these adjustments only apply to background images and text-shadow styles
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+footer[role="contentinfo"] .logo,
+section[role="main"] .logo
+{
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
+.l_als
+{
+  background-image: url('/statics/sports/i/mlb/l/als_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_ari
+{
+  background-image: url('/statics/sports/i/mlb/l/ari_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_atl
+{
+  background-image: url('/statics/sports/i/mlb/l/atl_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_bal
+{
+  background-image: url('/statics/sports/i/mlb/l/bal_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_bos
+{
+  background-image: url('/statics/sports/i/mlb/l/bos_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_chc
+{
+  background-image: url('/statics/sports/i/mlb/l/chc_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_cws
+{
+  background-image: url('/statics/sports/i/mlb/l/cws_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_cin
+{
+  background-image: url('/statics/sports/i/mlb/l/cin_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_cle
+{
+  background-image: url('/statics/sports/i/mlb/l/cle_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_col
+{
+  background-image: url('/statics/sports/i/mlb/l/col_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_det
+{
+  background-image: url('/statics/sports/i/mlb/l/det_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_fla
+{
+  background-image: url('/statics/sports/i/mlb/l/fla_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_hou
+{
+  background-image: url('/statics/sports/i/mlb/l/hou_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_kc
+{
+  background-image: url('/statics/sports/i/mlb/l/kc_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_laa
+{
+  background-image: url('/statics/sports/i/mlb/l/laa_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_lad
+{
+  background-image: url('/statics/sports/i/mlb/l/lad_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_mil
+{
+  background-image: url('/statics/sports/i/mlb/l/mil_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_min
+{
+  background-image: url('/statics/sports/i/mlb/l/min_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_nls
+{
+  background-image: url('/statics/sports/i/mlb/l/nls_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_nym
+{
+  background-image: url('/statics/sports/i/mlb/l/nym_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_nyy
+{
+  background-image: url('/statics/sports/i/mlb/l/nyy_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_oak
+{
+  background-image: url('/statics/sports/i/mlb/l/oak_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_phi
+{
+  background-image: url('/statics/sports/i/mlb/l/phi_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_pit
+{
+  background-image: url('/statics/sports/i/mlb/l/pit_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_sd
+{
+  background-image: url('/statics/sports/i/mlb/l/sd_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_sea
+{
+  background-image: url('/statics/sports/i/mlb/l/sea_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_sf
+{
+  background-image: url('/statics/sports/i/mlb/l/sf_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_stl
+{
+  background-image: url('/statics/sports/i/mlb/l/stl_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_tb
+{
+  background-image: url('/statics/sports/i/mlb/l/tb_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_tex
+{
+  background-image: url('/statics/sports/i/mlb/l/tex_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_tor
+{
+  background-image: url('/statics/sports/i/mlb/l/tor_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.l_was
+{
+  background-image: url('/statics/sports/i/mlb/l/was_2x.png');
+  -webkit-background-size: 40px 40px;
+}

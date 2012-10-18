@@ -1,0 +1,59 @@
+﻿.expressiontest {
+  display: expression(/c_ht/.test(this.parentNode.parentNode.className) ? "inline-block" : "block");
+  height: 10px;
+  height: expression(this.parentNode.clientHeight+"px");
+  top: 0;
+  top: expression( (-20 + (document.documentElement.clientHeight ? document.documentElement.clientHeight/2 : document.body.clientHeight/2 ) + ( ignoreMe = document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop )) + 'px');
+  -nosemicolon: expression(
+      (d = document.compatMode == "CSS1Compat" ?
+          document.documentElement : document.body) &&
+      (d.clientWidth > 1024 ? "1024px" :
+          d.clientWidth < 600 ? "600px" : "auto"))
+}
+.starhacktest
+{
+  top: 0;
+  *top: 50%;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+/* verify that star hack hasn't broken calc star operator or namespaces  */
+section {
+  float: left;
+  margin: 1em;
+  border: solid 1px;
+  width: calc(100%/3 - 2*1em - 2*1px);
+  width: calc(100%/3 - 2 * 1em - 2 * 1px);
+}
+* #foo1
+{
+}
+
+ns|* #foo2
+{
+}
+.unicodeescapehacktest
+{
+  top: 5px \0;
+  width: 100px\9;
+  position:relative\0;
+  height: 1em\9;
+  margin-bottom: 100%\9;
+  border: 1px solid #ccc;
+  padding: 10em 10px 10pt 10px\9;
+  border-radius: 0 \0;
+  border: 1px solid #ccc\9;
+  border: 1px solid #999 \9;
+  color: #ccc\9;
+  z-index: 10000\9;
+  line-height: 0\9;
+}
+.ie-only-filter
+{
+  _filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(enabled ='true', src='http://images.apple.com/global/ac_media_player/elements/quicktime/ie6/trackProgress.png', sizingMethod='crop');
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#0099CCFF, endColorstr=#77DDFFFF);
+  filter: progid:dximagetransform.microsoft.gradient(startColorstr='#00ffffff', endColorstr='#f7f6f5', GradientType=1);
+  filter:progid:DXImageTransform.Microsoft.Blur(strength=50);
+  filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2, mirror=1)
+}

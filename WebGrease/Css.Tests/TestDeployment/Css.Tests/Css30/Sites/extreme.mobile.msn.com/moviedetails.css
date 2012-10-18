@@ -1,0 +1,39 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="moviedetails.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styles for Movie details page
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+/* Adding space on top of moretab */
+#synopsisbranch .moretab
+{
+    margin-top: 6px;
+}
+
+/* removes space and top border between location indicator and showtimes heading */
+.page-moviedetails #showtimes #locindicator
+{
+    border-top: none;
+    margin-top: 0;
+}
+
+#photos .carousel li .hl img
+{
+    float:left;
+}
+
+#trailers .carousel,
+#photos .carousel
+{
+    margin-bottom: 0.583em; /* 7px @ 12px base font size */
+}
+
+#reviewsbranch .nomore
+{
+    margin-bottom: 1.667em; /* 20px @ 12px base font size */
+}

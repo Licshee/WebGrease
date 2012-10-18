@@ -1,0 +1,16 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="watch.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//  Watch Video page overrides
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+#relatedvideolist.coa2 ul.videolist li.first
+{
+  border-top: none;
+  padding-top: 0;
+}

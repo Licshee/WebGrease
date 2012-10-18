@@ -1,0 +1,161 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="double-resolution.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//    Styles for devices that support double pixel resolution
+//    Generally these adjustments only apply to background images and text-shadow styles
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.loading 
+{
+  background-image: url('/statics/common/i/blue/loading_2x.gif');
+  -webkit-background-size: 50px 50px;
+}
+
+.header a.msn,
+.breadcrumb a.msn
+{
+  background-image: url('/statics/common/i/blue/logo_msn_2x.png');
+  -webkit-background-size: 64px 26px;
+}
+
+.header a.search
+{
+  background-image: url('/statics/common/i/blue/search_hourglass_2x.png');
+  -webkit-background-size: 28px 28px;
+}
+
+.header a.partner,
+.breadcrumb a.fox
+{
+  background-image: url('/statics/common/i/blue/logo_fox_2x.png');
+  -webkit-background-size: 56px 34px;
+}
+
+.no-touch .touchfallback .next
+{
+  background-image: url('/statics/common/i/blue/arrow_right_with_opacity_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.no-touch .touchfallback .prev
+{
+  background-image: url('/statics/common/i/blue/arrow_left_with_opacity_2x.png');
+  -webkit-background-size: 40px 40px;
+}
+
+.games .favorite .game
+{
+  background-image: url('/statics/common/i/blue/team_favorite_2x.png');
+  -webkit-background-size: 52px 52px;
+}
+
+.games .past.game .high td.first,
+.games2 tr.high td.first
+{
+  background-image: url('/statics/common/i/blue/team_winning_2x.png');
+  -webkit-background-size: 6px 10px;
+}
+
+.games .present.game .status.bottom,
+.boxscore thead th:first-child.bottom
+{
+  background-image: url('/statics/common/i/blue/inning_bottom_2x.png');
+  -webkit-background-size: 10px 8px;
+}
+
+.games .present.game .status.top,
+.boxscore thead th:first-child.top
+{
+  background-image: url('/statics/common/i/blue/inning_top_2x.png');
+  -webkit-background-size: 10px 8px;
+}
+
+.hllist3 li .hl figure
+{
+  background-image: url('/statics/common/i/blue/gallery_stack_2x.png');
+  -webkit-background-size: 100px 68px;
+}
+
+.gtfield
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_field_2x.png');
+  -webkit-background-size: 304px 290px;
+}
+
+.gtfield .balls span
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_balls_2x.png');
+  -webkit-background-size: 100px 10px;
+}
+
+.gtfield .outs span
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_outs_2x.png');
+  -webkit-background-size: 74px 10px;
+}
+
+.gtfield .strikes span
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_strikes_2x.png');
+  -webkit-background-size: 74px 10px;
+}
+
+.gtfield .on
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_manonbase_2x.png');
+  -webkit-background-size: 14px 34px;
+}
+
+.gtfieldmini
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_field_mini_2x.png');
+  -webkit-background-size: 36px 36px;
+}
+
+.gtfieldmini .on
+{
+  background-image: url('/statics/sports/i/mlb/gametrax_manonbase_mini_2x.png');
+  -webkit-background-size: 16px 16px;
+}
+
+
+#slideshowcontent .breadcrumb a.msn
+{
+  background-image: url('/statics/common/i/blue/logo_msn_white_2x.png');
+  -webkit-background-size: 64px 26px;
+}
+
+#slideshowcontent .breadcrumb a.fox
+{
+  background-image: url('/statics/common/i/blue/logo_fox_white_2x.png');
+  -webkit-background-size: 56px 34px;
+}
+
+/* Sizing cascades to the .add and .pending states via .fav classname  */
+.games2 .fav,
+.standings3 .fav,
+.teamlist ul li .fav,
+#myteamslink a,
+#myteams.coa2 .h2 > a,
+#myteams.coa2 .h2 > span
+{
+  background-image: url('/statics/common/i/blue/favorites_on_button_2x.png');
+  -webkit-background-size: 22px 22px;
+}
+
+.standings3 .add,
+.teamlist ul li .add
+{
+  background-image: url('/statics/common/i/blue/favorites_off_button_2x.png');
+}
+
+.standings3 .pending,
+.teamlist ul li .pending
+{
+  background-image: url('/statics/common/i/blue/favorites_pending_button_2x.png');
+}

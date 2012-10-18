@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>WebGrease</id>
+    <version>1.3.0</version>
+    <owners>Microsoft</owners>
+    <authors>webgrease@microsoft.com</authors>
+    <description>Web Grease is a suite of tools for optimizing javascript, css files and images.</description>
+    <language>en-US</language>
+    <licenseUrl>http://www.microsoft.com/web/webpi/eula/msn_webgrease_eula.htm</licenseUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <references>
+      <reference file="Antlr3.Runtime.dll" />
+      <reference file="WebGrease.dll" />
+    </references>
+  </metadata>
+  <files>
+    <file src="$InDirPath$Antlr3.Runtime.dll" target="lib"/>
+    <file src="$InDirPath$WebGrease.dll" target="lib"/>
+    <file src="$InDirPath$Merged\WG.exe" target="tools"/>
+    <file src="packagescripts\install.ps1" target="tools" />
+    <file src="packagescripts\uninstall.ps1" target="tools" />
+  </files>
+</package>

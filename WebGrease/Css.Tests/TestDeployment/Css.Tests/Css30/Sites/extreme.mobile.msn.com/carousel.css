@@ -1,0 +1,167 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="carousel.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The styles specific for carousel markup elements.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.carousel
+{
+  margin: 8px 0;
+  padding: 0;
+}
+
+.carousel h2,
+.carousel h2 a,
+.carousel h2 a:link,
+.carousel h2 a:visited
+{
+  color: #333;
+  color: rgb(51,51,51);
+  display: block;
+  font-weight: bold;
+  margin: 0;
+  padding: 0;
+}
+
+aside.carousel h2
+{
+  border-bottom: solid 4px #e1276c;
+  border-bottom-color: rgb(225,39,108);
+  font-size: 100%;
+  margin: 0 8px;
+  padding-bottom: 1px;
+}
+
+.carousel div.videos
+{
+  position: relative;
+}
+
+.carousel div.videos img 
+{
+  display: block;
+  height: 75px; /* REVIEW:  Remove once image service and/or editorial provides images of correct dimensions, as it will not be necessary */
+  margin: 0 0 4px 0;
+  width: auto; /* REVIEW:  Remove once image service and/or editorial provides images of correct dimensions, as it will not be necessary */
+}
+
+.carousel div.viewport
+{
+  border-bottom: solid 1px #ccc;
+  border-bottom-color: rgb(204,204,204);
+  margin: 0 auto;
+  overflow: hidden;
+  position: relative;
+}
+
+.carousel figcaption
+{
+  margin: 0 0 4px 0;
+}
+
+.carousel li figcaption p
+{
+  display: none;
+}
+
+.carousel ul
+{
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  width: 2430px; /* really just a guess based on our desired image width, but JS sets to actual width */
+}
+
+.carousel ul li
+{
+  display: block;
+  float: left;
+  margin: 0 4px 0 0;
+  width: 135px; /* really just a guess based on our desired image width, but JS sets to actual width */
+}
+
+.carousel ul li:last
+{
+  margin: 0;
+}
+
+.carousel a
+{
+  color: #555;
+  color: rgb(85,85,85);
+  font-size: 108.333%;
+}
+
+.carousel a.more.videos
+{
+  color: #0071bc;
+  color: rgb(0,113,188);
+  display: inline-block;
+  float: right;
+  margin: 7px 8px 21px 8px;
+  text-align: right;
+}
+
+/* Styling for &ranquo; character */
+.carousel a.more.videos span
+{
+  font-size: 123.077%;
+  line-height: 100%;
+}
+
+/* Styling of Previous/Next buttons for no-touch default case */
+.no-touch .carousel .next,
+.no-touch .carousel .prev
+{
+  background: transparent url('/statics/common/i/transp_dark.png') repeat 0 0;
+  display: block;
+  position: absolute;
+  width: 44px;
+  height: 56px;
+  top: 12px;
+  z-index: 500;
+}
+
+.no-touch .carousel .next
+{
+  right: 0;
+}
+
+.no-touch .carousel .prev
+{
+  left: 0;
+}
+
+.no-touch .carousel .next span,
+.no-touch .carousel .prev span
+{
+  height: 100%;
+  position: absolute;
+  width: 44px;
+}
+
+.no-touch .carousel .next span
+{
+  background: transparent url('/statics/common/i/slider_next_enabled.png') no-repeat 14px 50%;
+  right: 0;
+}
+
+.no-touch .carousel .next.disabled span
+{
+  background-image: url('/statics/common/i/slider_next_disabled.png');
+}
+
+.no-touch .carousel .prev span
+{
+  background: transparent url('/statics/common/i/slider_prev_enabled.png') no-repeat 14px 50%;
+}
+
+.no-touch .carousel .prev.disabled span
+{
+  background-image: url('/statics/common/i/slider_prev_disabled.png');
+}

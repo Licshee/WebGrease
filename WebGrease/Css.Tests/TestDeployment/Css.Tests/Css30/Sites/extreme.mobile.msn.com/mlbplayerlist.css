@@ -1,0 +1,52 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="mlbplayerlist.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   MLB Player List control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.players li .player
+{
+  border: 0.0834em solid #ccc; /* 4px equivalent @ 12px font size */
+  min-width: 12.167em; /* 146px equivalent @ 12px font size */
+  padding: 0.0834em; /* 1px equivalent @ 12px font size */
+}
+
+.players img
+{
+  display: block;
+  float: left;
+}
+
+.players h4
+{
+  background-color: #ebebeb;
+  font-size: 91.667%; /* 11px equivalent @ 12px font size */
+  font-weight: bold;
+  line-height: 1.455em; /* 16px equivalent @ 11px font size */
+  margin: 0 0 0.182em 0; /* 0 0 2px 0 equivalent @ 11px font size, width of image */
+  padding: 0 0 0 0.364em; /* 4px equivalent @ 11px font size */
+}
+
+.players p
+{
+  margin: 0;
+  padding: 0 0.333em; /* 4px equivalent @ 12px font size */
+}
+
+.players .name
+{
+  white-space: nowrap;
+}
+
+.players .stat
+{
+  font-size: 133.333%; /* 16px equivalent @ 12px font size */
+  font-weight: bold;
+  line-height: 1.125em; /* 18px equivalent @ 16px font size */
+  padding: 0 0.25em; /* 4px equivalent @ 16px font size */
+}

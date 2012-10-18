@@ -1,0 +1,31 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="BlogPostList.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Styling for blog post list
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+ul.blogpostlist
+{
+  border-bottom: solid 0.0834em #e6e6e6; /* 1px equivalent @ 12px font size */
+}
+
+ul.blogpostlist li
+{
+  border-top: solid 0.0834em #e6e6e6; /* 1px equivalent @ 12px font size */
+}
+
+ul.blogpostlist li.first
+{
+  border-top: none;
+}
+
+ul.blogpostlist li a
+{
+  display: block;
+  padding: 1em 0; /* 12px 0 equivalent @ 12px font size */
+}

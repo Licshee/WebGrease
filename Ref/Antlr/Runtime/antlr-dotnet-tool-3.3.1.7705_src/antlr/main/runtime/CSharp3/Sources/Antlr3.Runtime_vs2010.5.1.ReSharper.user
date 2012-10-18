@@ -1,0 +1,28 @@
+<Configuration>
+  <SettingsComponent>
+    <string />
+    <integer />
+    <boolean>
+      <setting name="SolutionAnalysisEnabled">False</setting>
+    </boolean>
+  </SettingsComponent>
+  <RecentFiles>
+    <RecentFiles>
+      <File id="8FDC0A87-9005-4D5A-AB75-E55CEB575559/f:RuleReturnScope.cs" caret="1669" fromTop="13" />
+      <File id="8FDC0A87-9005-4D5A-AB75-E55CEB575559/d:Tree/f:BaseTree.cs" caret="2278" fromTop="13" />
+      <File id="5EE27A90-B023-42C9-AAF1-52B0424C5D0B/f:RemoteDebugEventSocketListener.cs" caret="2807" fromTop="0" />
+    </RecentFiles>
+    <RecentEdits />
+  </RecentFiles>
+  <NAntValidationSettings>
+    <NAntPath value="" />
+  </NAntValidationSettings>
+  <UnitTestRunner>
+    <Providers />
+  </UnitTestRunner>
+  <UnitTestRunnerNUnit>
+    <NUnitInstallDir IsNull="False">
+    </NUnitInstallDir>
+    <UseAddins>Never</UseAddins>
+  </UnitTestRunnerNUnit>
+</Configuration>

@@ -1,0 +1,61 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="gametraxmini.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   MLB Mini Gametrax field images at 1x
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.gtfieldmini
+{
+  background: transparent url('/statics/sports/i/mlb/gametrax_field_mini.png') no-repeat 0 0;
+  height: 3.273em; /* 36px equivalent @ 11px font size */
+  position: absolute;
+  right: 6.818em; /* 75px equivalent @ 11px font size */
+  top: 0;
+  width: 3.273em; /* 36px equivalent @ 11px font size */
+}
+
+
+.gtfieldmini .on
+{
+  background: transparent url('/statics/sports/i/mlb/gametrax_manonbase_mini.png') no-repeat 0 0;
+  height: 1.455em; /* 16px equivalent @ 11px font size */
+  left: 1.636em; /* 18px equivalent @ 11px font size */
+  position: absolute;
+  top: 0.909em; /* 10px equivalent @ 11px font size */
+  width: 1.455em; /* 16px equivalent @ 11px font size */
+}
+
+.gtfieldmini .second
+{
+  left: 0.818em;  /* 9px equivalent @ 11px font size */
+  top: 0.091em; /* 1px equivalent @ 11px font size */
+}
+
+.gtfieldmini .third
+{
+  top: 0.909em; /* 10px equivalent @ 11px font size */
+  left: 0.091em;  /* 1px equivalent @ 11px font size */
+}
+
+.gtfieldmini .name,
+.gtfieldmini h4
+{
+  display: none;
+}
+
+.gtfieldmini ol
+{
+  position: relative;
+}
+
+.gtfieldmini li
+{
+  border: none;
+  padding: 0;
+  position: static;
+}

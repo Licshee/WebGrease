@@ -1,0 +1,18 @@
+﻿@import "vars.scss";
+
+body {
+	font-size: $baseFontSize;
+	#{$baseFontSize}: green;
+}
+
+@media #{$media} {
+	@import "base.scss";
+}
+
+@media #{$media} and (min-width: $fillMinWidth) and (max-width: $fillMaxWidth) {
+	@import "fill.scss";
+}
+
+@media #{$media} and (min-width: $fillMaxWidth) {
+	@import "full.scss";
+}

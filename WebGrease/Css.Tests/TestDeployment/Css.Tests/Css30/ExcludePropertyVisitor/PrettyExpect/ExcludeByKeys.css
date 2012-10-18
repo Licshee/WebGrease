@@ -1,0 +1,36 @@
+﻿.vidnws .linklist17 li .media
+{
+
+}
+.pa1
+{
+  margin:10px;
+  padding:1em .833em
+}
+.pa2 #content,
+p.pastoral.marine,
+.pa#area1,
+.pa#area2,
+.pa#area3
+{
+  float:left
+}
+.pa #subfoot
+{
+
+}
+.pa #area2,
+.pa #area3
+{
+
+}
+.pa #page:after
+{
+  exclude:block;
+  height:0;
+  visibility:hidden
+}
+.pa #page:before
+{
+
+}

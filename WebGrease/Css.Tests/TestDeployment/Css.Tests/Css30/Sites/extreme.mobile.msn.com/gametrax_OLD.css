@@ -1,0 +1,209 @@
+﻿.toggleBar
+{
+    background: #FFF url('/statics/sports/i/bar.png') repeat-x left top;
+    color: #326DB6;
+    font-weight: bold;
+    line-height: 40px;
+    min-height: 40px;
+    padding: 0 20px 0 10px;
+    margin-top: 3px;
+    border-bottom: 1px solid #9D9D9D;
+}
+
+.toggleBar .arrow
+{
+    background: transparent url('/statics/sports/i/toggle_bar.png') no-repeat -15px -10px;
+    width: 22px;
+    height: 15px;
+    display: block;
+    margin-top: 12px;
+    float: right;
+}
+
+.selected .arrow /* toggles the arrow */
+{
+    background: transparent url('/statics/sports/i/toggle_bar.png') no-repeat -55px -10px;
+}
+
+#fieldWrapper
+{
+	text-align: center;
+	background-color: #384F18;
+}
+
+#fieldFootball
+{
+	text-align: left;
+	background: #6D864D url('/statics/sports/i/field.png') left top no-repeat;
+	height: 186px;
+	width: 314px;
+	position: relative;
+	margin: 0 2px;
+	display: inline-block;
+}
+
+#fieldFootballMask
+{
+	padding: 18px 42px 20px 41px;
+	height: 115px;
+}
+
+#currentPlayStatus
+{
+	color: #FFF;
+	margin-top: 5px;
+}
+#currentPlayStatus td
+{
+	padding: 0 3px;
+}
+
+.timeouts
+{
+	font-size: 60%;
+}
+
+#preGameInfo
+{
+	background-color: #FFF;
+	border: 1px solid #000;
+	color: #000;
+	font-size: 80%;
+	padding: 5px;
+	margin: 0px 20px;
+	font-weight: bold;
+	text-align: center;
+}
+
+.weaInfo img
+{
+	position: relative;
+	top: 3px;
+}
+
+.matchup
+{
+	margin-top: 5px;
+	background-color: #496821;
+	color: #FFF;
+	height: 49px;
+	font-size: 80%;
+}
+
+.recentPlays
+{
+	background-color: #496821;
+	color: #FFF;
+	font-size: 80%;
+}
+
+.recentPlaysWrapper
+{
+	padding: 0px 2px;
+}
+
+.recentPlays .odd
+{
+	background-color: #597534;
+}
+
+.recentPlays tr td
+{
+	border-bottom: 1px solid #6E864D;
+	padding: 3px;
+}
+
+.statBtn, .statBtnH2H, .statsBtnSelected
+{
+	background: url('/statics/sports/i/stats_btn.png') no-repeat -51px 0;
+	height: 44px;
+	width: 50px;
+	text-align: center;
+	margin: 5px 11px;
+	display: block;
+	padding-top: 4px;
+}
+
+.statBtnH2H
+{
+	padding-top: 5px;
+}
+
+.statsBtnSelected
+{
+	background: url('/statics/sports/i/stats_btn.png') no-repeat 0 0;
+}
+
+.play
+{
+	display: block;
+	height: 13px;
+	position: relative;
+	border: 1px solid #CCC;
+	margin-bottom: 10px;
+}
+
+.playArrowLeft, .playArrowRight
+{
+	height: 13px;
+	width: 5px;
+	display: block;
+	position: absolute;
+}
+.playArrowLeft
+{
+	background: url('/statics/sports/i/play_arrow_left.png') no-repeat 0px center;
+	left: -7px;
+}
+
+.playArrowRight
+{
+	background: url('/statics/sports/i/play_arrow_right.png') no-repeat 0px center;
+	right: -7px;
+}
+
+.logoAwayOnField, .logoHomeOnField
+{
+	float: left;
+	top: 65px;
+	position: absolute;
+}
+
+.logoAwayOnField
+{
+	left: 8px;
+}
+
+.logoHomeOnField
+{
+	right: 8px;
+}
+
+#gametraxArticle
+{
+	padding: 8px 3px;
+}
+
+#gametraxArticle .title
+{
+	color: #869CB2;
+	font-weight: bold;
+	font-size: 120%;
+	padding-bottom: 10px;
+}
+
+#gametraxArticle .info
+{
+	line-height: 16px;
+	color: #636363;
+	background-color: #E9EDF1;
+	font-size: 60%;
+	padding-left: 3px;
+	margin-bottom: 3px;
+}
+
+#gametraxArticle .body p
+{
+	font-size: 90%;
+	padding-top: 10px;
+}

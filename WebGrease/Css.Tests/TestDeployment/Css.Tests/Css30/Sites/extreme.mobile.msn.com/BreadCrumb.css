@@ -1,0 +1,68 @@
+﻿/*
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="breadcrumb.css" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   Breadcrumb control styles.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+*/
+
+.breadcrumb a
+{
+  padding: 0.25em 0.167em 0 0.167em; /* 3px 2px 0 2px equivalent @ 12px font size */
+  vertical-align: middle;
+}
+
+.breadcrumb a.logo span,
+.breadcrumb a.msn span,
+.breadcrumb a.fox span
+{
+  display: none;
+}
+
+.breadcrumb a.msn
+{
+  background: transparent url('/statics/common/i/blue/logo_msn.png') no-repeat 0 0;
+  display: inline-block;
+  height: 2.833em; /* 34px equivalent @ 12px font size */
+  margin: 0.0834em 0.167em 0.25em 0.75em; /* 1px 2px 3px 8px equivalent @ 12px font size */
+  padding: 0;
+  width: 5.25em; /* 63px equivalent @ 12px font size */
+}
+
+.breadcrumb a.fox
+{
+  background: transparent url('/statics/common/i/blue/logo_fox.png') no-repeat 0 0;
+  display: inline-block;
+  height: 2.833em; /* 34px equivalent @ 12px font size */
+  margin: 0.167em 0.167em 0.167em 0.083em; /* 2px 2px 2px 1px equivalent @ 12px font size */
+  padding: 0;
+  width: 4.667em; /* 56px equivalent @ 12px font size */
+}
+
+.breadcrumb a.logo
+{
+  display: inline-block;
+  height: 3.333em; /* 40px equivalent @ 12px font size */
+  margin: 0.167em 0; /* 2px 0 equivalent @ 12px font size */
+  padding: 0;
+  width: 3.333em; /* 40px equivalent @ 12px font size */
+}
+
+.breadcrumb span /* this is the >> */
+{
+  display: inline-block;
+  font-size: 133.333%; /* 16px equivalent @ 12px font size */
+  margin: 0 0.083em; /* 1px equivalent @ 16px font size */
+  vertical-align: middle;
+}
+
+.breadcrumb a span
+{
+  font-size: 141.667%; /* 17px equivalent @ 12px font size */
+  color: #083980;
+  display: inline;
+  margin: 0;
+}

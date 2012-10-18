@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Dictionary>
+  <!-- http://msdn.microsoft.com/en-us/library/bb514188.aspx - How to use a custom dictionary in VS2012-->
+  <Words>
+    <Recognized>
+      <!--<Word></Word>-->
+      <Word>Ast</Word>
+      <Word>Attrib</Word>
+      <Word>Vars</Word>
+      <Word>Exp</Word>
+      <Word>javascript</Word>
+      <Word>msg</Word>
+      <Word>js</Word>
+      <Word>Pos</Word>
+    </Recognized>
+    <DiscreteExceptions>
+      <Term>plugIn</Term>
+    </DiscreteExceptions>
+    <Acronyms>
+      <CasingExceptions>
+        <!--<Acronym></Acronym>-->
+      </CasingExceptions>
+    </Acronyms>
+  </Words>
+</Dictionary>

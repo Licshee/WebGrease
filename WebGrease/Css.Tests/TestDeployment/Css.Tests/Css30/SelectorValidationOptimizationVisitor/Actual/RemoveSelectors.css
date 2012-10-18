@@ -1,0 +1,36 @@
+html>body
+{
+}
+* html
+{
+}
+*:first-child+html p
+{
+}
+head:first-child+body
+{
+}
+head+body
+{
+}
+body>div
+{
+}
+*>html
+{
+}
+*html>body
+{
+}
+#foo .abc 
+{
+    color: red;
+}
+.abc 
+{
+    color: red;
+}
+#foo
+{
+    color: red;
+}

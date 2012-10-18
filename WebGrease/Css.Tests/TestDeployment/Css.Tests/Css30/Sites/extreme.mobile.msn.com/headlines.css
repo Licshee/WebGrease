@@ -1,0 +1,93 @@
+﻿/* headlines css */
+.hlHeadlines
+{
+    /*background: #323D48;*/
+    background:#FFFFFF;
+    font-family: Tahoma,Verdana;
+    margin-bottom: 4px; 
+    font-size:100%;
+    width:100%;
+    text-align:center;   
+}
+.hlHidden
+{
+	display:none;
+}
+.hlParent
+{
+    text-align:left;
+    display: inline-block;
+}
+.hlTitle
+{    
+    font-size:100%;
+    cursor:pointer;
+    text-align:center;
+}
+.hlTitleP
+{    
+    font-size:100%;	
+    cursor:pointer;
+    height: 40px;
+    padding-left: 10px;
+}
+.hlTextP
+{
+	vertical-align:top;
+}
+.hlImagePanel
+{
+    overflow:hidden;
+    text-align:center;
+    height: 147px;
+}
+.hlImagePanelP
+{
+    overflow:hidden;
+    text-align:center;
+}
+.hlInnerSlider
+{
+	clear:left;
+	width:100%;
+}
+.hlSlide
+{
+	float:left;
+}
+.hlDesc
+{
+	font-size:80%;
+    color: #9AC8E8;
+    margin: 0px 4px 4px 0px;
+    padding: 2px 0px 2px 5px;
+    text-align:justify;        
+}
+.hlDescP
+{
+	font-size:80%;
+    color: #9AC8E8;
+    margin: 0px 4px 4px 0px;
+    padding: 2px 0px 2px 5px;        
+}
+.hlDesc a
+{
+	color: #000000;
+}
+.hlStoryLink
+{
+    text-decoration: none;
+    color: #9AC8E8;
+    background-color: transparent;
+    font-weight:bold;
+}
+.hlPMode
+{
+	width:100%;
+}
+.hlLoading
+{
+	background: transparent url('/statics/common/i/loading.gif') no-repeat center;
+	height:30px;	
+	display:block;	
+}
