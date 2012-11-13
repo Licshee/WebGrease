@@ -36,44 +36,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebGrease.Preprocessing.Include", "WebGrease.Preprocessing.Include\WebGrease.Preprocessing.Include.csproj", "{72B8FDED-86A4-4814-B8BF-24A556CF7831}"
 EndProject
 Global
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 11
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = http://vstfmsn:8080/tfs/msn01
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = WebGrease.Tests\\WebGrease.Tests.csproj
-		SccProjectName1 = WebGrease.Tests
-		SccLocalPath1 = WebGrease.Tests
-		SccProjectUniqueName2 = ..\\Ref\\Antlr\\Runtime\\antlr-dotnet-tool-3.3.1.7705_src\\antlr\\main\\runtime\\CSharp3\\Sources\\Antlr3.Runtime\\Antlr3.Runtime_vs2010.csproj
-		SccProjectName2 = ../Ref/Antlr/Runtime/antlr-dotnet-tool-3.3.1.7705_src/antlr/main/runtime/CSharp3/Sources/Antlr3.Runtime
-		SccLocalPath2 = ..\\Ref\\Antlr\\Runtime\\antlr-dotnet-tool-3.3.1.7705_src\\antlr\\main\\runtime\\CSharp3\\Sources\\Antlr3.Runtime
-		SccProjectUniqueName3 = Css.Tests\\Css.Tests.csproj
-		SccProjectName3 = Css.Tests
-		SccLocalPath3 = Css.Tests
-		SccProjectUniqueName4 = ImageAssemble.Tests\\ImageAssemble.Tests.csproj
-		SccProjectName4 = ImageAssemble.Tests
-		SccLocalPath4 = ImageAssemble.Tests
-		SccProjectUniqueName5 = WG\\WG.csproj
-		SccProjectName5 = WG
-		SccLocalPath5 = WG
-		SccProjectUniqueName6 = WebGrease\\WebGrease.csproj
-		SccProjectName6 = WebGrease
-		SccLocalPath6 = WebGrease
-		SccProjectUniqueName7 = NuGet\\NuGet.csproj
-		SccProjectName7 = NuGet
-		SccLocalPath7 = NuGet
-		SccProjectUniqueName8 = WebGrease.Build\\WebGrease.Build.csproj
-		SccProjectName8 = WebGrease.Build
-		SccLocalPath8 = WebGrease.Build
-		SccProjectUniqueName9 = WebGrease.Preprocessing.Sass\\WebGrease.Preprocessing.Sass.csproj
-		SccProjectTopLevelParentUniqueName9 = WebGrease.sln
-		SccProjectName9 = WebGrease.Preprocessing.Sass
-		SccLocalPath9 = WebGrease.Preprocessing.Sass
-		SccProjectUniqueName10 = WebGrease.Preprocessing.Include\\WebGrease.Preprocessing.Include.csproj
-		SccProjectTopLevelParentUniqueName10 = WebGrease.sln
-		SccProjectName10 = WebGrease.Preprocessing.Include
-		SccLocalPath10 = WebGrease.Preprocessing.Include
-	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = WebGrease.vsmdi
 	EndGlobalSection

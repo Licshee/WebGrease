@@ -14,10 +14,6 @@
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
     <OutputPath>bin\Debug\</OutputPath>
     <VersionMajor Condition="$(VersionMajor) == ''">1</VersionMajor>
     <VersionMinor Condition="$(VersionMinor) == ''">0</VersionMinor>
