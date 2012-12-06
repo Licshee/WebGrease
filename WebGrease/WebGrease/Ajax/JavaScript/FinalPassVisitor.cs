@@ -37,12 +37,11 @@ namespace Microsoft.Ajax.Utilities
                 if (node.PrimitiveType == PrimitiveType.Boolean
                     && m_parser.Settings.IsModificationAllowed(TreeModifications.BooleanLiteralsToNotOperators))
                 {
-                    node.Parent.ReplaceChild(node, new UnaryOperator(
-                        node.Context,
-                        m_parser,
-                        new ConstantWrapper(node.ToBoolean() ? 0 : 1, PrimitiveType.Number, node.Context, m_parser),
-                        JSToken.LogicalNot,
-                        false));
+                    node.Parent.ReplaceChild(node, new UnaryOperator(node.Context, m_parser)
+                        {
+                            Operand = new ConstantWrapper(node.ToBoolean() ? 0 : 1, PrimitiveType.Number, node.Context, m_parser),
+                            OperatorToken = JSToken.LogicalNot
+                        });
                 }
             }
         }

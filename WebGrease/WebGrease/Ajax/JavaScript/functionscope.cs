@@ -22,148 +22,129 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class FunctionScope : ActivationObject
     {
-        public FunctionObject FunctionObject { get; set; }
+        public FunctionObject FunctionObject { get; private set; }
 
-        private Dictionary<ActivationObject, ActivationObject> m_refScopes;
+        private HashSet<ActivationObject> m_refScopes;
 
-        internal FunctionScope(ActivationObject parent, bool isExpression, JSParser parser)
-            : base(parent, parser)
+        internal FunctionScope(ActivationObject parent, bool isExpression, CodeSettings settings, FunctionObject funcObj)
+            : base(parent, settings)
         {
+            m_refScopes = new HashSet<ActivationObject>();
             if (isExpression)
             {
                 // parent scopes automatically reference enclosed function expressions
                 AddReference(Parent);
             }
+
+            FunctionObject = funcObj;
         }
 
-        internal override void AnalyzeScope()
+        #region scope setup methods
+
+        /// <summary>
+        /// Set up this scopes lexically- and var-declared fields, plus formal parameters and the arguments object
+        /// </summary>
+        public override void DeclareScope()
         {
-            if (FunctionObject != null)
+            // we are a function expression that points to a function object. 
+            // if the function object points back to us, then this is the main
+            // function scope. But if it doesn't, then this is actually the parent
+            // scope for named function expressions that should contain just a field
+            // for the function name
+            if (FunctionObject.FunctionScope == this)
             {
-                // default processing
-                base.AnalyzeScope();
+                // first bind any parameters
+                DefineParameters();
+
+                // bind lexical declarations next
+                DefineLexicalDeclarations();
+
+                // bind the arguments object if this is a function scope
+                DefineArgumentsObject();
+
+                // bind the variable declarations
+                DefineVarDeclarations();
+            }
+            else
+            {
+                // we just need to define the function name in this scope
+                DefineFunctionExpressionName();
             }
         }
 
-        internal JSVariableField AddNewArgumentField(String name)
+        private void DefineFunctionExpressionName()
         {
-            var result = new JSVariableField(FieldType.Argument, name, 0, Missing.Value);
-            AddField(result);
-            return result;
+            // add a field for the function expression name so it can be self-referencing.
+            var functionField = this.CreateField(FunctionObject.Name, FunctionObject, 0);
+            functionField.IsFunction = true;
+            functionField.OriginalContext = FunctionObject.IdContext.Clone();
+
+            FunctionObject.VariableField = functionField;
+
+            this.AddField(functionField);
         }
 
-        internal JSVariableField AddArgumentsField()
+        private void DefineParameters()
         {
-            var arguments = new JSVariableField(FieldType.Arguments, "arguments", 0, null);
-            AddField(arguments);
-            return arguments;
-        }
-
-        internal bool IsArgumentTrimmable(JSVariableField argumentField)
-        {
-            return FunctionObject.IsArgumentTrimmable(argumentField);
-        }
-
-        public override JSVariableField FindReference(string name)
-        {
-            JSVariableField variableField = this[name];
-            if (variableField == null)
+            if (FunctionObject.ParameterDeclarations != null)
             {
-                // didn't find a field in this scope.
-                // special to function scopes: check to see if this is the arguments object
-                if (string.Compare(name, "arguments", StringComparison.Ordinal) == 0)
+                // for each parameter...
+                foreach (ParameterDeclaration parameter in FunctionObject.ParameterDeclarations)
                 {
-                    // this is a reference to the arguments object, so add the 
-                    // arguments field to the scope and return it
-                    variableField = AddArgumentsField();
-                }
-                else
-                {
-                    // recurse up the parent chain
-                    variableField = Parent.FindReference(name);
+                    // see if it's already defined
+                    var argumentField = this[parameter.Name];
+                    if (argumentField == null)
+                    {
+                        // not already defined -- create a field now
+                        argumentField = new JSVariableField(FieldType.Argument, parameter.Name, 0, null)
+                        {
+                            Position = parameter.Position,
+                            OriginalContext = parameter.Context.Clone(),
+                            CanCrunch = !parameter.RenameNotAllowed
+                        };
+
+                        this.AddField(argumentField);
+                    }
+
+                    // make the parameter reference the field and the field reference
+                    // the parameter as its declaration
+                    parameter.VariableField = argumentField;
+                    argumentField.Declarations.Add(parameter);
                 }
             }
-            return variableField;
         }
+
+        private void DefineArgumentsObject()
+        {
+            // this one is easy: if it's not already defined, define it now
+            const string name = "arguments";
+            if (this[name] == null)
+            {
+                this.AddField(new JSVariableField(FieldType.Arguments, name, 0, null));
+            }
+        }
+
+        #endregion
 
         public override JSVariableField CreateField(string name, object value, FieldAttributes attributes)
         {
             return new JSVariableField(FieldType.Local, name, attributes, value);
         }
 
-        public override JSVariableField CreateField(JSVariableField outerField)
-        {
-            return new JSVariableField(FieldType.Local, outerField);
-        }
-
         internal void AddReference(ActivationObject scope)
         {
-            // make sure the hash is created
-            if (m_refScopes == null)
-            {
-                m_refScopes = new Dictionary<ActivationObject, ActivationObject>();
-            }
             // we don't want to include block scopes or with scopes -- they are really
             // contained within their parents
             while (scope != null && scope is BlockScope)
             {
                 scope = scope.Parent;
             }
-            if (scope != null && !m_refScopes.ContainsKey(scope))
+
+            if (scope != null)
             {
                 // add the scope to the hash
-                m_refScopes.Add(scope, scope);
+                m_refScopes.Add(scope);
             }
-        }
-
-        public bool IsReferenced(IDictionary<ActivationObject, ActivationObject> visited)
-        {
-            // first off, if the parent scope of this scope is a global scope, 
-            // then we're a global function and referenced by default.
-            if (Parent is GlobalScope)
-            {
-                return true;
-            }
-
-            // if we were passed null, then create a new hash table for us to pass on
-            if (visited == null)
-            {
-                visited = new Dictionary<ActivationObject, ActivationObject>();
-            }
-
-            // add our scope to the visited hash
-            if (!visited.ContainsKey(this))
-            {
-                visited.Add(this, this);
-            }
-
-            // now we walk the hash of referencing scopes and try to find one that that is
-            if (m_refScopes != null)
-            {
-                foreach (ActivationObject referencingScope in m_refScopes.Keys)
-                {
-                    // skip any that we've already been to
-                    if (!visited.ContainsKey(referencingScope))
-                    {
-                        // if we are referenced by the global scope, then we are referenced
-                        if (referencingScope is GlobalScope)
-                        {
-                            return true;
-                        }
-
-                        // if this is a function scope, traverse through it
-                        FunctionScope functionScope = referencingScope as FunctionScope;
-                        if (functionScope != null && functionScope.IsReferenced(visited))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            // if we get here, then we didn't find any referencing scopes
-            // that were referenced
-            return false;
         }
     }
 }

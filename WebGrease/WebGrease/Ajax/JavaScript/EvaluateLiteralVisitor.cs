@@ -69,7 +69,12 @@ namespace Microsoft.Ajax.Utilities
                             // we want to replace the call with operator with a new member dot operation, and
                             // since we won't be analyzing it (we're past the analyze phase, we're going to need
                             // to use the new string value
-                            Member replacementMember = new Member(parentCall.Context, m_parser, parentCall.Function, newName, parentCall.Arguments[0].Context);
+                            Member replacementMember = new Member(parentCall.Context, m_parser)
+                                {
+                                    Root = parentCall.Function,
+                                    Name = newName,
+                                    NameContext = parentCall.Arguments[0].Context
+                                };
                             parentCall.Parent.ReplaceChild(parentCall, replacementMember);
                             return true;
                         }
@@ -91,7 +96,12 @@ namespace Microsoft.Ajax.Utilities
                         if (JSScanner.IsSafeIdentifier(combinedString) && !JSScanner.IsKeyword(combinedString, parentCall.EnclosingScope.UseStrict))
                         {
                             // yes -- replace the parent call with a new member node using the newly-combined string
-                            Member replacementMember = new Member(parentCall.Context, m_parser, parentCall.Function, combinedString, parentCall.Arguments[0].Context);
+                            Member replacementMember = new Member(parentCall.Context, m_parser)
+                                {
+                                    Root = parentCall.Function,
+                                    Name = combinedString,
+                                    NameContext = parentCall.Arguments[0].Context
+                                };
                             parentCall.Parent.ReplaceChild(parentCall, replacementMember);
                             return true;
                         }
@@ -99,6 +109,74 @@ namespace Microsoft.Ajax.Utilities
                 }
             }
             return false;
+        }
+
+        /// <summary>
+        /// replace the node with a literal. If the node was wrapped in a grouping operator
+        /// before (parentheses around it), then we can get rid of the parentheses too, since
+        /// we are replacing the node with a single literal entity.
+        /// </summary>
+        /// <param name="node">node to replace</param>
+        /// <param name="newLiteral">literal to replace the node with</param>
+        private static void ReplaceNodeWithLiteral(AstNode node, ConstantWrapper newLiteral)
+        {
+            var grouping = node.Parent as GroupingOperator;
+            if (grouping != null)
+            {
+                // because we are replacing the operator with a literal, the parentheses
+                // the grouped this operator are now superfluous. Replace them, too
+                grouping.Parent.ReplaceChild(grouping, newLiteral);
+            }
+            else
+            {
+                // just replace the node with the literal
+                node.Parent.ReplaceChild(node, newLiteral);
+            }
+        }
+
+        private static void ReplaceNodeCheckParens(AstNode oldNode, AstNode newNode)
+        {
+            var grouping = oldNode.Parent as GroupingOperator;
+            if (grouping != null)
+            {
+                if (newNode != null)
+                {
+                    var targetPrecedence = grouping.Parent.Precedence;
+                    var conditional = grouping.Parent as Conditional;
+                    if (conditional != null)
+                    {
+                        // the conditional is weird in that the different parts need to be
+                        // compared against different precedences, not the precedence of the
+                        // conditional itself. The condition should be compared to logical-or,
+                        // and the true/false expressions against assignment.
+                        targetPrecedence = conditional.Condition == grouping
+                            ? OperatorPrecedence.LogicalOr
+                            : OperatorPrecedence.Assignment;
+                    }
+
+                    if (newNode.Precedence >= targetPrecedence)
+                    {
+                        // don't need the parens anymore, so replace the grouping operator
+                        // with the new node, thereby eliminating the parens
+                        grouping.Parent.ReplaceChild(grouping, newNode);
+                    }
+                    else
+                    {
+                        // still need the parens; just replace the node with the literal
+                        oldNode.Parent.ReplaceChild(oldNode, newNode);
+                    }
+                }
+                else
+                {
+                    // eliminate the parens
+                    grouping.Parent.ReplaceChild(grouping, null);
+                }
+            }
+            else
+            {
+                // just replace the node with the literal
+                oldNode.Parent.ReplaceChild(oldNode, newNode);
+            }
         }
 
         /// <summary>
@@ -225,7 +303,7 @@ namespace Microsoft.Ajax.Utilities
                 // expression
                 if (!ReplaceMemberBracketWithDot(node, newLiteral))
                 {
-                    node.Parent.ReplaceChild(node, newLiteral);
+                    ReplaceNodeWithLiteral(node, newLiteral);
                 }
             }
         }
@@ -242,7 +320,7 @@ namespace Microsoft.Ajax.Utilities
         private void RotateFromLeft(BinaryOperator node, BinaryOperator binaryOp, ConstantWrapper newLiteral)
         {
             // replace our node with the binary operator
-            binaryOp.ReplaceChild(binaryOp.Operand2, newLiteral);
+            binaryOp.Operand2 = newLiteral;
             node.Parent.ReplaceChild(node, binaryOp);
 
             // and just for good measure.. revisit the node that's taking our place, since
@@ -266,7 +344,7 @@ namespace Microsoft.Ajax.Utilities
         private void RotateFromRight(BinaryOperator node, BinaryOperator binaryOp, ConstantWrapper newLiteral)
         {
             // replace our node with the binary operator
-            binaryOp.ReplaceChild(binaryOp.Operand1, newLiteral);
+            binaryOp.Operand1 = newLiteral;
             node.Parent.ReplaceChild(node, binaryOp);
 
             // and just for good measure.. revisit the node that's taking our place, since
@@ -1740,8 +1818,8 @@ namespace Microsoft.Ajax.Utilities
                                 if (leftType != rightType)
                                 {
                                     // they are not the same type -- replace with a boolean and bail
-                                    node.Parent.ReplaceChild(
-                                        node,
+                                    ReplaceNodeWithLiteral(
+                                        node, 
                                         new ConstantWrapper(node.OperatorToken == JSToken.StrictEqual ? false : true, PrimitiveType.Boolean, node.Context, m_parser));
                                     return;
                                 }
@@ -1771,7 +1849,7 @@ namespace Microsoft.Ajax.Utilities
                                 // the comma with the right-hand operand.
                                 if (!ReplaceMemberBracketWithDot(node, rightConstant))
                                 {
-                                    node.Parent.ReplaceChild(node, rightConstant);
+                                    ReplaceNodeWithLiteral(node, rightConstant);
                                 }
                             }
                             else if (node is CommaOperator)
@@ -1783,19 +1861,19 @@ namespace Microsoft.Ajax.Utilities
                                 {
                                     // not a list, just a single item, so we can just
                                     // replace this entire node with the one element
-                                    node.Parent.ReplaceChild(node, node.Operand2);
+                                    ReplaceNodeCheckParens(node, node.Operand2);
                                 }
                                 else if (list.Count == 1)
                                 {
                                     // If the list has a single element, then we can just
                                     // replace this entire node with the one element
-                                    node.Parent.ReplaceChild(node, list[0]);
+                                    ReplaceNodeCheckParens(node, list[0]);
                                 }
                                 else if (list.Count == 0)
                                 {
                                     // the recursion ended up emptying the list, so we can just delete
                                     // this node altogether
-                                    node.Parent.ReplaceChild(node, null);
+                                    ReplaceNodeCheckParens(node, null);
                                 }
                                 else
                                 {
@@ -1803,7 +1881,7 @@ namespace Microsoft.Ajax.Utilities
                                     // move the first item from the list to the left-hand side
                                     var firstItem = list[0];
                                     list.RemoveAt(0);
-                                    node.ReplaceChild(node.Operand1, firstItem);
+                                    node.Operand1 = firstItem;
 
                                     // if there's only one item left in the list, we can get rid of the
                                     // extra list node and make it just the remaining node
@@ -1811,14 +1889,14 @@ namespace Microsoft.Ajax.Utilities
                                     {
                                         firstItem = list[0];
                                         list.RemoveAt(0);
-                                        node.ReplaceChild(node.Operand2, firstItem);
+                                        node.Operand2 = firstItem;
                                     }
                                 }
                             }
                             else
                             {
                                 // replace the comma operator with the right-hand operand
-                                node.Parent.ReplaceChild(node, node.Operand2);
+                                ReplaceNodeCheckParens(node, node.Operand2);
                             }
                         }
                         else
@@ -1889,8 +1967,12 @@ namespace Microsoft.Ajax.Utilities
                                     // okay, so we have "lookup - 0"
                                     // this is done frequently to force a value to be numeric. 
                                     // There is an easier way: apply the unary + operator to it. 
-                                    var unary = new UnaryOperator(node.Context, m_parser, lookup, JSToken.Plus, false);
-                                    node.Parent.ReplaceChild(node, unary);
+                                    var unary = new UnaryOperator(node.Context, m_parser)
+                                        {
+                                            Operand = lookup,
+                                            OperatorToken = JSToken.Plus
+                                        };
+                                    ReplaceNodeCheckParens(node, unary);
                                 }
                             }
                         }
@@ -1935,7 +2017,7 @@ namespace Microsoft.Ajax.Utilities
                                         if (combinedJoin.Length + 2 < node.ToCode().Length)
                                         {
                                             // transform: [c,c,c].join(s) => "cscsc"
-                                            node.Parent.ReplaceChild(node,
+                                            ReplaceNodeWithLiteral(node, 
                                                 new ConstantWrapper(combinedJoin, PrimitiveType.String, node.Context, node.Parser));
                                         }
                                     }
@@ -1971,7 +2053,7 @@ namespace Microsoft.Ajax.Utilities
                     {
                         // if the boolean represenation of the literal is true, we can replace the condition operator
                         // with the true expression; otherwise we can replace it with the false expression
-                        node.Parent.ReplaceChild(node, literalCondition.ToBoolean() ? node.TrueExpression : node.FalseExpression);
+                        ReplaceNodeCheckParens(node, literalCondition.ToBoolean() ? node.TrueExpression : node.FalseExpression);
                     }
                     catch (InvalidCastException)
                     {
@@ -2005,8 +2087,8 @@ namespace Microsoft.Ajax.Utilities
                     {
                         try
                         {
-                            node.ReplaceChild(node.Condition,
-                                new ConstantWrapper(constantCondition.ToBoolean() ? 1 : 0, PrimitiveType.Number, node.Condition.Context, m_parser));
+                            node.Condition =
+                                new ConstantWrapper(constantCondition.ToBoolean() ? 1 : 0, PrimitiveType.Number, node.Condition.Context, m_parser);
                         }
                         catch (InvalidCastException)
                         {
@@ -2041,8 +2123,8 @@ namespace Microsoft.Ajax.Utilities
                     {
                         try
                         {
-                            node.ReplaceChild(node.Condition,
-                                new ConstantWrapper(constantCondition.ToBoolean() ? 1 : 0, PrimitiveType.Number, node.Condition.Context, m_parser));
+                            node.Condition =
+                                new ConstantWrapper(constantCondition.ToBoolean() ? 1 : 0, PrimitiveType.Number, node.Condition.Context, m_parser);
                         }
                         catch (InvalidCastException)
                         {
@@ -2076,8 +2158,8 @@ namespace Microsoft.Ajax.Utilities
                     {
                         // the condition is a constant, so it is always either true or false
                         // we can replace the condition with a one or a zero -- only one byte
-                        node.ReplaceChild(node.Condition,
-                            new ConstantWrapper(constantCondition.ToBoolean() ? 1 : 0, PrimitiveType.Number, node.Condition.Context, m_parser));
+                        node.Condition =
+                            new ConstantWrapper(constantCondition.ToBoolean() ? 1 : 0, PrimitiveType.Number, node.Condition.Context, m_parser);
                     }
                     catch (InvalidCastException)
                     {
@@ -2112,12 +2194,12 @@ namespace Microsoft.Ajax.Utilities
                         if (constantCondition.ToBoolean())
                         {
                             // always true -- don't need a condition at all
-                            node.ReplaceChild(node.Condition, null);
+                            node.Condition = null;
                         }
                         else if (constantCondition.IsNotOneOrPositiveZero)
                         {
                             // always false and it's not already a zero. Make it so (only one byte)
-                            node.ReplaceChild(node.Condition, new ConstantWrapper(0, PrimitiveType.Number, node.Condition.Context, m_parser));
+                            node.Condition = new ConstantWrapper(0, PrimitiveType.Number, node.Condition.Context, m_parser);
                         }
                     }
                     catch (InvalidCastException)
@@ -2152,8 +2234,8 @@ namespace Microsoft.Ajax.Utilities
                     {
                         try
                         {
-                            node.ReplaceChild(node.Condition,
-                                new ConstantWrapper(constantCondition.ToBoolean() ? 1 : 0, PrimitiveType.Number, node.Condition.Context, m_parser));
+                            node.Condition =
+                                new ConstantWrapper(constantCondition.ToBoolean() ? 1 : 0, PrimitiveType.Number, node.Condition.Context, m_parser);
                         }
                         catch (InvalidCastException)
                         {
@@ -2191,7 +2273,7 @@ namespace Microsoft.Ajax.Utilities
                             // the void operator evaluates its operand and returns undefined. Since evaluating a literal
                             // does nothing, then it doesn't matter what the heck it is. Replace it with a zero -- a one-
                             // character literal.
-                            node.ReplaceChild(literalOperand, new ConstantWrapper(0, PrimitiveType.Number, node.Context, m_parser));
+                            node.Operand = new ConstantWrapper(0, PrimitiveType.Number, node.Context, m_parser);
                         }
                         break;
 
@@ -2226,12 +2308,12 @@ namespace Microsoft.Ajax.Utilities
 
                             if (!string.IsNullOrEmpty(typeName))
                             {
-                                node.Parent.ReplaceChild(node, new ConstantWrapper(typeName, PrimitiveType.String, node.Context, m_parser));
+                                ReplaceNodeWithLiteral(node, new ConstantWrapper(typeName, PrimitiveType.String, node.Context, m_parser));
                             }
                         }
                         else if (node.Operand is ObjectLiteral)
                         {
-                            node.Parent.ReplaceChild(node, new ConstantWrapper("object", PrimitiveType.String, node.Context, m_parser));
+                            ReplaceNodeWithLiteral(node, new ConstantWrapper("object", PrimitiveType.String, node.Context, m_parser));
                         }
                         break;
 
@@ -2241,7 +2323,7 @@ namespace Microsoft.Ajax.Utilities
                             try
                             {
                                 // replace with a constant representing operand.ToNumber,
-                                node.Parent.ReplaceChild(node, new ConstantWrapper(literalOperand.ToNumber(), PrimitiveType.Number, node.Context, m_parser));
+                                ReplaceNodeWithLiteral(node, new ConstantWrapper(literalOperand.ToNumber(), PrimitiveType.Number, node.Context, m_parser));
                             }
                             catch (InvalidCastException)
                             {
@@ -2257,7 +2339,7 @@ namespace Microsoft.Ajax.Utilities
                             try
                             {
                                 // replace with a constant representing the negative of operand.ToNumber
-                                node.Parent.ReplaceChild(node, new ConstantWrapper(-literalOperand.ToNumber(), PrimitiveType.Number, node.Context, m_parser));
+                                ReplaceNodeWithLiteral(node, new ConstantWrapper(-literalOperand.ToNumber(), PrimitiveType.Number, node.Context, m_parser));
                             }
                             catch (InvalidCastException)
                             {
@@ -2273,7 +2355,7 @@ namespace Microsoft.Ajax.Utilities
                             try
                             {
                                 // replace with a constant representing the bitwise-not of operant.ToInt32
-                                node.Parent.ReplaceChild(node, new ConstantWrapper(Convert.ToDouble(~literalOperand.ToInt32()), PrimitiveType.Number, node.Context, m_parser));
+                                ReplaceNodeWithLiteral(node, new ConstantWrapper(Convert.ToDouble(~literalOperand.ToInt32()), PrimitiveType.Number, node.Context, m_parser));
                             }
                             catch (InvalidCastException)
                             {
@@ -2289,7 +2371,7 @@ namespace Microsoft.Ajax.Utilities
                             // replace with a constant representing the opposite of operand.ToBoolean
                             try
                             {
-                                node.Parent.ReplaceChild(node, new ConstantWrapper(!literalOperand.ToBoolean(), PrimitiveType.Boolean, node.Context, m_parser));
+                                ReplaceNodeWithLiteral(node, new ConstantWrapper(!literalOperand.ToBoolean(), PrimitiveType.Boolean, node.Context, m_parser));
                             }
                             catch (InvalidCastException)
                             {
@@ -2317,7 +2399,7 @@ namespace Microsoft.Ajax.Utilities
             // see if the condition is a constant
             if (m_parser.Settings.IsModificationAllowed(TreeModifications.EvaluateNumericExpressions))
             {
-                ConstantWrapper constantCondition = node.Condition as ConstantWrapper;
+                var constantCondition = node.Condition as ConstantWrapper;
                 if (constantCondition != null)
                 {
                     // TODO: (someday) we'd RATHER eliminate the statement altogether if the condition is always false,
@@ -2340,38 +2422,42 @@ namespace Microsoft.Ajax.Utilities
                                     // if the previous statement is a var, we can move it to the initializer
                                     // and save even more bytes. The parent should always be a block. If not, 
                                     // then assume there is no previous.
-                                    Block parentBlock = node.Parent as Block;
+                                    var parentBlock = node.Parent as Block;
                                     if (parentBlock != null)
                                     {
-                                        int whileIndex = parentBlock.StatementIndex(node);
+                                        int whileIndex = parentBlock.IndexOf(node);
                                         if (whileIndex > 0)
                                         {
-                                            Var previousVar = parentBlock[whileIndex - 1] as Var;
+                                            var previousVar = parentBlock[whileIndex - 1] as Var;
                                             if (previousVar != null)
                                             {
                                                 initializer = previousVar;
-                                                parentBlock.ReplaceChild(previousVar, null);
+                                                parentBlock.RemoveAt(whileIndex - 1);
                                             }
                                         }
                                     }
                                 }
 
                                 // create the for using our body and replace ourselves with it
-                                ForNode forNode = new ForNode(node.Context, m_parser, initializer, null, null, node.Body);
+                                var forNode = new ForNode(node.Context, m_parser)
+                                    {
+                                        Initializer = initializer,
+                                        Body = node.Body
+                                    };
                                 node.Parent.ReplaceChild(node, forNode);
                             }
                             else
                             {
                                 // the condition is always true, so we can replace the condition
                                 // with a 1 -- only one byte
-                                node.ReplaceChild(node.Condition, new ConstantWrapper(1, PrimitiveType.Number, null, m_parser));
+                                node.Condition = new ConstantWrapper(1, PrimitiveType.Number, null, m_parser);
                             }
                         }
                         else if (constantCondition.IsNotOneOrPositiveZero)
                         {
                             // the condition is always false, so we can replace the condition
                             // with a zero -- only one byte
-                            node.ReplaceChild(node.Condition, new ConstantWrapper(0, PrimitiveType.Number, null, m_parser));
+                            node.Condition = new ConstantWrapper(0, PrimitiveType.Number, null, m_parser);
                         }
                     }
                     catch (InvalidCastException)

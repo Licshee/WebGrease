@@ -145,7 +145,7 @@ namespace Microsoft.Ajax.Utilities
             {
                 if (m_context != null)
                 {
-                    if (m_context.EndColumn > m_context.StartColumn)
+                    if (m_context.EndColumn >= m_context.StartColumn)
                     {
                         // normal condition - one-based
                         return m_context.EndColumn + 1;
@@ -246,7 +246,7 @@ namespace Microsoft.Ajax.Utilities
 
                 // special case some errors with contextual information
                 return JScript.ResourceManager.GetString(code, JScript.Culture).FormatInvariant(
-                    m_context == null ? string.Empty : m_context.Code);
+                    m_context.IfNotNull(c => c.HasCode) ? string.Empty : m_context.Code);
             }
         }
 
@@ -259,7 +259,7 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                return m_isError ? 0 : GetSeverity(m_errorCode);
+                return GetSeverity(m_errorCode);
             }
         }
 
@@ -332,7 +332,7 @@ namespace Microsoft.Ajax.Utilities
         /// Return the default severity for a given JSError value
         /// guide: 0 == there will be a run-time error if this code executes
         ///        1 == the programmer probably did not intend to do this
-        ///        2 == this can lead to problems in the future.
+        ///        2 == this can lead to cross-browser of future problems.
         ///        3 == this can lead to performance problems
         ///        4 == this is just not right
         /// </summary>
@@ -342,17 +342,18 @@ namespace Microsoft.Ajax.Utilities
         {
             switch (errorCode)
             {
-                case JSError.AmbiguousVariable:
                 case JSError.AmbiguousCatchVar:
                 case JSError.AmbiguousNamedFunctionExpression:
                 case JSError.NumericOverflow:
                 case JSError.StrictComparisonIsAlwaysTrueOrFalse:
                     return 1;
 
+                case JSError.DuplicateCatch:
                 case JSError.DuplicateConstantDeclaration:
+                case JSError.DuplicateLexicalDeclaration:
                 case JSError.KeywordUsedAsIdentifier:
                 case JSError.MisplacedFunctionDeclaration:
-                case JSError.ObjectLiteralReservedWord:
+                case JSError.ObjectLiteralKeyword:
                     return 2;
 
                 case JSError.ArgumentNotReferenced:
@@ -366,12 +367,14 @@ namespace Microsoft.Ajax.Utilities
                 case JSError.StatementBlockExpected:
                 case JSError.SuspectAssignment:
                 case JSError.SuspectSemicolon:
+                case JSError.SuspectEquality:
                 case JSError.WithNotRecommended:
                 case JSError.ObjectConstructorTakesNoArguments:
                 case JSError.NumericMaximum:
                 case JSError.NumericMinimum:
                 case JSError.OctalLiteralsDeprecated:
                 case JSError.FunctionNameMustBeIdentifier:
+                case JSError.SemicolonInsertion:
                     return 4;
 
                 default:

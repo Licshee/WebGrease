@@ -76,9 +76,9 @@ namespace Microsoft.Ajax.Utilities
             // only interested if the index is greater than zero, since the zero-index
             // needs to be a lookup. Also needs to be a brackets-call, and there needs to
             // be a single argument.
-            if (node != null 
+            if (node != null
                 && m_index > 0
-                && node.InBrackets 
+                && node.InBrackets
                 && node.Arguments != null
                 && node.Arguments.Count == 1)
             {
@@ -118,11 +118,21 @@ namespace Microsoft.Ajax.Utilities
             {
                 // see if the name matches; and if there is a field, it should be a global
                 if (string.CompareOrdinal(node.Name, m_parts[0]) == 0
-                    && (node.VariableField == null || node.VariableField.FieldType == FieldType.Global))
+                    && (node.VariableField == null || node.VariableField.FieldType == FieldType.UndefinedGlobal 
+                    || node.VariableField.FieldType == FieldType.Global))
                 {
                     // match!
                     m_isMatch = true;
                 }
+            }
+        }
+
+        public virtual void Visit(GroupingOperator node)
+        {
+            if (node != null && node.Operand != null)
+            {
+                // just totally ignore any parentheses
+                node.Operand.Accept(this);
             }
         }
 
@@ -273,12 +283,27 @@ namespace Microsoft.Ajax.Utilities
             // not applicable; terminate
         }
 
+        public void Visit(LexicalDeclaration node)
+        {
+            // not applicable; terminate
+        }
+
         public void Visit(ObjectLiteral node)
         {
             // not applicable; terminate
         }
 
         public void Visit(ObjectLiteralField node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(ObjectLiteralProperty node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(ParameterDeclaration node)
         {
             // not applicable; terminate
         }

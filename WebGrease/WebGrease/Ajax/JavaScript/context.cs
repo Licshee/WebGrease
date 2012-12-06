@@ -28,9 +28,10 @@ namespace Microsoft.Ajax.Utilities
         public int EndLineNumber { get; internal set; }
         public int EndLinePosition { get; internal set; }
         public int EndPosition { get; internal set; }
-        public JSToken Token { get; internal set; }
+        public int SourceOffsetStart { get; internal set; }
+        public int SourceOffsetEnd { get; internal set; }
 
-        private int m_errorReported;
+        public JSToken Token { get; internal set; }
 
         public Context(JSParser parser)
             : this(new DocumentContext(parser))
@@ -51,7 +52,18 @@ namespace Microsoft.Ajax.Utilities
             EndPosition = (Document.Source == null) ? -1 : Document.Source.Length;
 
             Token = JSToken.None;
-            m_errorReported = 1000000;
+        }
+
+        public Context(DocumentContext document, int startLineNumber, int startLinePosition, int startPosition, int endLineNumber, int endLinePosition, int endPosition, JSToken token)
+            : this(document)
+        {
+            StartLineNumber = startLineNumber;
+            StartLinePosition = startLinePosition;
+            StartPosition = startPosition;
+            EndLineNumber = endLineNumber;
+            EndLinePosition = endLinePosition;
+            EndPosition = endPosition;
+            Token = token;
         }
 
         public Context Clone()
@@ -63,10 +75,31 @@ namespace Microsoft.Ajax.Utilities
                 StartPosition = this.StartPosition,
                 EndLineNumber = this.EndLineNumber, 
                 EndLinePosition = this.EndLinePosition, 
-                EndPosition = this.EndPosition, 
+                EndPosition = this.EndPosition,
+                SourceOffsetStart = this.SourceOffsetStart,
+                SourceOffsetEnd = this.SourceOffsetEnd,
                 Token = this.Token,
-                m_errorReported = this.m_errorReported
             };
+        }
+
+        public Context FlattenToStart()
+        {
+            // clone the context and flatten the end to be the start position
+            var clone = Clone();
+            clone.EndLineNumber = clone.StartLineNumber;
+            clone.EndLinePosition = clone.StartLinePosition;
+            clone.EndPosition = clone.StartPosition;
+            return clone;
+        }
+
+        public Context FlattenToEnd()
+        {
+            // clone the context and flatten the start to the end position
+            var clone = Clone();
+            clone.StartLineNumber = clone.EndLineNumber;
+            clone.StartLinePosition = clone.EndLinePosition;
+            clone.StartPosition = clone.EndPosition;
+            return clone;
         }
 
         public Context CombineWith(Context other)
@@ -81,6 +114,8 @@ namespace Microsoft.Ajax.Utilities
                         EndLineNumber = other.EndLineNumber,
                         EndLinePosition = other.EndLinePosition,
                         EndPosition = other.EndPosition,
+                        SourceOffsetStart = this.SourceOffsetStart,
+                        SourceOffsetEnd = other.SourceOffsetEnd,
                         Token = this.Token
                     };
         }
@@ -141,45 +176,50 @@ namespace Microsoft.Ajax.Utilities
 
         internal void HandleError(JSError errorId)
         {
-            HandleError(errorId, null, false);
+            HandleError(errorId, false);
         }
 
-        internal void HandleError(JSError errorId, bool treatAsError)
-        {
-            HandleError(errorId, null, treatAsError);
-        }
-
-        internal void HandleError(JSError errorId, String message, bool treatAsError)
+        internal void HandleError(JSError errorId, bool forceToError)
         {
             if ((errorId != JSError.UndeclaredVariable && errorId != JSError.UndeclaredFunction) || !Document.HasAlreadySeenErrorFor(Code))
             {
                 var error = new JScriptException(errorId, this);
-                if (message != null)
-                    error.Value = message;
 
-                if (treatAsError)
-                    error.IsError = treatAsError;
-
-                int sev = error.Severity;
-                if (sev < m_errorReported)
+                if (forceToError)
                 {
-                    Document.HandleError(error);
-                    m_errorReported = sev;
+                    error.IsError = true;
                 }
+                else
+                {
+                    error.IsError = error.Severity < 2;
+                }
+
+                Document.HandleError(error);
             }
         }
 
-        public void UpdateWith(Context other)
+        public Context UpdateWith(Context other)
         {
             if (other != null)
             {
-                StartPosition = Math.Min(StartPosition, other.StartPosition);
-                StartLineNumber = Math.Min(StartLineNumber, other.StartLineNumber);
-                StartLinePosition = Math.Min(StartLinePosition, other.StartLinePosition);
-                EndPosition = Math.Max(EndPosition, other.EndPosition);
-                EndLineNumber = Math.Max(EndLineNumber, other.EndLineNumber);
-                EndLinePosition = Math.Max(EndLinePosition, other.EndLinePosition);
+                if (other.StartPosition < this.StartPosition)
+                {
+                    this.StartPosition = other.StartPosition;
+                    this.StartLineNumber = other.StartLineNumber;
+                    this.StartLinePosition = other.StartLinePosition;
+                    this.SourceOffsetStart = other.SourceOffsetStart;
+                }
+
+                if (other.EndPosition > this.EndPosition)
+                {
+                    this.EndPosition = other.EndPosition;
+                    this.EndLineNumber = other.EndLineNumber;
+                    this.EndLinePosition = other.EndLinePosition;
+                    this.SourceOffsetEnd = other.SourceOffsetEnd;
+                }
             }
+
+            return this;
         }
 
         public bool IsBefore(Context other)

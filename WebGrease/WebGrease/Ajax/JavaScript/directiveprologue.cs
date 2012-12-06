@@ -54,6 +54,15 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public override bool IsConstant
+        {
+            get
+            {
+                // not a constant, really; it's a directive prologue.
+                return false;
+            }
+        }
+
         public override void Accept(IVisitor visitor)
         {
             if (visitor != null)

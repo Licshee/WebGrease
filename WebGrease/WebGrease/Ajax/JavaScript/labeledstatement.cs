@@ -21,21 +21,27 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class LabeledStatement : AstNode
     {
-        public int NestCount { get; private set; }
-        public AstNode Statement { get; private set; }
+        private AstNode m_statement;
+
+        public AstNode Statement
+        {
+            get { return m_statement; }
+            set
+            {
+                m_statement.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_statement = value;
+                m_statement.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public int NestCount { get; set; }
         public string Label { get; set; }
 
-        public LabeledStatement(Context context, JSParser parser, string label, int nestCount, AstNode statement)
+        public Context ColonContext { get; set; }
+
+        public LabeledStatement(Context context, JSParser parser)
             : base(context, parser)
         {
-            Label = label;
-            Statement = statement;
-            NestCount = nestCount;
-
-            if (Statement != null)
-            {
-                Statement.Parent = this;
-            }
         }
 
         public override void Accept(IVisitor visitor)
@@ -83,7 +89,6 @@ namespace Microsoft.Ajax.Utilities
             if (Statement == oldNode)
             {
                 Statement = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             return false;

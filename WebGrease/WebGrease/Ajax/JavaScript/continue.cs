@@ -21,14 +21,14 @@ namespace Microsoft.Ajax.Utilities
 
     public sealed class ContinueNode : AstNode
     {
-        public string Label { get; set; }
-        public int NestLevel { get; private set; }
+        public int NestLevel { get; set; }
 
-        public ContinueNode(Context context, JSParser parser, int count, string label)
+        public string Label { get; set; }
+        public Context LabelContext { get; set; }
+
+        public ContinueNode(Context context, JSParser parser)
             : base(context, parser)
         {
-            Label = (label == null || label.Length == 0) ? null : label;
-            NestLevel = count;
         }
 
         public override void Accept(IVisitor visitor)

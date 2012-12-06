@@ -21,18 +21,26 @@ using System.Text;
 namespace Microsoft.Ajax.Utilities
 {
 
-    public sealed class DoWhile : AstNode
+    public sealed class DoWhile : IterationStatement
     {
-        public Block Body { get; set; }
-        public AstNode Condition {get; set;}
+        private AstNode m_condition;
 
-        public DoWhile(Context context, JSParser parser, AstNode body, AstNode condition)
+        public AstNode Condition 
+        {
+            get { return m_condition; }
+            set
+            {
+                m_condition.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_condition = value;
+                m_condition.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public Context WhileContext { get; set; }
+
+        public DoWhile(Context context, JSParser parser)
             : base(context, parser)
         {
-            Body = ForceToBlock(body);
-            Condition = condition;
-            if (Body != null) Body.Parent = this;
-            if (Condition != null) Condition.Parent = this;
         }
 
         internal override bool RequiresSeparator
@@ -68,13 +76,11 @@ namespace Microsoft.Ajax.Utilities
             if (Body == oldNode)
             {
                 Body = ForceToBlock(newNode);
-                if (Body != null) { Body.Parent = this; }
                 return true;
             }
             if (Condition == oldNode)
             {
                 Condition = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             return false;

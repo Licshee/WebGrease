@@ -21,19 +21,39 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class Switch : AstNode
     {
-        public AstNode Expression { get; private set; }
-        public AstNodeList Cases { get; private set; }
-        public bool BraceOnNewLine { get; set; }
+        private AstNode m_expression;
+        private AstNodeList m_cases;
 
-        public Switch(Context context, JSParser parser, AstNode expression, AstNodeList cases, bool braceOnNewLine)
+        public AstNode Expression
+        {
+            get { return m_expression; }
+            set
+            {
+                m_expression.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_expression = value;
+                m_expression.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public AstNodeList Cases
+        {
+            get { return m_cases; }
+            set
+            {
+                m_cases.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_cases = value;
+                m_cases.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public bool BraceOnNewLine { get; set; }
+        public Context BraceContext { get; set; }
+
+        public ActivationObject BlockScope { get; set; }
+
+        public Switch(Context context, JSParser parser)
             : base(context, parser)
         {
-            Expression = expression;
-            Cases = cases;
-            BraceOnNewLine = braceOnNewLine;
-
-            if (Expression != null) Expression.Parent = this;
-            if (Cases != null) Cases.Parent = this;
         }
 
         public override void Accept(IVisitor visitor)
@@ -67,29 +87,19 @@ namespace Microsoft.Ajax.Utilities
             if (Expression == oldNode)
             {
                 Expression = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             if (Cases == oldNode)
             {
-                if (newNode == null)
+                AstNodeList newList = newNode as AstNodeList;
+                if (newNode == null || newList != null)
                 {
                     // remove it
-                    Cases = null;
+                    Cases = newList;
                     return true;
                 }
-                else
-                {
-                    // if the new node isn't an AstNodeList, ignore the call
-                    AstNodeList newList = newNode as AstNodeList;
-                    if (newList != null)
-                    {
-                        Cases = newList;
-                        newNode.Parent = this;
-                        return true;
-                    }
-                }
             }
+
             return false;
         }
     }

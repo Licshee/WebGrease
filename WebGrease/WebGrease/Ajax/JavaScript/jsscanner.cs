@@ -100,6 +100,8 @@ namespace Microsoft.Ajax.Utilities
 
         public event EventHandler<GlobalDefineEventArgs> GlobalDefine;
 
+        public event EventHandler<NewModuleEventArgs> NewModule;
+
         #endregion
 
         #region constructors
@@ -1030,6 +1032,14 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        private void OnNewModule(string newModule)
+        {
+            if (NewModule != null)
+            {
+                NewModule(this, new NewModuleEventArgs { Module = newModule });
+            }
+        }
+
         public static bool IsKeyword(string name, bool strictMode)
         {
             bool isKeyword = false;
@@ -1197,21 +1207,15 @@ namespace Microsoft.Ajax.Utilities
                 c = GetChar(m_currentPosition);
                 if ('x' == c || 'X' == c)
                 {
-                    if (!JSScanner.IsHexDigit(GetChar(m_currentPosition + 1)))
+                    if (JSScanner.IsHexDigit(GetChar(m_currentPosition + 1)))
                     {
-                        // bump it up two characters to pick up the 'x' and the bad digit
-                        m_currentPosition += 2;
-                        HandleError(JSError.BadHexDigit);
-                        // bump it down three characters to go back to the 0
-                        m_currentPosition -= 3;
+                        while (JSScanner.IsHexDigit(GetChar(++m_currentPosition)))
+                        {
+                            // empty
+                        }
                     }
 
-                    while (JSScanner.IsHexDigit(GetChar(++m_currentPosition)))
-                    {
-                        // empty
-                    }
-
-                    return token;
+                    return CheckForNumericBadEnding(token);
                 }
                 else if ('b' == c || 'B' == c)
                 {
@@ -1223,9 +1227,9 @@ namespace Microsoft.Ajax.Utilities
                         {
                             // iterator handled in the condition
                         }
-
-                        return token;
                     }
+
+                    return CheckForNumericBadEnding(token);
                 }
                 else if ('o' == c || 'O' == c)
                 {
@@ -1237,9 +1241,9 @@ namespace Microsoft.Ajax.Utilities
                         {
                             // iterator handled in the condition
                         }
-
-                        return token;
                     }
+
+                    return CheckForNumericBadEnding(token);
                 }
                 else if ('0' <= c && c <= '7')
                 {
@@ -1255,6 +1259,15 @@ namespace Microsoft.Ajax.Utilities
                     m_literalIssues = true;
                     HandleError(JSError.OctalLiteralsDeprecated);
                     return token;
+                }
+                else if (c != 'e' && c != 'E' && IsValidIdentifierStart(c))
+                {
+                    // invalid for an integer (in this case '0') the be followed by
+                    // an identifier part. The 'e' is okay, though, because that will
+                    // be the exponent part.
+                    // we know the 0 and the next character are both invalid, so skip them and 
+                    // anything else after it that's identifier-like, and throw an error.
+                    return CheckForNumericBadEnding(token);
                 }
             }
 
@@ -1310,6 +1323,33 @@ namespace Microsoft.Ajax.Utilities
             if ('e' == c || 'E' == c)
             {
                 m_currentPosition--;
+            }
+
+            // it is invalid for a numeric literal to be immediately followed by another
+            // digit or an identifier start character. So check for those and return an
+            // invalid numeric literal if true.
+            return CheckForNumericBadEnding(token);
+        }
+
+        private JSToken CheckForNumericBadEnding(JSToken token)
+        {
+            // it is invalid for a numeric literal to be immediately followed by another
+            // digit or an identifier start character. So check for those cases and return an
+            // invalid numeric literal if true.
+            char ch = GetChar(m_currentPosition);
+            if (('0' <= ch && ch <= '9') || IsValidIdentifierStart(ch))
+            {
+                // we know that next character is invalid, so skip it and 
+                // anything else after it that's identifier-like, and throw an error.
+                ++m_currentPosition;
+                while (IsValidIdentifierPart(GetChar(m_currentPosition)))
+                {
+                    ++m_currentPosition;
+                }
+
+                m_literalIssues = true;
+                HandleError(JSError.BadNumericLiteral);
+                token = JSToken.NumericLiteral;
             }
 
             return token;
@@ -1520,7 +1560,18 @@ namespace Microsoft.Ajax.Utilities
                     // this is the common non escape case
                     if (IsLineTerminator(ch, 0))
                     {
+                        // TODO: we want to flag this string as unterminated *and having issues*,
+                        // and then somehow output a line-break in the output to duplicate the
+                        // source. However, we will need to figure out how to NOT combine the statement
+                        // with the next statement. For instance:
+                        //      var x = "unterminated
+                        //      var y = 42;
+                        // should NOT get combined to: var x="unterminated,y=42;
+                        // (same for moving it inside for-statements, combining expression statements, etc.)
+                        //m_literalIssues = true;
                         HandleError(JSError.UnterminatedString);
+
+                        // back up to the start of the line terminator
                         --m_currentPosition;
                         if (GetChar(m_currentPosition - 1) == '\r')
                         {
@@ -1532,6 +1583,10 @@ namespace Microsoft.Ajax.Utilities
 
                     if ('\0' == ch)
                     {
+                        // whether it's a null literal character within the string or an
+                        // actual end of file, this string literal has issues....
+                        m_literalIssues = true;
+
                         if (IsEndOfFile)
                         {
                             m_currentPosition--;
@@ -1539,8 +1594,6 @@ namespace Microsoft.Ajax.Utilities
                             break;
                         }
 
-                        // null literal character within the string can cause "issues"
-                        m_literalIssues = true;
                     }
 
                     if (AllowEmbeddedAspNetBlocks
@@ -1578,6 +1631,8 @@ namespace Microsoft.Ajax.Utilities
 
                     // state variable to be reset
                     bool seqOfThree = false;
+                    bool isValidHex;
+                    int escapeStart;
                     int esc = 0;
 
                     ch = GetChar(m_currentPosition++);
@@ -1640,56 +1695,113 @@ namespace Microsoft.Ajax.Utilities
 
                         // hexadecimal escape sequence /xHH
                         case 'x':
-                            if (ScanHexDigit(ref esc))
+                            // save the start of the escape in case we fail
+                            escapeStart = m_currentPosition - 2;
+                            isValidHex = true;
+                            if (!ScanHexDigit(ref esc))
                             {
-                                if (!ScanHexDigit(ref esc))
+                                isValidHex = false;
+                                
+                                // if that invalid character (which the scan function skipped over)
+                                // was a delimiter, back up!
+                                if (GetChar(m_currentPosition - 1) == delimiter)
                                 {
-                                    HandleError(JSError.BadHexDigit);
                                     --m_currentPosition;
                                 }
                             }
-                            else
+
+                            if (!ScanHexDigit(ref esc))
                             {
-                                HandleError(JSError.BadHexDigit);
-                                --m_currentPosition;
+                                isValidHex = false;
+
+                                // if that invalid character (which the scan function skipped over)
+                                // was a delimiter, back up!
+                                if (GetChar(m_currentPosition - 1) == delimiter)
+                                {
+                                    --m_currentPosition;
+                                }
                             }
 
-                            result.Append((char)esc);
+                            if (isValidHex)
+                            {
+                                // valid; use the unescaped character
+                                result.Append((char)esc);
+                            }
+                            else
+                            {
+                                // wasn't valid -- keep the original and flag this 
+                                // as having issues
+                                result.Append(m_strSourceCode.Substring(escapeStart, m_currentPosition - escapeStart));
+                                m_literalIssues = true;
+                                HandleError(JSError.BadHexEscapeSequence);
+                            }
                             break;
 
                         // unicode escape sequence /uHHHH
                         case 'u':
-                            if (ScanHexDigit(ref esc))
+                            // save the start of the escape in case we fail
+                            escapeStart = m_currentPosition - 2;
+                            isValidHex = true;
+                            if (!ScanHexDigit(ref esc))
                             {
-                                if (ScanHexDigit(ref esc))
+                                isValidHex = false;
+                                
+                                // if that invalid character (which the scan function skipped over)
+                                // was a delimiter, back up!
+                                if (GetChar(m_currentPosition - 1) == delimiter)
                                 {
-                                    if (ScanHexDigit(ref esc))
-                                    {
-                                        if (!ScanHexDigit(ref esc))
-                                        {
-                                            HandleError(JSError.BadHexDigit);
-                                            --m_currentPosition;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        HandleError(JSError.BadHexDigit);
-                                        --m_currentPosition;
-                                    }
-                                }
-                                else
-                                {
-                                    HandleError(JSError.BadHexDigit);
                                     --m_currentPosition;
                                 }
                             }
-                            else
+
+                            if (!ScanHexDigit(ref esc))
                             {
-                                HandleError(JSError.BadHexDigit);
-                                --m_currentPosition;
+                                isValidHex = false;
+                                
+                                // if that invalid character (which the scan function skipped over)
+                                // was a delimiter, back up!
+                                if (GetChar(m_currentPosition - 1) == delimiter)
+                                {
+                                    --m_currentPosition;
+                                }
                             }
 
-                            result.Append((char)esc);
+                            if (!ScanHexDigit(ref esc))
+                            {
+                                isValidHex = false;
+                                
+                                // if that invalid character (which the scan function skipped over)
+                                // was a delimiter, back up!
+                                if (GetChar(m_currentPosition - 1) == delimiter)
+                                {
+                                    --m_currentPosition;
+                                }
+                            }
+
+                            if (!ScanHexDigit(ref esc))
+                            {
+                                isValidHex = false;
+                                
+                                // if that invalid character (which the scan function skipped over)
+                                // was a delimiter, back up!
+                                if (GetChar(m_currentPosition - 1) == delimiter)
+                                {
+                                    --m_currentPosition;
+                                }
+                            }
+
+                            if (isValidHex)
+                            {
+                                // valid; use the unescaped character
+                                result.Append((char)esc);
+                            }
+                            else
+                            {
+                                // wasn't valid -- keep the original
+                                result.Append(m_strSourceCode.Substring(escapeStart, m_currentPosition - escapeStart));
+                                m_literalIssues = true;
+                                HandleError(JSError.BadHexEscapeSequence);
+                            }
                             break;
 
                         case '0':
@@ -2589,7 +2701,8 @@ namespace Microsoft.Ajax.Utilities
                         SkipOneLineTerminator();
 
                         // change the file context
-                        m_currentToken.ChangeFileContext(m_strSourceCode.Substring(ndxStart, m_currentPosition - ndxStart).TrimEnd());
+                        var newModule = m_strSourceCode.Substring(ndxStart, m_currentPosition - ndxStart).TrimEnd();
+                        m_currentToken.ChangeFileContext(newModule);
 
                         // adjust the line number
                         this.m_currentLine = linePos;
@@ -2598,6 +2711,14 @@ namespace Microsoft.Ajax.Utilities
                         // and because the column position in the comment is one-based, add one to get 
                         // back to zero-based: current - (col - 1)
                         this.m_startLinePosition = m_currentPosition - colPos + 1;
+
+                        // the source offset for both start and end is now the current position.
+                        // this is assuming that a single token doesn't span across source files, which isn't
+                        // entirely true, since a string literal or multi-line comment (for example) may do just that.
+                        this.m_currentToken.SourceOffsetStart = this.m_currentToken.SourceOffsetEnd = m_currentPosition;
+
+                        // alert anyone (the parser) that we encountered the start of a new module
+                        OnNewModule(newModule);
 
                         // return false because we are all set on the next line and DON'T want the
                         // line skipped.
@@ -2877,6 +2998,35 @@ namespace Microsoft.Ajax.Utilities
             m_currentToken.HandleError(error);
         }
 
+        /// <summary>
+        /// Given an assignment operator (=, +=, -=, *=, /=, %=, &amp;=, |=, ^=, &lt;&lt;=, &gt;&gt;=, &gt;&gt;&gt;=), strip
+        /// the assignment to return (+, -, *, /, %, &amp;, |, ^, &lt;&lt;, &gt;&gt;, &gt;&gt;&gt;). For all other operators,
+        /// include the normal assign (=), just return the same operator token.
+        /// This only works if the two groups of tokens are actually defined in those orders!!! 
+        /// </summary>
+        /// <param name="assignOp"></param>
+        /// <returns></returns>
+        internal static JSToken StripAssignment(JSToken assignOp)
+        {
+            // gotta be an assignment operator
+            if (IsAssignmentOperator(assignOp))
+            {
+                // get the delta from assign (=), which is the first assignment operator
+                int delta = assignOp - JSToken.Assign;
+
+                // assign (=) will be zero -- we don't want to modify that one, so if
+                // the delta is GREATER than zero...
+                if (delta > 0)
+                {
+                    // add it to the plus token, less one since the delta for +=
+                    // will be one.
+                    assignOp = JSToken.Plus + delta - 1;
+                }
+            }
+
+            return assignOp;
+        }
+
         internal static bool IsAssignmentOperator(JSToken token)
         {
             return JSToken.Assign <= token && token <= JSToken.LastAssign;
@@ -2894,10 +3044,15 @@ namespace Microsoft.Ajax.Utilities
             return JSToken.FirstBinaryOperator <= token && token <= JSToken.ConditionalIf;
         }
 
-        internal static OperatorPrecedence GetOperatorPrecedence(JSToken token)
+        internal static OperatorPrecedence GetOperatorPrecedence(Context op)
         {
-            return token == JSToken.None ? OperatorPrecedence.None : JSScanner.s_OperatorsPrec[token - JSToken.FirstBinaryOperator];
+            return op == null || op.Token == JSToken.None ? OperatorPrecedence.None : JSScanner.s_OperatorsPrec[op.Token - JSToken.FirstBinaryOperator];
         }
+
+        //internal static OperatorPrecedence GetOperatorPrecedence(JSToken op)
+        //{
+        //    return JSScanner.s_OperatorsPrec[op - JSToken.FirstBinaryOperator];
+        //}
 
         private static OperatorPrecedence[] InitOperatorsPrec()
         {
@@ -3145,5 +3300,10 @@ namespace Microsoft.Ajax.Utilities
     public class GlobalDefineEventArgs : EventArgs
     {
         public string Name { get; set; }
+    }
+
+    public class NewModuleEventArgs : EventArgs
+    {
+        public string Module { get; set; }
     }
 }

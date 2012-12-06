@@ -22,17 +22,44 @@ using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
-    public sealed class FunctionObject : AstNode
+    public sealed class FunctionObject : AstNode, INameDeclaration
     {
-        public Block Body { get; private set; }
-        public FunctionType FunctionType { get; private set; }
+        private Block m_body;
+        private AstNodeList m_parameters;
 
-        private ParameterDeclaration[] m_parameterDeclarations;
-        public IList<ParameterDeclaration> ParameterDeclarations
+        public Block Body
+        {
+            get { return m_body; }
+            set
+            {
+                m_body.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_body = value;
+                m_body.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public AstNodeList ParameterDeclarations
+        {
+            get { return m_parameters; }
+            set
+            {
+                m_parameters.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_parameters = value;
+                m_parameters.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public FunctionType FunctionType { get; set; }
+
+        public AstNode Initializer { get { return null; } }
+
+        public Context NameContext { get { return IdContext; } }
+
+        public bool RenameNotAllowed
         {
             get
             {
-                return m_parameterDeclarations;
+                return VariableField == null ? true : !VariableField.CanCrunch;
             }
         }
 
@@ -49,27 +76,20 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public Lookup Identifier { get; private set; }
-        private string m_name;
         public string Name
         {
-            get
-            {
-                return (Identifier != null ? Identifier.Name : m_name);
-            }
-            set
-            {
-                if (Identifier != null)
-                {
-                    Identifier.Name = value;
-                }
-                else
-                {
-                    m_name = value;
-                }
-            }
+            get;
+            set;
         }
-        public Context IdContext { get { return (Identifier == null ? null : Identifier.Context); } }
+
+        public string NameGuess
+        {
+            get;
+            set;
+        }
+
+        public Context IdContext { get; set; }
+        public Context ParametersContext { get; set; }
 
         public override bool IsExpression
         {
@@ -89,18 +109,16 @@ namespace Microsoft.Ajax.Utilities
             set;
         }
 
-        private JSVariableField m_variableField;
-        public JSVariableField VariableField { get { return m_variableField; } }
-        public int RefCount { get { return (m_variableField == null ? 0 : m_variableField.RefCount); } }
+        public JSVariableField VariableField { get; set; }
+        public int RefCount { get { return (VariableField == null ? 0 : VariableField.RefCount); } }
 
-        private FunctionScope m_functionScope;
-        public FunctionScope FunctionScope { get { return m_functionScope; } }
+        public FunctionScope FunctionScope { get; set; }
 
         public override ActivationObject EnclosingScope
         {
             get
             {
-                return m_functionScope;
+                return FunctionScope;
             }
         }
 
@@ -113,179 +131,9 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public FunctionObject(Lookup identifier, JSParser parser, FunctionType functionType, ParameterDeclaration[] parameterDeclarations, Block bodyBlock, Context functionContext, FunctionScope functionScope)
+        public FunctionObject(Context functionContext, JSParser parser)
             : base(functionContext, parser)
         {
-            FunctionType = functionType;
-            m_functionScope = functionScope;
-            if (functionScope != null)
-            {
-                functionScope.FunctionObject = this;
-            }
-
-            m_name = string.Empty;
-            Identifier = identifier;
-            if (Identifier != null) { Identifier.Parent = this; }
-
-            m_parameterDeclarations = parameterDeclarations;
-
-            Body = bodyBlock;
-            if (bodyBlock != null) { bodyBlock.Parent = this; }
-
-            // now we need to make sure that the enclosing scope has the name of this function defined
-            // so that any references get properly resolved once we start analyzing the parent scope
-            // see if this is not anonymnous AND not a getter/setter
-            bool isGetterSetter = (FunctionType == FunctionType.Getter || FunctionType == FunctionType.Setter);
-            if (Identifier != null && !isGetterSetter)
-            {
-                // yes -- add the function name to the current enclosing
-                // check whether the function name is in use already
-                // shouldn't be any duplicate names
-                ActivationObject enclosingScope = m_functionScope.Parent;
-                // functions aren't owned by block scopes
-                while (enclosingScope is BlockScope)
-                {
-                    enclosingScope = enclosingScope.Parent;
-                }
-
-                // if the enclosing scope already contains this name, then we know we have a dup
-                string functionName = Identifier.Name;
-                m_variableField = enclosingScope[functionName];
-                if (m_variableField != null)
-                {
-                    // it's pointing to a function
-                    m_variableField.IsFunction = true;
-
-                    if (FunctionType == FunctionType.Expression)
-                    {
-                        // if the containing scope is itself a named function expression, then just
-                        // continue on as if everything is fine. It will chain and be good.
-                        if (m_variableField.FieldType != FieldType.NamedFunctionExpression)
-                        {
-                            if (m_variableField.NamedFunctionExpression != null)
-                            {
-                                // we have a second named function expression in the same scope
-                                // with the same name. Not an error unless someone actually references
-                                // it.
-
-                                // we are now ambiguous.
-                                m_variableField.IsAmbiguous = true;
-
-                                // BUT because this field now points to multiple function object, we
-                                // need to break the connection. We'll leave the inner NFEs pointing
-                                // to this field as the outer field so the names all align, however.
-                                DetachFromOuterField(true);
-
-                                // create a new NFE pointing to the existing field as the outer so
-                                // the names stay in sync, and with a value of our function object.
-                                var namedExpressionField = 
-                                    new JSVariableField(FieldType.NamedFunctionExpression, m_variableField);
-                                namedExpressionField.FieldValue = this;
-                                m_functionScope.AddField(namedExpressionField);
-
-                                // hook our function object up to the named field
-                                m_variableField = namedExpressionField;
-                                Identifier.VariableField = namedExpressionField;
-
-                                // if we want to preserve the function names, mark this field as not crunchable
-                                if (Parser.Settings.PreserveFunctionNames)
-                                {
-                                    namedExpressionField.CanCrunch = false;
-                                }
-
-                                // we're done; quit.
-                                return;
-                            }
-                            else if (m_variableField.IsAmbiguous)
-                            {
-                                // we're pointing to a field that is already marked as ambiguous.
-                                // just create our own NFE pointing to this one, and hook us up.
-                                var namedExpressionField = 
-                                    new JSVariableField(FieldType.NamedFunctionExpression, m_variableField);
-                                namedExpressionField.FieldValue = this;
-                                m_functionScope.AddField(namedExpressionField);
-
-                                // hook our function object up to the named field
-                                m_variableField = namedExpressionField;
-                                Identifier.VariableField = namedExpressionField;
-
-                                // if we want to preserve the function names, mark this field as not crunchable
-                                if (Parser.Settings.PreserveFunctionNames)
-                                {
-                                    namedExpressionField.CanCrunch = false;
-                                }
-
-                                // we're done; quit.
-                                return;
-                            }
-                            else
-                            {
-                                // we are a named function expression in a scope that has already
-                                // defined a local variable of the same name. Not good. Throw the 
-                                // error but keep them attached because the names have to be synced
-                                // to keep the same meaning in all browsers.
-                                Identifier.Context.HandleError(JSError.AmbiguousNamedFunctionExpression, false);
-
-                                // if we are preserving function names, then we need to mark this field
-                                // as not crunchable
-                                if (Parser.Settings.PreserveFunctionNames)
-                                {
-                                    m_variableField.CanCrunch = false;
-                                }
-                            }
-                        }
-                        /*else
-                        {
-                            // it's okay; just chain the NFEs as normal and everything will work out
-                            // and the names will be properly synced.
-                        }*/
-                    }
-                    else
-                    {
-                        // function declaration -- duplicate name
-                        Identifier.Context.HandleError(JSError.DuplicateName, false);
-                    }
-                }
-                else
-                {
-                    // doesn't exist -- create it now
-                    m_variableField = enclosingScope.DeclareField(functionName, this, 0);
-                    m_variableField.OriginalContext = Identifier.Context;
-
-                    // and it's a pointing to a function object
-                    m_variableField.IsFunction = true;
-                }
-
-                // set the identifier variable field now. We *know* what the field is now, and during
-                // Analyze mode we aren't going to recurse into the identifier because that would add 
-                // a reference to it.
-                Identifier.VariableField = m_variableField;
-
-                // if we're here, we have a name. if this is a function expression, then we have
-                // a named function expression and we need to do a little more work to prepare for
-                // the ambiguities of named function expressions in various browsers.
-                if (FunctionType == FunctionType.Expression)
-                {
-                    // now add a field within the function scope that indicates that it's okay to reference
-                    // this named function expression from WITHIN the function itself.
-                    // the inner field points to the outer field since we're going to want to catch ambiguous
-                    // references in the future
-                    var namedExpressionField = new JSVariableField(FieldType.NamedFunctionExpression, m_variableField);
-                    m_functionScope.AddField(namedExpressionField);
-                    m_variableField.NamedFunctionExpression = namedExpressionField;
-
-                    // if we want to preserve the function names, mark this field as not crunchable
-                    if (Parser.Settings.PreserveFunctionNames)
-                    {
-                        namedExpressionField.CanCrunch = false;
-                    }
-                }
-                else
-                {
-                    // function declarations are declared by definition
-                    m_variableField.IsDeclared = true;
-                }
-            }
         }
 
         public override void Accept(IVisitor visitor)
@@ -296,31 +144,71 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        internal bool IsReferenced(int fieldRefCount)
+        public bool IsReferenced
         {
-            // function expressions, getters, and setters are always referenced.
-            // for function declarations, if the field refcount is zero, then we know we're not referenced.
-            // otherwise, let's check with the scopes to see what's up.
-            bool isReferenced = false;
-            if (FunctionType != FunctionType.Declaration)
+            get
             {
-                isReferenced = true;
+                // call the checking method with a new empty hashset so it doesn't
+                // go in an endless circle
+                return SafeIsReferenced(new HashSet<FunctionObject>());
             }
-            else if (fieldRefCount > 0)
+        }
+
+        private bool SafeIsReferenced(HashSet<FunctionObject> visited)
+        {
+            // if we've already been here, don't go in a circle
+            if (!visited.Contains(this))
             {
-                // we are going to visit each referenced scope and ask if any are
-                // referenced. If any one is, then we are too. Since this will be a graph,
-                // keep a hashtable of visited scopes so we don't get into endless loops.
-                isReferenced = m_functionScope.IsReferenced(null);
+                // add us to the visited list
+                visited.Add(this);
+
+                if (FunctionType == FunctionType.Declaration)
+                {
+                    // this is a function declaration, so it better have it's variable field set.
+                    // if the variable (and therefore the function) is defined in the global scope,
+                    // then this function declaration is called by a global function and therefore is
+                    // referenced.
+                    if (VariableField.OwningScope is GlobalScope)
+                    {
+                        return true;
+                    }
+
+                    // not defined in the global scope. Check its references.
+                    foreach (var reference in VariableField.References)
+                    {
+                        var referencingScope = reference.VariableScope;
+                        if (referencingScope is GlobalScope)
+                        {
+                            // referenced by a lookup in the global scope -- we're good to go.
+                            return true;
+                        }
+                        else
+                        {
+                            var functionScope = referencingScope as FunctionScope;
+                            if (functionScope != null && functionScope.FunctionObject.SafeIsReferenced(visited))
+                            {
+                                // as soon as we find one that's referenced, we stop
+                                return true;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // expressions are always referenced
+                    return true;
+                }
             }
-            return isReferenced;
+
+            // if we get here, we aren't referenced by anything that's referenced
+            return false;
         }
 
         public override IEnumerable<AstNode> Children
         {
             get
             {
-                return EnumerateNonNullNodes(Body);
+                return EnumerateNonNullNodes(ParameterDeclarations, Body);
             }
         }
 
@@ -328,24 +216,19 @@ namespace Microsoft.Ajax.Utilities
         {
             if (Body == oldNode)
             {
-                if (newNode == null)
+                Body = ForceToBlock(newNode);
+                return true;
+            }
+            else if (ParameterDeclarations == oldNode)
+            {
+                var newList = newNode as AstNodeList;
+                if (newNode == null || newList != null)
                 {
-                    // just remove it
-                    Body = null;
+                    ParameterDeclarations = newList;
                     return true;
                 }
-                else
-                {
-                    // if the new node isn't a block, ignore it
-                    Block newBlock = newNode as Block;
-                    if (newBlock != null)
-                    {
-                        Body = newBlock;
-                        newNode.Parent = this;
-                        return true;
-                    }
-                }
             }
+
             return false;
         }
 
@@ -362,11 +245,12 @@ namespace Microsoft.Ajax.Utilities
             // referenced parameters after it.
             // if we find a referenced argument, then the parameter is not trimmable.
             JSVariableField argumentField = null;
-            if (m_parameterDeclarations != null)
+            if (ParameterDeclarations != null)
             {
-                for (int index = m_parameterDeclarations.Length - 1; index >= 0; --index)
+                for (int index = ParameterDeclarations.Count - 1; index >= 0; --index)
                 {
-                    argumentField = m_parameterDeclarations[index].Field;
+                    // better be a parameter declaration
+                    argumentField = (ParameterDeclarations[index] as ParameterDeclaration).IfNotNull(p => p.VariableField);
                     if (argumentField != null
                         && (argumentField == targetArgumentField || argumentField.IsReferenced))
                     {
@@ -379,32 +263,6 @@ namespace Microsoft.Ajax.Utilities
             // then we found the target argument BEFORE we found a referenced parameter. Therefore
             // the argument can be trimmed.
             return (argumentField == targetArgumentField);
-        }
-
-        public void DetachFromOuterField(bool leaveInnerPointingToOuter)
-        {
-            // we're going to change the reference from the outer variable to the inner variable
-            // save the inner variable field
-            var nfeField = m_variableField.NamedFunctionExpression;
-            // break the connection from the outer to the inner
-            m_variableField.NamedFunctionExpression = null;
-
-            if (!leaveInnerPointingToOuter)
-            {
-                // detach the inner from the outer
-                nfeField.Detach();
-            }
-
-            // the outer field no longer points to the function object
-            m_variableField.FieldValue = null;
-            // but the inner field should
-            nfeField.FieldValue = this;
-
-            // our variable field is now the inner field
-            m_variableField = nfeField;
-
-            // and so is out identifier
-            Identifier.VariableField = nfeField;
         }
     }
 }

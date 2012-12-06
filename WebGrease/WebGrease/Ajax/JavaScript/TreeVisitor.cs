@@ -309,6 +309,14 @@ namespace Microsoft.Ajax.Utilities
             // no children
         }
 
+        public virtual void Visit(GroupingOperator node)
+        {
+            if (node != null && node.Operand != null)
+            {
+                node.Operand.Accept(this);
+            }
+        }
+
         public virtual void Visit(IfNode node)
         {
             if (node != null)
@@ -346,6 +354,17 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public virtual void Visit(LexicalDeclaration node)
+        {
+            if (node != null)
+            {
+                foreach (var childNode in node.Children)
+                {
+                    childNode.Accept(this);
+                }
+            }
+        }
+
         public virtual void Visit(Lookup node)
         {
             // no children
@@ -366,14 +385,35 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                foreach (var childNode in node.Children)
+                if (node.Properties != null)
                 {
-                    childNode.Accept(this);
+                    node.Properties.Accept(this);
                 }
             }
         }
 
         public virtual void Visit(ObjectLiteralField node)
+        {
+            // no children
+        }
+
+        public virtual void Visit(ObjectLiteralProperty node)
+        {
+            if (node != null)
+            {
+                if (node.Name != null)
+                {
+                    node.Name.Accept(this);
+                }
+
+                if (node.Value != null)
+                {
+                    node.Value.Accept(this);
+                }
+            }
+        }
+
+        public virtual void Visit(ParameterDeclaration node)
         {
             // no children
         }

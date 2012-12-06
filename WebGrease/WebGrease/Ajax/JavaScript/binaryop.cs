@@ -24,18 +24,46 @@ namespace Microsoft.Ajax.Utilities
 
     public class BinaryOperator : Expression
     {
-        public AstNode Operand1 { get; protected set; }
-        public AstNode Operand2 { get; protected set; }
-        public JSToken OperatorToken { get; set; }
+        private AstNode m_operand1;
+        private AstNode m_operand2;
 
-        public BinaryOperator(Context context, JSParser parser, AstNode operand1, AstNode operand2, JSToken operatorToken)
+        public AstNode Operand1 
+        {
+            get { return m_operand1; }
+            set
+            {
+                m_operand1.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_operand1 = value;
+                m_operand1.IfNotNull(n => n.Parent = this);
+            }
+        }
+        
+        public AstNode Operand2 
+        {
+            get { return m_operand2; }
+            set
+            {
+                m_operand2.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_operand2 = value;
+                m_operand2.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public JSToken OperatorToken { get; set; }
+        public Context OperatorContext { get; set; }
+
+        public override Context TerminatingContext
+        {
+            get
+            {
+                // if we have one, return it. If not, see ifthe right-hand side has one
+                return base.TerminatingContext ?? Operand2.IfNotNull(n => n.TerminatingContext);
+            }
+        }
+
+        public BinaryOperator(Context context, JSParser parser)
             : base(context, parser)
         {
-            if (operand1 != null) operand1.Parent = this;
-            if (operand2 != null) operand2.Parent = this;
-            Operand1 = operand1;
-            Operand2 = operand2;
-            OperatorToken = operatorToken;
         }
 
         public override OperatorPrecedence Precedence
@@ -216,13 +244,11 @@ namespace Microsoft.Ajax.Utilities
             if (Operand1 == oldNode)
             {
                 Operand1 = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             if (Operand2 == oldNode)
             {
                 Operand2 = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             return false;
@@ -239,12 +265,12 @@ namespace Microsoft.Ajax.Utilities
 
         public void SwapOperands()
         {
-            // swap the operands -- we don't need to go through ReplaceChild 
-            // because we don't need to change the Parent pointers 
+            // swap the operands -- we don't need to go through ReplaceChild or the
+            // property setters because we don't need to change the Parent pointers 
             // or anything like that.
-            AstNode temp = Operand1;
-            Operand1 = Operand2;
-            Operand2 = temp;
+            AstNode temp = m_operand1;
+            m_operand1 = m_operand2;
+            m_operand2 = temp;
         }
 
         public override bool IsEquivalentTo(AstNode otherNode)
@@ -286,7 +312,9 @@ namespace Microsoft.Ajax.Utilities
 
         internal override string GetFunctionGuess(AstNode target)
         {
-            return Operand1.GetFunctionGuess(target);
+            return Operand2 == target
+                ? IsAssign ? Operand1.GetFunctionGuess(this) : Parent.GetFunctionGuess(this)
+                : string.Empty;
         }
 
         /// <summary>
@@ -301,6 +329,14 @@ namespace Microsoft.Ajax.Utilities
                 return OperatorToken == JSToken.In
                     ? true
                     : Operand1.ContainsInOperator || Operand2.ContainsInOperator;
+            }
+        }
+
+        public override bool IsConstant
+        {
+            get
+            {
+                return Operand1.IfNotNull(o => o.IsConstant) && Operand2.IfNotNull(o => o.IsConstant);
             }
         }
 

@@ -22,13 +22,22 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class ArrayLiteral : Expression
     {
-        public AstNodeList Elements { get; private set; }
+        private AstNodeList m_elements;
 
-        public ArrayLiteral(Context context, JSParser parser, AstNodeList elements)
+        public AstNodeList Elements 
+        {
+            get { return m_elements; }
+            set
+            {
+                m_elements.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_elements = value;
+                m_elements.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public ArrayLiteral(Context context, JSParser parser)
             : base(context, parser)
         {
-            Elements = elements;
-            if (Elements != null) { Elements.Parent = this; }
         }
 
         public override IEnumerable<AstNode> Children
@@ -66,7 +75,6 @@ namespace Microsoft.Ajax.Utilities
                     {
                         // replace it
                         Elements = newList;
-                        newList.Parent = this;
                         return true;
                     }
                 }
@@ -74,20 +82,12 @@ namespace Microsoft.Ajax.Utilities
             return false;
         }
 
-        internal override string GetFunctionGuess(AstNode target)
+        public override bool IsConstant
         {
-            // find the index of the target item
-            for (int ndx = 0; ndx < Elements.Count; ++ndx)
+            get
             {
-                if (Elements[ndx] == target)
-                {
-                    // we'll append the index to the guess for this array
-                    string parentGuess = Parent.GetFunctionGuess(this);
-                    return "{0}_{1}".FormatInvariant(parentGuess, ndx);
-                }
+                return Elements == null ? true : Elements.IsConstant;
             }
-            // didn't find it
-            return string.Empty;
         }
     }
 }

@@ -22,17 +22,43 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class WithNode : AstNode
     {
-        public AstNode WithObject { get; private set; }
-        public Block Body { get; private set; }
+        private AstNode m_withObject;
+        private Block m_body;
 
-        public WithNode(Context context, JSParser parser, AstNode obj, AstNode body)
+        public AstNode WithObject
+        {
+            get { return m_withObject; }
+            set
+            {
+                m_withObject.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_withObject = value;
+                m_withObject.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public Block Body
+        {
+            get { return m_body; }
+            set
+            {
+                m_body.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_body = value;
+                m_body.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public override Context TerminatingContext
+        {
+            get
+            {
+                // if we have one, return it. If not, return what the body has (if any)
+                return base.TerminatingContext ?? Body.IfNotNull(b => b.TerminatingContext);
+            }
+        }
+
+        public WithNode(Context context, JSParser parser)
             : base(context, parser)
         {
-            WithObject = obj;
-            Body = ForceToBlock(body);
-
-            if (WithObject != null) { WithObject.Parent = this; }
-            if (Body != null) { Body.Parent = this; }
         }
 
         public override void Accept(IVisitor visitor)
@@ -41,11 +67,6 @@ namespace Microsoft.Ajax.Utilities
             {
                 visitor.Visit(this);
             }
-        }
-
-        internal override string GetFunctionGuess(AstNode target)
-        {
-            return "with";
         }
 
         public override IEnumerable<AstNode> Children
@@ -61,13 +82,11 @@ namespace Microsoft.Ajax.Utilities
             if (WithObject == oldNode)
             {
                 WithObject = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             if (Body == oldNode)
             {
                 Body = ForceToBlock(newNode);
-                if (Body != null) { Body.Parent = this; }
                 return true;
             }
             return false;

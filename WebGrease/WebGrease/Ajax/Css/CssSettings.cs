@@ -20,6 +20,8 @@ namespace Microsoft.Ajax.Utilities
     using System.Collections.ObjectModel;
     using System.Text;
 
+    #region public enums
+
     /// <summary>
     /// Enumeration for the type of CSS that will be parsed
     /// </summary>
@@ -35,6 +37,54 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         DeclarationList,
     }
+
+    public enum CssComment
+    {
+        /// <summary>
+        /// Remove all comments except those marked as important (//! or /*!)
+        /// </summary>
+        Important = 0,
+
+        /// <summary>
+        /// Remove all source comments from the output
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// Keep all source comments in the output
+        /// </summary>
+        All,
+
+        /// <summary>
+        /// Remove all source comments except those for approved comment-based hacks. (See documentation)
+        /// </summary>
+        Hacks
+    }
+
+    /// <summary>
+    /// Enumeration for how to treat known color names
+    /// </summary>
+    public enum CssColor
+    {
+        /// <summary>
+        /// Convert strict names to hex values if shorter; hex values to strict names if shorter. Leave all other
+        /// color names or hex values as-specified.
+        /// </summary>
+        Strict = 0,
+
+        /// <summary>
+        /// Always use hex values; do not convert any hex values to color names
+        /// </summary>
+        Hex,
+
+        /// <summary>
+        /// Convert known hex values to major-browser color names if shorter; and known major-browser color
+        /// names to hex if shorter.
+        /// </summary>
+        Major
+    }
+
+    #endregion
 
     /// <summary>
     /// Settings Object for CSS Minifier

@@ -486,6 +486,25 @@ namespace Microsoft.Ajax.Utilities
 
                                 break;
 
+                            case "CONST":
+                                // options: MOZ or ES6 (ES6 is the default)
+                                if (paramPartUpper == "MOZ")
+                                {
+                                    JSSettings.ConstStatementsMozilla = true;
+                                }
+                                else if (paramPartUpper == "ES6")
+                                {
+                                    JSSettings.ConstStatementsMozilla = false;
+                                }
+                                else
+                                {
+                                    OnInvalidSwitch(switchPart, paramPart);
+                                }
+
+                                // this is a JS-only switch
+                                OnJSOnlyParameter();
+                                break;
+
                             case "CSS":
                                 OnCssOnlyParameter();
                                 if (paramPartUpper != null)
@@ -823,6 +842,62 @@ namespace Microsoft.Ajax.Utilities
                                 break;
 
                             case "JS":
+                                if (paramPart == null)
+                                {
+                                    // normal settings
+                                    JSSettings.SourceMode = JavaScriptSourceMode.Program;
+                                    JSSettings.Format = JavaScriptFormat.Normal;
+                                }
+                                else
+                                {
+                                    // comma-delimited list of JS settings
+                                    var tokens = paramPartUpper.Split(',', ';');
+                                    foreach (var token in tokens)
+                                    {
+                                        switch (token)
+                                        {
+                                            case "JSON":
+                                                // JSON is incompatible with any other tokens, so throw an error
+                                                // if it's not the only token
+                                                if (tokens.Length > 1)
+                                                {
+                                                    OnInvalidSwitch(switchPart, paramPart);
+                                                }
+
+                                                // nothing to "minify" in the JSON format, so turn off the minify flag
+                                                JSSettings.MinifyCode = false;
+
+                                                // JSON affects both the input (it's an expression) and the output
+                                                // (use the JSON-output visitor)
+                                                JSSettings.SourceMode = JavaScriptSourceMode.Expression;
+                                                JSSettings.Format = JavaScriptFormat.JSON;
+                                                break;
+
+                                            case "PROG":
+                                                // this is the default setting
+                                                JSSettings.SourceMode = JavaScriptSourceMode.Program;
+                                                break;
+
+                                            case "EXPR":
+                                                JSSettings.SourceMode = JavaScriptSourceMode.Expression;
+                                                break;
+
+                                            case "EVT":
+                                                JSSettings.SourceMode = JavaScriptSourceMode.EventHandler;
+                                                break;
+
+                                            default:
+                                                // later: ES5 to convert any ES6 syntax to ES5-compatible
+                                                // later: ES6 to create ES6 syntax when optimizing
+                                                // etc.
+                                                // those two examples will affect the format property.
+                                                // but for now, not supported
+                                                OnInvalidSwitch(switchPart, paramPart);
+                                                break;
+                                        }
+                                    }
+                                }
+
                                 OnJSOnlyParameter();
                                 break;
 
@@ -1059,11 +1134,15 @@ namespace Microsoft.Ajax.Utilities
 
                             case "MINIFY":
                                 minifySpecified = true;
-
-                                // optional boolean switch
-                                // no arg is a valid scenario (default is true)
-                                if (BooleanSwitch(paramPartUpper, true, out parameterFlag))
+                                if (renamingSpecified && JSSettings.LocalRenaming != LocalRenaming.KeepAll)
                                 {
+                                    // minify can only exist if rename is set to KeepAll
+                                    OnInvalidSwitch(switchPart, paramPart);
+                                }
+                                else if (BooleanSwitch(paramPartUpper, true, out parameterFlag))
+                                {
+                                    // optional boolean switch
+                                    // no arg is a valid scenario (default is true)
                                     JSSettings.MinifyCode = parameterFlag;
                                 }
                                 else
@@ -1134,45 +1213,56 @@ namespace Microsoft.Ajax.Utilities
                                 OnJSOnlyParameter();
                                 break;
 
+                            case "OBJ":
+                                // two options: MINify or QUOTE
+                                if (paramPartUpper == "MIN")
+                                {
+                                    JSSettings.QuoteObjectLiteralProperties = false;
+                                }
+                                else if (paramPartUpper == "QUOTE")
+                                {
+                                    JSSettings.QuoteObjectLiteralProperties = true;
+                                }
+                                else
+                                {
+                                    OnInvalidSwitch(switchPart, paramPart);
+                                }
+
+                                // this is a JS-only switch
+                                OnJSOnlyParameter();
+                                break;
+
+                            case "PPONLY":
+                                // just putting the pponly switch on the command line without any arguments
+                                // is the same as putting -pponly:true and perfectly valid.
+                                if (paramPart == null)
+                                {
+                                    JSSettings.PreprocessOnly = true;
+                                }
+                                else if (BooleanSwitch(paramPartUpper, true, out parameterFlag))
+                                {
+                                    JSSettings.PreprocessOnly = parameterFlag;
+                                }
+                                else
+                                {
+                                    OnInvalidSwitch(switchPart, paramPart);
+                                }
+
+                                // this is a JS-only switch
+                                OnJSOnlyParameter();
+                                break;
+
                             case "PRETTY":
                             case "P": // <-- old style
                                 // doesn't take a flag -- just set to pretty
-                                PrettyPrint = true;
-                                JSSettings.OutputMode = 
-                                    CssSettings.OutputMode = OutputMode.MultipleLines;
+                                PrettyPrint = true;            
 
-                                // if renaming hasn't been specified yet, turn it off for prety-print
-                                if (!renamingSpecified)
-                                {
-                                    JSSettings.LocalRenaming = LocalRenaming.KeepAll;
-                                }
+                                // by default, pretty mode turns off minification, which sets a bunch of other flags as well
+                                JSSettings.MinifyCode = false;
 
-                                // if minify hasn't been specified yet, turn it off. This will stop
-                                // most (but not all) AST modifications. BUT if we specified the -rename
-                                // options and set it to something other than keepall, then we don't want
-                                // to turn off minification.
-                                if (!minifySpecified
-                                    && (!renamingSpecified || JSSettings.LocalRenaming == LocalRenaming.KeepAll ))
-                                {
-                                    JSSettings.MinifyCode = false;
-                                }
-
-                                // if a kill switch hasn't been specified yet, set all its bits on.
-                                // EXCEPT the important-comment bit -- we DO want to preserve important comments in pretty mode.
-                                if (!killSpecified)
-                                {
-                                    if (renamingSpecified && JSSettings.LocalRenaming != LocalRenaming.KeepAll)
-                                    {
-                                        // we specifically turned on local renaming, so set the kill switch to everything BUT
-                                        JSSettings.KillSwitch = ~((long)(TreeModifications.LocalRenaming | TreeModifications.PreserveImportantComments));
-                                        CssSettings.KillSwitch = ~((long)TreeModifications.PreserveImportantComments);
-                                    }
-                                    else
-                                    {
-                                        // we didn't specifically turn on local renaming. Turn everything off.
-                                        JSSettings.KillSwitch = CssSettings.KillSwitch = ~((long)TreeModifications.PreserveImportantComments);
-                                    }
-                                }
+                                // and some other flags for pretty-mode
+                                JSSettings.OutputMode = CssSettings.OutputMode = OutputMode.MultipleLines;
+                                CssSettings.KillSwitch = ~((long)TreeModifications.PreserveImportantComments);
 
                                 // optional integer switch argument
                                 if (paramPartUpper != null)
@@ -1296,7 +1386,13 @@ namespace Microsoft.Ajax.Utilities
                                 // stop renaming, which we have explicitly said we want.
                                 if (JSSettings.LocalRenaming != LocalRenaming.KeepAll)
                                 {
-                                    ResetRenamingKill(minifySpecified, killSpecified);
+                                    ResetRenamingKill(killSpecified);
+
+                                    // if minify was specified as turned off, then this is invalid
+                                    if (minifySpecified && !JSSettings.MinifyCode)
+                                    {
+                                        OnInvalidSwitch(switchPart, paramPart);
+                                    }
                                 }
 
                                 // this is a JS-only switch
@@ -1483,7 +1579,13 @@ namespace Microsoft.Ajax.Utilities
                                 // since we specified a rename switch OTHER than none, 
                                 // let's make sure we don't *automatically* turn off switches that would 
                                 // stop renaming, which we have explicitly said we want.
-                                ResetRenamingKill(minifySpecified, killSpecified);
+                                ResetRenamingKill(killSpecified);
+
+                                // if minify was specified as turned off, then this is invalid
+                                if (minifySpecified && !JSSettings.MinifyCode)
+                                {
+                                    OnInvalidSwitch(switchPart, paramPart);
+                                }
                                 break;
 
                             case "HL":
@@ -1498,7 +1600,13 @@ namespace Microsoft.Ajax.Utilities
                                 // since we specified a rename switch OTHER than none, 
                                 // let's make sure we don't *automatically* turn off switches that would 
                                 // stop renaming, which we have explicitly said we want.
-                                ResetRenamingKill(minifySpecified, killSpecified);
+                                ResetRenamingKill(killSpecified);
+
+                                // if minify was specified as turned off, then this is invalid
+                                if (minifySpecified && !JSSettings.MinifyCode)
+                                {
+                                    OnInvalidSwitch(switchPart, paramPart);
+                                }
                                 break;
 
                             case "HC":
@@ -1638,6 +1746,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1021:AvoidOutParameters", MessageId = "2#", Justification="duly noted")]
         public static bool BooleanSwitch(string booleanText, bool defaultValue, out bool booleanValue)
         {
             // assume it's valid unless proven otherwise
@@ -1656,6 +1765,7 @@ namespace Microsoft.Ajax.Utilities
 
                 case "N":
                 case "NO":
+                case "NONE":
                 case "F":
                 case "FALSE":
                 case "OFF":
@@ -1678,7 +1788,7 @@ namespace Microsoft.Ajax.Utilities
             return isValid;
         }
 
-        private void ResetRenamingKill(bool minifySpecified, bool killSpecified)
+        private void ResetRenamingKill(bool killSpecified)
         {
             // Reset the LocalRenaming kill bit IF the kill switch hadn't been specified
             // and it's also not zero. If that's the case, that's because we set it to something
@@ -1688,12 +1798,6 @@ namespace Microsoft.Ajax.Utilities
             if (!killSpecified && JSSettings.KillSwitch != 0)
             {
                 JSSettings.KillSwitch &= ~((long)TreeModifications.LocalRenaming);
-            }
-
-            // and make sure the minify flag is turned on if it wasn't explicity turned off
-            if (!minifySpecified)
-            {
-                JSSettings.MinifyCode = true;
             }
         }
 

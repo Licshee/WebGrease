@@ -162,6 +162,12 @@ namespace Microsoft.Ajax.Utilities
             // we're good
         }
 
+        public virtual void Visit(GroupingOperator node)
+        {
+            // definitely does NOT need parens, because we will
+            // output parens ourselves. And don't bother recursing.
+        }
+
         public void Visit(ImportantComment node)
         {
             // don't recurse
@@ -182,6 +188,11 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(ObjectLiteral node)
+        {
+            // we're good
+        }
+
+        public void Visit(ParameterDeclaration node)
         {
             // we're good
         }
@@ -221,6 +232,11 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(ObjectLiteralField node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(ObjectLiteralProperty node)
         {
             Debug.Fail("shouldn't get here");
         }
@@ -280,6 +296,11 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(LabeledStatement node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(LexicalDeclaration node)
         {
             Debug.Fail("shouldn't get here");
         }

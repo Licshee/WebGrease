@@ -44,13 +44,12 @@ namespace Microsoft.Ajax.Utilities
         private void WrapWithLogicalNot(AstNode operand)
         {
             operand.Parent.ReplaceChild(
-                operand, 
-                new UnaryOperator(
-                    null,
-                    m_parser,
-                    operand,
-                    JSToken.LogicalNot,
-                    false));
+                operand,
+                new UnaryOperator(operand.Context, m_parser)
+                    {
+                        Operand = operand,
+                        OperatorToken = JSToken.LogicalNot
+                    });
         }
 
         private void TypicalHandler(AstNode node)
@@ -378,6 +377,49 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public override void Visit(GroupingOperator node)
+        {
+            if (node != null)
+            {
+                if (m_measure)
+                {
+                    // either we add one by putting a ! in front of the parens, or
+                    // the expression itself can come out equal to less.
+                    // save the current delta, check the operand, and if applying the
+                    // logical not to the operand is MORE than just throwing a ! on the
+                    // front, then we'll just return the +1 for the simple not.
+                    var plusOne = m_delta + 1;
+                    node.Operand.Accept(this);
+                    if (m_delta > plusOne)
+                    {
+                        m_delta = plusOne;
+                    }
+                }
+                else
+                {
+                    // we need to know how we're going to do this, so we need
+                    // to run another measurement.
+                    m_measure = true;
+                    m_delta = 0;
+                    node.Operand.Accept(this);
+                    m_measure = false;
+
+                    // if the delta is greater than 1, then we are just going
+                    // to wrap ourselves in a unary not. Otherwise we're going
+                    // to replace ourselves with our operand and not it in-place.
+                    if (m_delta > 1)
+                    {
+                        WrapWithLogicalNot(node);
+                    }
+                    else
+                    {
+                        node.Parent.ReplaceChild(node, node.Operand);
+                        node.Operand.Accept(this);
+                    }
+                }
+            }
+        }
+
         public override void Visit(Lookup node)
         {
             // same logic for most nodes
@@ -422,7 +464,7 @@ namespace Microsoft.Ajax.Utilities
                         // removes the not operator character, but also might remove parens that we would
                         // no longer need.
                         --m_delta;
-                        if (node.Operand is BinaryOperator || node.Operand is Conditional)
+                        if (node.Operand is BinaryOperator || node.Operand is Conditional || node.Operand is GroupingOperator)
                         {
                             // those operators are lesser-precedence than the logical-not coperator and would've
                             // added parens that we now don't need
@@ -432,8 +474,18 @@ namespace Microsoft.Ajax.Utilities
                     else
                     {
                         // convert
-                        // just replace the not with its own operand
-                        node.Parent.ReplaceChild(node, node.Operand);
+                        // just replace the not with its own operand, unless the child
+                        // itself is a grouping operator, in which case we will replace it
+                        // with the grouping operand to get rid of the parens
+                        var grouping = node.Operand as GroupingOperator;
+                        if (grouping != null)
+                        {
+                            node.Parent.ReplaceChild(node, grouping.Operand);
+                        }
+                        else
+                        {
+                            node.Parent.ReplaceChild(node, node.Operand);
+                        }
                     }
                 }
                 else

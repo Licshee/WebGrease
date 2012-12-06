@@ -33,6 +33,7 @@ namespace Microsoft.Ajax.Utilities
 
         #region constructor
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1809:AvoidExcessiveLocals", Justification="there are a lot of colors")]
         private ColorSlice()
         {
             _colorArray = new[] {

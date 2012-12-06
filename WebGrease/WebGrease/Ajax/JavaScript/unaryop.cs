@@ -21,22 +21,29 @@ namespace Microsoft.Ajax.Utilities
 {
     public class UnaryOperator : Expression
     {
-        public AstNode Operand { get; private set; }
-        public JSToken OperatorToken { get; private set; }
-        public bool IsPostfix { get; private set; }
+        private AstNode m_operand;
+
+        public AstNode Operand
+        {
+            get { return m_operand; }
+            set
+            {
+                m_operand.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_operand = value;
+                m_operand.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public Context OperatorContext { get; set; }
+
+        public JSToken OperatorToken { get; set; }
+        public bool IsPostfix { get; set; }
         public bool OperatorInConditionalCompilationComment { get; set; }
         public bool ConditionalCommentContainsOn { get; set; }
 
-        public UnaryOperator(Context context, JSParser parser, AstNode operand, JSToken operatorToken, bool isPostfix)
+        public UnaryOperator(Context context, JSParser parser)
             : base(context, parser)
         {
-            Operand = operand;
-            OperatorToken = operatorToken;
-            IsPostfix = isPostfix;
-
-            if (Operand != null) Operand.Parent = this;
-
-            Debug.Assert(!isPostfix || operatorToken == JSToken.Increment || operatorToken == JSToken.Decrement, "Postfix flag is only for Increment or Decrement");
         }
 
         public override void Accept(IVisitor visitor)
@@ -80,11 +87,6 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        internal override string GetFunctionGuess(AstNode target)
-        {
-            return Operand.GetFunctionGuess(target);
-        }
-
         public override IEnumerable<AstNode> Children
         {
             get
@@ -98,20 +100,9 @@ namespace Microsoft.Ajax.Utilities
             if (Operand == oldNode)
             {
                 Operand = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             return false;
-        }
-
-        protected bool NeedsParentheses
-        {
-            // binary and conditional operators are all lesser-precedence than unaries
-            get
-            {
-                // we only need parens if the operand is a binary op or a conditional op
-                return (Operand is BinaryOperator || Operand is Conditional);
-            }
         }
 
         public override bool IsEquivalentTo(AstNode otherNode)
@@ -120,6 +111,14 @@ namespace Microsoft.Ajax.Utilities
             return otherUnary != null
                 && OperatorToken == otherUnary.OperatorToken
                 && Operand.IsEquivalentTo(otherUnary.Operand);
+        }
+
+        public override bool IsConstant
+        {
+            get
+            {
+                return Operand.IfNotNull(o => o.IsConstant);
+            }
         }
 
         public override string ToString()

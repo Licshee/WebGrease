@@ -248,6 +248,7 @@ namespace Microsoft.Ajax.Utilities
 
         #region Scan... methods
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private CssToken ScanComment()
         {
             CssToken token = null;
@@ -296,17 +297,26 @@ namespace Microsoft.Ajax.Utilities
             }
             else if (m_currentChar == '/')
             {
-                // we found '//' might be our special ///#source directive
+                // we found '//' -- it's a JS-style single-line comment which isn't strictly
+                // supported by CSS, but we're going to treat as a valid comment because 
+                // developers like using them. We're not going to persist them, though -- we're
+                // going to eat these comments, since they're not valid CSS.
+
+                // first check for our special ///#source directive. 
+                // We're on the second slash; see if the NEXT character is a third slash
                 if (PeekChar() == '/')
                 {
                     // found '///'
                     NextChar();
+
+                    // now w're on the third slash; see if the NEXT character is a pound-sign
                     if (PeekChar() == '#')
                     {
                         // okay, we have ///#, which we are going to reserve for all AjaxMin directive comments.
                         // so the source better not have something meaningful for the rest of the line.
                         NextChar();
 
+                        // now we're on the pound-sign. See if we have the source directive
                         if (ReadString("#SOURCE"))
                         {
                             // we have a source directive: ///#source line col file
@@ -337,46 +347,51 @@ namespace Microsoft.Ajax.Utilities
                                         // we got a proper line, column, and non-blank path. reset our context
                                         // with the new line and column.
                                         this.OnContextChange(fileContext, line, column);
+
+                                        // START SPECIAL PROCESSING
+                                        // don't use NextChar here because that method updates the line/col position.
+                                        // at this stage, we are processing a directive, and we may have set the line/col
+                                        // that we're supposed to be at for the start of the next line. So make SURE we
+                                        // don't update lin/col until we get to the next line.
+                                        // skip anything remaining up to a line terminator
+                                        while (m_currentChar != '\n' && m_currentChar != '\r')
+                                        {
+                                            DirectiveNextChar();
+                                        }
+
+                                        // then skip a SINGLE line terminator without advancing the line
+                                        // (although a \r\n pair is a single line terminator)
+                                        if (m_currentChar == '\n' || m_currentChar == '\f')
+                                        {
+                                            DirectiveNextChar();
+                                        }
+                                        else if (m_currentChar == '\r')
+                                        {
+                                            if (DirectiveNextChar() == '\n')
+                                            {
+                                                DirectiveNextChar();
+                                            }
+                                        }
+
+                                        // return null here so we don't fall through and return a / character.
+                                        return null;
                                     }
                                 }
                             }
                         }
-
-                        // START SPECIAL PROCESSING
-                        // don't use NextChar here because that method updates the line/col position.
-                        // at this stage, we are processing a directive, and we may have set the line/col
-                        // that we're supposed to be at for the start of the next line. So make SURE we
-                        // don't update lin/col until we get to the next line.
-                        // skip anything remaining up to a line terminator
-                        while (m_currentChar != '\n' && m_currentChar != '\r')
-                        {
-                            DirectiveNextChar();
-                        }
-
-                        // then skip a SINGLE line terminator without advancing the line
-                        // (although a \r\n pair is a single line terminator)
-                        if (m_currentChar == '\n' || m_currentChar == '\f')
-                        {
-                            DirectiveNextChar();
-                        }
-                        else if (m_currentChar == '\r')
-                        {
-                            if (DirectiveNextChar() == '\n')
-                            {
-                                DirectiveNextChar();
-                            }
-                        }
-
-                        // return null here so we don't fall through and return a / character.
-                        return null;
-                    }
-                    else
-                    {
-                        // nope; the third / back so the current char is still the second '/'
-                        // and we'll return a single-char token for the first char
-                        PushChar('/');
                     }
                 }
+
+                // eat the comment up to, but not including, the next line terminator
+                while (m_currentChar != '\n' && m_currentChar != '\r' && m_currentChar != '\0')
+                {
+                    NextChar();
+                }
+
+                // if we wanted to maintain these comments, we would set the token
+                // variable to a new CssToken object of type comment. But we don't, so
+                // just return null so that the scanner will go around again.
+                return null;
             }
 
             if (token == null)
@@ -952,50 +967,56 @@ namespace Microsoft.Ajax.Utilities
                         TokenType tokenType = TokenType.Dimension;
                         switch (dimen.ToUpperInvariant())
                         {
-                            case "EM":
-                            case "EX":
-                            case "CH":
-                            case "REM":
-                            case "VW":
-                            case "VH":
-                            case "VM":
-                            case "VMIN":
-                            case "FR":
-                            case "GR":
-                            case "GD":
+                            case "EM":          // font-size of the element
+                            case "EX":          // x-height of the element's font
+                            case "CH":          // width of the zero glyph in the element's font
+                            case "REM":         // font-size of the root element
+                            case "VW":          // viewport's width
+                            case "VH":          // viewport's height
+                            case "VM":          // viewport width or height, whichever is smaller of the two (use VMIN)
+                            case "VMIN":        // minimum of the viewport's height and width
+                            case "VMAX":        // maximum of the viewport's height and width
+                            case "FR":          // fraction of available space
+                            case "GR":          // grid unit
+                            case "GD":          // text grid unit
                                 tokenType = TokenType.RelativeLength;
                                 break;
 
-                            case "CM":
-                            case "MM":
-                            case "IN":
-                            case "PX":
-                            case "PT":
-                            case "PC":
+                            case "CM":          // centimeters
+                            case "MM":          // millimeters
+                            case "IN":          // inches (1in == 2.54cm)
+                            case "PX":          // pixels (1px == 1/96in)
+                            case "PT":          // points (1pt == 1/72in)
+                            case "PC":          // picas (1pc == 12pt)
                                 tokenType = TokenType.AbsoluteLength;
                                 break;
 
-                            case "DEG":
-                            case "GRAD":
-                            case "RAD":
-                            case "TURN":
+                            case "DEG":         // degrees (360deg == 1 full circle)
+                            case "GRAD":        // gradians (400grad == 1 full circle)
+                            case "RAD":         // radians (2*pi radians == 1 full circle)
+                            case "TURN":        // turns (1turn == 1 full circle)
                                 tokenType = TokenType.Angle;
                                 break;
 
-                            case "MS":
-                            case "S":
+                            case "MS":          // milliseconds
+                            case "S":           // seconds
                                 tokenType = TokenType.Time;
                                 break;
 
-                            case "DPI":
-                            case "DPCM":
-                            case "DPPX":
+                            case "DPI":         // dots per inch
+                            case "DPCM":        // dots per centimeter
+                            case "DPPX":        // dots per pixel
                                 tokenType = TokenType.Resolution;
                                 break;
 
-                            case "HZ":
-                            case "KHZ":
+                            case "HZ":          // hertz
+                            case "KHZ":         // kilohertz
                                 tokenType = TokenType.Frequency;
+                                break;
+
+                            case "DB":          // decibel
+                            case "ST":          // semitones
+                                tokenType = TokenType.Speech;
                                 break;
                         }
 

@@ -36,6 +36,8 @@ namespace Microsoft.Ajax.Utilities.Configuration
         private const string EncodingAttributeName = "encoding";
         private const string TypeAttributeName = "type";
         private const string MapPathAttributeName = "mappath";
+        private const string SourceRootAttributeName = "sourceRoot";
+        private const string SafeAttributeName = "safe";
         private const string NameAttributeName = "name";
         private const string OptionalAttributeName = "optional";
         private const string ConfigAttributeName = "config";
@@ -237,6 +239,7 @@ namespace Microsoft.Ajax.Utilities.Configuration
 
         private static SymbolMap ReadSymbolMapElement(XmlReader reader)
         {
+            bool flag;
             var symbolMapNode = new SymbolMap();
             while (reader.Read())
             {
@@ -253,6 +256,17 @@ namespace Microsoft.Ajax.Utilities.Configuration
 
                             case PathAttributeName:
                                 symbolMapNode.Path = reader.Value;
+                                break;
+
+                            case SourceRootAttributeName:
+                                symbolMapNode.SourceRoot = reader.Value;
+                                break;
+
+                            case SafeAttributeName:
+                                if (bool.TryParse(reader.Value, out flag))
+                                {
+                                    symbolMapNode.SafeHeader = flag;
+                                }
                                 break;
                         }
                     }
@@ -424,6 +438,8 @@ namespace Microsoft.Ajax.Utilities.Configuration
     {
         public string Path { get; set; }
         public string Name { get; set; }
+        public string SourceRoot { get; set; }
+        public bool? SafeHeader { get; set; }
     }
 
     public class Resource

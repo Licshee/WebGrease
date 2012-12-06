@@ -227,6 +227,7 @@
     <Compile Include="Ajax\JavaScript\CustomNode.cs" />
     <Compile Include="Ajax\JavaScript\debugger.cs" />
     <Compile Include="Ajax\JavaScript\declaration.cs" />
+    <Compile Include="Ajax\JavaScript\DetachReferences.cs" />
     <Compile Include="Ajax\JavaScript\directiveprologue.cs" />
     <Compile Include="Ajax\JavaScript\documentcontext.cs" />
     <Compile Include="Ajax\JavaScript\dowhile.cs" />
@@ -238,13 +239,15 @@
     <Compile Include="Ajax\JavaScript\functionobject.cs" />
     <Compile Include="Ajax\JavaScript\functionscope.cs" />
     <Compile Include="Ajax\JavaScript\gettersetter.cs" />
-    <Compile Include="Ajax\JavaScript\globalobject.cs" />
     <Compile Include="Ajax\JavaScript\globalscope.cs" />
+    <Compile Include="Ajax\JavaScript\grouping.cs" />
     <Compile Include="Ajax\JavaScript\if.cs" />
     <Compile Include="Ajax\JavaScript\importantcomment.cs" />
+    <Compile Include="Ajax\JavaScript\INameDeclaration.cs" />
+    <Compile Include="Ajax\JavaScript\INameReference.cs" />
     <Compile Include="Ajax\JavaScript\ISourceMap.cs" />
+    <Compile Include="Ajax\JavaScript\IterationStatement.cs" />
     <Compile Include="Ajax\JavaScript\IVisitor.cs" />
-    <Compile Include="Ajax\JavaScript\JavaScriptSymbol.cs" />
     <Compile Include="Ajax\JavaScript\JScript.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -253,11 +256,13 @@
     <Compile Include="Ajax\JavaScript\jscriptexception.cs" />
     <Compile Include="Ajax\JavaScript\jserror.cs" />
     <Compile Include="Ajax\JavaScript\jskeyword.cs" />
+    <Compile Include="Ajax\JavaScript\JSONOutputVisitor.cs" />
     <Compile Include="Ajax\JavaScript\jsparser.cs" />
     <Compile Include="Ajax\JavaScript\jsscanner.cs" />
     <Compile Include="Ajax\JavaScript\jstoken.cs" />
     <Compile Include="Ajax\JavaScript\jsvariablefield.cs" />
     <Compile Include="Ajax\JavaScript\labeledstatement.cs" />
+    <Compile Include="Ajax\JavaScript\LexicalDeclaration.cs" />
     <Compile Include="Ajax\JavaScript\LogicalNotVisitor.cs" />
     <Compile Include="Ajax\JavaScript\lookup.cs" />
     <Compile Include="Ajax\JavaScript\MatchPropertiesVisitor.cs" />
@@ -266,14 +271,17 @@
     <Compile Include="Ajax\JavaScript\NewParensVisitor.cs" />
     <Compile Include="Ajax\JavaScript\objectliteral.cs" />
     <Compile Include="Ajax\JavaScript\objectliteralfield.cs" />
+    <Compile Include="Ajax\JavaScript\ObjectLiteralProperty.cs" />
     <Compile Include="Ajax\JavaScript\opprec.cs" />
     <Compile Include="Ajax\JavaScript\OutputVisitor.cs" />
     <Compile Include="Ajax\JavaScript\parameterdeclaration.cs" />
     <Compile Include="Ajax\JavaScript\regexpliteral.cs" />
     <Compile Include="Ajax\JavaScript\ReorderScopeVisitor.cs" />
+    <Compile Include="Ajax\JavaScript\ResolutionVisitor.cs" />
     <Compile Include="Ajax\JavaScript\return.cs" />
     <Compile Include="Ajax\JavaScript\scannerexception.cs" />
     <Compile Include="Ajax\JavaScript\ScriptSharpSourceMap.cs" />
+    <Compile Include="Ajax\JavaScript\SourceMapFactory.cs" />
     <Compile Include="Ajax\JavaScript\switch.cs" />
     <Compile Include="Ajax\JavaScript\switchcase.cs" />
     <Compile Include="Ajax\JavaScript\thisliteral.cs" />
@@ -281,6 +289,7 @@
     <Compile Include="Ajax\JavaScript\TreeVisitor.cs" />
     <Compile Include="Ajax\JavaScript\try.cs" />
     <Compile Include="Ajax\JavaScript\unaryop.cs" />
+    <Compile Include="Ajax\JavaScript\V3SourceMap.cs" />
     <Compile Include="Ajax\JavaScript\var.cs" />
     <Compile Include="Ajax\JavaScript\variabledeclaration.cs" />
     <Compile Include="Ajax\JavaScript\while.cs" />

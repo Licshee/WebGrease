@@ -22,13 +22,22 @@ namespace Microsoft.Ajax.Utilities
 {
     public class ConditionalCompilationComment : AstNode
     {
-        public Block Statements { get; private set; }
+        private Block m_statements;
+        public Block Statements
+        {
+            get { return m_statements; }
+            set
+            {
+                m_statements.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_statements = value;
+                m_statements.IfNotNull(n => n.Parent = this);
+            }
+        }
 
         public ConditionalCompilationComment(Context context, JSParser parser)
             : base(context, parser)
         {
             Statements = new Block(null, parser);
-            Statements.Parent = this;
         }
 
 
@@ -70,9 +79,9 @@ namespace Microsoft.Ajax.Utilities
             if (Statements == oldNode)
             {
                 Statements = ForceToBlock(newNode);
-                if (Statements != null) { Statements.Parent = this; }
                 return true;
             }
+
             return false;
         }
     }

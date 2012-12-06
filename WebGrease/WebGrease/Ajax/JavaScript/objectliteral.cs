@@ -21,45 +21,44 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class ObjectLiteral : Expression
     {
-        private ObjectLiteralField[] m_keys;
-        public IList<ObjectLiteralField> Keys { get { return m_keys; } }
+        private AstNodeList m_properties;
 
-        private AstNode[] m_values;
-        public IList<AstNode> Values { get { return m_values; } }
+        public AstNodeList Properties
+        {
+            get { return m_properties; }
+            set
+            {
+                m_properties.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_properties = value;
+                m_properties.IfNotNull(n => n.Parent = this);
+            }
+        }
 
-        // return the length of the keys, since we can't set the keys or values with differing lengths,
-        // returning one should be the same for both
-        public int Count { get { return m_keys.Length; } }
+        public override bool IsConstant
+        {
+            get
+            {
+                // we are NOT constant if any one property value isn't constant.
+                // no properties means an empty object literal, which is constant.
+                if (Properties != null)
+                {
+                    foreach (var property in Properties)
+                    {
+                        if (!property.IsConstant)
+                        {
+                            return false;
+                        }
+                    }
+                }
 
-        public ObjectLiteral(Context context, JSParser parser, ObjectLiteralField[] keys, AstNode[] values)
+                // if we got here, they're all constant
+                return true;
+            }
+        }
+
+        public ObjectLiteral(Context context, JSParser parser)
             : base(context, parser)
         {
-            // the length of keys and values should be identical.
-            // if either is null, or if the lengths don't match, we ignore both!
-            if (keys == null || values == null || keys.Length != values.Length)
-            {
-                // allocate EMPTY arrays so we don't have to keep checking for nulls
-                m_keys = new ObjectLiteralField[0];
-                m_values = new AstNode[0];
-            }
-            else
-            {
-                // copy the arrays
-                m_keys = keys;
-                m_values = values;
-
-                // make sure the parents are set properly
-                foreach (AstNode astNode in keys)
-                {
-                    astNode.Parent = this;
-                }
-                foreach (AstNode astNode in values)
-                {
-                    astNode.Parent = this;
-                }
-                // because we don't ensure that the arrays are the same length, we'll need to
-                // check for the minimum length every time we iterate over them
-            }
         }
 
         public override void Accept(IVisitor visitor)
@@ -74,53 +73,21 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                // the lengths should be the same, but just in case, use the minimum
-                int count = (m_keys.Length < m_values.Length ? m_keys.Length : m_values.Length);
-                for (int ndx = 0; ndx < count; ++ndx)
-                {
-                    yield return m_keys[ndx];
-                    yield return m_values[ndx];
-                }
+                return EnumerateNonNullNodes(m_properties);
             }
         }
 
         public override bool ReplaceChild(AstNode oldNode, AstNode newNode)
         {
-            // they're both created at the same time, so they should both be non-null.
-            // assumption: they should also have the same number of members in them!
-            int count = (m_keys.Length < m_values.Length ? m_keys.Length : m_values.Length);
-            for (int ndx = 0; ndx < count; ++ndx)
+            if (oldNode == m_properties)
             {
-                if (m_keys[ndx] == oldNode)
+                var properties = newNode as AstNodeList;
+                if (newNode == null || properties != null)
                 {
-                    m_keys[ndx] = newNode as ObjectLiteralField;
-                    if (newNode != null) { newNode.Parent = this; }
-                    return true;
-                }
-                if (m_values[ndx] == oldNode)
-                {
-                    m_values[ndx] = newNode;
-                    if (newNode != null) { newNode.Parent = this; }
-                    return true;
+                    Properties = properties;
                 }
             }
             return false;
-        }
-
-        internal override string GetFunctionGuess(AstNode target)
-        {
-            // walk the values until we find the target, then return the key
-            int count = (m_keys.Length < m_values.Length ? m_keys.Length : m_values.Length);
-            for (int ndx = 0; ndx < count; ++ndx)
-            {
-                if (m_values[ndx] == target)
-                {
-                    // we found it -- return the corresponding key (converted to a string)
-                    return m_keys[ndx].ToString();
-                }
-            }
-            // if we get this far, we didn't find it
-            return string.Empty;
         }
     }
 }

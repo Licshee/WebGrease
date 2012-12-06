@@ -40,7 +40,6 @@ namespace Microsoft.Ajax.Utilities
         private bool m_noOutput;
         private string m_lastOutputString;
         private bool m_mightNeedSpace;
-        private bool m_expressionContainsErrors;
         private bool m_skippedSpace;
         private int m_lineLength;
         private bool m_noColorAbbreviation;
@@ -63,8 +62,42 @@ namespace Microsoft.Ajax.Utilities
         public string FileContext { get; set; }
 
         private CodeSettings m_jsSettings;
+        public CodeSettings JSSettings
+        {
+            get
+            {
+                return m_jsSettings;
+            }
+            set
+            {
+                if (value != null)
+                {
+                    // clone the settings
+                    m_jsSettings = value.Clone();
+
+                    // and then make SURE the source format is Expression
+                    m_jsSettings.SourceMode = JavaScriptSourceMode.Expression;
+                }
+                else
+                {
+                    m_jsSettings = new CodeSettings()
+                        {
+                            KillSwitch = (long)TreeModifications.MinifyStringLiterals,
+                            SourceMode = JavaScriptSourceMode.Expression
+                        };
+                }
+            }
+        }
 
         #endregion
+
+        private static Regex s_vendorSpecific = new Regex(
+            @"^(\-(?<vendor>[^\-]+)\-)?(?<root>.+)$", 
+            RegexOptions.IgnoreCase | RegexOptions.Singleline
+#if !SILVERLIGHT
+            | RegexOptions.Compiled
+#endif
+            );
 
         #region Comment-related fields
 
@@ -264,10 +297,10 @@ namespace Microsoft.Ajax.Utilities
             // default settings
             Settings = new CssSettings();
 
-            // create the settings we'll use for JS expression minification
+            // create the default settings we'll use for JS expression minification
             // use the defaults, other than to set the kill switch so that it leaves
             // string literals alone (so we don't inadvertently change any delimiter chars)
-            m_jsSettings = new CodeSettings() { KillSwitch = (long)TreeModifications.MinifyStringLiterals };
+            JSSettings = null;
 
             // create a list of strings that represent the namespaces declared
             // in a @namespace statement. We will clear this every time we parse a new source string.
@@ -2504,13 +2537,30 @@ namespace Microsoft.Ajax.Utilities
             return parsed;
         }
 
+        private static string GetRoot(string text)
+        {
+            if (text.StartsWith("-", StringComparison.Ordinal))
+            {
+                var match = s_vendorSpecific.Match(text);
+                if (match.Success)
+                {
+                    text = match.Result("${root}");
+                }
+            }
+
+            return text;
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification="No, we want to output lower-case here")]
         private Parsed ParseFunction()
         {
             Parsed parsed = Parsed.False;
             if (CurrentTokenType == TokenType.Function)
             {
-                bool crunchedRGB = false;
-                if (string.Compare(CurrentTokenText, "rgb(", StringComparison.OrdinalIgnoreCase) == 0)
+                var crunchedRGB = false;
+                var functionText = GetRoot(CurrentTokenText);
+
+                if (string.Compare(functionText, "rgb(", StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     // rgb function parsing
                     bool useRGB = false;
@@ -2520,7 +2570,7 @@ namespace Microsoft.Ajax.Utilities
 
                     // we're going to be building up the rgb function just in case we need it
                     StringBuilder sbRGB = new StringBuilder();
-                    sbRGB.Append("rgb(");
+                    sbRGB.Append(CurrentTokenText.ToLowerInvariant());
 
                     string comments = NextSignificantToken();
                     if (comments.Length > 0)
@@ -2685,9 +2735,9 @@ namespace Microsoft.Ajax.Utilities
                         crunchedRGB = true;
                     }
                 }
-                else if (string.Compare(CurrentTokenText, "expression(", StringComparison.OrdinalIgnoreCase) == 0)
+                else if (string.Compare(functionText, "expression(", StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    Append("expression(");
+                    Append(CurrentTokenText.ToLowerInvariant());
                     NextToken();
 
                     // for now, just echo out everything up to the matching closing paren, 
@@ -2747,16 +2797,20 @@ namespace Microsoft.Ajax.Utilities
 
                         // hook the error handler and set the "contains errors" flag to false.
                         // the handler will set the value to true if it encounters any errors
-                        jsParser.CompilerError += OnScriptError;
-                        m_expressionContainsErrors = false;
+                        var containsErrors = false;
+                        jsParser.CompilerError += (sender, ea) =>
+                            {
+                                ReportError(0, CssErrorCode.ExpressionError, ea.Error.Message);
+                                containsErrors = true;
+                            };
 
                         // parse the source as an expression using our common JS settings
-                        Block block = jsParser.ParseExpression(m_jsSettings);
+                        Block block = jsParser.Parse(m_jsSettings);
 
                         // if we got back a parsed block and there were no errors, output the minified code.
                         // if we didn't get back the block, or if there were any errors at all, just output
                         // the raw expression source.
-                        if (block != null && !m_expressionContainsErrors)
+                        if (block != null && !containsErrors)
                         {
                             Append(block.ToCode());
                         }
@@ -2772,16 +2826,16 @@ namespace Microsoft.Ajax.Utilities
                         Append(expressionCode);
                     }
                 }
-                else if (string.Compare(CurrentTokenText, "calc(", StringComparison.OrdinalIgnoreCase) == 0)
+                else if (string.Compare(functionText, "calc(", StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    Append("calc(");
+                    Append(CurrentTokenText.ToLowerInvariant());
                     SkipSpace();
 
                     // one sum
                     parsed = ParseSum();
                 }
-                else if (string.Compare(CurrentTokenText, "min(", StringComparison.OrdinalIgnoreCase) == 0
-                    || string.Compare(CurrentTokenText, "max(", StringComparison.OrdinalIgnoreCase) == 0)
+                else if (string.Compare(functionText, "min(", StringComparison.OrdinalIgnoreCase) == 0
+                    || string.Compare(functionText, "max(", StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     Append(CurrentTokenText.ToLowerInvariant());
                     SkipSpace();
@@ -2826,12 +2880,6 @@ namespace Microsoft.Ajax.Utilities
                 }
             }
             return parsed;
-        }
-
-        private void OnScriptError(object sender, JScriptExceptionEventArgs ea)
-        {
-            ReportError(0, CssErrorCode.ExpressionError, ea.Error.Message);
-            m_expressionContainsErrors = true;
         }
 
         private Parsed ParseHexcolor()
@@ -3025,15 +3073,8 @@ namespace Microsoft.Ajax.Utilities
                 // keep going while we have sum operators
                 while (CurrentTokenType == TokenType.Character && (CurrentTokenText == "+" || CurrentTokenText == "-"))
                 {
-                    // plus operators don't seem to need a space before them, but minus do in
-                    // order to keep them from being part of a previous identifier. However, if the
-                    // previous token is a percentage, then we don't need the space.
-                    // but if this is multi-line mode, always put the space in, regardless.
-                    if (Settings.OutputMode == OutputMode.MultipleLines
-                        || (CurrentTokenText == "-" && !m_lastOutputString.EndsWith("%", StringComparison.Ordinal)))
-                    {
-                        Append(' ');
-                    }
+                    // plus and minus operators need space around them.
+                    Append(' ');
                     AppendCurrent();
 
                     // plus and minus operators both need spaces after them.
@@ -3061,6 +3102,7 @@ namespace Microsoft.Ajax.Utilities
             return parsed;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification="we want lower-case output")]
         private Parsed ParseMinMax()
         {
             // return false if the function isn't min or max
@@ -4320,56 +4362,6 @@ namespace Microsoft.Ajax.Utilities
 
         #endregion
     }
-
-    #region public enums
-
-    public enum CssComment
-    {
-        /// <summary>
-        /// Remove all comments except those marked as important (//! or /*!)
-        /// </summary>
-        Important = 0,
-
-        /// <summary>
-        /// Remove all source comments from the output
-        /// </summary>
-        None,
-
-        /// <summary>
-        /// Keep all source comments in the output
-        /// </summary>
-        All,
-
-        /// <summary>
-        /// Remove all source comments except those for approved comment-based hacks. (See documentation)
-        /// </summary>
-        Hacks
-    }
-
-    /// <summary>
-    /// Enumeration for how to treat known color names
-    /// </summary>
-    public enum CssColor
-    {
-        /// <summary>
-        /// Convert strict names to hex values if shorter; hex values to strict names if shorter. Leave all other
-        /// color names or hex values as-specified.
-        /// </summary>
-        Strict = 0,
-
-        /// <summary>
-        /// Always use hex values; do not convert any hex values to color names
-        /// </summary>
-        Hex,
-
-        /// <summary>
-        /// Convert known hex values to major-browser color names if shorter; and known major-browser color
-        /// names to hex if shorter.
-        /// </summary>
-        Major
-    }
-
-    #endregion
 
     #region custom exceptions
 

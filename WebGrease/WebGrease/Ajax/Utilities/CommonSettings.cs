@@ -38,7 +38,12 @@ namespace Microsoft.Ajax.Utilities
         /// <summary>
         /// Output the minified code on multiple lines to increase readability
         /// </summary>
-        MultipleLines
+        MultipleLines,
+
+        /// <summary>
+        /// Supress code output; typically used for linting or analysis of source code
+        /// </summary>
+        None
     }
 
     /// <summary>

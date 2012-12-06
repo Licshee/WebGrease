@@ -20,6 +20,8 @@ namespace Microsoft.Ajax.Utilities
 {
     public class ObjectLiteralField : ConstantWrapper
     {
+        public Context ColonContext { get; set; }
+
         public ObjectLiteralField(Object value, PrimitiveType primitiveType, Context context, JSParser parser)
             : base(value, primitiveType, context, parser)
         {

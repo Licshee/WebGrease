@@ -22,7 +22,7 @@ namespace Microsoft.Ajax.Utilities
 {
     public class CrunchEnumerator
     {
-        private Dictionary<string, string> m_skipNames;
+        private HashSet<string> m_skipNames;
         private int m_currentName = -1;
 
         // this first set of characters is broken out from the second set because the allowed first-characters
@@ -36,27 +36,10 @@ namespace Microsoft.Ajax.Utilities
         private static string s_varPartLetters  = "tirufeoshclavypwbkdgn";//"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$";
         public static string PartLetters { get { return s_varPartLetters ?? s_varFirstLetters; } set { s_varPartLetters = value; } }     
 
-        internal CrunchEnumerator(Dictionary<string, string> avoidNames)
+        internal CrunchEnumerator(IEnumerable<string> avoidNames)
         {
             // just use the dictionary we were passed
-            m_skipNames = avoidNames;
-        }
-
-        internal CrunchEnumerator(Dictionary<JSVariableField, JSVariableField> verboten)
-        {
-            // empty hashtable
-            m_skipNames = new Dictionary<string, string>(verboten.Count);
-
-            // walk through all the items in verboten
-            foreach (var variableField in verboten.Keys)
-            {
-                string name = variableField.ToString();
-                // if the name isn't already in the skipnames hash, add it
-                if (!m_skipNames.ContainsKey(name))
-                {
-                    m_skipNames[name] = name;
-                }
-            }
+            m_skipNames = new HashSet<string>(avoidNames);
         }
 
         internal string NextName()
@@ -70,7 +53,7 @@ namespace Microsoft.Ajax.Utilities
                 // keep advancing until we find one that isn't in the skip list or a keyword
                 // (use strict mode to be safe)
             }
-            while (m_skipNames.ContainsKey(name) || JSScanner.IsKeyword(name, true));
+            while (m_skipNames.Contains(name) || JSScanner.IsKeyword(name, true));
             return name;
         }
 
@@ -197,15 +180,16 @@ namespace Microsoft.Ajax.Utilities
             // arguments come first, ordered by position. This is an effort to try and make the
             // argument lists for the functions come out in a more repeatable pattern so gzip will
             // compress the file better.
-            if (left.FieldType == FieldType.Argument && right.FieldType == FieldType.Argument)
+            if ((left.FieldType == FieldType.Argument || left.FieldType == FieldType.CatchError)
+                && (right.FieldType == FieldType.Argument || right.FieldType == FieldType.CatchError))
             {
                 return left.Position - right.Position;
             }
-            if (left.FieldType == FieldType.Argument)
+            if (left.FieldType == FieldType.Argument || left.FieldType == FieldType.CatchError)
             {
                 return -1;
             }
-            if (right.FieldType == FieldType.Argument)
+            if (right.FieldType == FieldType.Argument || right.FieldType == FieldType.CatchError)
             {
                 return 1;
             }

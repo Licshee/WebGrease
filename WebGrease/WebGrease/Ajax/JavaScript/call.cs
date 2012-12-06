@@ -22,46 +22,46 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class CallNode : Expression
     {
-        private AstNode m_func;
+        private AstNode m_function;
+        private AstNodeList m_arguments;
+
         public AstNode Function
         {
-            get { return m_func; }
+            get { return m_function; }
+            set
+            {
+                m_function.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_function = value;
+                m_function.IfNotNull(n => n.Parent = this);
+            }
         }
 
-        private bool m_isConstructor;
-        public bool IsConstructor
-        {
-            get { return m_isConstructor; }
-            set { m_isConstructor = value; }
-        }
-
-        private bool m_inBrackets;
-        public bool InBrackets
-        {
-            get { return m_inBrackets; }
-        }
-
-        private AstNodeList m_args;
         public AstNodeList Arguments
         {
-            get { return m_args; }
+            get { return m_arguments; }
+            set
+            {
+                m_arguments.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_arguments = value;
+                m_arguments.IfNotNull(n => n.Parent = this);
+            }
         }
 
-        public CallNode(Context context, JSParser parser, AstNode function, AstNodeList args, bool inBrackets)
+        public bool IsConstructor
+        {
+            get;
+            set;
+        }
+
+        public bool InBrackets
+        {
+            get;
+            set;
+        }
+
+        public CallNode(Context context, JSParser parser)
             : base(context, parser)
         {
-            m_func = function;
-            m_args = args;
-            m_inBrackets = inBrackets;
-
-            if (m_func != null)
-            {
-                m_func.Parent = this;
-            }
-            if (m_args != null)
-            {
-                m_args.Parent = this;
-            }
         }
 
         public override OperatorPrecedence Precedence
@@ -112,34 +112,32 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                return EnumerateNonNullNodes(m_func, m_args);
+                return EnumerateNonNullNodes(Function, Arguments);
             }
         }
 
         public override bool ReplaceChild(AstNode oldNode, AstNode newNode)
         {
-            if (m_func == oldNode)
+            if (Function == oldNode)
             {
-                m_func = newNode;
-                if (newNode != null) { newNode.Parent = this; }
+                Function = newNode;
                 return true;
             }
-            if (m_args == oldNode)
+            if (Arguments == oldNode)
             {
                 if (newNode == null)
                 {
                     // remove it
-                    m_args = null;
+                    Arguments = null;
                     return true;
                 }
                 else
                 {
                     // if the new node isn't an AstNodeList, ignore it
-                    AstNodeList newList = newNode as AstNodeList;
+                    var newList = newNode as AstNodeList;
                     if (newList != null)
                     {
-                        m_args = newList;
-                        newNode.Parent = this;
+                        Arguments = newList;
                         return true;
                     }
                 }
@@ -152,7 +150,7 @@ namespace Microsoft.Ajax.Utilities
             get
             {
                 // the function is on the left
-                return m_func.LeftHandSide;
+                return Function.LeftHandSide;
             }
         }
 
@@ -174,31 +172,8 @@ namespace Microsoft.Ajax.Utilities
             {
                 // see if this is a member, lookup, or call node
                 // if it is, then we will pop positive if the recursive call does
-                return ((m_func is Member || m_func is CallNode || m_func is Lookup) && m_func.IsDebuggerStatement);
+                return ((Function is Member || Function is CallNode || Function is Lookup) && Function.IsDebuggerStatement);
             }
-        }
-
-        internal override string GetFunctionGuess(AstNode target)
-        {
-            // get our guess from the function call
-            string funcName = m_func.GetFunctionGuess(target);
-
-            // MSN VOODOO: if this is the addMethod method, then the
-            // name of the function is the first parameter. 
-            // The syntax of the add method call is: obj.addMethod("name",function(){...})
-            // so there should be two parameters....
-            if (funcName == "addMethod" && m_args.Count == 2)
-            {
-                // the first one should be a string constant....
-                ConstantWrapper firstParam = m_args[0] as ConstantWrapper;
-                // and the second one should be the function expression we're looking for
-                if ((firstParam != null) && (firstParam.Value is string) && (m_args[1] == target))
-                {
-                    // use that first parameter as the guess
-                    funcName = firstParam.ToString();
-                }
-            }
-            return funcName;
         }
     }
 }

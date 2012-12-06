@@ -26,38 +26,64 @@ namespace Microsoft.Ajax.Utilities
     }
 
 
-    public sealed class Lookup : Expression
+    public sealed class Lookup : Expression, INameReference
     {
         public JSVariableField VariableField { get; internal set; }
 
         public bool IsGenerated { get; set; }
         public ReferenceType RefType { get; set; }
+        public string Name { get; set; }
 
-        private string m_name;
-        public string Name
+        public bool IsAssignment
         {
             get
             {
-                return m_name;
-            }
-            set
-            {
-                if (VariableField == null)
+                var isAssign = false;
+
+                // see if our parent is a binary operator.
+                var binaryOp = Parent as BinaryOperator;
+                if (binaryOp != null)
                 {
-                    m_name = value;
+                    // if we are, we are an assignment lookup if the binary operator parent is an assignment
+                    // and we are the left-hand side.
+                    isAssign = binaryOp.IsAssign && binaryOp.Operand1 == this;
                 }
                 else
                 {
-                    VariableField.CrunchedName = value;
+                    // not a binary op -- but we might still be an "assignment" if we are an increment or decrement operator.
+                    // otherwise we are not an assignment
+                    var unaryOp = Parent as UnaryOperator;
+                    isAssign = unaryOp != null
+                        && (unaryOp.OperatorToken == JSToken.Increment || unaryOp.OperatorToken == JSToken.Decrement);
                 }
+
+                return isAssign;
             }
         }
 
-        // this constructor is invoked when there has been a parse error. The typical scenario is a missing identifier.
-        public Lookup(String name, Context context, JSParser parser)
+        public AstNode AssignmentValue
+        {
+            get
+            {
+                AstNode value = null;
+
+                // see if our parent is a binary operator.
+                var binaryOp = Parent as BinaryOperator;
+                if (binaryOp != null)
+                {
+                    // the parent is a binary operator. If it is an assignment operator 
+                    // (not including any of the op-assign which depend on an initial value)
+                    // then the value we are assigning is the right-hand side of the = operator.
+                    value = binaryOp.OperatorToken == JSToken.Assign && binaryOp.Operand1 == this ? binaryOp.Operand2 : null;
+                }
+
+                return value;
+            }
+        }
+
+        public Lookup(Context context, JSParser parser)
             : base(context, parser)
         {
-            m_name = name;
             RefType = ReferenceType.Variable;
         }
 
@@ -95,7 +121,7 @@ namespace Microsoft.Ajax.Utilities
         internal override string GetFunctionGuess(AstNode target)
         {
             // return the source name
-            return m_name;
+            return Name;
         }
 
         private static bool MatchMemberName(AstNode node, string lookup, int startIndex, int endIndex)
@@ -148,7 +174,7 @@ namespace Microsoft.Ajax.Utilities
                         {
                             // this lookup is a member chain, so check our name against that
                             // first part before the period; if it matches, we need to walk up the parent tree
-                            if (string.CompareOrdinal(m_name, 0, lookup, 0, firstPeriod) == 0)
+                            if (string.CompareOrdinal(Name, 0, lookup, 0, firstPeriod) == 0)
                             {
                                 // we matched the first one; test the rest of the chain
                                 if (MatchesMemberChain(Parent, lookup, firstPeriod + 1))
@@ -160,7 +186,7 @@ namespace Microsoft.Ajax.Utilities
                         else
                         {
                             // just a straight comparison
-                            if (string.CompareOrdinal(m_name, lookup) == 0)
+                            if (string.CompareOrdinal(Name, lookup) == 0)
                             {
                                 // we found a match
                                 return true;
@@ -177,7 +203,28 @@ namespace Microsoft.Ajax.Utilities
         //code in parser relies on this.name being returned from here
         public override String ToString()
         {
-            return m_name;
+            return Name;
         }
+
+        #region INameReference Members
+
+        public ActivationObject VariableScope
+        {
+            get
+            {
+                // get the enclosing scope from the node, but that might be 
+                // a block scope -- we only want variable scopes: functions or global.
+                // so walk up until we find one.
+                var enclosingScope = this.EnclosingScope;
+                while (enclosingScope is BlockScope)
+                {
+                    enclosingScope = enclosingScope.Parent;
+                }
+
+                return enclosingScope;
+            }
+        }
+
+        #endregion
     }
 }

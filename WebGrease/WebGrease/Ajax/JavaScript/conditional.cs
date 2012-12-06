@@ -23,19 +23,49 @@ namespace Microsoft.Ajax.Utilities
 
     public sealed class Conditional : Expression
     {
-        public AstNode Condition { get; private set; }
-        public AstNode TrueExpression { get; private set; }
-        public AstNode FalseExpression { get; private set; }
+        private AstNode m_condition;
+        private AstNode m_trueExpression;
+        private AstNode m_falseExpression;
 
-        public Conditional(Context context, JSParser parser, AstNode condition, AstNode trueExpression, AstNode falseExpression)
+        public AstNode Condition
+        {
+            get { return m_condition; }
+            set
+            {
+                m_condition.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_condition = value;
+                m_condition.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public AstNode TrueExpression
+        {
+            get { return m_trueExpression; }
+            set
+            {
+                m_trueExpression.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_trueExpression = value;
+                m_trueExpression.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public AstNode FalseExpression
+        {
+            get { return m_falseExpression; }
+            set
+            {
+                m_falseExpression.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_falseExpression = value;
+                m_falseExpression.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public Context QuestionContext { get; set; }
+        public Context ColonContext { get; set; }
+
+        public Conditional(Context context, JSParser parser)
             : base(context, parser)
         {
-            Condition = condition;
-            TrueExpression = trueExpression;
-            FalseExpression = falseExpression;
-            if (condition != null) condition.Parent = this;
-            if (trueExpression != null) trueExpression.Parent = this;
-            if (falseExpression != null) falseExpression.Parent = this;
         }
 
         public override OperatorPrecedence Precedence
@@ -48,9 +78,9 @@ namespace Microsoft.Ajax.Utilities
 
         public void SwapBranches()
         {
-            AstNode temp = TrueExpression;
-            TrueExpression = FalseExpression;
-            FalseExpression = temp;
+            var temp = m_trueExpression;
+            m_trueExpression = m_falseExpression;
+            m_falseExpression = temp;
         }
 
         public override PrimitiveType FindPrimitiveType()
@@ -100,19 +130,16 @@ namespace Microsoft.Ajax.Utilities
             if (Condition == oldNode)
             {
                 Condition = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             if (TrueExpression == oldNode)
             {
                 TrueExpression = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             if (FalseExpression == oldNode)
             {
                 FalseExpression = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             return false;

@@ -16,50 +16,34 @@
 
 namespace Microsoft.Ajax.Utilities
 {
-    public sealed class ParameterDeclaration
+    public sealed class ParameterDeclaration : AstNode, INameDeclaration
     {
-        public JSVariableField Field { get; private set; }
-
         public string Name
         {
-            get
-            {
-                return (Field != null ? Field.ToString() : m_name);
-            }
+            get;
+            set;
         }
 
-        public string OriginalName
+        public int Position { get; set; }
+
+        public bool RenameNotAllowed { get; set; }
+
+        public JSVariableField VariableField { get; set; }
+
+        public AstNode Initializer { get { return null; } }
+
+        public Context NameContext { get { return Context; } }
+
+        public ParameterDeclaration(Context context, JSParser parser)
+            : base(context, parser)
         {
-            get { return m_name; }
         }
-        private string m_name;
 
-        public Context Context { get { return m_context; } }
-        private Context m_context;
-
-        public ParameterDeclaration(Context context, JSParser parser, string identifier, int position)
+        public override void Accept(IVisitor visitor)
         {
-            m_name = identifier;
-            m_context = (context != null ? context : new Context(parser));
-
-            FunctionScope functionScope = parser != null ? parser.ScopeStack.Peek() as FunctionScope : null;
-            if (functionScope != null)
+            if (visitor != null)
             {
-                if (!functionScope.NameTable.ContainsKey(m_name))
-                {
-                    Field = functionScope.AddNewArgumentField(m_name);
-                    Field.OriginalContext = m_context;
-                    Field.Position = position;
-                }
-            }
-            else
-            {
-                // parameters should only be under a function scope
-                m_context.HandleError(
-                  JSError.DuplicateName,
-                  m_name,
-                  true
-                  );
+                visitor.Visit(this);
             }
         }
     }

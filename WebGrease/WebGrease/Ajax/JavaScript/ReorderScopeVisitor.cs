@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Ajax.Utilities
@@ -25,6 +26,12 @@ namespace Microsoft.Ajax.Utilities
 
         // list of all other functions found in this scope
         private List<FunctionObject> m_functionExpressions;
+
+        // all directive prologues we found BEYOND the initial grouping.
+        // if we find any, it was probably because they were directive prologues
+        // for modules that were batched together and no longer at the top, so
+        // we will need to promote them to get them to the proper place.
+        private List<DirectivePrologue> m_moduleDirectives;
 
         // list of all var statements found in this scope
         private List<Var> m_varStatements;
@@ -59,9 +66,18 @@ namespace Microsoft.Ajax.Utilities
             var visitor = new ReorderScopeVisitor(parser);
             block.Accept(visitor);
 
-            // get the first insertion point. Make sure that we skip over any comments and directive prologues.
-            // we do NOT want to insert anything between the start of the scope and any directive prologues.
-            int insertAt = 0;
+            // if there were any module directive prologues we need to promote, do them first
+            var insertAt = 0;
+            if (visitor.m_moduleDirectives != null)
+            {
+                foreach (var directivePrologue in visitor.m_moduleDirectives)
+                {
+                    insertAt = RelocateDirectivePrologue(block, insertAt, directivePrologue);
+                }
+            }
+
+            // Make sure that we skip over any remaining comments and directive prologues.
+            // we do NOT want to insert anything between the start of the scope and any directive prologues.            
             while (insertAt < block.Count
                 && (block[insertAt] is DirectivePrologue || block[insertAt] is ImportantComment))
             {
@@ -105,6 +121,26 @@ namespace Microsoft.Ajax.Utilities
                     Apply(funcExpr.Body, parser);
                 }
             }
+        }
+
+        private static int RelocateDirectivePrologue(Block block, int insertAt, DirectivePrologue directivePrologue)
+        {
+            // skip over any important comments
+            while (insertAt < block.Count && (block[insertAt] is ImportantComment))
+            {
+                ++insertAt;
+            }
+
+            // if the one we want to insert is already at this spot, then we're good to go
+            if (block[insertAt] != directivePrologue)
+            {
+                // remove it from where it is right now and insert it into the proper location
+                directivePrologue.Parent.ReplaceChild(directivePrologue, null);
+                block.Insert(insertAt, directivePrologue);
+            }
+
+            // and move up to the next slot
+            return ++insertAt;
         }
 
         private static int RelocateFunction(Block block, int insertAt, FunctionObject funcDecl)
@@ -187,20 +223,23 @@ namespace Microsoft.Ajax.Utilities
                                 if (varDecl.IsCCSpecialCase)
                                 {
                                     // create a vardecl with the same name and no initializer
-                                    var copyDecl = new VariableDeclaration(
-                                        varDecl.Context,
-                                        varDecl.Parser,
-                                        varDecl.Identifier,
-                                        varDecl.Field.OriginalContext,
-                                        null,
-                                        0,
-                                        true);
+                                    var copyDecl = new VariableDeclaration(varDecl.Context, varDecl.Parser)
+                                        {
+                                            Identifier = varDecl.Identifier,
+                                            NameContext = varDecl.VariableField.OriginalContext,
+                                            VariableField = varDecl.VariableField
+                                        };
 
                                     // replace the special vardecl with the copy
-                                    varStatement.ReplaceChild(varDecl, copyDecl);
+                                    varStatement[ndx] = copyDecl;
 
                                     // add the original vardecl to the list of "assignments"
                                     assignments.Add(varDecl);
+
+                                    // add the new decl to the field's declaration list, and remove the old one
+                                    // because we're going to change that to an assignment.
+                                    varDecl.VariableField.Declarations.Add(copyDecl);
+                                    varDecl.VariableField.Declarations.Remove(varDecl);
                                 }
                                 else
                                 {
@@ -208,16 +247,25 @@ namespace Microsoft.Ajax.Utilities
                                     var initializer = varDecl.Initializer;
 
                                     // remove it from the vardecl
-                                    varDecl.ReplaceChild(initializer, null);
+                                    varDecl.Initializer = null;
 
                                     // create an assignment operator for a lookup to the name
                                     // as the left, and the initializer as the right, and add it to the list
-                                    assignments.Add(new BinaryOperator(
-                                        varDecl.Context,
-                                        varDecl.Parser,
-                                        new Lookup(varDecl.Identifier, varDecl.Field.OriginalContext, varDecl.Parser),
-                                        initializer,
-                                        JSToken.Assign));
+                                    var lookup = new Lookup(varDecl.VariableField.OriginalContext, varDecl.Parser)
+                                        {
+                                            Name = varDecl.Identifier,
+                                            VariableField = varDecl.VariableField,
+                                        };
+                                    assignments.Add(new BinaryOperator(varDecl.Context, varDecl.Parser)
+                                        {
+                                            Operand1 = lookup,
+                                            Operand2 = initializer,
+                                            OperatorToken = JSToken.Assign,
+                                            OperatorContext = varDecl.AssignContext
+                                        });
+
+                                    // add the new lookup to the field's references
+                                    varDecl.VariableField.References.Add(lookup);
                                 }
                             }
                         }
@@ -231,11 +279,7 @@ namespace Microsoft.Ajax.Utilities
                             var expression = assignments[0];
                             for (var ndx = 1; ndx < assignments.Count; ++ndx)
                             {
-                                expression = new CommaOperator(
-                                    null,
-                                    expression.Parser,
-                                    expression,
-                                    assignments[ndx]);
+                                expression = CommaOperator.CombineWithComma(null, expression.Parser, expression, assignments[ndx]);
                             }
 
                             // replace the var with the expression.
@@ -253,9 +297,13 @@ namespace Microsoft.Ajax.Utilities
                                 // we want to replace the var statement with a lookup for the var
                                 // there should be only one vardecl
                                 var varDecl = varStatement[0];
-                                varStatement.Parent.ReplaceChild(
-                                    varStatement,
-                                    new Lookup(varDecl.Identifier, varDecl.Field.OriginalContext, varStatement.Parser));
+                                var lookup = new Lookup(varDecl.VariableField.OriginalContext, varStatement.Parser)
+                                    {
+                                        Name = varDecl.Identifier,
+                                        VariableField = varDecl.VariableField
+                                    };
+                                varStatement.Parent.ReplaceChild(varStatement, lookup);
+                                varDecl.VariableField.References.Add(lookup);
                             }
                             else
                             {
@@ -300,12 +348,17 @@ namespace Microsoft.Ajax.Utilities
                     // unnest recursively
                     UnnestBlocks(nestedBlock);
 
-                    // remove the nested block
-                    node.RemoveAt(ndx);
+                    // if the block has a block scope, then we can't really unnest it
+                    // without merging lexical scopes
+                    if (nestedBlock.BlockScope == null)
+                    {
+                        // remove the nested block
+                        node.RemoveAt(ndx);
 
-                    // then start adding the statements in the nested block to our own.
-                    // go backwards so we can just keep using the same index
-                    node.InsertRange(ndx, nestedBlock.Children);
+                        // then start adding the statements in the nested block to our own.
+                        // go backwards so we can just keep using the same index
+                        node.InsertRange(ndx, nestedBlock.Children);
+                    }
                 }
                 else if (ndx > 0)
                 {
@@ -358,14 +411,29 @@ namespace Microsoft.Ajax.Utilities
                         }
                         else
                         {
-                            // try doing the same for const-statements: combine adjacent ones
-                            var previousConst = node[ndx - 1] as ConstStatement;
-                            if (previousConst != null && node[ndx] is ConstStatement)
+                            // do the same thing for lexical declarations
+                            var previousLex = node[ndx - 1] as LexicalDeclaration;
+                            var thisLex = node[ndx] as LexicalDeclaration;
+                            if (previousLex != null && thisLex != null)
                             {
-                                // they are both ConstStatements, so adding the current one to the 
-                                // previous one will combine them, then delete the latter one.
-                                previousConst.Append(node[ndx]);
-                                node.RemoveAt(ndx);
+                                // but we can only combine them if they are the same type (let or const)
+                                if (previousLex.StatementToken == thisLex.StatementToken)
+                                {
+                                    previousLex.Append(node[ndx]);
+                                    node.RemoveAt(ndx);
+                                }
+                            }
+                            else
+                            {
+                                // try doing the same for const-statements: combine adjacent ones
+                                var previousConst = node[ndx - 1] as ConstStatement;
+                                if (previousConst != null && node[ndx] is ConstStatement)
+                                {
+                                    // they are both ConstStatements, so adding the current one to the 
+                                    // previous one will combine them, then delete the latter one.
+                                    previousConst.Append(node[ndx]);
+                                    node.RemoveAt(ndx);
+                                }
                             }
                         }
                     }
@@ -404,6 +472,50 @@ namespace Microsoft.Ajax.Utilities
             {
                 // just decrement the level, because there's nothing to recurse
                 --m_conditionalCommentLevel;
+            }
+        }
+
+        public override void Visit(ConstantWrapper node)
+        {
+            // by default this node has nothing to do and no children to recurse.
+            // but if this node's parent is a block, then this is an expression statement
+            // consisting of a single string literal. Normally we would ignore these -- if
+            // they occured at the top of the block they would be DirectivePrologues. So because
+            // this exists, it must not be at the top. But we still want to check it for the nomunge
+            // hints and respect them if that's what it is.
+            if (node != null && node.Parent is Block)
+            {
+                // if this is a hint, process it as such.
+                if (IsMinificationHint(node))
+                {
+                    // and then remove it. We can do that here, because blocks are processed
+                    // in reverse order.
+                    node.Parent.ReplaceChild(node, null);
+                }
+            }
+        }
+
+        public override void Visit(DirectivePrologue node)
+        {
+            if (node != null)
+            {
+                // if this is a minification hint, then process it now
+                // and then remove it. Otherwise treat it as a directive prologue that
+                // we need to preserve
+                if (IsMinificationHint(node))
+                {
+                    node.Parent.ReplaceChild(node, null);
+                }
+                else
+                {
+                    // no need to call the base, just add it to the list
+                    if (m_moduleDirectives == null)
+                    {
+                        m_moduleDirectives = new List<DirectivePrologue>();
+                    }
+
+                    m_moduleDirectives.Add(node);
+                }
             }
         }
 
@@ -478,6 +590,142 @@ namespace Microsoft.Ajax.Utilities
                 // and recurse
                 base.Visit(node);
             }
+        }
+
+        public override void Visit(GroupingOperator node)
+        {
+            if (node != null)
+            {
+                // if the parent isn't null, we need to run some checks
+                // to see if we can be removed for being superfluous.
+                if (node.Parent != null)
+                {
+                    var deleteParens = false;
+                    if (node.Operand == null)
+                    {
+                        // delete self - no operand make the parens superfluous
+                        // TODO: or should we leave them to preserve the "error"?
+                        deleteParens = true;
+                    }
+                    else if (node.Parent is Block)
+                    {
+                        // function expressions and object literals need to keep the parens 
+                        // or they'll be mistaken for function delcarations and blocks, respectively.
+                        // all others get axed.
+                        if (!(node.Operand is FunctionObject) && !(node.Operand is ObjectLiteral))
+                        {
+                            // delete self
+                            deleteParens = true;
+                        }
+                    }
+                    else if (node.Parent is AstNodeList)
+                    {
+                        // keep the parens if the node is itself a comma-operator
+                        // question: do we need to check for ANY comma-operators in the entire expression,
+                        // or will precedence rules dictate that there will be parens lower down if this
+                        // expression isn't a comma-operator?
+                        var binOp = node.Operand as BinaryOperator;
+                        if (binOp == null || binOp.OperatorToken != JSToken.Comma)
+                        {
+                            // delete self
+                            deleteParens = true;
+                        }
+                    }
+                    else if (node.Parent.IsExpression)
+                    {
+                        var targetPrecedence = node.Parent.Precedence;
+                        var conditional = node.Parent as Conditional;
+                        if (conditional != null)
+                        {
+                            // the conditional is weird in that the different parts need to be
+                            // compared against different precedences, not the precedence of the
+                            // conditional itself. The condition should be compared to logical-or,
+                            // and the true/false expressions against assignment.
+                            targetPrecedence = conditional.Condition == node
+                                ? OperatorPrecedence.LogicalOr
+                                : OperatorPrecedence.Assignment;
+                        }
+                        
+                        if (targetPrecedence <= node.Operand.Precedence)
+                        {
+                            // if the target precedence is less than or equal to the 
+                            // precedence of the operand, then the parens are superfluous.
+                            deleteParens = true;
+                        }
+                    }
+                    else
+                    {
+                        // delete self
+                        deleteParens = true;
+                    }
+
+                    if (deleteParens)
+                    {
+                        // delete the parens by replacing the grouping opertor node
+                        // with its own operand
+                        node.Parent.ReplaceChild(node, node.Operand);
+                    }
+                }
+                
+                // always recurse the operand
+                if (node.Operand != null)
+                {
+                    node.Operand.Accept(this);
+                }
+            }
+        }
+
+        private static bool IsMinificationHint(ConstantWrapper node)
+        {
+            var isHint = false;
+            if (node.PrimitiveType == PrimitiveType.String)
+            {
+                // try splitting on commas and removing empty items
+                var sections = node.ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var section in sections)
+                {
+                    // valid hints are:
+                    //      name:nomunge    don't automatically rename the field defined in this scope named "name"
+                    //                      if name is missing (colon is the first character) or "*", then don't rename ANY
+                    //                      fields defined in the current scope.
+                    var ndxColon = section.IndexOf(':');
+                    if (ndxColon >= 0)
+                    {
+                        // make sure this is a "nomunge" hint. If it is, then the entire node is treated as a hint and
+                        // will be removed from the AST.
+                        if (string.Compare(section.Substring(ndxColon + 1).Trim(), "nomunge", StringComparison.OrdinalIgnoreCase) == 0)
+                        {
+                            // it is.
+                            isHint = true;
+
+                            // get the name that we don't want to munge. Null means all. Convert "*"
+                            // to null.
+                            var identifier = section.Substring(0, ndxColon).Trim();
+                            if (string.IsNullOrEmpty(identifier) || string.CompareOrdinal(identifier, "*") == 0)
+                            {
+                                identifier = null;
+                            }
+
+                            // get the current scope and iterate over all the fields within it
+                            // looking for just the ones that are defined here (outer is null)
+                            var currentScope = node.EnclosingScope;
+                            foreach (var field in currentScope.NameTable.Values)
+                            {
+                                if (field.OuterField == null)
+                                {
+                                    // if the identifier is null or matches exactly, mark it as not crunchable
+                                    if (identifier == null || string.CompareOrdinal(identifier, field.Name) == 0)
+                                    {
+                                        field.CanCrunch = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return isHint;
         }
     }
 }

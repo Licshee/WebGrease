@@ -20,7 +20,8 @@ using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
-    public abstract class Declaration : AstNode
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Justification = "AST statement")]
+    public abstract class Declaration : AstNode, IEnumerable<VariableDeclaration>
     {
         private List<VariableDeclaration> m_list;
 
@@ -32,7 +33,22 @@ namespace Microsoft.Ajax.Utilities
         public VariableDeclaration this[int index]
         {
             get { return m_list[index]; }
+            set
+            {
+                m_list[index].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                if (value != null)
+                {
+                    m_list[index] = value;
+                    m_list[index].Parent = this;
+                }
+                else
+                {
+                    m_list.RemoveAt(index);
+                }
+            }
         }
+
+        public ActivationObject Scope { get; set; }
 
         protected Declaration(Context context, JSParser parser)
             : base(context, parser)
@@ -54,24 +70,17 @@ namespace Microsoft.Ajax.Utilities
             {
                 if (m_list[ndx] == oldNode)
                 {
-                    if (newNode == null)
+                    // if the new node isn't a variabledeclaration, ignore the call
+                    VariableDeclaration newDecl = newNode as VariableDeclaration;
+                    if (newNode == null || newDecl != null)
                     {
-                        // remove it
-                        m_list.RemoveAt(ndx);
+                        m_list[ndx].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                        m_list[ndx] = newDecl;
+                        m_list[ndx].IfNotNull(n => n.Parent = this);
                         return true;
                     }
-                    else
-                    {
-                        // if the new node isn't a variabledeclaration, ignore the call
-                        VariableDeclaration newDecl = newNode as VariableDeclaration;
-                        if (newDecl != null)
-                        {
-                            m_list[ndx] = newDecl;
-                            newNode.Parent = this;
-                            return true;
-                        }
-                        break;
-                    }
+
+                    break;
                 }
             }
             return false;
@@ -93,6 +102,7 @@ namespace Microsoft.Ajax.Utilities
                     // set the parent and add it to the list
                     decl.Parent = this;
                     m_list.Add(decl);
+                    UpdateWith(decl.Context);
                 }
             }
             else
@@ -164,6 +174,7 @@ namespace Microsoft.Ajax.Utilities
                     }
                     else
                     {
+                        varDecl.Parent = null;
                         m_list.RemoveAt(ndx);
                     }
                 }
@@ -176,7 +187,19 @@ namespace Microsoft.Ajax.Utilities
         {
             if (0 <= index & index < m_list.Count)
             {
+                m_list[index].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
                 m_list.RemoveAt(index);
+            }
+        }
+
+        public void Remove(VariableDeclaration variableDeclaration)
+        {
+            // remove the vardecl from the list. If it was there and was
+            // successfully remove, Remove will return true. At that point, if the
+            // vardecl still thinks we are the parent, reset the parent pointer.
+            if (variableDeclaration != null && m_list.Remove(variableDeclaration) && variableDeclaration.Parent == this)
+            {
+                variableDeclaration.Parent = null;
             }
         }
 
@@ -218,5 +241,23 @@ namespace Microsoft.Ajax.Utilities
                 return false;
             }
         }
+
+        #region IEnumerable<VariableDeclaration> Members
+
+        public IEnumerator<VariableDeclaration> GetEnumerator()
+        {
+            return m_list.GetEnumerator();
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return m_list.GetEnumerator();
+        }
+
+        #endregion
     }
 }

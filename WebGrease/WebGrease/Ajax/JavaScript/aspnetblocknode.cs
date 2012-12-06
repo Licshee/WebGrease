@@ -20,18 +20,15 @@ using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
-	public sealed class AspNetBlockNode : AstNode
-	{
+    public sealed class AspNetBlockNode : AstNode
+    {
         public bool IsTerminatedByExplicitSemicolon { get; set; }
-        public string AspNetBlockText { get; private set; }
+        public string AspNetBlockText { get; set; }
 
-		public AspNetBlockNode(Context context, JSParser parser, string aspNetBlockText,
-			bool blockTerminatedByExplicitSemicolon)
-			: base(context, parser)
-		{
-			this.AspNetBlockText = aspNetBlockText;
-			this.IsTerminatedByExplicitSemicolon = blockTerminatedByExplicitSemicolon;
-		}
+        public AspNetBlockNode(Context context, JSParser parser)
+            : base(context, parser)
+        {
+        }
 
         public override void Accept(IVisitor visitor)
         {
@@ -41,12 +38,12 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-		internal override bool RequiresSeparator
-		{
-			get
-			{
-				return this.IsTerminatedByExplicitSemicolon;
-			}
-		}
-	}
+        internal override bool RequiresSeparator
+        {
+            get
+            {
+                return this.IsTerminatedByExplicitSemicolon;
+            }
+        }
+    }
 }

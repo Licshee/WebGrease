@@ -22,13 +22,20 @@ namespace Microsoft.Ajax.Utilities
     public sealed class ReturnNode : AstNode
     {
         private AstNode m_operand;
-        public AstNode Operand { get { return m_operand; } }
+        public AstNode Operand
+        {
+            get { return m_operand; }
+            set
+            {
+                m_operand.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_operand = value;
+                m_operand.IfNotNull(n => n.Parent = this);
+            }
+        }
 
-        public ReturnNode(Context context, JSParser parser, AstNode operand)
+        public ReturnNode(Context context, JSParser parser)
             : base(context, parser)
         {
-            m_operand = operand;
-            if (m_operand != null) { m_operand.Parent = this; }
         }
 
         public override void Accept(IVisitor visitor)
@@ -39,25 +46,19 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        internal override string GetFunctionGuess(AstNode target)
-        {
-            return "return";
-        }
-
         public override IEnumerable<AstNode> Children
         {
             get
             {
-                return EnumerateNonNullNodes(m_operand);
+                return EnumerateNonNullNodes(Operand);
             }
         }
 
         public override bool ReplaceChild(AstNode oldNode, AstNode newNode)
         {
-            if (m_operand == oldNode)
+            if (Operand == oldNode)
             {
-                m_operand = newNode;
-                if (newNode != null) { newNode.Parent = this; }
+                Operand = newNode;
                 return true;
             }
             return false;

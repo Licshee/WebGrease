@@ -151,7 +151,7 @@ namespace Microsoft.Ajax.Utilities
             return source.Where(p => hash.Add(keySelector(p)));
         }
 
-        public static TResult IfNotNull<TObject, TResult>(this TObject obj, Func<TObject,TResult> action)
+        public static TResult IfNotNull<TObject, TResult>(this TObject obj, Func<TObject, TResult> action)
         {
             if (action == null)
             {
@@ -159,6 +159,35 @@ namespace Microsoft.Ajax.Utilities
             }
 
             return obj == null ? default(TResult) : action(obj);
+        }
+
+        public static void IfNotNull<TObject>(this TObject obj, Action<TObject> action)
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
+
+            if (obj != null)
+            {
+                action(obj);
+            }
+        }
+
+        public static void CopyItemsTo<TSource>(this ICollection<TSource> fromSet, ICollection<TSource> toSet)
+        {
+            if (toSet == null)
+            {
+                throw new ArgumentNullException("toSet");
+            }
+
+            if (fromSet != null)
+            {
+                foreach (var item in fromSet)
+                {
+                    toSet.Add(item);
+                }
+            }
         }
     }
 }

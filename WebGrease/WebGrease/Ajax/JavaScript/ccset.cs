@@ -21,18 +21,24 @@ namespace Microsoft.Ajax.Utilities
 {
     public class ConditionalCompilationSet : ConditionalCompilationStatement
     {
-        public string VariableName { get; private set; }
-        public AstNode Value { get; private set; }
+        private AstNode m_value;
 
-        public ConditionalCompilationSet(Context context, JSParser parser, string variableName, AstNode value)
+        public AstNode Value
+        {
+            get { return m_value; }
+            set
+            {
+                m_value.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_value = value;
+                m_value.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public string VariableName { get; set; }
+
+        public ConditionalCompilationSet(Context context, JSParser parser)
             : base(context, parser)
         {
-            VariableName = variableName;
-            Value = value;
-            if (Value != null)
-            {
-                Value.Parent = this;
-            }
         }
 
         public override IEnumerable<AstNode> Children
@@ -56,7 +62,6 @@ namespace Microsoft.Ajax.Utilities
             if (Value == oldNode)
             {
                 Value = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             return false;

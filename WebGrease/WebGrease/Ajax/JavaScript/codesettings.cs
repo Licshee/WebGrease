@@ -69,31 +69,61 @@ namespace Microsoft.Ajax.Utilities
     }
 
     /// <summary>
+    /// Enum describing the type of input expected
+    /// </summary>
+    public enum JavaScriptSourceMode
+    {
+        /// <summary>Default input mode: a program, a block of top-level global statements</summary>
+        Program = 0,
+
+        /// <summary>Input is a single JavaScript Expression</summary>
+        Expression,
+
+        /// <summary>Input is an implicit function block, as in the value of an HTML onclick attribute</summary>
+        EventHandler
+    }
+
+    /// <summary>
+    /// Enum describing how to treat the output JavaScript
+    /// </summary>
+    public enum JavaScriptFormat
+    {
+        /// <summary>normal JavaScript code</summary>
+        Normal = 0,
+
+        /// <summary>JSON code</summary>
+        JSON
+    }
+
+    /// <summary>
     /// Object used to store code settings for JavaScript parsing, minification, and output
     /// </summary>
     public class CodeSettings : CommonSettings
     {
+        #region private fields
+
+        private bool m_minify;
+
+        #endregion
+
         /// <summary>
         /// Instantiate a CodeSettings object with the default settings
         /// </summary>
         public CodeSettings()
         {
-            this.CollapseToLiteral = true;
-            //this.CombineDuplicateLiterals = false;
+            // setting this property sets other fields as well
+            this.MinifyCode = true;
+
+            // other fields we want initialized
             this.EvalTreatment = EvalTreatment.Ignore;
             this.InlineSafeStrings = true;
-            this.LocalRenaming = LocalRenaming.CrunchAll;
             this.MacSafariQuirks = true;
-            this.MinifyCode = true;
-            this.PreserveFunctionNames = false;
             this.PreserveImportantComments = true;
-            this.ReorderScopeDeclarations = true;
-            this.RemoveFunctionExpressionNames = true;
-            this.RemoveUnneededCode = true;
+            this.QuoteObjectLiteralProperties = false;
             this.StrictMode = false;
             this.StripDebugStatements = true;
-            this.EvalLiteralExpressions = true;
             this.ManualRenamesProperties = true;
+            this.OutputMode = OutputMode.SingleLine;
 
             // no default globals
             this.m_knownGlobals = new HashSet<string>();
@@ -119,12 +149,17 @@ namespace Microsoft.Ajax.Utilities
             // create a new settings object and set all the properties using this settings object
             var newSettings = new CodeSettings()
             {
+                // set the field, not the property. Setting the property will set a bunch of
+                // other properties, which may not represent their actual values.
+                m_minify = this.m_minify,
+
                 AllowEmbeddedAspNetBlocks = this.AllowEmbeddedAspNetBlocks,
                 CollapseToLiteral = this.CollapseToLiteral,
-                //CombineDuplicateLiterals = this.CombineDuplicateLiterals,
+                ConstStatementsMozilla = this.ConstStatementsMozilla,
                 DebugLookupList = this.DebugLookupList,
                 EvalLiteralExpressions = this.EvalLiteralExpressions,
                 EvalTreatment = this.EvalTreatment,
+                Format = this.Format,
                 IgnoreConditionalCompilation = this.IgnoreConditionalCompilation,
                 IgnoreAllErrors = this.IgnoreAllErrors,
                 IgnoreErrorList = this.IgnoreErrorList,
@@ -137,16 +172,18 @@ namespace Microsoft.Ajax.Utilities
                 LocalRenaming = this.LocalRenaming,
                 MacSafariQuirks = this.MacSafariQuirks,
                 ManualRenamesProperties = this.ManualRenamesProperties,
-                MinifyCode = this.MinifyCode,
                 NoAutoRenameList = this.NoAutoRenameList,
                 OutputMode = this.OutputMode,
+                PreprocessOnly = this.PreprocessOnly,
                 PreprocessorDefineList = this.PreprocessorDefineList,
                 PreserveFunctionNames = this.PreserveFunctionNames,
                 PreserveImportantComments = this.PreserveImportantComments,
+                QuoteObjectLiteralProperties = this.QuoteObjectLiteralProperties,
                 RemoveFunctionExpressionNames = this.RemoveFunctionExpressionNames,
                 RemoveUnneededCode = this.RemoveUnneededCode,
                 RenamePairs = this.RenamePairs,
                 ReorderScopeDeclarations = this.ReorderScopeDeclarations,
+                SourceMode = this.SourceMode,
                 StrictMode = this.StrictMode,
                 StripDebugStatements = this.StripDebugStatements,
                 TermSemicolons = this.TermSemicolons,
@@ -623,6 +660,16 @@ namespace Microsoft.Ajax.Utilities
         }
 
         /// <summary>
+        /// Gets or sets a boolean value indicating whether to use old-style const statements (just var-statements that
+        /// define unchangeable fields) or new EcmaScript 6 lexical declarations.
+        /// </summary>
+        public bool ConstStatementsMozilla
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Throw an error if a source string is not safe for inclusion 
         /// in an HTML inline script block. Default is false.
         /// </summary>
@@ -678,6 +725,14 @@ namespace Microsoft.Ajax.Utilities
         }
 
         /// <summary>
+        /// Gets or sets the format to use for the JavaScript processing.
+        /// </summary>
+        public JavaScriptFormat Format
+        {
+            get; set;
+        }
+
+        /// <summary>
         /// Gets or sets a boolean value indicating whether or not to ignore conditional-compilation comment syntax (true) or
         /// to try to retain the comments in the output (false; default)
         /// </summary>
@@ -719,12 +774,36 @@ namespace Microsoft.Ajax.Utilities
         }
 
         /// <summary>
-        /// Gets or sets a boolean value indicating whether to modify the source code's syntax tree to provide the smallest equivalent output [true, default],
-        /// or to not modify the syntax tree [false]
+        /// Gets or sets a boolean value indicating whether any operations are to be applied to the parsed tree [true, default],
+        /// or whether to return it as-is [false]. 
         /// </summary>
         public bool MinifyCode
         {
-            get; set;
+            get 
+            {
+                // just return the minify flag
+                return m_minify;
+            }
+            set 
+            { 
+                // when we set this flag, we want to turn other things on and off at the same time
+                m_minify = value;
+
+                // aligned properties
+                this.CollapseToLiteral = m_minify;
+                this.EvalLiteralExpressions = m_minify;
+                this.RemoveFunctionExpressionNames = m_minify;
+                this.RemoveUnneededCode = m_minify;
+                this.ReorderScopeDeclarations = m_minify;
+
+                // opposite properties
+                this.PreserveFunctionNames = !m_minify;
+                this.PreserveImportantComments = !m_minify;
+
+                // dependent switches
+                this.LocalRenaming = m_minify ? LocalRenaming.CrunchAll : LocalRenaming.KeepAll;
+                this.KillSwitch = m_minify ? 0 : ~((long)TreeModifications.PreserveImportantComments);
+            }
         }
 
         /// <summary>
@@ -734,6 +813,15 @@ namespace Microsoft.Ajax.Utilities
         public bool ManualRenamesProperties
         {
             get; set;
+        }
+
+        /// <summary>
+        /// Gets or sets a boolean value indicating whether or not the input files should be preprocessed only (default is false)
+        /// </summary>
+        public bool PreprocessOnly 
+        { 
+            get; 
+            set; 
         }
 
         /// <summary>
@@ -751,6 +839,15 @@ namespace Microsoft.Ajax.Utilities
         /// mark as the very first in-comment character (//! or /*!).
         /// </summary>
         public bool PreserveImportantComments
+        {
+            get; set;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to always quote object literal property names.
+        /// Default is false.
+        /// </summary>
+        public bool QuoteObjectLiteralProperties
         {
             get; set;
         }
@@ -779,6 +876,14 @@ namespace Microsoft.Ajax.Utilities
         /// or to keep such code in the output [false].
         /// </summary>
         public bool RemoveUnneededCode
+        {
+            get; set;
+        }
+
+        /// <summary>
+        /// Gets or sets the source mode
+        /// </summary>
+        public JavaScriptSourceMode SourceMode
         {
             get; set;
         }
@@ -1133,5 +1238,11 @@ namespace Microsoft.Ajax.Utilities
         /// Whether to convert [a,b,c].join(s) to "asbsc" if all items are constants.
         /// </summary>
         EvaluateLiteralJoins                        = 0x0001000000000000,
+
+        /// <summary>
+        /// Whether we should remove unused variable, or variables assigned a constant in their
+        /// initializer and referenced only once.
+        /// </summary>
+        RemoveUnusedVariables                       = 0x0002000000000000,
     }
 }

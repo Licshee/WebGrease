@@ -20,6 +20,13 @@ using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
+    /// <summary>
+    /// Old-style const-statement, pre-ES6, for those browsers that basically implemented
+    /// a var that can't be assigned to outside the declaration. Have to set the 
+    /// <see cref="CodeSettings.ConstStatementsMozilla" /> property to true to get these objects
+    /// parsed, because we default to the ES6 behavior.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Justification="AST statement")]
     public class ConstStatement : Declaration
     {
         public ConstStatement(Context context, JSParser parser)

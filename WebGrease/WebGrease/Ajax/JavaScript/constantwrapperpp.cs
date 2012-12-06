@@ -20,16 +20,13 @@ namespace Microsoft.Ajax.Utilities
 {
     public class ConstantWrapperPP : Expression
     {
-        private string m_varName;
-        public string VarName { get { return m_varName; } }
+        public string VarName { get; set; }
 
-        public bool ForceComments { get; private set; }
+        public bool ForceComments { get; set; }
 
-        public ConstantWrapperPP(string varName, bool forceComments, Context context, JSParser parser)
+        public ConstantWrapperPP(Context context, JSParser parser)
             : base(context, parser)
         {
-            m_varName = varName;
-            ForceComments = forceComments;
         }
 
         public override void Accept(IVisitor visitor)

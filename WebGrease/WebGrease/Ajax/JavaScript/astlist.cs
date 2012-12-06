@@ -20,10 +20,20 @@ using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
-
-    public sealed class AstNodeList : AstNode
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
+    public sealed class AstNodeList : AstNode, IEnumerable<AstNode>
     {
         private List<AstNode> m_list;
+
+        public override Context TerminatingContext
+        {
+            get
+            {
+                // if we have one, return it. If not, see if we are empty, and if not,
+                // return the last item's terminator
+                return base.TerminatingContext ?? (m_list.Count> 0 ? m_list[m_list.Count - 1].TerminatingContext : null);
+            }
+        }
 
         public AstNodeList(Context context, JSParser parser)
             : base(context, parser)
@@ -68,6 +78,8 @@ namespace Microsoft.Ajax.Utilities
             {
                 if (m_list[ndx] == oldNode)
                 {
+                    oldNode.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+
                     if (newNode == null)
                     {
                         // remove it
@@ -79,9 +91,11 @@ namespace Microsoft.Ajax.Utilities
                         m_list[ndx] = newNode;
                         newNode.Parent = this;
                     }
+
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -160,6 +174,7 @@ namespace Microsoft.Ajax.Utilities
 
         internal void RemoveAt(int position)
         {
+            m_list[position].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
             m_list.RemoveAt(position);
         }
 
@@ -168,6 +183,19 @@ namespace Microsoft.Ajax.Utilities
             get
             {
                 return m_list[index];
+            }
+            set
+            {
+                m_list[index].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                if (value != null)
+                {
+                    m_list[index] = value;
+                    m_list[index].Parent = this;
+                }
+                else
+                {
+                    m_list.RemoveAt(index);
+                }
             }
         }
 
@@ -202,6 +230,25 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public override bool IsConstant
+        {
+            get
+            {
+                foreach (var item in m_list)
+                {
+                    if (item != null)
+                    {
+                        if (!item.IsConstant)
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+        }
+
         public override string ToString()
         {
             var sb = new StringBuilder();
@@ -218,5 +265,23 @@ namespace Microsoft.Ajax.Utilities
 
             return sb.ToString();
         }
+
+        #region IEnumerable<AstNode> Members
+
+        public IEnumerator<AstNode> GetEnumerator()
+        {
+            return m_list.GetEnumerator();
+        }
+
+        #endregion
+
+        #region IEnumerable Members
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return m_list.GetEnumerator();
+        }
+
+        #endregion
     }
 }

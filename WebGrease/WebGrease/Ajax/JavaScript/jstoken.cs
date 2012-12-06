@@ -84,9 +84,12 @@ namespace Microsoft.Ajax.Utilities
         // binary ops
         Plus = FirstBinaryOperator,     // +
         Minus,                          // -
-        LessThan,                       // <
+        Multiply,                       // *
         Divide,                         // /
         Modulo,                         // %
+        BitwiseAnd,                     // &
+        BitwiseOr,                      // |
+        BitwiseXor,                     // ^
         LeftShift,                      // <<
         RightShift,                     // >>
         UnsignedRightShift,             // >>>
@@ -95,20 +98,16 @@ namespace Microsoft.Ajax.Utilities
         NotEqual,                       // !=
         StrictEqual,                    // ===
         StrictNotEqual,                 // !==
+        LessThan,                       // <
         LessThanEqual,                  // <=
         GreaterThan,                    // >
         GreaterThanEqual,               // >=
 
-        Multiply,                       // *
-        BitwiseAnd,                     // &
-        BitwiseOr,                      // |
-        BitwiseXor,                     // ^
         LogicalAnd,                     // &&
         LogicalOr,                      // ||
 
         InstanceOf,
         In,
-
         Comma,                          // ,
 
         Assign,                         // =
@@ -120,9 +119,9 @@ namespace Microsoft.Ajax.Utilities
         BitwiseAndAssign,               // &=
         BitwiseOrAssign,                // |=
         BitwiseXorAssign,               // ^=
-        LeftShiftAssign,                // >>=
-        RightShiftAssign,               // <<=
-        UnsignedRightShiftAssign,       // <<<=
+        LeftShiftAssign,                // <<=
+        RightShiftAssign,               // >>=
+        UnsignedRightShiftAssign,       // >>>=
         LastAssign = UnsignedRightShiftAssign,
 
         ConditionalIf,                  // ? // MUST FOLLOW LastBinaryOp

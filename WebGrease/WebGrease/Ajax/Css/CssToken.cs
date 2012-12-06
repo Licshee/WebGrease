@@ -168,6 +168,7 @@ namespace Microsoft.Ajax.Utilities
         Angle,
         Time,
         Frequency,
+        Speech,
         Dimension,
         Percentage,
         Number,

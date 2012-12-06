@@ -21,14 +21,20 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class RegExpLiteral : Expression
     {
-        public string Pattern { get; private set; }
-        public string PatternSwitches { get; private set; }
+        public string Pattern { get; set; }
+        public string PatternSwitches { get; set; }
 
-        public RegExpLiteral(string pattern, string patternSwitches, Context context, JSParser parser)
+        public override bool IsConstant
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        public RegExpLiteral(Context context, JSParser parser)
             : base(context, parser)
         {
-            Pattern = pattern;
-            PatternSwitches = patternSwitches;
         }
 
         public override void Accept(IVisitor visitor)

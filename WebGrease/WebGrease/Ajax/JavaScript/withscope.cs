@@ -20,54 +20,52 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class WithScope : BlockScope
     {
-        public WithScope(ActivationObject parent, Context context, JSParser parser)
-            : base(parent, context, parser)
+        public WithScope(ActivationObject parent, Context context, CodeSettings settings)
+            : base(parent, context, settings)
         {
-            // with statements are unknown by default
-            //IsKnownAtCompileTime = false;
-        }
-
-        public override JSVariableField FindReference(string name)
-        {
-            // call the base class, which will walk up the chain to find wherever the name lives
-            JSVariableField variableField = base.FindReference(name);
-            if (variableField != null)
-            {
-                // it exists, but is it in our with scope?
-                if (this[name] == null)
-                {
-                    // it's not. We need to create an inner field pointing to this outer
-                    // field so we can make sure the name doesn't get crunched
-                    variableField = CreateInnerField(variableField);
-                }
-            }
-            else
-            {
-                // because this is a with scope, if something isn't defined anywhere, we
-                // don't want to throw an error because we very well may be referencing
-                // a property on the object of the with scope.
-                // So add a global field to our scope and return that instead, and use the
-                // RTSpecialName flag to indicate that we don't really know what this thing could be.
-                JSVariableField globalField = Parser.GlobalScope.AddField(
-                    new JSVariableField(FieldType.Global, name, FieldAttributes.RTSpecialName, null)
-                    );
-                variableField = CreateInnerField(globalField);
-            }
-            return variableField;
+            IsInWithScope = true;
         }
 
         public override JSVariableField CreateInnerField(JSVariableField outerField)
         {
-            // blindly create an inner reference field for with scopes, no matter what it
-            // is. globals and predefined values can be hijacked by object properties in
-            // this scope.
-            JSVariableField innerField = CreateField(outerField);
-            AddField(innerField);
-            return innerField;
+            return outerField.IfNotNull(o =>
+            {
+                // blindly create an inner reference field for with scopes, no matter what it
+                // is. globals and predefined values can be hijacked by object properties in
+                // this scope.
+                var withField = AddField(CreateField(outerField));
+
+                // and we need to make sure that any field that may be referenced from inside
+                // a with-statement does not get automatically renamed
+                outerField.CanCrunch = false;
+
+                return withField;
+            });
+        }
+
+        /// <summary>
+        /// Set up this scopes lexically-declared fields
+        /// </summary>
+        public override void DeclareScope()
+        {
+            // only bind lexical declarations
+            DefineLexicalDeclarations();
+
+            // however, take a look at the var-decl fields and make sure that
+            // their fields all get marked as cannot-rename.
+            foreach (var varDecl in VarDeclaredNames)
+            {
+                if (varDecl.VariableField != null)
+                {
+                    varDecl.VariableField.CanCrunch = false;
+                }
+            }
         }
 
         public override JSVariableField CreateField(JSVariableField outerField)
         {
+            // when we create a field inside a with-scope, it's ALWAYS a with-field, no matter
+            // what type the outer reference is.
             return new JSVariableField(FieldType.WithField, outerField);
         }
 

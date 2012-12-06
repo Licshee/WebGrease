@@ -22,7 +22,7 @@ namespace Microsoft.Ajax.Utilities
 
     public sealed class GetterSetter : ObjectLiteralField
     {
-        public bool IsGetter { get; private set; }
+        public bool IsGetter { get; set; }
 
         public GetterSetter(String identifier, bool isGetter, Context context, JSParser parser)
             : base(identifier, PrimitiveType.String, context, parser)

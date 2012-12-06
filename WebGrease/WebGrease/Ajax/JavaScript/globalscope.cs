@@ -23,27 +23,36 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class GlobalScope : ActivationObject
     {
-        private GlobalObject m_globalObject;
-        private GlobalObject m_windowObject;
+        private HashSet<string> m_globalProperties;
+        private HashSet<string> m_globalFunctions;
         private HashSet<string> m_assumedGlobals;
         private HashSet<UndefinedReferenceException> m_undefined;
 
         public ICollection<UndefinedReferenceException> UndefinedReferences { get { return m_undefined; } }
 
-        internal GlobalScope(JSParser parser)
-            : base(null, parser)
+        internal GlobalScope(CodeSettings settings)
+            : base(null, settings)
         {
             // define the Global object's properties, and methods
-            m_globalObject = new GlobalObject(
-              new string[] { "Infinity", "NaN", "undefined", "window", "Image", "JSON", "Math", "XMLHttpRequest", "DOMParser" },
-              new string[] { "decodeURI", "decodeURIComponent", "encodeURI", "encodeURIComponent", "escape", "eval", "importScripts", "isNaN", "isFinite", "parseFloat", "parseInt", "unescape", "ActiveXObject", "Array", "Boolean", "Date", "Error", "EvalError", "EventSource", "File", "FileList", "FileReader", "Function", "GeckoActiveXObject", "HTMLElement", "Number", "Object", "Proxy", "RangeError", "ReferenceError", "RegExp", "SharedWorker", "String", "SyntaxError", "TypeError", "URIError", "WebSocket", "Worker" }
-              );
+            m_globalProperties = new HashSet<string>(new[] { 
+                "Infinity", "NaN", "undefined", "window", "Image", "JSON", "Math", "XMLHttpRequest", "DOMParser",
+                "applicationCache", "clientInformation", "clipboardData", "closed", "console", "document", "event", "external", "frameElement", "frames", "history", "length", "localStorage", "location", "name", "navigator", "opener", "parent", "screen", "self", "sessionStorage", "status", "top"});
 
-            // define the Window object's properties, and methods
-            m_windowObject = new GlobalObject(
-              new string[] { "applicationCache", "clientInformation", "clipboardData", "closed", "console", "document", "event", "external", "frameElement", "frames", "history", "length", "localStorage", "location", "name", "navigator", "opener", "parent", "screen", "self", "sessionStorage", "status", "top" },
-              new string[] { "addEventListener", "alert", "attachEvent", "blur", "clearInterval", "clearTimeout", "close", "confirm", "createPopup", "detachEvent", "dispatchEvent", "execScript", "focus", "getComputedStyle", "getSelection", "moveBy", "moveTo", "navigate", "open", "postMessage", "prompt", "removeEventListener", "resizeBy", "resizeTo", "scroll", "scrollBy", "scrollTo", "setActive", "setInterval", "setTimeout", "showModalDialog", "showModelessDialog" }
-              );
+            m_globalFunctions = new HashSet<string>(new[] {
+                "decodeURI", "decodeURIComponent", "encodeURI", "encodeURIComponent", "escape", "eval", "importScripts", "isNaN", "isFinite", "parseFloat", "parseInt", "unescape", "ActiveXObject", "Array", "Boolean", "Date", "Error", "EvalError", "EventSource", "File", "FileList", "FileReader", "Function", "GeckoActiveXObject", "HTMLElement", "Number", "Object", "Proxy", "RangeError", "ReferenceError", "RegExp", "SharedWorker", "String", "SyntaxError", "TypeError", "URIError", "WebSocket", "Worker",
+                "addEventListener", "alert", "attachEvent", "blur", "clearInterval", "clearTimeout", "close", "confirm", "createPopup", "detachEvent", "dispatchEvent", "execScript", "focus", "getComputedStyle", "getSelection", "moveBy", "moveTo", "navigate", "open", "postMessage", "prompt", "removeEventListener", "resizeBy", "resizeTo", "scroll", "scrollBy", "scrollTo", "setActive", "setInterval", "setTimeout", "showModalDialog", "showModelessDialog" });
+        }
+
+        /// <summary>
+        /// Set up this scopes lexically- and var-declared fields
+        /// </summary>
+        public override void DeclareScope()
+        {
+            // bind lexical declarations
+            DefineLexicalDeclarations();
+
+            // bind the variable declarations
+            DefineVarDeclarations();
         }
 
         public void AddUndefinedReference(UndefinedReferenceException exception)
@@ -56,52 +65,36 @@ namespace Microsoft.Ajax.Utilities
             m_undefined.Add(exception);
         }
 
-        internal void SetAssumedGlobals(IEnumerable<string> globals, IEnumerable<string> debugLookups)
+        internal void SetAssumedGlobals(CodeSettings settings)
         {
-            // start off with any known globals
-            m_assumedGlobals = globals == null ? new HashSet<string>() : new HashSet<string>(globals);
-
-            // chek to see if there are any debug lookups
-            if (debugLookups != null)
+            if (settings != null)
             {
-                foreach (var debugLookup in debugLookups)
+                // start off with any known globals
+                m_assumedGlobals = settings.KnownGlobalCollection == null ? new HashSet<string>() : new HashSet<string>(settings.KnownGlobalCollection);
+
+                // chek to see if there are any debug lookups
+                foreach (var debugLookup in settings.DebugLookupCollection)
                 {
                     m_assumedGlobals.Add(debugLookup.SubstringUpToFirst('.'));
                 }
-            }
-        }
 
-        internal override void AnalyzeScope()
-        {
-            // rename fields if we need to
-            RenameFields();
-
-            // it's okay for the global scope to have unused vars, so don't bother checking
-            // the fields, but recurse the function scopes anyway
-            foreach (ActivationObject activationObject in ChildScopes)
-            {
-                try
+                // and the root name of any resource strings is also an assumed global
+                foreach (var resourceStrings in settings.ResourceStrings)
                 {
-                    Parser.ScopeStack.Push(activationObject);
-                    activationObject.AnalyzeScope();
-                }
-                finally
-                {
-                    Parser.ScopeStack.Pop();
+                    if (!resourceStrings.Name.IsNullOrWhiteSpace())
+                    {
+                        m_assumedGlobals.Add(resourceStrings.Name.SubstringUpToFirst('.'));
+                    }
                 }
             }
-        }
-
-        internal override void ReserveFields()
-        {
-            // don't do anything but traverse through our children
-            foreach (ActivationObject scope in ChildScopes)
+            else
             {
-                scope.ReserveFields();
+                // empty set
+                m_assumedGlobals = new HashSet<string>();
             }
         }
 
-        internal override void HyperCrunch()
+        internal override void AutoRenameFields()
         {
             // don't crunch global values -- they might be referenced in other scripts
             // within the page but outside this module.
@@ -109,7 +102,7 @@ namespace Microsoft.Ajax.Utilities
             // traverse through our children scopes
             foreach (ActivationObject scope in ChildScopes)
             {
-                scope.HyperCrunch();
+                scope.AutoRenameFields();
             }
         }
 
@@ -119,33 +112,40 @@ namespace Microsoft.Ajax.Utilities
             {
                 // check the name table
                 JSVariableField variableField = base[name];
+
+                // not found so far, check the global properties
                 if (variableField == null)
                 {
-                    // not found so far, check the window object
-                    variableField = m_windowObject.GetField(name);
+                    variableField = ResolveFromCollection(name, m_globalProperties, FieldType.Predefined, false);
                 }
+
+                // not found so far, check the global properties
                 if (variableField == null)
                 {
-                    // not found so far, check the global object
-                    variableField = m_globalObject.GetField(name);
+                    variableField = ResolveFromCollection(name, m_globalFunctions, FieldType.Predefined, true);
                 }
+
+                // if not found so far, check to see if this value is provided in our "assumed" 
+                // global list specified on the command line
                 if (variableField == null)
                 {
-                    // see if this value is provided in our "assumed" global list specified on the command line
-                    if (m_assumedGlobals.Count > 0)
-                    {
-                        foreach (string globalName in m_assumedGlobals)
-                        {
-                            if (string.Compare(name, globalName.Trim(), StringComparison.Ordinal) == 0)
-                            {
-                                variableField = CreateField(name, null, 0);
-                                break;
-                            }
-                        }
-                    }
+                    variableField = ResolveFromCollection(name, m_assumedGlobals, FieldType.Global, false);
                 }
+
                 return variableField;
             }
+        }
+
+        private JSVariableField ResolveFromCollection(string name, HashSet<string> collection, FieldType fieldType, bool isFunction)
+        {
+            if (collection.Contains(name))
+            {
+                var variableField = new JSVariableField(fieldType, name, 0, null);
+                variableField.IsFunction = isFunction;
+                return AddField(variableField);
+            }
+
+            return null;
         }
 
         public override JSVariableField CreateField(string name, object value, FieldAttributes attributes)
@@ -157,12 +157,6 @@ namespace Microsoft.Ajax.Utilities
         {
             // should NEVER try to create an inner field in a global scope
             throw new NotImplementedException();
-        }
-
-        public override JSVariableField GetLocalField(String name)
-        {
-            // there are no local fields in the global scope
-            return null;
         }
     }
 }

@@ -21,12 +21,29 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class SwitchCase : AstNode
     {
-        public AstNode CaseValue { get; private set; }
-
+        private AstNode m_caseValue;
         private Block m_statements;
+
+        public AstNode CaseValue
+        {
+            get { return m_caseValue; }
+            set
+            {
+                m_caseValue.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_caseValue = value;
+                m_caseValue.IfNotNull(n => n.Parent = this);
+            }
+        }
+
         public Block Statements
         {
             get { return m_statements; }
+            set
+            {
+                m_statements.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_statements = value;
+                m_statements.IfNotNull(n => n.Parent = this);
+            }
         }
 
         internal bool IsDefault
@@ -34,35 +51,11 @@ namespace Microsoft.Ajax.Utilities
             get { return (CaseValue == null); }
         }
 
-        public SwitchCase(Context context, JSParser parser, AstNode caseValue, Block statements)
+        public Context ColonContext { get; set; }
+
+        public SwitchCase(Context context, JSParser parser)
             : base(context, parser)
         {
-            CaseValue = caseValue;
-            if (caseValue != null)
-            {
-                caseValue.Parent = this;
-            }
-
-            if (statements != null)
-            {
-                if (statements.Count == 1)
-                {
-                    // if there is only one item in the block
-                    // and that one item IS a block...
-                    Block block = statements[0] as Block;
-                    if (block != null)
-                    {
-                        // then we can skip the intermediary block because all it
-                        // does is add braces around the block, which aren't needed
-                        statements = block;
-                    }
-                }
-            }
-            m_statements = statements;
-            if (statements != null)
-            {
-                statements.Parent = this;
-            }
         }
 
         public override void Accept(IVisitor visitor)
@@ -73,16 +66,11 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        internal override string GetFunctionGuess(AstNode target)
-        {
-            return CaseValue.GetFunctionGuess(target);
-        }
-
         public override IEnumerable<AstNode> Children
         {
             get
             {
-                return EnumerateNonNullNodes(CaseValue, m_statements);
+                return EnumerateNonNullNodes(CaseValue, Statements);
             }
         }
 
@@ -91,27 +79,15 @@ namespace Microsoft.Ajax.Utilities
             if (CaseValue == oldNode)
             {
                 CaseValue = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
-            if (m_statements == oldNode)
+            if (Statements == oldNode)
             {
-                if (newNode == null)
+                var newBlock = newNode as Block;
+                if (newNode == null || newBlock != null)
                 {
-                    // remove it
-                    m_statements = null;
+                    Statements = newBlock;
                     return true;
-                }
-                else
-                {
-                    // if the new node isn't a block, ignore the call
-                    Block newBlock = newNode as Block;
-                    if (newBlock != null)
-                    {
-                        m_statements = newBlock;
-                        newNode.Parent = this;
-                        return true;
-                    }
                 }
             }
             return false;
@@ -123,12 +99,12 @@ namespace Microsoft.Ajax.Utilities
             {
                 // no statements doesn't require a separator.
                 // otherwise only if statements require it
-                if (m_statements == null || m_statements.Count == 0)
+                if (Statements == null || Statements.Count == 0)
                 {
                     return false;
                 }
 
-                return m_statements[m_statements.Count - 1].RequiresSeparator;
+                return Statements[Statements.Count - 1].RequiresSeparator;
             }
         }
     }

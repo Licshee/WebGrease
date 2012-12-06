@@ -45,13 +45,17 @@ namespace Microsoft.Ajax.Utilities
         void Visit(ForNode node);
         void Visit(FunctionObject node);
         void Visit(GetterSetter node);
+        void Visit(GroupingOperator node);
         void Visit(IfNode node);
         void Visit(ImportantComment node);
         void Visit(LabeledStatement node);
+        void Visit(LexicalDeclaration node);
         void Visit(Lookup node);
         void Visit(Member node);
         void Visit(ObjectLiteral node);
         void Visit(ObjectLiteralField node);
+        void Visit(ObjectLiteralProperty node);
+        void Visit(ParameterDeclaration node);
         void Visit(RegExpLiteral node);
         void Visit(ReturnNode node);
         void Visit(Switch node);

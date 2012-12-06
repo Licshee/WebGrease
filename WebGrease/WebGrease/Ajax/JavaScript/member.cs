@@ -22,18 +22,25 @@ namespace Microsoft.Ajax.Utilities
 
     public sealed class Member : Expression
     {
-        public AstNode Root { get; private set; }
-        public string Name { get; set; }
-        public Context NameContext { get; private set; }
+        private AstNode m_root;
 
-        public Member(Context context, JSParser parser, AstNode rootObject, string memberName, Context idContext)
+        public AstNode Root
+        {
+            get { return m_root; }
+            set
+            {
+                m_root.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_root = value;
+                m_root.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public string Name { get; set; }
+        public Context NameContext { get; set; }
+
+        public Member(Context context, JSParser parser)
             : base(context, parser)
         {
-            Name = memberName;
-            NameContext = idContext;
-
-            Root = rootObject;
-            if (Root != null) Root.Parent = this;
         }
 
         public override OperatorPrecedence Precedence
@@ -62,21 +69,7 @@ namespace Microsoft.Ajax.Utilities
 
         internal override string GetFunctionGuess(AstNode target)
         {
-            // MSN VOODOO: treat the as and ns methods as special if the expression is the root,
-            // the parent is the call, and there is one string parameter -- use the string parameter
-            if (Root == target && (Name == "as" || Name == "ns"))
-            {
-                CallNode call = Parent as CallNode;
-                if (call != null && call.Arguments.Count == 1)
-                {
-                    ConstantWrapper firstParam = call.Arguments[0] as ConstantWrapper;
-                    if (firstParam != null)
-                    {
-                        return firstParam.ToString();
-                    }
-                }
-            }
-            return Name;
+            return Root.GetFunctionGuess(this) + '.' + Name;
         }
 
         internal override bool IsDebuggerStatement
@@ -101,7 +94,6 @@ namespace Microsoft.Ajax.Utilities
             if (Root == oldNode)
             {
                 Root = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             return false;

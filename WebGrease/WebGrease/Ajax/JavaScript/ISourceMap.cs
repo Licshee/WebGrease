@@ -15,15 +15,20 @@
 // limitations under the License.
 
 using System;
+using System.IO;
 
 namespace Microsoft.Ajax.Utilities
 {
     public interface ISourceMap : IDisposable
     {
-        void StartPackage(string sourcePath);
+        void StartPackage(string sourcePath, string mapPath);
         void EndPackage();
         object StartSymbol(AstNode astNode, int startLine, int startColumn);
+        void MarkSegment(AstNode node, int startLine, int startColumn, string name, Context context);
         void EndSymbol(object symbol, int endLine, int endColumn, string parentContext);
+        void EndFile(TextWriter writer, string newLine);
         string Name { get; }
+        string SourceRoot { get; set; }
+        bool SafeHeader { get; set; }
     }
 }

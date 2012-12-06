@@ -20,18 +20,33 @@ using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
-    public sealed class WhileNode : AstNode
+    public sealed class WhileNode : IterationStatement
     {
-        public AstNode Condition { get; private set; }
-        public Block Body { get; private set; }
+        private AstNode m_condition;
 
-        public WhileNode(Context context, JSParser parser, AstNode condition, AstNode body)
+        public AstNode Condition
+        {
+            get { return m_condition; }
+            set
+            {
+                m_condition.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_condition = value;
+                m_condition.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public override Context TerminatingContext
+        {
+            get
+            {
+                // if we have one, return it. If not, return what the body has (if any)
+                return base.TerminatingContext ?? Body.IfNotNull(b => b.TerminatingContext);
+            }
+        }
+
+        public WhileNode(Context context, JSParser parser)
             : base(context, parser)
         {
-            Condition = condition;
-            Body = ForceToBlock(body);
-            if (Condition != null) Condition.Parent = this;
-            if (Body != null) Body.Parent = this;
         }
 
         public override void Accept(IVisitor visitor)
@@ -55,13 +70,11 @@ namespace Microsoft.Ajax.Utilities
             if (Condition == oldNode)
             {
                 Condition = newNode;
-                if (newNode != null) { newNode.Parent = this; }
                 return true;
             }
             if (Body == oldNode)
             {
                 Body = ForceToBlock(newNode);
-                if (Body != null) { Body.Parent = this; }
                 return true;
             }
             return false;
