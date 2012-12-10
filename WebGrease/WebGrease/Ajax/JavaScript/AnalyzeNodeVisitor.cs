@@ -544,6 +544,9 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
+                int ndx;
+                IfNode ifNode;
+
                 // if this block has a block scope, then look at the lexically-declared names (if any)
                 // and throw an error if any are defined as var's within this scope (ES6 rules).
                 // if this is the body of a function object, use the function scope.
@@ -597,7 +600,7 @@ namespace Microsoft.Ajax.Utilities
                 {
                     // don't call the base class to recurse -- let's walk the block
                     // backwards in case any of the children opt to delete themselves.
-                    for (var ndx = node.Count - 1; ndx >= 0; --ndx)
+                    for (ndx = node.Count - 1; ndx >= 0; --ndx)
                     {
                         node[ndx].Accept(this);
                     }
@@ -616,10 +619,10 @@ namespace Microsoft.Ajax.Utilities
                     // let's look at all our if-statements. If a true-clause ends in a return, then we don't
                     // need the else-clause; we can pull its statements out and stick them after the if-statement.
                     // also, if we encounter a return-, break- or continue-statement, we can axe everything after it
-                    for (var ndx = 0; ndx < node.Count; ++ndx)
+                    for (ndx = 0; ndx < node.Count; ++ndx)
                     {
                         // see if it's an if-statement with both a true and a false block
-                        var ifNode = node[ndx] as IfNode;
+                        ifNode = node[ndx] as IfNode;
                         if (ifNode != null
                             && ifNode.TrueBlock != null
                             && ifNode.TrueBlock.Count > 0
@@ -696,7 +699,7 @@ namespace Microsoft.Ajax.Utilities
                     && m_parser.Settings.IsModificationAllowed(TreeModifications.IfConditionReturnToCondition))
                 {
                     ReturnNode returnNode;
-                    var ifNode = FindLastStatement(node) as IfNode;
+                    ifNode = FindLastStatement(node) as IfNode;
                     if (ifNode != null && ifNode.FalseBlock == null
                         && ifNode.TrueBlock.Count == 1
                         && (returnNode = ifNode.TrueBlock[0] as ReturnNode) != null)
@@ -755,7 +758,7 @@ namespace Microsoft.Ajax.Utilities
                     // walk BACKWARDS down the list because we'll be removing items when we encounter
                     // var statements that can be moved inside a for statement's initializer
                     // we also don't need to check the first one, since there is nothing before it.
-                    for (int ndx = node.Count - 1; ndx > 0; --ndx)
+                    for (ndx = node.Count - 1; ndx > 0; --ndx)
                     {
                         // see if the previous statement is a var statement
                         // (we've already combined adjacent var-statements)
@@ -774,7 +777,7 @@ namespace Microsoft.Ajax.Utilities
                                 if (forNode.Initializer != null)
                                 {
                                     // not empty -- see if it is a Var node
-                                    Var varInitializer = forNode.Initializer as Var;
+                                    var varInitializer = forNode.Initializer as Var;
                                     if (varInitializer != null)
                                     {
                                         // transform: var decls1;for(var decls2;...) to for(var decls1,decls2;...)
@@ -914,18 +917,17 @@ namespace Microsoft.Ajax.Utilities
                     // into a simple return-conditional. The true statement needs to have no false block,
                     // and only one statement in the true block.
                     Conditional conditional;
-                    IfNode previousIf;
                     while (indexPrevious >= 0 
                         && lastReturn != null
-                        && (previousIf = node[indexPrevious] as IfNode) != null
-                        && previousIf.TrueBlock != null && previousIf.TrueBlock.Count == 1
-                        && previousIf.FalseBlock == null)
+                        && (ifNode = node[indexPrevious] as IfNode) != null
+                        && ifNode.TrueBlock != null && ifNode.TrueBlock.Count == 1
+                        && ifNode.FalseBlock == null)
                     {
                         // assume no change is made for this loop
                         bool somethingChanged = false;
 
                         // and that one true-block statement needs to be a return statement
-                        var previousReturn = previousIf.TrueBlock[0] as ReturnNode;
+                        var previousReturn = ifNode.TrueBlock[0] as ReturnNode;
                         if (previousReturn != null)
                         {
                             if (lastReturn.Operand == null)
@@ -938,7 +940,7 @@ namespace Microsoft.Ajax.Utilities
                                     if (!isFunctionLevel)
                                     {
                                         // not at the function level, so the return must stay.
-                                        if (previousIf.Condition.IsConstant)
+                                        if (ifNode.Condition.IsConstant)
                                         {
                                             // transform: if(cond)return;return} to return}
                                             node.RemoveAt(indexPrevious);
@@ -947,10 +949,10 @@ namespace Microsoft.Ajax.Utilities
                                         else
                                         {
                                             // transform: if(cond)return;return} to cond;return}
-                                            node[indexPrevious] = previousIf.Condition;
+                                            node[indexPrevious] = ifNode.Condition;
                                         }
                                     }
-                                    else if (previousIf.Condition.IsConstant)
+                                    else if (ifNode.Condition.IsConstant)
                                     {
                                         // transform: remove if(cond)return;return} because cond is a constant
                                         node.ReplaceChild(lastReturn, null);
@@ -961,7 +963,7 @@ namespace Microsoft.Ajax.Utilities
                                     {
                                         // transform: if(cond)return;return} to cond}
                                         // replace the final return with just the condition, then remove the previous if
-                                        if (node.ReplaceChild(lastReturn, previousIf.Condition))
+                                        if (node.ReplaceChild(lastReturn, ifNode.Condition))
                                         {
                                             node.RemoveAt(indexPrevious);
                                             somethingChanged = true;
@@ -973,7 +975,7 @@ namespace Microsoft.Ajax.Utilities
                                     // transform: if(cond)return expr;return} to return cond?expr:void 0
                                     conditional = new Conditional(null, m_parser)
                                         {
-                                            Condition = previousIf.Condition,
+                                            Condition = ifNode.Condition,
                                             TrueExpression = previousReturn.Operand,
                                             FalseExpression = CreateVoidNode()
                                         };
@@ -997,7 +999,7 @@ namespace Microsoft.Ajax.Utilities
                                     // transform: if(cond)return;return expr} to return cond?void 0:expr
                                     conditional = new Conditional(null, m_parser)
                                         {
-                                            Condition = previousIf.Condition,
+                                            Condition = ifNode.Condition,
                                             TrueExpression = CreateVoidNode(),
                                             FalseExpression = lastReturn.Operand
                                         };
@@ -1015,7 +1017,7 @@ namespace Microsoft.Ajax.Utilities
                                 }
                                 else if (previousReturn.Operand.IsEquivalentTo(lastReturn.Operand))
                                 {
-                                    if (previousIf.Condition.IsConstant)
+                                    if (ifNode.Condition.IsConstant)
                                     {
                                         // the condition is constant, and the returns return the same thing.
                                         // get rid of the if statement altogether.
@@ -1031,7 +1033,7 @@ namespace Microsoft.Ajax.Utilities
                                         // replace the operand on the final-return with the new binary operator,
                                         // and then delete the previous if-statement
                                         DetachReferences.Apply(previousReturn.Operand);
-                                        lastReturn.Operand = CommaOperator.CombineWithComma(null, m_parser, previousIf.Condition, lastReturn.Operand);
+                                        lastReturn.Operand = CommaOperator.CombineWithComma(null, m_parser, ifNode.Condition, lastReturn.Operand);
                                         node.RemoveAt(indexPrevious);
                                         somethingChanged = true;
                                     }
@@ -1045,7 +1047,7 @@ namespace Microsoft.Ajax.Utilities
                                     // transform: if(cond)return expr1;return expr2} to return cond?expr1:expr2}
                                     conditional = new Conditional(null, m_parser)
                                         {
-                                            Condition = previousIf.Condition,
+                                            Condition = ifNode.Condition,
                                             TrueExpression = previousReturn.Operand,
                                             FalseExpression = lastReturn.Operand
                                         };
@@ -1119,7 +1121,7 @@ namespace Microsoft.Ajax.Utilities
                             {
                                 // transform: ...;return cond?expr:void 0} to ...;if(cond)return expr}
                                 // (only works at the function-level because of the implicit return statement)
-                                var ifNode = new IfNode(lastReturn.Context, m_parser)
+                                ifNode = new IfNode(lastReturn.Context, m_parser)
                                     {
                                         Condition = conditional.Condition,
                                         TrueBlock = AstNode.ForceToBlock(new ReturnNode(null, m_parser)
@@ -1145,7 +1147,7 @@ namespace Microsoft.Ajax.Utilities
 
                                 // create a new if-node based on the condition, with the branches swapped 
                                 // (true-expression goes to false-branch, false-expression goes to true-branch
-                                var ifNode = new IfNode(lastReturn.Context, m_parser)
+                                ifNode = new IfNode(lastReturn.Context, m_parser)
                                     {
                                         Condition = conditional.Condition,
                                         TrueBlock = AstNode.ForceToBlock(new ReturnNode(null, m_parser)
@@ -1165,7 +1167,7 @@ namespace Microsoft.Ajax.Utilities
                     // (backwards, because we'll be combining those into one statement, reducing the number of statements.
                     // don't go all the way to zero, because each loop will compare the statement to the PREVIOUS
                     // statement, and the first statement (index==0) has no previous statement.
-                    for (var ndx = node.Count - 1; ndx > 0; --ndx)
+                    for (ndx = node.Count - 1; ndx > 0; --ndx)
                     {
                         // see if the current statement is an if-statement with no else block, and a true
                         // block that contains a single return-statement WITH an expression.
@@ -1177,7 +1179,7 @@ namespace Microsoft.Ajax.Utilities
                             // the equivalent expression as its return operand
                             AstNode condition1;
                             var matchedExpression = currentExpr;
-                            var ifNode = IsIfReturnExpr(node[ndx - 1], out condition1, ref matchedExpression);
+                            ifNode = IsIfReturnExpr(node[ndx - 1], out condition1, ref matchedExpression);
                             if (ifNode != null)
                             {
                                 // it is a match!
@@ -1204,9 +1206,9 @@ namespace Microsoft.Ajax.Utilities
                     // walk backwards looking for if (cond) return; whenever we encounter that statement,
                     // we can change it to if (!cond) and put all subsequent statements in the block inside the
                     // if's true-block.
-                    for (var ndx = node.Count - 1; ndx >= 0; --ndx)
+                    for (ndx = node.Count - 1; ndx >= 0; --ndx)
                     {
-                        var ifNode = node[ndx] as IfNode;
+                        ifNode = node[ndx] as IfNode;
                         if (ifNode != null
                             && ifNode.FalseBlock == null
                             && ifNode.TrueBlock != null
@@ -1279,9 +1281,9 @@ namespace Microsoft.Ajax.Utilities
                         // walk backwards looking for if (cond) continue; whenever we encounter that statement,
                         // we can change it to if (!cond) and put all subsequent statements in the block inside the
                         // if's true-block.
-                        for (var ndx = node.Count - 1; ndx >= 0; --ndx)
+                        for (ndx = node.Count - 1; ndx >= 0; --ndx)
                         {
-                            var ifNode = node[ndx] as IfNode;
+                            ifNode = node[ndx] as IfNode;
                             if (ifNode != null
                                 && ifNode.FalseBlock == null
                                 && ifNode.TrueBlock != null

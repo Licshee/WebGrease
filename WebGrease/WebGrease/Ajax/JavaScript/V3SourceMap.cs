@@ -148,6 +148,7 @@ namespace Microsoft.Ajax.Utilities
             return null;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2233:OperationsShouldNotOverflow", MessageId = "startLine+1", Justification="If there are 2 billion lines of code in the source file, then there are bigger problems.")]
         public void MarkSegment(AstNode node, int startLine, int startColumn, string name, Context context)
         {
             if (startLine == int.MaxValue)
