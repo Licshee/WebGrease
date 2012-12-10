@@ -147,7 +147,6 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
         private void CombineExpressions(Block node)
         {
             // walk backwards because we'll be removing items as we go along.
@@ -257,7 +256,7 @@ namespace Microsoft.Ajax.Utilities
                                     if (beforeExpr.OperatorToken == JSToken.Assign)
                                     {
                                         // check to see if lookup is in the current scope from which we are returning
-                                        if (lookup.VariableField == null 
+                                        if (lookup.VariableField == null
                                             || lookup.VariableField.OuterField != null
                                             || lookup.VariableField.IsReferencedInnerScope)
                                         {
@@ -341,7 +340,7 @@ namespace Microsoft.Ajax.Utilities
                                         returnNode.Operand = beforeExpr;
 
                                         // is this field scoped only to this function?
-                                        if (lookup.VariableField != null 
+                                        if (lookup.VariableField != null
                                             && lookup.VariableField.OuterField == null
                                             && !lookup.VariableField.IsReferencedInnerScope)
                                         {
@@ -355,52 +354,13 @@ namespace Microsoft.Ajax.Utilities
                                 }
                                 else
                                 {
-                                    // see if the return itself is an OPassignment on the same lookup.
-                                    var leftMostOperand = returnNode.Operand.LeftHandSide;
-                                    var returnBinary = leftMostOperand == null ? null : leftMostOperand.Parent as BinaryOperator;
-                                    if (returnBinary != null
-                                        && (!returnBinary.IsAssign || returnBinary.OperatorToken != JSToken.Assign)
-                                        && leftMostOperand.IsEquivalentTo(lookup))
-                                    {
-                                        // transform: lookup[ASSIGN]expr1;return lookupOPexpr2;  ==>  return (lookup[ASSIGN]expr1)OPexpr2;
-                                        if (lookup.VariableField != null)
-                                        {
-                                            // remove the lookup reference from the field
-                                            DetachReferences.Apply(leftMostOperand);
-                                        }
+                                    // transform: expr1;return expr2 to return expr1,expr2
+                                    var binOp = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], returnNode.Operand);
 
-                                        // if the operator is an assign, we already know we are NOT a regular = operator,
-                                        // because we wouldn't get into this branch if we were, so go ahead and strip
-                                        // the assignment from the operator
-                                        returnBinary.OperatorToken = JSScanner.StripAssignment(returnBinary.OperatorToken);
-
-                                        // replace the lookup in the return operator with the previous expression
-                                        // after removing it from the block
-                                        node.RemoveAt(ndx - 1);
-                                        leftMostOperand.Parent.ReplaceChild(leftMostOperand, beforeExpr);
-
-                                        // is this field scoped only to this function?
-                                        if (lookup.VariableField != null 
-                                            && lookup.VariableField.OuterField == null
-                                            && !lookup.VariableField.IsReferencedInnerScope)
-                                        {
-                                            // in fact, the lookup is in the current scope, so assigning to it is a waste
-                                            // because we're just going to return anyway.
-                                            // we can get rid of the assignment part and just keep the operator:
-                                            // transform: lookup OP= expr;return lookup   =>   return lookup OP expr;
-                                            beforeExpr.OperatorToken = JSScanner.StripAssignment(beforeExpr.OperatorToken);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // transform: expr1;return expr2 to return expr1,expr2
-                                        var binOp = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], returnNode.Operand);
-
-                                        // replace the operand on the return node with the new expression and
-                                        // delete the previous node
-                                        returnNode.Operand = binOp;
-                                        node[ndx - 1] = null;
-                                    }
+                                    // replace the operand on the return node with the new expression and
+                                    // delete the previous node
+                                    returnNode.Operand = binOp;
+                                    node[ndx - 1] = null;
                                 }
                             }
                             else
@@ -2145,7 +2105,6 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public override void Visit(FunctionObject node)
         {
             if (node != null)

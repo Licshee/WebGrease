@@ -72,8 +72,6 @@ namespace Microsoft.Ajax.Utilities
 
         public bool AllowEmbeddedAspNetBlocks { get; set; }
 
-        public bool SkipDebugBlocks { get; set; }
-
         public bool LiteralHasIssues { get { return m_literalIssues; } }
 
         public string StringLiteralValue { get { return m_decodedString; } }
@@ -163,7 +161,6 @@ namespace Microsoft.Ajax.Utilities
                 m_lastPosOnBuilder = this.m_lastPosOnBuilder,
                 m_startLinePosition = this.m_startLinePosition,
                 m_strSourceCode = this.m_strSourceCode,
-                SkipDebugBlocks = this.SkipDebugBlocks,
                 UsePreprocessorDefines = this.UsePreprocessorDefines,
             };
         }
@@ -2610,11 +2607,7 @@ namespace Microsoft.Ajax.Utilities
         private bool ScanPreprocessingDirective()
         {
             // check for some AjaxMin preprocessor comments
-            if (CheckCaseInsensitiveSubstring("#DEBUG"))
-            {
-                return ScanDebugDirective();
-            }
-            else if (CheckCaseInsensitiveSubstring("#GLOBALS"))
+            if (CheckCaseInsensitiveSubstring("#GLOBALS"))
             {
                 return ScanGlobalsDirective();
             }
@@ -2624,7 +2617,11 @@ namespace Microsoft.Ajax.Utilities
             }
             else if (UsePreprocessorDefines)
             {
-                if (CheckCaseInsensitiveSubstring("#IF"))
+                if (CheckCaseInsensitiveSubstring("#DEBUG"))
+                {
+                    return ScanDebugDirective();
+                }
+                else if (CheckCaseInsensitiveSubstring("#IF"))
                 {
                     return ScanIfDirective();
                 }
@@ -2979,11 +2976,12 @@ namespace Microsoft.Ajax.Utilities
                     }
                 }
             }
-            else if (SkipDebugBlocks)
+            else if (m_defines == null || !m_defines.ContainsKey("DEBUG"))
             {
                 // NOT a debug namespace assignment comment, so this is the start
-                // of a debug block. If we are skipping debug blocks, start skipping now.
-                // skip until we hit ///#ENDDEBUG, but only if we are stripping debug statements
+                // of a debug block. If we are skipping debug blocks (the DEBUG name
+                // is not defined), then start skipping now.
+                // skip until we hit ///#ENDDEBUG
                 PPSkipToDirective("#ENDDEBUG");
             }
 

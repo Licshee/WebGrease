@@ -253,10 +253,6 @@ namespace Microsoft.Ajax.Utilities
             m_scanner.AllowEmbeddedAspNetBlocks = m_settings.AllowEmbeddedAspNetBlocks;
             m_scanner.IgnoreConditionalCompilation = m_settings.IgnoreConditionalCompilation;
 
-            // set the skip-debug-blocks flag on the scanner if we are stripping debug statements
-            m_scanner.SkipDebugBlocks = m_settings.StripDebugStatements
-                 && m_settings.IsModificationAllowed(TreeModifications.StripDebugStatements);
-
             // set any defines
             m_scanner.UsePreprocessorDefines = !m_settings.IgnorePreprocessorDefines;
             if (m_scanner.UsePreprocessorDefines)
@@ -752,7 +748,6 @@ namespace Microsoft.Ajax.Utilities
         // ParseStatement deals with the end of statement issue (EOL vs ';') so if any of the
         // ParseXXX routine does it as well, it should return directly from the switch statement
         // without any further execution in the ParseStatement
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
         private AstNode ParseStatement(bool fSourceElement)
         {
             AstNode statement = null;
