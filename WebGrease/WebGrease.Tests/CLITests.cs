@@ -154,10 +154,10 @@ namespace WebGrease.Tests
             int result = Program.Main(args);
 
             Assert.IsTrue(result == 0);
-            Assert.IsTrue(Directory.Exists(outputPath + "d3"));
-            Assert.IsTrue(File.Exists(Path.Combine(outputPath, "d3", "28adf3ca4dd692218996394e80f240.js")));
-            Assert.IsTrue(Directory.Exists(outputPath + "01"));
-            Assert.IsTrue(File.Exists(Path.Combine(outputPath, "01", "b549f115aded68186632239c3c4101.css")));
+            Assert.IsTrue(Directory.Exists(outputPath + "02"));
+            Assert.IsTrue(File.Exists(Path.Combine(outputPath, "02", "953f56f041bd5d7e7456a0eec1c112.js")));
+            Assert.IsTrue(Directory.Exists(outputPath + "aa"));
+            Assert.IsTrue(File.Exists(Path.Combine(outputPath, "aa", "ee066eb71c584d9ad387a6c77c2c05.css")));
         }
 
         [TestMethod]

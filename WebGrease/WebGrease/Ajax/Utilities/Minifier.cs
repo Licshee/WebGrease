@@ -216,9 +216,9 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         /// <param name="source">CSS Source</param>
         /// <param name="settings">CSS minification settings</param>
-        /// <param name="jsSettings">JS minification settings to use for expression-minification</param>
+        /// <param name="scriptSettings">JS minification settings to use for expression-minification</param>
         /// <returns>Minified StyleSheet</returns>
-        public string MinifyStyleSheet(string source, CssSettings settings, CodeSettings jsSettings)
+        public string MinifyStyleSheet(string source, CssSettings settings, CodeSettings scriptSettings)
         {
             // initialize some values, including the error list (which shoudl start off empty)
             string minifiedResults = string.Empty;
@@ -234,9 +234,9 @@ namespace Microsoft.Ajax.Utilities
                 parser.Settings = settings;
             }
 
-            if (jsSettings != null)
+            if (scriptSettings != null)
             {
-                parser.JSSettings = jsSettings;
+                parser.JSSettings = scriptSettings;
             }
 
             // hook the error handler

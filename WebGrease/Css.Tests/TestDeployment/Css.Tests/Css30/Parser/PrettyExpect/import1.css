@@ -1,4 +1,4 @@
-﻿@import "foo.css";
+@import "foo.css";
 @import url("bar.css") foo,bar,bee,gee;
 @import url("foobar.css");
 @import url("barfoo.css");

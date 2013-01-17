@@ -23,7 +23,7 @@ namespace Microsoft.Ajax.Utilities
     {
         void StartPackage(string sourcePath, string mapPath);
         void EndPackage();
-        object StartSymbol(AstNode astNode, int startLine, int startColumn);
+        object StartSymbol(AstNode node, int startLine, int startColumn);
         void MarkSegment(AstNode node, int startLine, int startColumn, string name, Context context);
         void EndSymbol(object symbol, int endLine, int endColumn, string parentContext);
         void EndFile(TextWriter writer, string newLine);

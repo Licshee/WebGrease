@@ -246,218 +246,13 @@ namespace Microsoft.Ajax.Utilities
 
         #region AnalyzeScope functionality
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         internal void AnalyzeScope()
         {
             // check for unused local fields or arguments if this isn't the global scope.
             // also remove unused lexical function declaration in with-scopes.
             if (!(this is GlobalScope))
             {
-                foreach (var variableField in NameTable.Values)
-                {
-                    // not referenced, not generated, and has an original context so not added after the fact.
-                    // and we don't care if catch-error fields are unreferenced.
-                    if (!variableField.IsReferenced
-                        && !variableField.IsGenerated
-                        && variableField.OuterField == null
-                        && variableField.FieldType != FieldType.CatchError
-                        && variableField.FieldType != FieldType.GhostCatch
-                        && variableField.OriginalContext != null)
-                    {
-                        // see if the value is a function
-                        var functionObject = variableField.FieldValue as FunctionObject;
-                        if (functionObject != null)
-                        {
-                            // if there is no name, then ignore this declaration because it's malformed.
-                            // (won't be a function expression because those are automatically refernced)
-                            if (functionObject.Name != null)
-                            {
-                                // if the function name isn't a simple identifier, then leave it there and mark it as
-                                // not renamable because it's probably one of those darn IE-extension event handlers or something.
-                                if (JSScanner.IsValidIdentifier(functionObject.Name))
-                                {
-                                    // unreferenced function declaration. fire a warning.
-                                    var ctx = functionObject.IdContext ?? variableField.OriginalContext;
-                                    ctx.HandleError(JSError.FunctionNotReferenced, false);
-
-                                    // hide it from the output if our settings say we can.
-                                    // we don't want to delete it, per se, because we still want it to 
-                                    // show up in the scope report so the user can see that it was unreachable
-                                    // in case they are wondering where it went.
-                                    // ES6 has the notion of block-scoped function declarations. ES5 says functions can't
-                                    // be defined inside blocks -- only at the root level of the global scope or function scopes.
-                                    // so if this is a block scope, don't hide the function, even if it is unreferenced because
-                                    // of the cross-browser difference.
-                                    if (this.IsKnownAtCompileTime
-                                        && m_settings.MinifyCode
-                                        && m_settings.RemoveUnneededCode
-                                        && !(this is BlockScope))
-                                    {
-                                        functionObject.HideFromOutput = true;
-                                    }
-                                }
-                                else
-                                {
-                                    // not a valid identifier name for this function. Don't rename it because it's
-                                    // malformed and we don't want to mess up the developer's intent.
-                                    variableField.CanCrunch = false;
-                                }
-                            }
-                        }
-                        else if (variableField.FieldType == FieldType.Argument)
-                        {
-                            // unreferenced argument. We only want to throw a warning if there are no referenced arguments
-                            // AFTER this unreferenced argument. Also, we're assuming that if this is an argument field,
-                            // this scope MUST be a function scope.
-                            var functionScope = this as FunctionScope;
-                            if (functionScope != null)
-                            {
-                                if (functionScope.FunctionObject.IfNotNull(func => func.IsArgumentTrimmable(variableField)))
-                                {
-                                    // if we are planning on removing unreferenced function parameters, mark it as removed
-                                    // so we don't waste a perfectly good auto-rename name on it later.
-                                    if (m_settings.RemoveUnneededCode
-                                        && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedParameters))
-                                    {
-                                        variableField.WasRemoved = true;
-                                    }
-
-                                    variableField.OriginalContext.HandleError(
-                                        JSError.ArgumentNotReferenced,
-                                        false);
-                                }
-                            }
-                        }
-                        else if (!variableField.WasRemoved)
-                        {
-                            var throwWarning = true;
-
-                            // not a function, not an argument, not a catch-arg, not a global.
-                            // not referenced. If there's a single definition, and it either has no
-                            // initializer or the initializer is constant, get rid of it. 
-                            // (unless we aren't removing unneeded code, or the scope is unknown)
-                            if (variableField.Declarations.Count == 1
-                                && this.IsKnownAtCompileTime)
-                            {
-                                var varDecl = variableField.OnlyDeclaration as VariableDeclaration;
-                                if (varDecl != null)
-                                {
-                                    var declaration = varDecl.Parent as Declaration;
-                                    if (declaration != null
-                                        && (varDecl.Initializer == null || varDecl.Initializer.IsConstant))
-                                    {
-                                        // if the decl parent is a for-in and the decl is the variable part
-                                        // of the statement, then just leave it alone. Don't even throw a warning
-                                        var forInStatement = declaration.Parent as ForIn;
-                                        if (forInStatement != null
-                                            && declaration == forInStatement.Variable)
-                                        {
-                                            // just leave it alone, and don't even throw a warning for it.
-                                            // TODO: try to reuse some pre-existing variable, or maybe replace
-                                            // this vardecl with a ref to an unused parameter if this is inside
-                                            // a function.
-                                            throwWarning = false;
-                                        }
-                                        else if (m_settings.RemoveUnneededCode
-                                            && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedVariables))
-                                        {
-                                            variableField.Declarations.Remove(varDecl);
-
-                                            // don't "remove" the field if it's a ghost to another field
-                                            if (variableField.GhostedField == null)
-                                            {
-                                                variableField.WasRemoved = true;
-                                            }
-
-                                            // remove the vardecl from the declaration list, and if the
-                                            // declaration list is now empty, remove it, too
-                                            declaration.Remove(varDecl);
-                                            if (declaration.Count == 0)
-                                            {
-                                                declaration.Parent.ReplaceChild(declaration, null);
-                                            }
-                                        }
-                                    }
-                                    else if (varDecl.Parent is ForIn)
-                                    {
-                                        // then this is okay
-                                        throwWarning = false;
-                                    }
-                                }
-                            }
-
-                            if (throwWarning)
-                            {
-                                // not referenced -- throw a warning, assuming it hasn't been "removed" 
-                                // via an optimization or something.
-                                variableField.OriginalContext.HandleError(
-                                    JSError.VariableDefinedNotReferenced,
-                                    false);
-                            }
-                        }
-                    }
-                    else if (variableField.RefCount == 1 
-                        && this.IsKnownAtCompileTime
-                        && m_settings.RemoveUnneededCode
-                        && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedVariables))
-                    {
-                        // local fields that don't reference an outer field, have only one refcount
-                        // and one declaration
-                        if (variableField.FieldType == FieldType.Local
-                            && variableField.OuterField == null
-                            && variableField.Declarations.Count == 1)
-                        {
-                            // there should only be one, it should be a vardecl, and 
-                            // either no initializer or a constant initializer
-                            var varDecl = variableField.OnlyDeclaration as VariableDeclaration;
-                            if (varDecl != null
-                                && varDecl.Initializer != null
-                                && varDecl.Initializer.IsConstant)
-                            {
-                                // there should only be one
-                                var reference = variableField.OnlyReference;
-                                if (reference != null)
-                                {
-                                    // if the reference is not being assigned to, it is not an outer reference
-                                    // (meaning the lookup is in the same scope as the declaration), and the
-                                    // lookup is after the declaration
-                                    if (!reference.IsAssignment 
-                                        && reference.VariableField != null
-                                        && reference.VariableField.OuterField == null
-                                        && reference.VariableField.CanCrunch
-                                        && varDecl.Index < reference.Index)
-                                    {
-                                        // so we have a declaration assigning a constant value, and only one
-                                        // reference reading that value. replace the reference with the constant
-                                        // and get rid of the declaration.
-                                        // transform: var lookup=constant;lookup   ==>   constant
-                                        // remove the vardecl
-                                        var declaration = varDecl.Parent as Declaration;
-                                        if (declaration != null)
-                                        {
-                                            // replace the reference with the constant
-                                            variableField.References.Remove(reference);
-                                            var refNode = reference as AstNode;
-                                            refNode.Parent.IfNotNull(p => p.ReplaceChild(refNode, varDecl.Initializer));
-
-                                            // we're also going to remove the declaration itself
-                                            variableField.Declarations.Remove(varDecl);
-                                            variableField.WasRemoved = true;
-
-                                            // remove the vardecl from the declaration list
-                                            // and if the declaration is now empty, remove it, too
-                                            declaration.Remove(varDecl);
-                                            if (declaration.Count == 0)
-                                            {
-                                                declaration.Parent.IfNotNull(p => p.ReplaceChild(declaration, null));
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                AnalyzeNonGlobalScope();
             }
 
             // rename fields if we need to
@@ -467,6 +262,240 @@ namespace Microsoft.Ajax.Utilities
             foreach (var activationObject in ChildScopes)
             {
                 activationObject.AnalyzeScope();
+            }
+        }
+
+        private void AnalyzeNonGlobalScope()
+        {
+            foreach (var variableField in NameTable.Values)
+            {
+                // not referenced, not generated, and has an original context so not added after the fact.
+                // and we don't care if catch-error fields are unreferenced.
+                if (!variableField.IsReferenced
+                    && !variableField.IsGenerated
+                    && variableField.OuterField == null
+                    && variableField.FieldType != FieldType.CatchError
+                    && variableField.FieldType != FieldType.GhostCatch
+                    && variableField.OriginalContext != null)
+                {
+                    UnreferencedVariableField(variableField);
+                }
+                else if (variableField.RefCount == 1
+                    && this.IsKnownAtCompileTime
+                    && m_settings.RemoveUnneededCode
+                    && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedVariables))
+                {
+                    SingleReferenceVariableField(variableField);
+                }
+            }
+        }
+
+        private void UnreferencedVariableField(JSVariableField variableField)
+        {
+            // see if the value is a function
+            var functionObject = variableField.FieldValue as FunctionObject;
+            if (functionObject != null)
+            {
+                UnreferencedFunction(variableField, functionObject);
+            }
+            else if (variableField.FieldType == FieldType.Argument)
+            {
+                UnreferencedArgument(variableField);
+            }
+            else if (!variableField.WasRemoved)
+            {
+                UnreferencedVariable(variableField);
+            }
+        }
+
+        private void UnreferencedFunction(JSVariableField variableField, FunctionObject functionObject)
+        {
+            // if there is no name, then ignore this declaration because it's malformed.
+            // (won't be a function expression because those are automatically refernced)
+            if (functionObject.Name != null)
+            {
+                // if the function name isn't a simple identifier, then leave it there and mark it as
+                // not renamable because it's probably one of those darn IE-extension event handlers or something.
+                if (JSScanner.IsValidIdentifier(functionObject.Name))
+                {
+                    // unreferenced function declaration. fire a warning.
+                    var ctx = functionObject.IdContext ?? variableField.OriginalContext;
+                    ctx.HandleError(JSError.FunctionNotReferenced, false);
+
+                    // hide it from the output if our settings say we can.
+                    // we don't want to delete it, per se, because we still want it to 
+                    // show up in the scope report so the user can see that it was unreachable
+                    // in case they are wondering where it went.
+                    // ES6 has the notion of block-scoped function declarations. ES5 says functions can't
+                    // be defined inside blocks -- only at the root level of the global scope or function scopes.
+                    // so if this is a block scope, don't hide the function, even if it is unreferenced because
+                    // of the cross-browser difference.
+                    if (this.IsKnownAtCompileTime
+                        && m_settings.MinifyCode
+                        && m_settings.RemoveUnneededCode
+                        && !(this is BlockScope))
+                    {
+                        functionObject.HideFromOutput = true;
+                    }
+                }
+                else
+                {
+                    // not a valid identifier name for this function. Don't rename it because it's
+                    // malformed and we don't want to mess up the developer's intent.
+                    variableField.CanCrunch = false;
+                }
+            }
+        }
+
+        private void UnreferencedArgument(JSVariableField variableField)
+        {
+            // unreferenced argument. We only want to throw a warning if there are no referenced arguments
+            // AFTER this unreferenced argument. Also, we're assuming that if this is an argument field,
+            // this scope MUST be a function scope.
+            var functionScope = this as FunctionScope;
+            if (functionScope != null)
+            {
+                if (functionScope.FunctionObject.IfNotNull(func => func.IsArgumentTrimmable(variableField)))
+                {
+                    // if we are planning on removing unreferenced function parameters, mark it as removed
+                    // so we don't waste a perfectly good auto-rename name on it later.
+                    if (m_settings.RemoveUnneededCode
+                        && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedParameters))
+                    {
+                        variableField.WasRemoved = true;
+                    }
+
+                    variableField.OriginalContext.HandleError(
+                        JSError.ArgumentNotReferenced,
+                        false);
+                }
+            }
+        }
+
+        private void UnreferencedVariable(JSVariableField variableField)
+        {
+            var throwWarning = true;
+
+            // not a function, not an argument, not a catch-arg, not a global.
+            // not referenced. If there's a single definition, and it either has no
+            // initializer or the initializer is constant, get rid of it. 
+            // (unless we aren't removing unneeded code, or the scope is unknown)
+            if (variableField.Declarations.Count == 1
+                && this.IsKnownAtCompileTime)
+            {
+                var varDecl = variableField.OnlyDeclaration as VariableDeclaration;
+                if (varDecl != null)
+                {
+                    var declaration = varDecl.Parent as Declaration;
+                    if (declaration != null
+                        && (varDecl.Initializer == null || varDecl.Initializer.IsConstant))
+                    {
+                        // if the decl parent is a for-in and the decl is the variable part
+                        // of the statement, then just leave it alone. Don't even throw a warning
+                        var forInStatement = declaration.Parent as ForIn;
+                        if (forInStatement != null
+                            && declaration == forInStatement.Variable)
+                        {
+                            // just leave it alone, and don't even throw a warning for it.
+                            // TODO: try to reuse some pre-existing variable, or maybe replace
+                            // this vardecl with a ref to an unused parameter if this is inside
+                            // a function.
+                            throwWarning = false;
+                        }
+                        else if (m_settings.RemoveUnneededCode
+                            && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedVariables))
+                        {
+                            variableField.Declarations.Remove(varDecl);
+
+                            // don't "remove" the field if it's a ghost to another field
+                            if (variableField.GhostedField == null)
+                            {
+                                variableField.WasRemoved = true;
+                            }
+
+                            // remove the vardecl from the declaration list, and if the
+                            // declaration list is now empty, remove it, too
+                            declaration.Remove(varDecl);
+                            if (declaration.Count == 0)
+                            {
+                                declaration.Parent.ReplaceChild(declaration, null);
+                            }
+                        }
+                    }
+                    else if (varDecl.Parent is ForIn)
+                    {
+                        // then this is okay
+                        throwWarning = false;
+                    }
+                }
+            }
+
+            if (throwWarning)
+            {
+                // not referenced -- throw a warning, assuming it hasn't been "removed" 
+                // via an optimization or something.
+                variableField.OriginalContext.HandleError(
+                    JSError.VariableDefinedNotReferenced,
+                    false);
+            }
+        }
+
+        private static void SingleReferenceVariableField(JSVariableField variableField)
+        {
+            // local fields that don't reference an outer field, have only one refcount
+            // and one declaration
+            if (variableField.FieldType == FieldType.Local
+                && variableField.OuterField == null
+                && variableField.Declarations.Count == 1)
+            {
+                // there should only be one, it should be a vardecl, and 
+                // either no initializer or a constant initializer
+                var varDecl = variableField.OnlyDeclaration as VariableDeclaration;
+                if (varDecl != null
+                    && varDecl.Initializer != null
+                    && varDecl.Initializer.IsConstant)
+                {
+                    // there should only be one
+                    var reference = variableField.OnlyReference;
+                    if (reference != null)
+                    {
+                        // if the reference is not being assigned to, it is not an outer reference
+                        // (meaning the lookup is in the same scope as the declaration), and the
+                        // lookup is after the declaration
+                        if (!reference.IsAssignment
+                            && reference.VariableField != null
+                            && reference.VariableField.OuterField == null
+                            && reference.VariableField.CanCrunch
+                            && varDecl.Index < reference.Index)
+                        {
+                            // so we have a declaration assigning a constant value, and only one
+                            // reference reading that value. replace the reference with the constant
+                            // and get rid of the declaration.
+                            // transform: var lookup=constant;lookup   ==>   constant
+                            // remove the vardecl
+                            var declaration = varDecl.Parent as Declaration;
+                            if (declaration != null)
+                            {
+                                // replace the reference with the constant
+                                variableField.References.Remove(reference);
+                                var refNode = reference as AstNode;
+                                refNode.Parent.IfNotNull(p => p.ReplaceChild(refNode, varDecl.Initializer));
+
+                                // we're also going to remove the declaration itself
+                                variableField.Declarations.Remove(varDecl);
+                                variableField.WasRemoved = true;
+
+                                // remove the vardecl from the declaration list
+                                // and if the declaration is now empty, remove it, too
+                                declaration.Remove(varDecl);
+                                if (declaration.Count == 0)
+                                {
+                                    declaration.Parent.IfNotNull(p => p.ReplaceChild(declaration, null));
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 

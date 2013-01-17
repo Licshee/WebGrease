@@ -252,7 +252,8 @@ namespace Microsoft.Ajax.Utilities
             sb.Append(escapedText);
         }
 
-        public static string EscapeString(string text, bool isRegExp, bool useW3Strict, bool useStrict)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification="big switch-case for special characters")]
+        public static string EscapeString(string text, bool isRegularExpression, bool useW3Strict, bool useStrict)
         {
             // see which kind of delimiter we need.
             // if it's okay to use double-quotes, use them. Otherwise use single-quotes
@@ -273,17 +274,17 @@ namespace Microsoft.Ajax.Utilities
                         // if this is for a string parameter to a RegExp object, then we want to use
                         // explicit hex-values, not the escape sequences
                         case '\b':
-                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegExp ? @"\x08" : @"\b", ref sb);
+                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegularExpression ? @"\x08" : @"\b", ref sb);
                             startOfStretch = ndx + 1;
                             break;
 
                         case '\t':
-                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegExp ? @"\x09" : @"\t", ref sb);
+                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegularExpression ? @"\x09" : @"\t", ref sb);
                             startOfStretch = ndx + 1;
                             break;
 
                         case '\n':
-                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegExp ? @"\x0a" : @"\n", ref sb);
+                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegularExpression ? @"\x0a" : @"\n", ref sb);
                             startOfStretch = ndx + 1;
                             break;
 
@@ -293,17 +294,17 @@ namespace Microsoft.Ajax.Utilities
                                 goto default;
                             }
 
-                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegExp ? @"\x0b" : @"\v", ref sb);
+                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegularExpression ? @"\x0b" : @"\v", ref sb);
                             startOfStretch = ndx + 1;
                             break;
 
                         case '\f':
-                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegExp ? @"\x0c" : @"\f", ref sb);
+                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegularExpression ? @"\x0c" : @"\f", ref sb);
                             startOfStretch = ndx + 1;
                             break;
 
                         case '\r':
-                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegExp ? @"\x0d" : @"\r", ref sb);
+                            AddEscape(text.Substring(startOfStretch, ndx - startOfStretch), isRegularExpression ? @"\x0d" : @"\r", ref sb);
                             startOfStretch = ndx + 1;
                             break;
 
@@ -346,7 +347,7 @@ namespace Microsoft.Ajax.Utilities
                             if (c < ' ')
                             {
                                 // ECMA strict mode can't use octal, either
-                                if (isRegExp || useStrict)
+                                if (isRegularExpression || useStrict)
                                 {
                                     // for regular expression strings, \1 through \9 are always backreferences, 
                                     // and \10 through \40 are backreferences if they correspond to existing 

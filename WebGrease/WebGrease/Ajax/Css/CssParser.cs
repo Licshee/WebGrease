@@ -316,6 +316,10 @@ namespace Microsoft.Ajax.Utilities
             var resetToHacks = false;
             try
             {
+                // see if we need to re-encode the text based on a @charset rule
+                // at the front.
+                source = HandleCharset(source);
+
                 if (Settings.CommentMode == CssComment.Hacks)
                 {
                     // change the various hacks to important comments so they will be kept
@@ -411,41 +415,81 @@ namespace Microsoft.Ajax.Utilities
             return source;
         }
 
+        #region Character set rule handling
+
+        private string HandleCharset(string source)
+        {
+            // normally we let the encoding switch decode the input file for us, so every character in
+            // the source string has already been decoded into the proper UNICODE character point.
+            // HOWEVER, that doesn't mean the person passing us the source string has used the right encoding
+            // to read the file. Check to see if there's a BOM that hasn't been decoded properly. If so, then
+            // that indicates a potential error condition. And if we have a proper BOM, then everything was okay,
+            // but we want to strip it off the source so it doesn't interfere with the parsing.
+            // We SHOULD also check for a @charset rule to see if we need to re-decode the string. But for now, just
+            // throw a low-pri warning if we see an improperly-decided BOM.
+
+            if (source.StartsWith("\u00ef\u00bb\u00bf", StringComparison.Ordinal))
+            {
+                // if the first three characters are EF BB BF, then the source file had a UTF-8 BOM in it, but 
+                // the BOM didn't get stripped. We MIGHT have some issues: the file indicated it's UTF-8 encoded,
+                // but if we didn't properly decode the BOM, then other non-ASCII character sequences might also be
+                // improperly decoded. Because that's an IF, we will only throw a pri-1 "programmer may not have intended this"
+                // error. However, first check to see if there's a @charset "ascii"; statement at the front. If so,
+                // then don't throw any error at all because everything should be ascii, in which case we're most-likely
+                // good to go. The quote may be single or double, and the ASCII part should be case-insensentive.
+                var charsetAscii = "@charset ";
+                if (string.CompareOrdinal(source, 3, charsetAscii, 0, charsetAscii.Length) != 0
+                    || (source[3 + charsetAscii.Length] != '"' && source[3 + charsetAscii.Length] != '\'')
+                    || string.Compare(source, 4 + charsetAscii.Length, "ascii", 0, 5, StringComparison.OrdinalIgnoreCase) != 0)
+                {
+                    // we either don't have a @charset statement, or it's pointing to something other than ASCII, in which
+                    // case we might have a problem here. But because that's a "MIGHT," let's make it a pri-1 instead of
+                    // a pri-0. If there are any problems, the output will be wonky and the developer can up the warning-level
+                    // and see this error, then use the proper encoding to read the source. 
+                    ReportError(1, CssErrorCode.PossibleCharsetError);
+                }
+
+                // remove the BOM
+                source = source.Substring(3);
+            }
+            else if (source.StartsWith("\u00fe\u00ff\u0000\u0000", StringComparison.Ordinal)
+                || source.StartsWith("\u0000\u0000\u00ff\u00fe", StringComparison.Ordinal))
+            {
+                // apparently we had a UTF-32 BOM (either BE or LE) that wasn't stripped. Remove it now.
+                // throw a syntax-level error because the rest of the file is probably whack.
+                ReportError(0, CssErrorCode.PossibleCharsetError);
+                source = source.Substring(4);
+            }
+            else if (source.StartsWith("\u00fe\u00ff", StringComparison.Ordinal)
+                || source.StartsWith("\u00ff\u00fe", StringComparison.Ordinal))
+            {
+                // apparently we had a UTF-16 BOM (either BE or LE) that wasn't stripped. Remove it now.
+                // throw a syntax-level error because the rest of the file is probably whack.
+                ReportError(0, CssErrorCode.PossibleCharsetError);
+                source = source.Substring(2);
+            }
+            else if (source[0] == '\ufeff')
+            {
+                // properly-decoded UNICODE BOM was at the front. Everything should be okay, but strip it
+                // so it doesn't interfere with the rest of the processing.
+                source = source.Substring(1);
+            }
+
+            return source;
+        }
+
+        #endregion
+
         #region Parse... methods
 
         private Parsed ParseStylesheet()
         {
             Parsed parsed = Parsed.False;
+
+            // the @charset token can ONLY be at the top of the file
             if (CurrentTokenType == TokenType.CharacterSetSymbol)
             {
-                AppendCurrent();
-                SkipSpace();
-
-                if (CurrentTokenType != TokenType.String)
-                {
-                    ReportError(0, CssErrorCode.ExpectedCharset, CurrentTokenText);
-                    SkipToEndOfStatement();
-                    AppendCurrent();
-                }
-                else
-                {
-                    Append(' ');
-                    AppendCurrent();
-                    SkipSpace();
-
-                    if (CurrentTokenType != TokenType.Character || CurrentTokenText != ";")
-                    {
-                        ReportError(0, CssErrorCode.ExpectedSemicolon, CurrentTokenText);
-                        SkipToEndOfStatement();
-                        // be sure to append the closing token (; or })
-                        AppendCurrent();
-                    }
-                    else
-                    {
-                        Append(';');
-                        NextToken();
-                    }
-                }
+                ParseCharset();
             }
 
             // any number of S, Comment, CDO, or CDC elements
@@ -505,6 +549,40 @@ namespace Microsoft.Ajax.Utilities
             }
 
             return parsed;
+        }
+
+        private Parsed ParseCharset()
+        {
+            AppendCurrent();
+            SkipSpace();
+
+            if (CurrentTokenType != TokenType.String)
+            {
+                ReportError(0, CssErrorCode.ExpectedCharset, CurrentTokenText);
+                SkipToEndOfStatement();
+                AppendCurrent();
+            }
+            else
+            {
+                Append(' ');
+                AppendCurrent();
+                SkipSpace();
+
+                if (CurrentTokenType != TokenType.Character || CurrentTokenText != ";")
+                {
+                    ReportError(0, CssErrorCode.ExpectedSemicolon, CurrentTokenText);
+                    SkipToEndOfStatement();
+                    // be sure to append the closing token (; or })
+                    AppendCurrent();
+                }
+                else
+                {
+                    Append(';');
+                    NextToken();
+                }
+            }
+
+            return Parsed.True;
         }
 
         private void ParseSCDOCDCComments()
@@ -584,6 +662,15 @@ namespace Microsoft.Ajax.Utilities
                 NewLine();
                 parsed = Parsed.True;
             }
+            else if (CurrentTokenType == TokenType.CharacterSetSymbol)
+            {
+                // we found a charset at-rule. Problem is, @charset can only be the VERY FIRST token
+                // in the file, and we process it special. So if we get here, then it's NOT the first
+                // token, and clients will ignore it. Throw a warning, but still process it.
+                ReportError(2, CssErrorCode.UnexpectedCharset, CurrentTokenText);
+                parsed = ParseCharset();
+            }
+
             return parsed;
         }
 
@@ -1150,7 +1237,7 @@ namespace Microsoft.Ajax.Utilities
                     }
                     else
                     {
-                        ReportError(0, CssErrorCode.ExpectedClosingParen, CurrentTokenText);
+                        ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                     }
                 }
                 else if (CurrentTokenType == TokenType.Character && CurrentTokenText == ")")
@@ -1161,7 +1248,7 @@ namespace Microsoft.Ajax.Utilities
                 }
                 else
                 {
-                    ReportError(0, CssErrorCode.ExpectedClosingParen, CurrentTokenText);
+                    ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                 }
             }
             else
@@ -1642,7 +1729,7 @@ namespace Microsoft.Ajax.Utilities
                 parsed = ParseCombinator();
                 if (parsed == Parsed.True)
                 {
-                    ReportError(4, CssErrorCode.HackGeneratesInvalidCSS, currentContext, possibleCombinator);
+                    ReportError(4, CssErrorCode.HackGeneratesInvalidCss, currentContext, possibleCombinator);
                 }
             }
 
@@ -2076,7 +2163,7 @@ namespace Microsoft.Ajax.Utilities
             {
                 // spot a low-pri error because this is actually invalid CSS
                 // taking advantage of an IE "feature"
-                ReportError(4, CssErrorCode.HackGeneratesInvalidCSS, CurrentTokenText);
+                ReportError(4, CssErrorCode.HackGeneratesInvalidCss, CurrentTokenText);
 
                 // save the prefix and skip it
                 prefix = CurrentTokenText;
@@ -2165,7 +2252,7 @@ namespace Microsoft.Ajax.Utilities
                 // a common IE7-and-below hack is to append another ! at the end of !important.
                 if (CurrentTokenType == TokenType.Character && CurrentTokenText == "!")
                 {
-                    ReportError(4, CssErrorCode.HackGeneratesInvalidCSS, CurrentTokenText);
+                    ReportError(4, CssErrorCode.HackGeneratesInvalidCss, CurrentTokenText);
                     AppendCurrent();
                     SkipSpace();
                 }
@@ -2186,7 +2273,7 @@ namespace Microsoft.Ajax.Utilities
                 NextToken();
                 if (CurrentTokenType == TokenType.Identifier)
                 {
-                    ReportError(4, CssErrorCode.HackGeneratesInvalidCSS, CurrentTokenText);
+                    ReportError(4, CssErrorCode.HackGeneratesInvalidCss, CurrentTokenText);
 
                     AppendCurrent();
                     SkipSpace();
@@ -2455,7 +2542,7 @@ namespace Microsoft.Ajax.Utilities
                         }
                         else
                         {
-                            ReportError(0, CssErrorCode.ExpectedClosingParen, CurrentTokenText);
+                            ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                         }
                     }
                     else
@@ -2992,7 +3079,7 @@ namespace Microsoft.Ajax.Utilities
                         else if (CurrentTokenType != TokenType.Character || CurrentTokenText != ")")
                         {
                             // needs to be a closing paren here
-                            ReportError(0, CssErrorCode.ExpectedClosingParen, CurrentTokenText);
+                            ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                             parsed = Parsed.False;
                         }
                         else
@@ -3138,7 +3225,7 @@ namespace Microsoft.Ajax.Utilities
                 }
                 else
                 {
-                    ReportError(0, CssErrorCode.ExpectedClosingParen, CurrentTokenText);
+                    ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                     parsed = Parsed.False;
                 }
             }

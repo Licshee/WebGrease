@@ -96,209 +96,219 @@ namespace Microsoft.Ajax.Utilities
                 if (m_measure)
                 {
                     // measure
-                    // depending on the operator, calculate the potential difference in length
-                    switch (node.OperatorToken)
-                    {
-                        case JSToken.Equal:
-                        case JSToken.NotEqual:
-                        case JSToken.StrictEqual:
-                        case JSToken.StrictNotEqual:
-                            // these operators can be turned into a logical not without any
-                            // delta in code size. == becomes !=, etc.
-                            break;
-
-                        case JSToken.LessThan:
-                        case JSToken.GreaterThan:
-                            // these operators would add another character when turnbed into a not.
-                            // for example, < becomes >=, etc
-                            //++m_delta;
-                            //break;
-
-                        case JSToken.LessThanEqual:
-                        case JSToken.GreaterThanEqual:
-                            // these operators would subtract another character when turnbed into a not.
-                            // for example, <= becomes >, etc
-                            //--m_delta;
-                            //break;
-
-                        case JSToken.Assign:
-                        case JSToken.PlusAssign:
-                        case JSToken.MinusAssign:
-                        case JSToken.MultiplyAssign:
-                        case JSToken.DivideAssign:
-                        case JSToken.ModuloAssign:
-                        case JSToken.BitwiseAndAssign:
-                        case JSToken.BitwiseOrAssign:
-                        case JSToken.BitwiseXorAssign:
-                        case JSToken.LeftShiftAssign:
-                        case JSToken.RightShiftAssign:
-                        case JSToken.UnsignedRightShiftAssign:
-                        case JSToken.BitwiseAnd:
-                        case JSToken.BitwiseOr:
-                        case JSToken.BitwiseXor:
-                        case JSToken.Divide:
-                        case JSToken.Multiply:
-                        case JSToken.Modulo:
-                        case JSToken.Minus:
-                        case JSToken.Plus:
-                        case JSToken.LeftShift:
-                        case JSToken.RightShift:
-                        case JSToken.UnsignedRightShift:
-                        case JSToken.In:
-                        case JSToken.InstanceOf:
-                            // these operators have no logical not, which means we need to wrap them in
-                            // a unary logical-not operator. And since they have a lower precedence than
-                            // the unary logical-not, they'll have to be wrapped in parens. So that means
-                            // logical-not'ing these guys adds three characters
-                            m_delta += 3;
-                            break;
-
-                        case JSToken.Comma:
-                            // to logical-not a comma-operator, we just need to logical-not the
-                            // right-hand side
-                            node.Operand2.Accept(this);
-                            break;
-
-                        case JSToken.LogicalAnd:
-                        case JSToken.LogicalOr:
-                            if (node.Parent is Block || (node.Parent is CommaOperator && node.Parent.Parent is Block))
-                            {
-                                // if the parent is a block, then this is a simple expression statement:
-                                // expr1 || expr2; or expr1 && expr2; If so, then the result isn't
-                                // used anywhere and we're just using the || or && operator as a
-                                // shorter if-statement. So we don't need to negate the right-hand
-                                // side, just the left-hand side.
-                                if (node.Operand1 != null)
-                                {
-                                    node.Operand1.Accept(this);
-                                }
-                            }
-                            else
-                            {
-                                // the logical-not of a logical-and or logical-or operation is the 
-                                // other operation against the not of each operand. Since the opposite
-                                // operator is the same length as this operator, then we just need
-                                // to recurse both operands to find the true delta.
-                                if (node.Operand1 != null)
-                                {
-                                    node.Operand1.Accept(this);
-                                }
-
-                                if (node.Operand2 != null)
-                                {
-                                    node.Operand2.Accept(this);
-                                }
-                            }
-                            break;
-                    }
+                    MeasureBinaryOperator(node);
                 }
                 else
                 {
                     // convert
-                    // depending on the operator, perform whatever we need to do to apply a logical
-                    // not to the operation
-                    switch (node.OperatorToken)
-                    {
-                        case JSToken.Equal:
-                            node.OperatorToken = JSToken.NotEqual;
-                            break;
-
-                        case JSToken.NotEqual:
-                            node.OperatorToken = JSToken.Equal;
-                            break;
-
-                        case JSToken.StrictEqual:
-                            node.OperatorToken = JSToken.StrictNotEqual;
-                            break;
-
-                        case JSToken.StrictNotEqual:
-                            node.OperatorToken = JSToken.StrictEqual;
-                            break;
-
-                        case JSToken.LessThan:
-                            //node.OperatorToken = JSToken.GreaterThanEqual;
-                            //break;
-
-                        case JSToken.GreaterThan:
-                            //node.OperatorToken = JSToken.LessThanEqual;
-                            //break;
-
-                        case JSToken.LessThanEqual:
-                            //node.OperatorToken = JSToken.GreaterThan;
-                            //break;
-
-                        case JSToken.GreaterThanEqual:
-                            //node.OperatorToken = JSToken.LessThan;
-                            //break;
-
-                        case JSToken.Assign:
-                        case JSToken.PlusAssign:
-                        case JSToken.MinusAssign:
-                        case JSToken.MultiplyAssign:
-                        case JSToken.DivideAssign:
-                        case JSToken.ModuloAssign:
-                        case JSToken.BitwiseAndAssign:
-                        case JSToken.BitwiseOrAssign:
-                        case JSToken.BitwiseXorAssign:
-                        case JSToken.LeftShiftAssign:
-                        case JSToken.RightShiftAssign:
-                        case JSToken.UnsignedRightShiftAssign:
-                        case JSToken.BitwiseAnd:
-                        case JSToken.BitwiseOr:
-                        case JSToken.BitwiseXor:
-                        case JSToken.Divide:
-                        case JSToken.Multiply:
-                        case JSToken.Modulo:
-                        case JSToken.Minus:
-                        case JSToken.Plus:
-                        case JSToken.LeftShift:
-                        case JSToken.RightShift:
-                        case JSToken.UnsignedRightShift:
-                        case JSToken.In:
-                        case JSToken.InstanceOf:
-                            WrapWithLogicalNot(node);
-                            break;
-
-                        case JSToken.Comma:
-                            // to logical-not a comma-operator, we just need to logical-not the
-                            // right-hand side
-                            node.Operand2.Accept(this);
-                            break;
-
-                        case JSToken.LogicalAnd:
-                        case JSToken.LogicalOr:
-                            if (node.Parent is Block || (node.Parent is CommaOperator && node.Parent.Parent is Block))
-                            {
-                                // if the parent is a block, then this is a simple expression statement:
-                                // expr1 || expr2; or expr1 && expr2; If so, then the result isn't
-                                // used anywhere and we're just using the || or && operator as a
-                                // shorter if-statement. So we don't need to negate the right-hand
-                                // side, just the left-hand side.
-                                if (node.Operand1 != null)
-                                {
-                                    node.Operand1.Accept(this);
-                                }
-                            }
-                            else
-                            {
-                                // the logical-not of a logical-and or logical-or operation is the 
-                                // other operation against the not of each operand. Since the opposite
-                                // operator is the same length as this operator, then we just need
-                                // to recurse both operands and swap the operator token
-                                if (node.Operand1 != null)
-                                {
-                                    node.Operand1.Accept(this);
-                                }
-
-                                if (node.Operand2 != null)
-                                {
-                                    node.Operand2.Accept(this);
-                                }
-                            }
-                            node.OperatorToken = node.OperatorToken == JSToken.LogicalAnd ? JSToken.LogicalOr : JSToken.LogicalAnd;
-                            break;
-                    }
+                    ConvertBinaryOperator(node);
                 }
+            }
+        }
+
+        private void MeasureBinaryOperator(BinaryOperator node)
+        {
+            // depending on the operator, calculate the potential difference in length
+            switch (node.OperatorToken)
+            {
+                case JSToken.Equal:
+                case JSToken.NotEqual:
+                case JSToken.StrictEqual:
+                case JSToken.StrictNotEqual:
+                    // these operators can be turned into a logical not without any
+                    // delta in code size. == becomes !=, etc.
+                    break;
+
+                case JSToken.LessThan:
+                case JSToken.GreaterThan:
+                // these operators would add another character when turnbed into a not.
+                // for example, < becomes >=, etc
+                //++m_delta;
+                //break;
+
+                case JSToken.LessThanEqual:
+                case JSToken.GreaterThanEqual:
+                // these operators would subtract another character when turnbed into a not.
+                // for example, <= becomes >, etc
+                //--m_delta;
+                //break;
+
+                case JSToken.Assign:
+                case JSToken.PlusAssign:
+                case JSToken.MinusAssign:
+                case JSToken.MultiplyAssign:
+                case JSToken.DivideAssign:
+                case JSToken.ModuloAssign:
+                case JSToken.BitwiseAndAssign:
+                case JSToken.BitwiseOrAssign:
+                case JSToken.BitwiseXorAssign:
+                case JSToken.LeftShiftAssign:
+                case JSToken.RightShiftAssign:
+                case JSToken.UnsignedRightShiftAssign:
+                case JSToken.BitwiseAnd:
+                case JSToken.BitwiseOr:
+                case JSToken.BitwiseXor:
+                case JSToken.Divide:
+                case JSToken.Multiply:
+                case JSToken.Modulo:
+                case JSToken.Minus:
+                case JSToken.Plus:
+                case JSToken.LeftShift:
+                case JSToken.RightShift:
+                case JSToken.UnsignedRightShift:
+                case JSToken.In:
+                case JSToken.InstanceOf:
+                    // these operators have no logical not, which means we need to wrap them in
+                    // a unary logical-not operator. And since they have a lower precedence than
+                    // the unary logical-not, they'll have to be wrapped in parens. So that means
+                    // logical-not'ing these guys adds three characters
+                    m_delta += 3;
+                    break;
+
+                case JSToken.Comma:
+                    // to logical-not a comma-operator, we just need to logical-not the
+                    // right-hand side
+                    node.Operand2.Accept(this);
+                    break;
+
+                case JSToken.LogicalAnd:
+                case JSToken.LogicalOr:
+                    if (node.Parent is Block || (node.Parent is CommaOperator && node.Parent.Parent is Block))
+                    {
+                        // if the parent is a block, then this is a simple expression statement:
+                        // expr1 || expr2; or expr1 && expr2; If so, then the result isn't
+                        // used anywhere and we're just using the || or && operator as a
+                        // shorter if-statement. So we don't need to negate the right-hand
+                        // side, just the left-hand side.
+                        if (node.Operand1 != null)
+                        {
+                            node.Operand1.Accept(this);
+                        }
+                    }
+                    else
+                    {
+                        // the logical-not of a logical-and or logical-or operation is the 
+                        // other operation against the not of each operand. Since the opposite
+                        // operator is the same length as this operator, then we just need
+                        // to recurse both operands to find the true delta.
+                        if (node.Operand1 != null)
+                        {
+                            node.Operand1.Accept(this);
+                        }
+
+                        if (node.Operand2 != null)
+                        {
+                            node.Operand2.Accept(this);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        private void ConvertBinaryOperator(BinaryOperator node)
+        {
+            // depending on the operator, perform whatever we need to do to apply a logical
+            // not to the operation
+            switch (node.OperatorToken)
+            {
+                case JSToken.Equal:
+                    node.OperatorToken = JSToken.NotEqual;
+                    break;
+
+                case JSToken.NotEqual:
+                    node.OperatorToken = JSToken.Equal;
+                    break;
+
+                case JSToken.StrictEqual:
+                    node.OperatorToken = JSToken.StrictNotEqual;
+                    break;
+
+                case JSToken.StrictNotEqual:
+                    node.OperatorToken = JSToken.StrictEqual;
+                    break;
+
+                case JSToken.LessThan:
+                //node.OperatorToken = JSToken.GreaterThanEqual;
+                //break;
+
+                case JSToken.GreaterThan:
+                //node.OperatorToken = JSToken.LessThanEqual;
+                //break;
+
+                case JSToken.LessThanEqual:
+                //node.OperatorToken = JSToken.GreaterThan;
+                //break;
+
+                case JSToken.GreaterThanEqual:
+                //node.OperatorToken = JSToken.LessThan;
+                //break;
+
+                case JSToken.Assign:
+                case JSToken.PlusAssign:
+                case JSToken.MinusAssign:
+                case JSToken.MultiplyAssign:
+                case JSToken.DivideAssign:
+                case JSToken.ModuloAssign:
+                case JSToken.BitwiseAndAssign:
+                case JSToken.BitwiseOrAssign:
+                case JSToken.BitwiseXorAssign:
+                case JSToken.LeftShiftAssign:
+                case JSToken.RightShiftAssign:
+                case JSToken.UnsignedRightShiftAssign:
+                case JSToken.BitwiseAnd:
+                case JSToken.BitwiseOr:
+                case JSToken.BitwiseXor:
+                case JSToken.Divide:
+                case JSToken.Multiply:
+                case JSToken.Modulo:
+                case JSToken.Minus:
+                case JSToken.Plus:
+                case JSToken.LeftShift:
+                case JSToken.RightShift:
+                case JSToken.UnsignedRightShift:
+                case JSToken.In:
+                case JSToken.InstanceOf:
+                    WrapWithLogicalNot(node);
+                    break;
+
+                case JSToken.Comma:
+                    // to logical-not a comma-operator, we just need to logical-not the
+                    // right-hand side
+                    node.Operand2.Accept(this);
+                    break;
+
+                case JSToken.LogicalAnd:
+                case JSToken.LogicalOr:
+                    if (node.Parent is Block || (node.Parent is CommaOperator && node.Parent.Parent is Block))
+                    {
+                        // if the parent is a block, then this is a simple expression statement:
+                        // expr1 || expr2; or expr1 && expr2; If so, then the result isn't
+                        // used anywhere and we're just using the || or && operator as a
+                        // shorter if-statement. So we don't need to negate the right-hand
+                        // side, just the left-hand side.
+                        if (node.Operand1 != null)
+                        {
+                            node.Operand1.Accept(this);
+                        }
+                    }
+                    else
+                    {
+                        // the logical-not of a logical-and or logical-or operation is the 
+                        // other operation against the not of each operand. Since the opposite
+                        // operator is the same length as this operator, then we just need
+                        // to recurse both operands and swap the operator token
+                        if (node.Operand1 != null)
+                        {
+                            node.Operand1.Accept(this);
+                        }
+
+                        if (node.Operand2 != null)
+                        {
+                            node.Operand2.Accept(this);
+                        }
+                    }
+                    node.OperatorToken = node.OperatorToken == JSToken.LogicalAnd ? JSToken.LogicalOr : JSToken.LogicalAnd;
+                    break;
             }
         }
 

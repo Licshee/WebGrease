@@ -16,19 +16,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
     /// <summary>
     /// Class used to parse JavaScript source code into an abstract syntax tree.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
     public class JSParser
     {
         private const int c_MaxSkippedTokenNumber = 50;
@@ -44,8 +43,6 @@ namespace Microsoft.Ajax.Utilities
         private int m_tokensSkipped;
         private NoSkipTokenSet m_noSkipTokenSet;
         private long m_goodTokensProcessed;
-
-        private Block m_program;
 
         private bool m_newModule;
 
@@ -457,11 +454,16 @@ namespace Microsoft.Ajax.Utilities
                 case JavaScriptSourceMode.Expression:
                     // create a block, get the first token, add in the parse of a single expression, 
                     // and we'll go fron there.
-                    returnBlock = scriptBlock = new Block(null, this);
+                    returnBlock = scriptBlock = new Block(CurrentPositionContext(), this);
                     GetNextToken();
                     try
                     {
-                        scriptBlock.Append(ParseExpression());
+                        var expr = ParseExpression();
+                        if (expr != null)
+                        {
+                            scriptBlock.Append(expr);
+                            scriptBlock.UpdateWith(expr.Context);
+                        }
                     }
                     catch (EndOfFileException)
                     {
@@ -585,7 +587,7 @@ namespace Microsoft.Ajax.Utilities
         //---------------------------------------------------------------------------------------
         private Block ParseStatements()
         {
-            m_program = new Block(m_currentToken.Clone(), this);
+            var program = new Block(CurrentPositionContext(), this);
             m_blockType.Add(BlockType.Block);
             m_useCurrentForNext = false;
             try
@@ -595,9 +597,9 @@ namespace Microsoft.Ajax.Utilities
                 
                 // if the block doesn't have a proper file context, then let's set it from the 
                 // first token -- that token might have had a ///#source directive!
-                if (string.IsNullOrEmpty(m_program.Context.Document.FileContext))
+                if (string.IsNullOrEmpty(program.Context.Document.FileContext))
                 {
-                    m_program.Context.Document.FileContext = m_currentToken.Document.FileContext;
+                    program.Context.Document.FileContext = m_currentToken.Document.FileContext;
                 }
 
                 m_noSkipTokenSet.Add(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
@@ -626,7 +628,10 @@ namespace Microsoft.Ajax.Utilities
                                     if (!(constantWrapper is DirectivePrologue))
                                     {
                                         // use a directive prologue node instead
-                                        ast = new DirectivePrologue(constantWrapper.Value.ToString(), ast.Context, ast.Parser);
+                                        ast = new DirectivePrologue(constantWrapper.Value.ToString(), ast.Context, ast.Parser)
+                                            {
+                                                MayHaveIssues = constantWrapper.MayHaveIssues
+                                            };
                                     }
                                 }
                                 else if (!m_newModule)
@@ -665,7 +670,7 @@ namespace Microsoft.Ajax.Utilities
                         if (null != ast)
                         {
                             // append the token to the program
-                            m_program.Append(ast);
+                            program.Append(ast);
 
                             // set the last end position to be the start of the current token.
                             // if we parse the next statement and the end is still the start, we know
@@ -689,7 +694,7 @@ namespace Microsoft.Ajax.Utilities
                         // we have important comments before the EOF. Add the comment(s) to the program.
                         foreach(var importantComment in m_importantComments)
                         {
-                            m_program.Append(new ImportantComment(importantComment, this));
+                            program.Append(new ImportantComment(importantComment, this));
                         }
 
                         m_importantComments.Clear();
@@ -711,7 +716,9 @@ namespace Microsoft.Ajax.Utilities
                 // Mark the end of file as the error location
                 EOFError(se.Error);
             }
-            return m_program;
+
+            program.UpdateWith(CurrentPositionContext());
+            return program;
         }
 
         //---------------------------------------------------------------------------------------
@@ -938,7 +945,10 @@ namespace Microsoft.Ajax.Utilities
                                     // module. Let's make it a DirectivePrologue if it isn't already
                                     if (!(statement is DirectivePrologue))
                                     {
-                                        statement = new DirectivePrologue(constantWrapper.Value.ToString(), constantWrapper.Context, this);
+                                        statement = new DirectivePrologue(constantWrapper.Value.ToString(), constantWrapper.Context, this)
+                                            {
+                                                MayHaveIssues = constantWrapper.MayHaveIssues
+                                            };
                                     }
                                 }
                             }
@@ -1652,7 +1662,7 @@ namespace Microsoft.Ajax.Utilities
                 else if (JSToken.LeftCurly != m_currentToken.Token)
                 {
                     // if the statements aren't withing curly-braces, throw a possible error
-                    ReportError(JSError.StatementBlockExpected, m_currentToken.FlattenToStart(), true);
+                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
                 }
 
                 try
@@ -1701,7 +1711,7 @@ namespace Microsoft.Ajax.Utilities
                       && JSToken.If != m_currentToken.Token)
                     {
                         // if the statements aren't withing curly-braces (or start another if-statement), throw a possible error
-                        ReportError(JSError.StatementBlockExpected, m_currentToken.FlattenToStart(), true);
+                        ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
                     }
 
                     try
@@ -1908,7 +1918,7 @@ namespace Microsoft.Ajax.Utilities
                     // if the statements aren't withing curly-braces, throw a possible error
                     if (JSToken.LeftCurly != m_currentToken.Token)
                     {
-                        ReportError(JSError.StatementBlockExpected, m_currentToken.FlattenToStart(), true);
+                        ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
                     }
                     try
                     {
@@ -2043,7 +2053,7 @@ namespace Microsoft.Ajax.Utilities
                     // if the statements aren't withing curly-braces, throw a possible error
                     if (JSToken.LeftCurly != m_currentToken.Token)
                     {
-                        ReportError(JSError.StatementBlockExpected, m_currentToken.FlattenToStart(), true);
+                        ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
                     }
                     try
                     {
@@ -2107,7 +2117,7 @@ namespace Microsoft.Ajax.Utilities
                 // if the statements aren't withing curly-braces, throw a possible error
                 if (JSToken.LeftCurly != m_currentToken.Token)
                 {
-                    ReportError(JSError.StatementBlockExpected, m_currentToken.FlattenToStart(), true);
+                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
                 }
                 try
                 {
@@ -2302,7 +2312,7 @@ namespace Microsoft.Ajax.Utilities
                 // if the statements aren't withing curly-braces, throw a possible error
                 if (JSToken.LeftCurly != m_currentToken.Token)
                 {
-                    ReportError(JSError.StatementBlockExpected, m_currentToken.FlattenToStart(), true);
+                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
                 }
                 try
                 {
@@ -2656,7 +2666,7 @@ namespace Microsoft.Ajax.Utilities
                 // if the statements aren't withing curly-braces, throw a possible error
                 if (JSToken.LeftCurly != m_currentToken.Token)
                 {
-                    ReportError(JSError.StatementBlockExpected, m_currentToken.FlattenToStart(), true);
+                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
                 }
 
                 try
@@ -2803,7 +2813,7 @@ namespace Microsoft.Ajax.Utilities
                 }
 
                 // parse the switch body
-                cases = new AstNodeList(m_currentToken.Clone(), this);
+                cases = new AstNodeList(CurrentPositionContext(), this);
                 bool defaultStatement = false;
                 m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockNoSkipTokenSet);
                 try
@@ -3513,7 +3523,10 @@ namespace Microsoft.Ajax.Utilities
                                     if (!(constantWrapper is DirectivePrologue))
                                     {
                                         // make the statement a directive prologue instead of a constant wrapper
-                                        statement = new DirectivePrologue(constantWrapper.Value.ToString(), constantWrapper.Context, constantWrapper.Parser);
+                                        statement = new DirectivePrologue(constantWrapper.Value.ToString(), constantWrapper.Context, constantWrapper.Parser)
+                                            {
+                                                MayHaveIssues = constantWrapper.MayHaveIssues
+                                            };
                                     }
                                 }
                                 else if (!m_newModule)
@@ -4449,8 +4462,8 @@ namespace Microsoft.Ajax.Utilities
                 // array initializer
                 case JSToken.LeftBracket:
                     Context listCtx = m_currentToken.Clone();
-                    AstNodeList list = new AstNodeList(m_currentToken.Clone(), this);
                     GetNextToken();
+                    AstNodeList list = new AstNodeList(CurrentPositionContext(), this);
                     while (JSToken.RightBracket != m_currentToken.Token)
                     {
                         if (JSToken.Comma != m_currentToken.Token)
@@ -4542,7 +4555,7 @@ namespace Microsoft.Ajax.Utilities
                     Context objCtx = m_currentToken.Clone();
                     GetNextToken();
 
-                    var propertyList = new AstNodeList(null, this);
+                    var propertyList = new AstNodeList(CurrentPositionContext(), this);
 
                     if (JSToken.RightCurly != m_currentToken.Token)
                     {
@@ -5028,7 +5041,7 @@ namespace Microsoft.Ajax.Utilities
                                 //
                                 //args = ParseExpressionList(JSToken.RightBracket);
                                 GetNextToken();
-                                args = new AstNodeList(m_currentToken.Clone(), this);
+                                args = new AstNodeList(CurrentPositionContext(), this);
 
                                 AstNode accessor = ParseExpression();
                                 if (accessor != null)
@@ -5435,9 +5448,7 @@ namespace Microsoft.Ajax.Utilities
 
         private Context CurrentPositionContext()
         {
-            Context context = m_currentToken.Clone();
-            context.EndPosition = (context.StartPosition < context.Document.Source.Length) ? context.StartPosition + 1 : context.StartPosition;
-            return context;
+            return m_currentToken.FlattenToStart();
         }
 
         //---------------------------------------------------------------------------------------

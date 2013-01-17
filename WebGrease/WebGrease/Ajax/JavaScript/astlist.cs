@@ -128,9 +128,9 @@ namespace Microsoft.Ajax.Utilities
             return isEquivalent;
         }
 
-        internal AstNodeList Append(AstNode astNode)
+        internal AstNodeList Append(AstNode node)
         {
-            var list = astNode as AstNodeList;
+            var list = node as AstNodeList;
             if (list != null)
             {
                 // another list -- append each item, not the whole list
@@ -139,20 +139,20 @@ namespace Microsoft.Ajax.Utilities
                     Append(list[ndx]);
                 }
             }
-            else if (astNode != null)
+            else if (node != null)
             {
                 // not another list
-                astNode.Parent = this;
-                m_list.Add(astNode);
-                Context.UpdateWith(astNode.Context);
+                node.Parent = this;
+                m_list.Add(node);
+                Context.UpdateWith(node.Context);
             }
 
             return this;
         }
 
-        public AstNodeList Insert(int position, AstNode astNode)
+        public AstNodeList Insert(int position, AstNode node)
         {
-            var list = astNode as AstNodeList;
+            var list = node as AstNodeList;
             if (list != null)
             {
                 // another list. 
@@ -161,12 +161,12 @@ namespace Microsoft.Ajax.Utilities
                     Insert(position + ndx, list[ndx]);
                 }
             }
-            else if (astNode != null)
+            else if (node != null)
             {
                 // not another list
-                astNode.Parent = this;
-                m_list.Insert(position, astNode);
-                Context.UpdateWith(astNode.Context);
+                node.Parent = this;
+                m_list.Insert(position, node);
+                Context.UpdateWith(node.Context);
             }
 
             return this;

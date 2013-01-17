@@ -20,7 +20,7 @@ namespace Microsoft.Ajax.Utilities
     using System.Reflection;
     using System.Resources;
 
-    internal enum CssErrorCode
+    public enum CssErrorCode
     {
         NoError = 0,
         UnknownError = 1000,
@@ -28,7 +28,7 @@ namespace Microsoft.Ajax.Utilities
         UnterminatedString,
         UnnecessaryUnits,
         UnexpectedNumberCharacter,
-        ExpectedOpenParen,
+        ExpectedOpenParenthesis,
         InvalidLowSurrogate,
         HighSurrogateNoLow,
         UnderscoreNotValid,
@@ -57,7 +57,7 @@ namespace Microsoft.Ajax.Utilities
         ExpectedSelector,
         ExpectedIdentifierOrString,
         ExpectedClosingBracket,
-        ExpectedClosingParen,
+        ExpectedClosingParenthesis,
         ExpectedColon,
         ExpectedExpression,
         HashAfterUnaryNotAllowed,
@@ -72,7 +72,7 @@ namespace Microsoft.Ajax.Utilities
         ExpectedComma,
         ExpectedRgbNumberOrPercentage,
         ColorCanBeCollapsed,
-        HackGeneratesInvalidCSS,
+        HackGeneratesInvalidCss,
         ExpectedEndOfFile,
         DuplicateNamespaceDeclaration,
         UndeclaredNamespace,
@@ -92,5 +92,7 @@ namespace Microsoft.Ajax.Utilities
         ExpectedMinMax,
         UnexpectedEndOfFile,
         ExpectedNumber,
+        UnexpectedCharset,
+        PossibleCharsetError,
     };
 }

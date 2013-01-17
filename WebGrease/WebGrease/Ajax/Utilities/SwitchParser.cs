@@ -118,10 +118,10 @@ namespace Microsoft.Ajax.Utilities
             m_isMono = Type.GetType("Mono.Runtime") != null;
         }
 
-        public SwitchParser(CodeSettings jsSettings, CssSettings cssSettings)
+        public SwitchParser(CodeSettings scriptSettings, CssSettings cssSettings)
         {
             // apply the switches to these two settings objects
-            JSSettings = jsSettings ?? new CodeSettings();
+            JSSettings = scriptSettings ?? new CodeSettings();
             CssSettings = cssSettings ?? new CssSettings();
         }
 
@@ -308,6 +308,7 @@ namespace Microsoft.Ajax.Utilities
         /// Takes an array of arguments and parses the switches into the appropriate settings objects
         /// </summary>
         /// <param name="args"></param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode", Justification="Big switch statement"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Big switch statement")]
         public void Parse(string[] args)
         {
             var listSeparators = new[] { ',', ';' };

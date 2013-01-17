@@ -170,9 +170,10 @@ namespace Microsoft.Ajax.Utilities
         /// <summary>
         /// main method for the scanner; scans the next token from the input stream.
         /// </summary>
-        /// <param name="scanRegExp">whether to try scanning a regexp when encountering a /</param>
+        /// <param name="scanForRegularExpressionLiterals">whether to try scanning a regexp when encountering a /</param>
         /// <returns>next token from the input</returns>
-        public Context ScanNextToken(bool scanRegExp)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode", Justification = "big case statement")]
+        public Context ScanNextToken(bool scanForRegularExpressionLiterals)
         {
             var token = JSToken.None;
 
@@ -427,7 +428,7 @@ namespace Microsoft.Ajax.Utilities
                         default:
                             // if we were passed the hint that we prefer regular expressions
                             // over divide operators, then try parsing one now.
-                            if (scanRegExp)
+                            if (scanForRegularExpressionLiterals)
                             {
                                 // we think this is probably a regular expression.
                                 // if it is...
@@ -1885,6 +1886,11 @@ namespace Microsoft.Ajax.Utilities
                     result.Append(m_strSourceCode, start, m_currentPosition - start - 1);
                 }
                 m_decodedString = result.ToString();
+            }
+            else if (m_currentPosition == m_currentToken.StartPosition + 1)
+            {
+                // empty unterminated string!
+                m_decodedString = string.Empty;
             }
             else
             {

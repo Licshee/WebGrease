@@ -142,13 +142,13 @@ namespace Microsoft.Ajax.Utilities
             // nothing to do
         }
 
-        public object StartSymbol(AstNode astNode, int startLine, int startColumn)
+        public object StartSymbol(AstNode node, int startLine, int startColumn)
         {
             // we don't care about the start/end methods -- we only care about segments
             return null;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2233:OperationsShouldNotOverflow", MessageId = "startLine+1", Justification="If there are 2 billion lines of code in the source file, then there are bigger problems.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2233:OperationsShouldNotOverflow", MessageId = "startLine+1")]
         public void MarkSegment(AstNode node, int startLine, int startColumn, string name, Context context)
         {
             if (startLine == int.MaxValue)

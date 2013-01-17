@@ -520,6 +520,15 @@ namespace Microsoft.Ajax.Utilities {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Byte-order mark at front of source indicates possible encoding issue..
+        /// </summary>
+        internal static string PossibleCharsetError {
+            get {
+                return ResourceManager.GetString("PossibleCharsetError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Possible cross-browser invalid class name: {0}.
         /// </summary>
         internal static string PossibleInvalidClassName {
@@ -633,6 +642,15 @@ namespace Microsoft.Ajax.Utilities {
         internal static string UnexpectedAtKeyword {
             get {
                 return ResourceManager.GetString("UnexpectedAtKeyword", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to @charset must be very first token in file.
+        /// </summary>
+        internal static string UnexpectedCharset {
+            get {
+                return ResourceManager.GetString("UnexpectedCharset", resourceCulture);
             }
         }
         

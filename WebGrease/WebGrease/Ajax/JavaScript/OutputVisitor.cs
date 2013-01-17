@@ -24,6 +24,7 @@ using System.Text.RegularExpressions;
 
 namespace Microsoft.Ajax.Utilities
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
     public class OutputVisitor : IVisitor
     {
         private TextWriter m_outputStream;
@@ -2772,6 +2773,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification="Big but simple case statement")]
         public static string OperatorString(JSToken token)
         {
             switch (token)

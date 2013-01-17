@@ -44,7 +44,7 @@ namespace Css.Tests.TestSuite
                 Trace.WriteLine("Expect Css:");
                 Trace.WriteLine(expectMinifiedCss);
 
-                throw new Exception("Comparison failed.");
+                throw new Exception("Pretty-Print Comparison failed.");
             }
         }
     }

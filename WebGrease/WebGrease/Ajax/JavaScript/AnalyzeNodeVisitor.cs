@@ -147,7 +147,6 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void CombineExpressions(Block node)
         {
             // walk backwards because we'll be removing items as we go along.
@@ -175,321 +174,348 @@ namespace Microsoft.Ajax.Utilities
                 // see if the previous statement is an expression
                 if (node[ndx - 1].IsExpression)
                 {
-                    IfNode ifNode;
-                    ForNode forNode;
-                    WhileNode whileNode;
-                    ReturnNode returnNode;
-                    if (node[ndx].IsExpression)
-                    {
-                        var prevBinary = node[ndx - 1] as BinaryOperator;
-                        var curBinary = node[ndx] as BinaryOperator;
-                        Lookup lookup;
-                        if (prevBinary != null
-                            && curBinary != null
-                            && prevBinary.IsAssign
-                            && curBinary.IsAssign
-                            && curBinary.OperatorToken != JSToken.Assign
-                            && (lookup = curBinary.Operand1 as Lookup) != null
-                            && prevBinary.Operand1.IsEquivalentTo(curBinary.Operand1))
-                        {
-                            if (prevBinary.OperatorToken == JSToken.Assign)
-                            {
-                                // transform: lookup=expr1;lookup[OP]=expr2;  ==>  lookup=expr1[OP]expr2
-                                var binOp = new BinaryOperator(prevBinary.Operand2.Context.Clone().CombineWith(curBinary.Operand2.Context), prevBinary.Parser)
-                                    {
-                                        Operand1 = prevBinary.Operand2,
-                                        Operand2 = curBinary.Operand2,
-                                        OperatorToken = JSScanner.StripAssignment(curBinary.OperatorToken),
-                                        OperatorContext = curBinary.OperatorContext
-                                    };
-                                prevBinary.Operand2 = binOp;
-
-                                // we are removing the second lookup, so clean up the reference on the field
-                                if (lookup.VariableField != null)
-                                {
-                                    lookup.VariableField.References.Remove(lookup);
-                                }
-
-                                // and remove the current assignment expression (everything was combined into the previous)
-                                node[ndx] = null;
-                            }
-                            else
-                            {
-                                // there's lots of ins-and-outs in terms of strings versus numerics versus precedence and all 
-                                // sorts of stuff. I need to iron this out a little better, but until then, just combine with a comma.
-                                // transform: expr1;expr2  ==>  expr1,expr2
-                                var binOp = CommaOperator.CombineWithComma(prevBinary.Context.Clone().CombineWith(curBinary.Context), m_parser, prevBinary, curBinary);
-
-                                // replace the previous node and delete the current
-                                node[ndx - 1] = binOp;
-                                node[ndx] = null;
-                            }
-                        }
-                        else
-                        {
-                            // transform: expr1;expr2 to expr1,expr2
-                            // use the special comma operator object so we can handle it special
-                            // and don't create stack-breakingly deep trees
-                            var binOp = CommaOperator.CombineWithComma(node[ndx - 1].Context.Clone().CombineWith(node[ndx].Context), m_parser, node[ndx - 1], node[ndx]);
-
-                            // replace the current node and delete the previous
-                            node[ndx] = binOp;
-                            node[ndx - 1] = null;
-                        }
-                    }
-                    else if ((returnNode = node[ndx] as ReturnNode) != null)
-                    {
-                        // see if the return node has an expression operand
-                        if (returnNode.Operand != null && returnNode.Operand.IsExpression)
-                        {
-                            // check for lookup[ASSIGN]expr2;return expr1.
-                            var beforeExpr = node[ndx - 1] as BinaryOperator;
-                            Lookup lookup;
-                            if (beforeExpr != null
-                                && beforeExpr.IsAssign
-                                && (lookup = beforeExpr.Operand1 as Lookup) != null)
-                            {
-                                if (returnNode.Operand.IsEquivalentTo(lookup))
-                                {
-                                    // we have lookup[ASSIGN]expr2;return lookup.
-                                    // if lookup is a local variable in the current scope, we can replace with return expr2;
-                                    // if lookup is an outer reference, we can replace with return lookup[ASSIGN]expr2
-                                    if (beforeExpr.OperatorToken == JSToken.Assign)
-                                    {
-                                        // check to see if lookup is in the current scope from which we are returning
-                                        if (lookup.VariableField == null
-                                            || lookup.VariableField.OuterField != null
-                                            || lookup.VariableField.IsReferencedInnerScope)
-                                        {
-                                            // transform: lookup[ASSIGN]expr2;return lookup => return lookup[ASSIGN]expr2
-                                            // lookup points to outer field (or we don't know)
-                                            // replace the operand on the return node with the previous expression and
-                                            // delete the previous node.
-                                            // first be sure to remove the lookup in the return operand from the references
-                                            // to field.
-                                            DetachReferences.Apply(returnNode.Operand);
-                                            returnNode.Operand = beforeExpr;
-                                            node[ndx - 1] = null;
-                                        }
-                                        else
-                                        {
-                                            // transform: lookup[ASSIGN]expr2;return lookup => return expr2
-                                            // lookup is a variable local to the current scope, so when we return, the
-                                            // variable won't exists anymore anyway.
-                                            // replace the operand on the return node oprand with the right-hand operand of the
-                                            // previous expression and delete the previous node.
-                                            // we're eliminating the two lookups altogether, so remove them both from the
-                                            // field's reference table.
-                                            var varField = lookup.VariableField;
-                                            DetachReferences.Apply(lookup, returnNode.Operand);
-
-                                            returnNode.Operand = beforeExpr.Operand2;
-                                            node[ndx - 1] = null;
-
-                                            // now that we've eliminated the two lookups, see if the local variable isn't
-                                            // referenced anymore. If it isn't, we might be able to remove the variable, too.
-                                            // (need to pick up those changes to keep track of a field's declarations, though)
-                                            if (varField.RefCount == 0)
-                                            {
-                                                // it's not. if there's only one declaration and it either has no initializer or
-                                                // is initialized to a constant, get rid of it.
-                                                var nameDecl = varField.OnlyDeclaration;
-                                                if (nameDecl != null)
-                                                {
-                                                    // we only had one declaration.
-                                                    if (nameDecl.Initializer == null || nameDecl.Initializer.IsConstant)
-                                                    {
-                                                        // and it either had no initializer or it was initialized to a constant.
-                                                        // but it has no references, so let's whack it. Actually, only if it was
-                                                        // a var-decl (leave parameter and function decls alone).
-                                                        var varDecl = nameDecl as VariableDeclaration;
-                                                        if (varDecl != null)
-                                                        {
-                                                            // save the declaration parent (var, const, or let) and remove the
-                                                            // child vardecl from its list
-                                                            var declStatement = varDecl.Parent as Declaration;
-                                                            declStatement.Remove(varDecl);
-                                                            varField.WasRemoved = true;
-
-                                                            // if the parent statement is now empty, remove it, too. this will
-                                                            // move everything up one index, but that'll just mean an extra loop.
-                                                            if (declStatement.Count == 0)
-                                                            {
-                                                                declStatement.Parent.ReplaceChild(declStatement, null);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        // it's an assignment, but it's not =. That means it's one of the OP= operators.
-                                        // we can't remove the field altogether. But we can move the assignment into the 
-                                        // return statement and get rid of the lone lookup.
-                                        // transform: lookup OP= expr;return lookup   =>   return lookup OP= expr;
-                                        if (lookup.VariableField != null)
-                                        {
-                                            // we're getting rid of the lookup, so remove it from the field's list of references
-                                            DetachReferences.Apply(returnNode.Operand);
-                                        }
-
-                                        // remove the expression from the block and put it in the operand of
-                                        // the return statement.
-                                        node.RemoveAt(ndx - 1);
-                                        returnNode.Operand = beforeExpr;
-
-                                        // is this field scoped only to this function?
-                                        if (lookup.VariableField != null
-                                            && lookup.VariableField.OuterField == null
-                                            && !lookup.VariableField.IsReferencedInnerScope)
-                                        {
-                                            // in fact, the lookup is in the current scope, so assigning to it is a waste
-                                            // because we're going to return (this is a return statement, after all).
-                                            // we can get rid of the assignment part and just keep the operator:
-                                            // transform: lookup OP= expr;return lookup   =>   return lookup OP expr;
-                                            beforeExpr.OperatorToken = JSScanner.StripAssignment(beforeExpr.OperatorToken);
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    // transform: expr1;return expr2 to return expr1,expr2
-                                    var binOp = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], returnNode.Operand);
-
-                                    // replace the operand on the return node with the new expression and
-                                    // delete the previous node
-                                    returnNode.Operand = binOp;
-                                    node[ndx - 1] = null;
-                                }
-                            }
-                            else
-                            {
-                                // transform: expr1;return expr2 to return expr1,expr2
-                                var binOp = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], returnNode.Operand);
-
-                                // replace the operand on the return node with the new expression and
-                                // delete the previous node
-                                returnNode.Operand = binOp;
-                                node[ndx - 1] = null;
-                            }
-                        }
-                    }
-                    else if ((forNode = node[ndx] as ForNode) != null)
-                    {
-                        // if we aren't allowing in-operators to be moved into for-statements, then
-                        // first check to see if that previous expression statement is free of in-operators
-                        // before trying to move it.
-                        if (m_parser.Settings.IsModificationAllowed(TreeModifications.MoveInExpressionsIntoForStatement)
-                            || !node[ndx - 1].ContainsInOperator)
-                        {
-                            if (forNode.Initializer == null)
-                            {
-                                // transform: expr1;for(;...) to for(expr1;...)
-                                // simply move the previous expression to the for-statement's initializer
-                                forNode.Initializer = node[ndx - 1];
-                                node[ndx - 1] = null;
-                            }
-                            else if (forNode.Initializer.IsExpression)
-                            {
-                                // transform: expr1;for(expr2;...) to for(expr1,expr2;...)
-                                var binOp = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], forNode.Initializer);
-
-                                // replace the initializer with the new binary operator and remove the previous node
-                                forNode.Initializer = binOp;
-                                node[ndx - 1] = null;
-                            }
-                        }
-                    }
-                    else if ((ifNode = node[ndx] as IfNode) != null)
-                    {
-                        // transform: expr;if(cond)... => if(expr,cond)...
-                        // combine the previous expression with the if-condition via comma, then delete
-                        // the previous statement.
-                        ifNode.Condition = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], ifNode.Condition);
-                        node.RemoveAt(ndx - 1);
-                    }
-                    else if ((whileNode = node[ndx] as WhileNode) != null
-                        && m_parser.Settings.IsModificationAllowed(TreeModifications.ChangeWhileToFor))
-                    {
-                        // transform: expr;while(cond)... => for(expr;cond;)...
-                        // zero-sum, and maybe a little worse for performance because of the nop iterator,
-                        // but combines two statements into one, which may have savings later on.
-                        var initializer = node[ndx - 1];
-                        node[ndx] = new ForNode(null, m_parser)
-                            {
-                                Initializer = initializer,
-                                Condition = whileNode.Condition,
-                                Body = whileNode.Body
-                            };
-                        node.RemoveAt(ndx - 1);
-                    }
+                    CombineWithPreviousExpression(node, ndx);
                 }
                 else
                 {
                     var previousVar = node[ndx - 1] as Var;
-                    var binaryOp = node[ndx] as BinaryOperator;
-                    Lookup lookup;
-                    if (previousVar != null
-                        && binaryOp != null
-                        && binaryOp.IsAssign
-                        && (lookup = binaryOp.Operand1 as Lookup) != null
-                        && lookup.VariableField != null
-                        && !ContainsReference(binaryOp.Operand2, lookup.VariableField)
-                        && previousVar[previousVar.Count - 1].VariableField == lookup.VariableField)
+                    if (previousVar != null)
                     {
-                        var varDecl = previousVar[previousVar.Count - 1];
-                        if (varDecl.Initializer != null)
-                        {
-                            if (binaryOp.OperatorToken == JSToken.Assign)
-                            {
-                                // we have var name=expr1;name=expr2. If expr1 is a constant, we will
-                                // get rid of it entirely and replace it with expr2. Otherwise we don't
-                                // know about any side-effects, so just leave it be.
-                                if (varDecl.Initializer.IsConstant)
-                                {
-                                    // transform: var name=const;name=expr  ==> var name=expr
-                                    varDecl.Initializer = binaryOp.Operand2;
+                        CombineWithPreviousVar(node, ndx, previousVar);
+                    }
+                }
+            }
+        }
 
-                                    // getting rid of the lookup, so clean up its references
-                                    lookup.VariableField.IfNotNull(v => v.References.Remove(lookup));
-                                    node[ndx] = null;
-                                }
+        private void CombineWithPreviousExpression(Block node, int ndx)
+        {
+            IfNode ifNode;
+            ForNode forNode;
+            WhileNode whileNode;
+            ReturnNode returnNode;
+            if (node[ndx].IsExpression)
+            {
+                CombineTwoExpressions(node, ndx);
+            }
+            else if ((returnNode = node[ndx] as ReturnNode) != null)
+            {
+                CombineReturnWithExpression(node, ndx, returnNode);
+            }
+            else if ((forNode = node[ndx] as ForNode) != null)
+            {
+                CombineForNodeWithExpression(node, ndx, forNode);
+            }
+            else if ((ifNode = node[ndx] as IfNode) != null)
+            {
+                // transform: expr;if(cond)... => if(expr,cond)...
+                // combine the previous expression with the if-condition via comma, then delete
+                // the previous statement.
+                ifNode.Condition = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], ifNode.Condition);
+                node.RemoveAt(ndx - 1);
+            }
+            else if ((whileNode = node[ndx] as WhileNode) != null
+                && m_parser.Settings.IsModificationAllowed(TreeModifications.ChangeWhileToFor))
+            {
+                // transform: expr;while(cond)... => for(expr;cond;)...
+                // zero-sum, and maybe a little worse for performance because of the nop iterator,
+                // but combines two statements into one, which may have savings later on.
+                var initializer = node[ndx - 1];
+                node[ndx] = new ForNode(null, m_parser)
+                {
+                    Initializer = initializer,
+                    Condition = whileNode.Condition,
+                    Body = whileNode.Body
+                };
+                node.RemoveAt(ndx - 1);
+            }
+        }
+
+        private void CombineTwoExpressions(Block node, int ndx)
+        {
+            var prevBinary = node[ndx - 1] as BinaryOperator;
+            var curBinary = node[ndx] as BinaryOperator;
+            Lookup lookup;
+            if (prevBinary != null
+                && curBinary != null
+                && prevBinary.IsAssign
+                && curBinary.IsAssign
+                && curBinary.OperatorToken != JSToken.Assign
+                && (lookup = curBinary.Operand1 as Lookup) != null
+                && prevBinary.Operand1.IsEquivalentTo(curBinary.Operand1))
+            {
+                if (prevBinary.OperatorToken == JSToken.Assign)
+                {
+                    // transform: lookup=expr1;lookup[OP]=expr2;  ==>  lookup=expr1[OP]expr2
+                    var binOp = new BinaryOperator(prevBinary.Operand2.Context.Clone().CombineWith(curBinary.Operand2.Context), prevBinary.Parser)
+                    {
+                        Operand1 = prevBinary.Operand2,
+                        Operand2 = curBinary.Operand2,
+                        OperatorToken = JSScanner.StripAssignment(curBinary.OperatorToken),
+                        OperatorContext = curBinary.OperatorContext
+                    };
+                    prevBinary.Operand2 = binOp;
+
+                    // we are removing the second lookup, so clean up the reference on the field
+                    if (lookup.VariableField != null)
+                    {
+                        lookup.VariableField.References.Remove(lookup);
+                    }
+
+                    // and remove the current assignment expression (everything was combined into the previous)
+                    node[ndx] = null;
+                }
+                else
+                {
+                    // there's lots of ins-and-outs in terms of strings versus numerics versus precedence and all 
+                    // sorts of stuff. I need to iron this out a little better, but until then, just combine with a comma.
+                    // transform: expr1;expr2  ==>  expr1,expr2
+                    var binOp = CommaOperator.CombineWithComma(prevBinary.Context.Clone().CombineWith(curBinary.Context), m_parser, prevBinary, curBinary);
+
+                    // replace the previous node and delete the current
+                    node[ndx - 1] = binOp;
+                    node[ndx] = null;
+                }
+            }
+            else
+            {
+                // transform: expr1;expr2 to expr1,expr2
+                // use the special comma operator object so we can handle it special
+                // and don't create stack-breakingly deep trees
+                var binOp = CommaOperator.CombineWithComma(node[ndx - 1].Context.Clone().CombineWith(node[ndx].Context), m_parser, node[ndx - 1], node[ndx]);
+
+                // replace the current node and delete the previous
+                node[ndx] = binOp;
+                node[ndx - 1] = null;
+            }
+        }
+
+        private void CombineReturnWithExpression(Block node, int ndx, ReturnNode returnNode)
+        {
+            // see if the return node has an expression operand
+            if (returnNode.Operand != null && returnNode.Operand.IsExpression)
+            {
+                // check for lookup[ASSIGN]expr2;return expr1.
+                var beforeExpr = node[ndx - 1] as BinaryOperator;
+                Lookup lookup;
+                if (beforeExpr != null
+                    && beforeExpr.IsAssign
+                    && (lookup = beforeExpr.Operand1 as Lookup) != null)
+                {
+                    if (returnNode.Operand.IsEquivalentTo(lookup))
+                    {
+                        // we have lookup[ASSIGN]expr2;return lookup.
+                        // if lookup is a local variable in the current scope, we can replace with return expr2;
+                        // if lookup is an outer reference, we can replace with return lookup[ASSIGN]expr2
+                        if (beforeExpr.OperatorToken == JSToken.Assign)
+                        {
+                            // check to see if lookup is in the current scope from which we are returning
+                            if (lookup.VariableField == null
+                                || lookup.VariableField.OuterField != null
+                                || lookup.VariableField.IsReferencedInnerScope)
+                            {
+                                // transform: lookup[ASSIGN]expr2;return lookup => return lookup[ASSIGN]expr2
+                                // lookup points to outer field (or we don't know)
+                                // replace the operand on the return node with the previous expression and
+                                // delete the previous node.
+                                // first be sure to remove the lookup in the return operand from the references
+                                // to field.
+                                DetachReferences.Apply(returnNode.Operand);
+                                returnNode.Operand = beforeExpr;
+                                node[ndx - 1] = null;
                             }
                             else
                             {
-                                // we have var name=expr1;name[OP]=expr2.
-                                // transform: var name=expr1;name[OP]=expr2  ==>  var name=expr1[OP]expr2
-                                // getting rid of the lookup, so clean up its references
-                                lookup.VariableField.IfNotNull(v => v.References.Remove(lookup));
+                                // transform: lookup[ASSIGN]expr2;return lookup => return expr2
+                                // lookup is a variable local to the current scope, so when we return, the
+                                // variable won't exists anymore anyway.
+                                // replace the operand on the return node oprand with the right-hand operand of the
+                                // previous expression and delete the previous node.
+                                // we're eliminating the two lookups altogether, so remove them both from the
+                                // field's reference table.
+                                var varField = lookup.VariableField;
+                                DetachReferences.Apply(lookup, returnNode.Operand);
 
-                                // reuse the binary op by stripping the assignment to just the operator,
-                                // clobbering the lookup on operand1 with the vardecl assignment,
-                                // and expanding the context to include the initializer.
-                                binaryOp.OperatorToken = JSScanner.StripAssignment(binaryOp.OperatorToken);
-                                binaryOp.Operand1 = varDecl.Initializer;
-                                binaryOp.UpdateWith(binaryOp.Operand1.Context);
+                                returnNode.Operand = beforeExpr.Operand2;
+                                node[ndx - 1] = null;
 
-                                // set the adjusted binary op to the vardecl initializer and remove the
-                                // current statement (that points to the binary op)
-                                varDecl.Initializer = binaryOp;
-                                node[ndx] = null;
+                                // now that we've eliminated the two lookups, see if the local variable isn't
+                                // referenced anymore. If it isn't, we might be able to remove the variable, too.
+                                // (need to pick up those changes to keep track of a field's declarations, though)
+                                if (varField.RefCount == 0)
+                                {
+                                    // it's not. if there's only one declaration and it either has no initializer or
+                                    // is initialized to a constant, get rid of it.
+                                    var nameDecl = varField.OnlyDeclaration;
+                                    if (nameDecl != null)
+                                    {
+                                        // we only had one declaration.
+                                        if (nameDecl.Initializer == null || nameDecl.Initializer.IsConstant)
+                                        {
+                                            // and it either had no initializer or it was initialized to a constant.
+                                            // but it has no references, so let's whack it. Actually, only if it was
+                                            // a var-decl (leave parameter and function decls alone).
+                                            var varDecl = nameDecl as VariableDeclaration;
+                                            if (varDecl != null)
+                                            {
+                                                // save the declaration parent (var, const, or let) and remove the
+                                                // child vardecl from its list
+                                                var declStatement = varDecl.Parent as Declaration;
+                                                declStatement.Remove(varDecl);
+                                                varField.WasRemoved = true;
+
+                                                // if the parent statement is now empty, remove it, too. this will
+                                                // move everything up one index, but that'll just mean an extra loop.
+                                                if (declStatement.Count == 0)
+                                                {
+                                                    declStatement.Parent.ReplaceChild(declStatement, null);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        }
-                        else if (binaryOp.OperatorToken == JSToken.Assign)
-                        {
-                            // transform: var name;name=expr  ==>  var name=expr
-                            lookup.VariableField.IfNotNull(v => v.References.Remove(lookup));
-                            varDecl.Initializer = binaryOp.Operand2;
-                            node[ndx] = null;
                         }
                         else
                         {
-                            // we have var name;name[OP]=expr.
-                            // leave it alone???? we could make var name=undefined[OP]expr1, if we have a good undefined value.
+                            // it's an assignment, but it's not =. That means it's one of the OP= operators.
+                            // we can't remove the field altogether. But we can move the assignment into the 
+                            // return statement and get rid of the lone lookup.
+                            // transform: lookup OP= expr;return lookup   =>   return lookup OP= expr;
+                            if (lookup.VariableField != null)
+                            {
+                                // we're getting rid of the lookup, so remove it from the field's list of references
+                                DetachReferences.Apply(returnNode.Operand);
+                            }
+
+                            // remove the expression from the block and put it in the operand of
+                            // the return statement.
+                            node.RemoveAt(ndx - 1);
+                            returnNode.Operand = beforeExpr;
+
+                            // is this field scoped only to this function?
+                            if (lookup.VariableField != null
+                                && lookup.VariableField.OuterField == null
+                                && !lookup.VariableField.IsReferencedInnerScope)
+                            {
+                                // in fact, the lookup is in the current scope, so assigning to it is a waste
+                                // because we're going to return (this is a return statement, after all).
+                                // we can get rid of the assignment part and just keep the operator:
+                                // transform: lookup OP= expr;return lookup   =>   return lookup OP expr;
+                                beforeExpr.OperatorToken = JSScanner.StripAssignment(beforeExpr.OperatorToken);
+                            }
                         }
                     }
+                    else
+                    {
+                        // transform: expr1;return expr2 to return expr1,expr2
+                        var binOp = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], returnNode.Operand);
+
+                        // replace the operand on the return node with the new expression and
+                        // delete the previous node
+                        returnNode.Operand = binOp;
+                        node[ndx - 1] = null;
+                    }
+                }
+                else
+                {
+                    // transform: expr1;return expr2 to return expr1,expr2
+                    var binOp = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], returnNode.Operand);
+
+                    // replace the operand on the return node with the new expression and
+                    // delete the previous node
+                    returnNode.Operand = binOp;
+                    node[ndx - 1] = null;
+                }
+            }
+        }
+
+        private void CombineForNodeWithExpression(Block node, int ndx, ForNode forNode)
+        {
+            // if we aren't allowing in-operators to be moved into for-statements, then
+            // first check to see if that previous expression statement is free of in-operators
+            // before trying to move it.
+            if (m_parser.Settings.IsModificationAllowed(TreeModifications.MoveInExpressionsIntoForStatement)
+                || !node[ndx - 1].ContainsInOperator)
+            {
+                if (forNode.Initializer == null)
+                {
+                    // transform: expr1;for(;...) to for(expr1;...)
+                    // simply move the previous expression to the for-statement's initializer
+                    forNode.Initializer = node[ndx - 1];
+                    node[ndx - 1] = null;
+                }
+                else if (forNode.Initializer.IsExpression)
+                {
+                    // transform: expr1;for(expr2;...) to for(expr1,expr2;...)
+                    var binOp = CommaOperator.CombineWithComma(null, m_parser, node[ndx - 1], forNode.Initializer);
+
+                    // replace the initializer with the new binary operator and remove the previous node
+                    forNode.Initializer = binOp;
+                    node[ndx - 1] = null;
+                }
+            }
+        }
+
+        private static void CombineWithPreviousVar(Block node, int ndx, Var previousVar)
+        {
+            var binaryOp = node[ndx] as BinaryOperator;
+            Lookup lookup;
+            if (binaryOp != null
+                && binaryOp.IsAssign
+                && (lookup = binaryOp.Operand1 as Lookup) != null
+                && lookup.VariableField != null
+                && !ContainsReference(binaryOp.Operand2, lookup.VariableField)
+                && previousVar[previousVar.Count - 1].VariableField == lookup.VariableField)
+            {
+                var varDecl = previousVar[previousVar.Count - 1];
+                if (varDecl.Initializer != null)
+                {
+                    if (binaryOp.OperatorToken == JSToken.Assign)
+                    {
+                        // we have var name=expr1;name=expr2. If expr1 is a constant, we will
+                        // get rid of it entirely and replace it with expr2. Otherwise we don't
+                        // know about any side-effects, so just leave it be.
+                        if (varDecl.Initializer.IsConstant)
+                        {
+                            // transform: var name=const;name=expr  ==> var name=expr
+                            varDecl.Initializer = binaryOp.Operand2;
+
+                            // getting rid of the lookup, so clean up its references
+                            lookup.VariableField.IfNotNull(v => v.References.Remove(lookup));
+                            node[ndx] = null;
+                        }
+                    }
+                    else
+                    {
+                        // we have var name=expr1;name[OP]=expr2.
+                        // transform: var name=expr1;name[OP]=expr2  ==>  var name=expr1[OP]expr2
+                        // getting rid of the lookup, so clean up its references
+                        lookup.VariableField.IfNotNull(v => v.References.Remove(lookup));
+
+                        // reuse the binary op by stripping the assignment to just the operator,
+                        // clobbering the lookup on operand1 with the vardecl assignment,
+                        // and expanding the context to include the initializer.
+                        binaryOp.OperatorToken = JSScanner.StripAssignment(binaryOp.OperatorToken);
+                        binaryOp.Operand1 = varDecl.Initializer;
+                        binaryOp.UpdateWith(binaryOp.Operand1.Context);
+
+                        // set the adjusted binary op to the vardecl initializer and remove the
+                        // current statement (that points to the binary op)
+                        varDecl.Initializer = binaryOp;
+                        node[ndx] = null;
+                    }
+                }
+                else if (binaryOp.OperatorToken == JSToken.Assign)
+                {
+                    // transform: var name;name=expr  ==>  var name=expr
+                    lookup.VariableField.IfNotNull(v => v.References.Remove(lookup));
+                    varDecl.Initializer = binaryOp.Operand2;
+                    node[ndx] = null;
+                }
+                else
+                {
+                    // we have var name;name[OP]=expr.
+                    // leave it alone???? we could make var name=undefined[OP]expr1, if we have a good undefined value.
                 }
             }
         }
@@ -540,13 +566,11 @@ namespace Microsoft.Ajax.Utilities
             return lastStatementIndex >= 0 ? node[lastStatementIndex] : null;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1809:AvoidExcessiveLocals")]
         public override void Visit(Block node)
         {
             if (node != null)
             {
-                int ndx;
-                IfNode ifNode;
-
                 // if this block has a block scope, then look at the lexically-declared names (if any)
                 // and throw an error if any are defined as var's within this scope (ES6 rules).
                 // if this is the body of a function object, use the function scope.
@@ -600,7 +624,7 @@ namespace Microsoft.Ajax.Utilities
                 {
                     // don't call the base class to recurse -- let's walk the block
                     // backwards in case any of the children opt to delete themselves.
-                    for (ndx = node.Count - 1; ndx >= 0; --ndx)
+                    for (var ndx = node.Count - 1; ndx >= 0; --ndx)
                     {
                         node[ndx].Accept(this);
                     }
@@ -619,10 +643,10 @@ namespace Microsoft.Ajax.Utilities
                     // let's look at all our if-statements. If a true-clause ends in a return, then we don't
                     // need the else-clause; we can pull its statements out and stick them after the if-statement.
                     // also, if we encounter a return-, break- or continue-statement, we can axe everything after it
-                    for (ndx = 0; ndx < node.Count; ++ndx)
+                    for (var ndx = 0; ndx < node.Count; ++ndx)
                     {
                         // see if it's an if-statement with both a true and a false block
-                        ifNode = node[ndx] as IfNode;
+                        var ifNode = node[ndx] as IfNode;
                         if (ifNode != null
                             && ifNode.TrueBlock != null
                             && ifNode.TrueBlock.Count > 0
@@ -699,7 +723,7 @@ namespace Microsoft.Ajax.Utilities
                     && m_parser.Settings.IsModificationAllowed(TreeModifications.IfConditionReturnToCondition))
                 {
                     ReturnNode returnNode;
-                    ifNode = FindLastStatement(node) as IfNode;
+                    var ifNode = FindLastStatement(node) as IfNode;
                     if (ifNode != null && ifNode.FalseBlock == null
                         && ifNode.TrueBlock.Count == 1
                         && (returnNode = ifNode.TrueBlock[0] as ReturnNode) != null)
@@ -758,7 +782,7 @@ namespace Microsoft.Ajax.Utilities
                     // walk BACKWARDS down the list because we'll be removing items when we encounter
                     // var statements that can be moved inside a for statement's initializer
                     // we also don't need to check the first one, since there is nothing before it.
-                    for (ndx = node.Count - 1; ndx > 0; --ndx)
+                    for (int ndx = node.Count - 1; ndx > 0; --ndx)
                     {
                         // see if the previous statement is a var statement
                         // (we've already combined adjacent var-statements)
@@ -777,7 +801,7 @@ namespace Microsoft.Ajax.Utilities
                                 if (forNode.Initializer != null)
                                 {
                                     // not empty -- see if it is a Var node
-                                    var varInitializer = forNode.Initializer as Var;
+                                    Var varInitializer = forNode.Initializer as Var;
                                     if (varInitializer != null)
                                     {
                                         // transform: var decls1;for(var decls2;...) to for(var decls1,decls2;...)
@@ -917,17 +941,18 @@ namespace Microsoft.Ajax.Utilities
                     // into a simple return-conditional. The true statement needs to have no false block,
                     // and only one statement in the true block.
                     Conditional conditional;
+                    IfNode previousIf;
                     while (indexPrevious >= 0 
                         && lastReturn != null
-                        && (ifNode = node[indexPrevious] as IfNode) != null
-                        && ifNode.TrueBlock != null && ifNode.TrueBlock.Count == 1
-                        && ifNode.FalseBlock == null)
+                        && (previousIf = node[indexPrevious] as IfNode) != null
+                        && previousIf.TrueBlock != null && previousIf.TrueBlock.Count == 1
+                        && previousIf.FalseBlock == null)
                     {
                         // assume no change is made for this loop
                         bool somethingChanged = false;
 
                         // and that one true-block statement needs to be a return statement
-                        var previousReturn = ifNode.TrueBlock[0] as ReturnNode;
+                        var previousReturn = previousIf.TrueBlock[0] as ReturnNode;
                         if (previousReturn != null)
                         {
                             if (lastReturn.Operand == null)
@@ -940,7 +965,7 @@ namespace Microsoft.Ajax.Utilities
                                     if (!isFunctionLevel)
                                     {
                                         // not at the function level, so the return must stay.
-                                        if (ifNode.Condition.IsConstant)
+                                        if (previousIf.Condition.IsConstant)
                                         {
                                             // transform: if(cond)return;return} to return}
                                             node.RemoveAt(indexPrevious);
@@ -949,10 +974,10 @@ namespace Microsoft.Ajax.Utilities
                                         else
                                         {
                                             // transform: if(cond)return;return} to cond;return}
-                                            node[indexPrevious] = ifNode.Condition;
+                                            node[indexPrevious] = previousIf.Condition;
                                         }
                                     }
-                                    else if (ifNode.Condition.IsConstant)
+                                    else if (previousIf.Condition.IsConstant)
                                     {
                                         // transform: remove if(cond)return;return} because cond is a constant
                                         node.ReplaceChild(lastReturn, null);
@@ -963,7 +988,7 @@ namespace Microsoft.Ajax.Utilities
                                     {
                                         // transform: if(cond)return;return} to cond}
                                         // replace the final return with just the condition, then remove the previous if
-                                        if (node.ReplaceChild(lastReturn, ifNode.Condition))
+                                        if (node.ReplaceChild(lastReturn, previousIf.Condition))
                                         {
                                             node.RemoveAt(indexPrevious);
                                             somethingChanged = true;
@@ -975,7 +1000,7 @@ namespace Microsoft.Ajax.Utilities
                                     // transform: if(cond)return expr;return} to return cond?expr:void 0
                                     conditional = new Conditional(null, m_parser)
                                         {
-                                            Condition = ifNode.Condition,
+                                            Condition = previousIf.Condition,
                                             TrueExpression = previousReturn.Operand,
                                             FalseExpression = CreateVoidNode()
                                         };
@@ -999,7 +1024,7 @@ namespace Microsoft.Ajax.Utilities
                                     // transform: if(cond)return;return expr} to return cond?void 0:expr
                                     conditional = new Conditional(null, m_parser)
                                         {
-                                            Condition = ifNode.Condition,
+                                            Condition = previousIf.Condition,
                                             TrueExpression = CreateVoidNode(),
                                             FalseExpression = lastReturn.Operand
                                         };
@@ -1017,7 +1042,7 @@ namespace Microsoft.Ajax.Utilities
                                 }
                                 else if (previousReturn.Operand.IsEquivalentTo(lastReturn.Operand))
                                 {
-                                    if (ifNode.Condition.IsConstant)
+                                    if (previousIf.Condition.IsConstant)
                                     {
                                         // the condition is constant, and the returns return the same thing.
                                         // get rid of the if statement altogether.
@@ -1033,7 +1058,7 @@ namespace Microsoft.Ajax.Utilities
                                         // replace the operand on the final-return with the new binary operator,
                                         // and then delete the previous if-statement
                                         DetachReferences.Apply(previousReturn.Operand);
-                                        lastReturn.Operand = CommaOperator.CombineWithComma(null, m_parser, ifNode.Condition, lastReturn.Operand);
+                                        lastReturn.Operand = CommaOperator.CombineWithComma(null, m_parser, previousIf.Condition, lastReturn.Operand);
                                         node.RemoveAt(indexPrevious);
                                         somethingChanged = true;
                                     }
@@ -1047,7 +1072,7 @@ namespace Microsoft.Ajax.Utilities
                                     // transform: if(cond)return expr1;return expr2} to return cond?expr1:expr2}
                                     conditional = new Conditional(null, m_parser)
                                         {
-                                            Condition = ifNode.Condition,
+                                            Condition = previousIf.Condition,
                                             TrueExpression = previousReturn.Operand,
                                             FalseExpression = lastReturn.Operand
                                         };
@@ -1121,7 +1146,7 @@ namespace Microsoft.Ajax.Utilities
                             {
                                 // transform: ...;return cond?expr:void 0} to ...;if(cond)return expr}
                                 // (only works at the function-level because of the implicit return statement)
-                                ifNode = new IfNode(lastReturn.Context, m_parser)
+                                var ifNode = new IfNode(lastReturn.Context, m_parser)
                                     {
                                         Condition = conditional.Condition,
                                         TrueBlock = AstNode.ForceToBlock(new ReturnNode(null, m_parser)
@@ -1147,7 +1172,7 @@ namespace Microsoft.Ajax.Utilities
 
                                 // create a new if-node based on the condition, with the branches swapped 
                                 // (true-expression goes to false-branch, false-expression goes to true-branch
-                                ifNode = new IfNode(lastReturn.Context, m_parser)
+                                var ifNode = new IfNode(lastReturn.Context, m_parser)
                                     {
                                         Condition = conditional.Condition,
                                         TrueBlock = AstNode.ForceToBlock(new ReturnNode(null, m_parser)
@@ -1167,7 +1192,7 @@ namespace Microsoft.Ajax.Utilities
                     // (backwards, because we'll be combining those into one statement, reducing the number of statements.
                     // don't go all the way to zero, because each loop will compare the statement to the PREVIOUS
                     // statement, and the first statement (index==0) has no previous statement.
-                    for (ndx = node.Count - 1; ndx > 0; --ndx)
+                    for (var ndx = node.Count - 1; ndx > 0; --ndx)
                     {
                         // see if the current statement is an if-statement with no else block, and a true
                         // block that contains a single return-statement WITH an expression.
@@ -1179,7 +1204,7 @@ namespace Microsoft.Ajax.Utilities
                             // the equivalent expression as its return operand
                             AstNode condition1;
                             var matchedExpression = currentExpr;
-                            ifNode = IsIfReturnExpr(node[ndx - 1], out condition1, ref matchedExpression);
+                            var ifNode = IsIfReturnExpr(node[ndx - 1], out condition1, ref matchedExpression);
                             if (ifNode != null)
                             {
                                 // it is a match!
@@ -1206,9 +1231,9 @@ namespace Microsoft.Ajax.Utilities
                     // walk backwards looking for if (cond) return; whenever we encounter that statement,
                     // we can change it to if (!cond) and put all subsequent statements in the block inside the
                     // if's true-block.
-                    for (ndx = node.Count - 1; ndx >= 0; --ndx)
+                    for (var ndx = node.Count - 1; ndx >= 0; --ndx)
                     {
-                        ifNode = node[ndx] as IfNode;
+                        var ifNode = node[ndx] as IfNode;
                         if (ifNode != null
                             && ifNode.FalseBlock == null
                             && ifNode.TrueBlock != null
@@ -1281,9 +1306,9 @@ namespace Microsoft.Ajax.Utilities
                         // walk backwards looking for if (cond) continue; whenever we encounter that statement,
                         // we can change it to if (!cond) and put all subsequent statements in the block inside the
                         // if's true-block.
-                        for (ndx = node.Count - 1; ndx >= 0; --ndx)
+                        for (var ndx = node.Count - 1; ndx >= 0; --ndx)
                         {
-                            ifNode = node[ndx] as IfNode;
+                            var ifNode = node[ndx] as IfNode;
                             if (ifNode != null
                                 && ifNode.FalseBlock == null
                                 && ifNode.TrueBlock != null

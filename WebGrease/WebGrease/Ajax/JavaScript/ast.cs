@@ -101,17 +101,17 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public static Block ForceToBlock(AstNode astNode)
+        public static Block ForceToBlock(AstNode node)
         {
             // if the node is null or already a block, then we're 
             // good to go -- just return it.
-            var block = astNode as Block;
-            if (block == null && astNode != null)
+            var block = node as Block;
+            if (block == null && node != null)
             {
                 // it's not a block, so create a new block, append the astnode
                 // and return the block
-                block = new Block(astNode.Context.Clone(), astNode.Parser);
-                block.Append(astNode);
+                block = new Block(node.Context.Clone(), node.Parser);
+                block.Append(node);
             }
 
             return block;

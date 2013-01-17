@@ -1,4 +1,4 @@
-﻿@charset 'iso-8859-1';
+@charset 'iso-8859-1';
 @import url("bar.css") foo,bar,bee,gee;
 @import url("foo.css");
 @font-face

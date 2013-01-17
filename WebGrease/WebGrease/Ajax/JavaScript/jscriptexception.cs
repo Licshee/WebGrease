@@ -268,11 +268,11 @@ namespace Microsoft.Ajax.Utilities
         #region constructors
 
         public JScriptException() : this(JSError.UncaughtException, null) { }
-        public JScriptException(string msg) : this(msg, null) { }
-        public JScriptException(string msg, Exception innerException)
-            : base(msg, innerException)
+        public JScriptException(string message) : this(message, null) { }
+        public JScriptException(string message, Exception innerException)
+            : base(message, innerException)
         {
-            m_valueObject = msg;
+            m_valueObject = message;
             m_context = null;
             m_fileContext = null;
             m_errorCode = JSError.UncaughtException;

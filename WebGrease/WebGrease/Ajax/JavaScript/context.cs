@@ -49,7 +49,7 @@ namespace Microsoft.Ajax.Utilities
 
             StartLineNumber = 1;
             EndLineNumber = 1;
-            EndPosition = (Document.Source == null) ? -1 : Document.Source.Length;
+            EndPosition = Document.Source.IfNotNull(s => s.Length);
 
             Token = JSToken.None;
         }

@@ -12,6 +12,7 @@
       <Word>msg</Word>
       <Word>js</Word>
       <Word>Pos</Word>
+      <Word>Rgb</Word>
     </Recognized>
     <DiscreteExceptions>
       <Term>plugIn</Term>

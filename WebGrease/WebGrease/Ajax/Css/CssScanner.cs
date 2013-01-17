@@ -85,6 +85,7 @@ namespace Microsoft.Ajax.Utilities
             NextChar();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification="Big case statement")]
         public CssToken NextToken()
         {
             GotEndOfLine = false;
@@ -1119,7 +1120,7 @@ namespace Microsoft.Ajax.Utilities
             }
             else
             {
-                ReportError(1, CssErrorCode.ExpectedOpenParen);
+                ReportError(1, CssErrorCode.ExpectedOpenParenthesis);
             }
             return token;
         }

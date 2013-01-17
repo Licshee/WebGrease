@@ -115,12 +115,12 @@ namespace Microsoft.Ajax.Utilities
             m_currentPackagePath = null;
         }
 
-        public object StartSymbol(AstNode astNode, int startLine, int startColumn)
+        public object StartSymbol(AstNode node, int startLine, int startColumn)
         {
-            if (astNode != null 
-                && !astNode.Context.Document.IsGenerated)
+            if (node != null 
+                && !node.Context.Document.IsGenerated)
             {
-                return JavaScriptSymbol.StartNew(astNode, startLine, startColumn, GetSourceFileIndex(astNode.Context.Document.FileContext));
+                return JavaScriptSymbol.StartNew(node, startLine, startColumn, GetSourceFileIndex(node.Context.Document.FileContext));
             }
 
             return null;
