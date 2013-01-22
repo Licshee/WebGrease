@@ -64,9 +64,14 @@ namespace WebGrease.Css.Extensions
         /// <param name="backgroundNode">The out "backgound" node</param>
         /// <param name="backgroundImageNode">The out "background-image" node</param>
         /// <param name="backgroundPositionNode">The out "background-position" node</param>
+        /// <param name="backgroundSize">The background size </param>
+        /// <param name="webGreaseBackgroundDpi">The webgrease dpi value.</param>
         /// <param name="imageReferencesInInvalidDeclarations">The list of urls which are valid but could not pass the other conditions in a list of declarations</param>
         /// <param name="imageReferencesToIgnore">The urls which should be igoned while scan</param>
         /// <param name="imageAssemblyAnalysisLog">The logging object</param>
+        /// <param name="outputUnitFactor">The output unit factor.</param>
+        /// <param name="ignoreImagesWithNonDefaultBackgroundSize">Determines whether to ignore images that have a non-default background image set.</param>
+        /// <param name="outputUnit">The output unit</param>
         /// <returns>The declaration node which matches the criteria</returns>
         internal static bool TryGetBackgroundDeclaration(
             this IEnumerable<DeclarationNode> declarationAstNodes, 
@@ -74,15 +79,22 @@ namespace WebGrease.Css.Extensions
             AstNode parentAstNode, 
             out Background backgroundNode, 
             out BackgroundImage backgroundImageNode, 
-            out BackgroundPosition backgroundPositionNode, 
+            out BackgroundPosition backgroundPositionNode,
+            out DeclarationNode backgroundSize,
+            out DeclarationNode webGreaseBackgroundDpi,
             List<string> imageReferencesInInvalidDeclarations, 
-            HashSet<string> imageReferencesToIgnore, 
-            ImageAssemblyAnalysisLog imageAssemblyAnalysisLog)
+            HashSet<string> imageReferencesToIgnore,
+            ImageAssemblyAnalysisLog imageAssemblyAnalysisLog,
+            string outputUnit,
+            double outputUnitFactor,
+            bool ignoreImagesWithNonDefaultBackgroundSize = false)
         {
             // Initialize the nodes to null
             backgroundNode = null;
             backgroundImageNode = null;
             backgroundPositionNode = null;
+            backgroundSize = null;
+            webGreaseBackgroundDpi = null;
 
             // With CSS3 multiple urls can be present in a single rule, this is not yet supported
             // background: url(flower.png), url(ball.png), url(grass.png) no-repeat;
@@ -123,7 +135,7 @@ namespace WebGrease.Css.Extensions
                 }
 
                 // Load the model for the "background" declaration
-                var parsedBackground = new Background(declarationAstNode);
+                var parsedBackground = new Background(declarationAstNode, outputUnit, outputUnitFactor);
 
                 ////
                 //// The url should be present
@@ -148,6 +160,20 @@ namespace WebGrease.Css.Extensions
                 //// The background position should only be empty, x = any value and y = 0, top or px
                 ////
                 if (!parsedBackground.BackgroundPosition.IsVerticalSpriteCandidate(parentAstNode, imageAssemblyAnalysisLog))
+                {
+                    UpdateFailedUrlsList(parsedBackground.Url, imageReferencesInInvalidDeclarations);
+                    return false;
+                }
+
+                //// Try to get the background dpi, returns false if the the found value is invalid.
+                if (!TryGetBackgroundDpi(declarationProperties, out webGreaseBackgroundDpi))
+                {
+                    UpdateFailedUrlsList(parsedBackground.Url, imageReferencesInInvalidDeclarations);
+                    return false;
+                }
+
+                //// Try to get the background size, returns false if we want to ignore images with background sizes and the background size is set to a non-default value.
+                if (!TryGetBackgroundSize(ignoreImagesWithNonDefaultBackgroundSize, declarationProperties, out backgroundSize))
                 {
                     UpdateFailedUrlsList(parsedBackground.Url, imageReferencesInInvalidDeclarations);
                     return false;
@@ -210,6 +236,20 @@ namespace WebGrease.Css.Extensions
                     return false;
                 }
 
+                //// Try to get the background dpi, returns false if the the found value is invalid.
+                if (!TryGetBackgroundDpi(declarationProperties, out webGreaseBackgroundDpi))
+                {
+                    UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
+                    return false;
+                }
+
+                //// Try to get the background size, returns false if we want to ignore images with background sizes and the background size is set to a non-default value.
+                if (!TryGetBackgroundSize(ignoreImagesWithNonDefaultBackgroundSize, declarationProperties, out backgroundSize))
+                {
+                    UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
+                    return false;
+                }
+
                 ////
                 //// The background position should only be empty, x = any value and y = 0, top or px
                 ////
@@ -218,7 +258,7 @@ namespace WebGrease.Css.Extensions
                 {
                     // Now if there is a "background-position" declaration (optional), lets make 
                     // it should only be empty, px or left/top or right/px
-                    var parsedBackgroundPosition = new BackgroundPosition(backgroundPosition);
+                    var parsedBackgroundPosition = new BackgroundPosition(backgroundPosition, outputUnit, outputUnitFactor);
 
                     if (!parsedBackgroundPosition.IsVerticalSpriteCandidate(parentAstNode, imageAssemblyAnalysisLog))
                     {
@@ -254,6 +294,57 @@ namespace WebGrease.Css.Extensions
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Get the background-size declaration for this rule, if there is one
+        /// </summary>
+        /// <param name="ignoreImagesWithNonDefaultBackgroundSize">if true, ignore background-size declarations where the size value is auto</param>
+        /// <param name="declarationProperties">collection of declarations</param>
+        /// <param name="backgroundSize">background-size declaration to return</param>
+        /// <returns>true if successful; false otherwise (or if ignored)</returns>
+        private static bool TryGetBackgroundSize(bool ignoreImagesWithNonDefaultBackgroundSize, IDictionary<string, DeclarationNode> declarationProperties, out DeclarationNode backgroundSize)
+        {
+            ////
+            //// The background size should only be empty, auto or auto auto.
+            //// Only ignores them when IgnoreWhenBackgroundSizeIsSet setting is set to true.
+            ////
+            if (declarationProperties.TryGetValue(ImageAssembleConstants.BackgroundSize, out backgroundSize))
+            {
+                if (ignoreImagesWithNonDefaultBackgroundSize)
+                {
+                    var sizeValue = backgroundSize.ExprNode.MinifyPrint();
+                    if (!sizeValue.Equals("auto") && !sizeValue.Equals("auto auto"))
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Return the -wg-background-dpi declaration from the rule, if there is one
+        /// </summary>
+        /// <param name="declarationProperties">collection of declarations</param>
+        /// <param name="webGreaseBackgroundDpi">declaration to return</param>
+        /// <returns>true if found; false otherwise</returns>
+        private static bool TryGetBackgroundDpi(IDictionary<string, DeclarationNode> declarationProperties, out DeclarationNode webGreaseBackgroundDpi)
+        {
+            if (declarationProperties.TryGetValue(ImageAssembleConstants.WebGreaseBackgroundDpi, out webGreaseBackgroundDpi))
+            {
+                double webGreaseBackgroundDpiValue;
+                if (
+                    !double.TryParse(
+                        webGreaseBackgroundDpi.ExprNode.TermNode.NumberBasedValue,
+                        NumberStyles.Any,
+                        CultureInfo.InvariantCulture,
+                        out webGreaseBackgroundDpiValue))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         /// <summary>The enumerable for declaration node</summary>

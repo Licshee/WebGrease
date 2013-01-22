@@ -1,0 +1,46 @@
+﻿/* Without position x  y */
+#test1
+{
+    background-repeat: no-repeat;
+    background-image: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif);
+}
+
+/* With position x (Should not qualify for candidate since the y would resolve to center)*/
+#test2
+{
+    background-repeat: no-repeat;
+    background-position: 0%;
+    background-image: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif);
+}
+
+#test3
+{
+    background-repeat: no-repeat;
+    background-position: center left;
+    background-image: url(../../i/03/69A3A49A93A636AB2E9235F2237F36.gif);
+}
+
+#test4
+{
+    background-repeat: no-repeat;
+    background-position: center 10px;
+    background-image: url(../../i/03/69A3A49A93A636AB2E9235F2237F36.gif);
+}
+
+#test5
+{
+    background-repeat: no-repeat;
+    background-position: center right;
+    background-image: url(../../i/03/69A3A49A93A636AB2E9235F2237F36.gif);
+}
+
+/* With position x y */
+#test6
+{
+    background: 10px 200px url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif) no-repeat;
+}
+
+#test7
+{
+    background: url(../../i/03/69A3A49A93A636AB2E9235F2237F36.gif) -10px 200px no-repeat;
+}

@@ -1,30 +1,35 @@
 ﻿.media
 {
   background:url(images/bullet-media.gif) no-repeat;
-  padding-left:20px
+  padding-left:2rem
 }
 .bullet
 {
   background:url(images/media.gif) no-repeat;
-  padding-left:20px
+  -wg-background-dpi: 2;
+  padding-left:2rem
 }
 .bullet1
 {
   background:url(images/foo.jpg) no-repeat;
-  padding-left:20px
+  background-size: auto auto;
+  padding-left: 2rem;
+  -wg-background-dpi: 4;
 }
 .bullet2
 {
   background:url(images/bar.jpg) no-repeat;
-  padding-left:20px
+  background-size: auto;
+  padding-left:2rem
 }
 .bullet3
 {
   background:url(images/lazy1.jpg) no-repeat;
-  padding-left:20px
+  background-size: 20px auto;
+  padding-left:2rem
 }
 .bullet4
 {
   background:url(images/lazy2.jpg) no-repeat;
-  padding-left:20px
+  padding-left: 2rem
 }

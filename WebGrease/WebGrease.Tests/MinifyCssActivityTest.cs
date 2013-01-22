@@ -157,6 +157,10 @@ namespace WebGrease.Tests
             minifyCssActivity.ImagesOutputDirectory = Path.Combine(sourceDirectory, @"Output\Case6\Images\");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case6\SpriteTest.css");
             minifyCssActivity.ShouldAssembleBackgroundImages = true;
+            minifyCssActivity.OutputUnit = "rem";
+            minifyCssActivity.OutputUnitFactor = 0.1;
+            minifyCssActivity.ShouldMinify = true;
+            minifyCssActivity.ShouldOptimize = true;
             minifyCssActivity.AdditionalImageAssemblyBuckets.Add(new ImageAssemblyScanInput(".Lazy", new ReadOnlyCollection<string>(new List<string> { @"images/lazy1.jpg", @"images/lazy2.jpg" })));
             minifyCssActivity.Execute();
 
@@ -197,6 +201,78 @@ namespace WebGrease.Tests
             Assert.IsTrue(File.Exists(outputFilePath));
             var text = File.ReadAllText(outputFilePath);
             Assert.IsTrue(text.Contains("background:0 0 url(" + relativePath + ") no-repeat;"));
+        }
+
+        /// <summary>A test for Css sprite.</summary>
+        [TestMethod]
+        public void CssImageSpriteTest2()
+        {
+            var sourceDirectory = Path.Combine(
+                TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
+            var minifyCssActivity = new MinifyCssActivity();
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case7\SpriteTest.css");
+            minifyCssActivity.ImageAssembleScanDestinationFile = Path.Combine(
+                sourceDirectory, @"Output\Case7\SpriteTest_Scan.css");
+            minifyCssActivity.ImageAssembleUpdateDestinationFile = Path.Combine(
+                sourceDirectory, @"Output\Case7\SpriteTest_Update.css");
+            minifyCssActivity.ImagesOutputDirectory = Path.Combine(sourceDirectory, @"Output\Case6\Images\");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case7\SpriteTest.css");
+            minifyCssActivity.ShouldAssembleBackgroundImages = true;
+            minifyCssActivity.OutputUnit = "rem";
+            minifyCssActivity.OutputUnitFactor = 0.1;
+            minifyCssActivity.ShouldMinify = true;
+            minifyCssActivity.ShouldOptimize = true;
+            minifyCssActivity.Execute();
+
+            // Assertions
+            var outputFilePath = minifyCssActivity.DestinationFile;
+
+            // mapping file (so we can look up the target name of the assembled image, as the generated image can be different based on gdi dll versions)
+            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".xml";
+            var testImage = "media.gif";
+
+            Assert.IsTrue(File.Exists(outputFilePath));
+            outputFilePath = minifyCssActivity.ImageAssembleScanDestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+
+            Assert.IsTrue(File.Exists(mapFilePath));
+            // verify our test file is in the xml file and get the source folder and assembled file name.
+            string relativePath;
+            using (var fs = File.OpenRead(mapFilePath))
+            {
+                var mapFile = XDocument.Load(fs);
+                var inputElement = mapFile.Root.Descendants()
+                    // get at the input elements
+                    .Descendants().Where(e => e.Name == "input")
+                    // now at the source file name
+                    .Descendants().FirstOrDefault(i => i.Name == "originalfile" && i.Value.Contains(testImage));
+
+                // get the output 
+                var outputElement = inputElement.Parent.Parent;
+
+                // get the input path from the location of the css file and the output path where the destination file is.
+                var inputPath = Path.GetDirectoryName(inputElement.Value).ToLowerInvariant();
+                var outputPath = outputElement.Attribute("file").Value.ToLowerInvariant();
+
+                // diff the paths to get the relative path (as found in the final file)
+                relativePath = outputPath.MakeRelativeTo(inputPath);
+            }
+
+
+            // In between result
+            outputFilePath = minifyCssActivity.ImageAssembleUpdateDestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            var text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(text.Contains("/*"));
+            Assert.IsTrue(text.Contains("*/"));
+
+            // Minified result
+            outputFilePath = minifyCssActivity.DestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(!text.Contains("/*"));
+            Assert.IsTrue(!text.Contains("*/"));
+            Assert.IsTrue(!text.Contains(";;"));
         }
     }
 }

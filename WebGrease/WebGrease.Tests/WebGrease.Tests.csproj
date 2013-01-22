@@ -120,6 +120,13 @@
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder\include3.js" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder\include2.js" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\test1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\bar.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\bullet-media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\foo.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\lazy1.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\lazy2.jpg" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\media.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\SpriteTest.css" />
     <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\base.scss" />
     <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\fill.scss" />
     <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\full.scss" />

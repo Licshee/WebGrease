@@ -64,7 +64,17 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <summary>
         /// This is for forward compatibility post Css 2.1
         /// </summary>
-        Unknown
+        Unknown,
+
+        /// <summary>
+        /// The rem source (relative to html element font size)
+        /// </summary>
+        Rem,
+
+        /// <summary>
+        /// The em (relative to parent font-size)
+        /// </summary>
+        Em
     }
 
     /// <summary>Represents the Css "background-position" node
@@ -75,17 +85,30 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
     /// }</summary>
     internal sealed class BackgroundPosition
     {
+        private readonly string outputUnit = "px";
+
+        private readonly double outputUnitFactor = 1;
+
         /// <summary>
         /// Initializes a new instance of the BackgroundPosition class
         /// </summary>
-        internal BackgroundPosition()
+        /// <param name="outputUnit">The output unit.</param>
+        /// <param name="outputUnitFactor">The output unit factor.</param>
+        internal BackgroundPosition(string outputUnit, double outputUnitFactor)
         {
+            this.outputUnit = outputUnit;
+            this.outputUnitFactor = outputUnitFactor;
         }
 
         /// <summary>Initializes a new instance of the BackgroundPosition class</summary>
         /// <param name="declarationNode">The declaration node</param>
-        internal BackgroundPosition(DeclarationNode declarationNode)
+        /// <param name="outputUnit">The output unit.</param>
+        /// <param name="outputUnitFactor">The output unit factor.</param>
+        internal BackgroundPosition(DeclarationNode declarationNode, string outputUnit, double outputUnitFactor)
         {
+            this.outputUnit = outputUnit;
+            this.outputUnitFactor = outputUnitFactor;
+
             if (declarationNode == null)
             {
                 throw new ArgumentNullException("declarationNode");
@@ -141,7 +164,8 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="indexX">The index at which X should be inserted</param>
         /// <param name="indexY">The index at which Y should be inserted</param>
         /// <param name="newTermsWithOperators">The updated terms</param>
-        internal static void AddingMissingXAndY(float? updatedX, float? updatedY, bool isXUpdated, bool isYUpdated, int indexX, int indexY, List<TermWithOperatorNode> newTermsWithOperators)
+        /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
+        internal void AddingMissingXAndY(float? updatedX, float? updatedY, bool isXUpdated, bool isYUpdated, int indexX, int indexY, List<TermWithOperatorNode> newTermsWithOperators, double webGreaseBackgroundDpi)
         {
              // Per Css 2.1 - If only one value is specified, the second value is assumed to be 'center'
             string operatorX = null;
@@ -153,10 +177,12 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             // Per Css 2.1 - If both x and y are missing then reconcile the coordinates with 0 0
             if (!isXUpdated && !isYUpdated)
             {
-                operatorX = updatedX.UnaryOperator();
-                operatorY = updatedY.UnaryOperator();
-                finalX = updatedX.Pixels();
-                finalY = updatedY.Pixels();
+                var calcX = (float?)Math.Round(updatedX.GetValueOrDefault() * this.outputUnitFactor / webGreaseBackgroundDpi, 3);
+                var calcY = (float?)Math.Round(updatedY.GetValueOrDefault() * this.outputUnitFactor / webGreaseBackgroundDpi, 3);
+                operatorX = calcX.UnaryOperator();
+                operatorY = calcY.UnaryOperator();
+                finalX = calcX.CssUnitValue(this.outputUnit);
+                finalY = calcY.CssUnitValue(this.outputUnit);
             }
 
             if (!isXUpdated)
@@ -176,8 +202,11 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <summary>Adds a node with new updatedX, updatedY to specify the background position</summary>
         /// <param name="updatedX">The updated X</param>
         /// <param name="updatedY">The updated Y</param>
+        /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
+        /// <param name="outputUnit">The output init (px/em/rem) </param>
+        /// <param name="outputUnitFactor">The factor which which to multiple the px value to get the output unit.</param>
         /// <returns>The declaration node</returns>
-        internal static DeclarationNode CreateNewDeclaration(float? updatedX, float? updatedY)
+        internal static DeclarationNode CreateNewDeclaration(float? updatedX, float? updatedY, double webGreaseBackgroundDpi, string outputUnit, double outputUnitFactor)
         {
             if (updatedX == null || (updatedX == 0 && updatedY == 0))
             {
@@ -185,14 +214,17 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             }
 
             // Create a new term for coordinate x
-            var termNodeX = new TermNode(updatedX.UnaryOperator(), updatedX.Pixels(), null, null, null);
+            var calcX = (float?)Math.Round(((double)updatedX) * outputUnitFactor / webGreaseBackgroundDpi, 3);
+
+            var termNodeX = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(outputUnit), null, null, null);
 
             var termWithOperatorNodes = new List<TermWithOperatorNode>();
 
             // Create a new term with operator for coordinate y
             if (updatedY != null && updatedY != 0)
             {
-                var termNodeY = new TermNode(updatedY.UnaryOperator(), updatedY.Pixels(), null, null, null);
+                var calcY = (float?)Math.Round(((double)updatedY) * outputUnitFactor / webGreaseBackgroundDpi, 3);
+                var termNodeY = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(outputUnit), null, null, null);
                 termWithOperatorNodes.Add(new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, termNodeY));
             }
 
@@ -319,7 +351,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
 
             // Parse the number based terms:
             // The 0 values (except 0%) would be available without suffix on the term nodes.
-            // We are interested non zero values only if those are px or percentage.
+            // We are interested non zero values only if those are px,rem,em or percentage.
             var termValue = termNode.NumberBasedValue;
 
             if (termValue.EndsWith(ImageAssembleConstants.Px, StringComparison.OrdinalIgnoreCase) &&
@@ -327,6 +359,21 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 float.TryParse(termValue.Substring(0, termValue.Length - 2), out length))
             {
                 this.AssignXy(termNode, length, termNode.UnaryOperator.SignInt(), Source.Px);
+            }
+            else if (termValue.EndsWith(ImageAssembleConstants.Rem, StringComparison.OrdinalIgnoreCase) &&
+                     termValue.Length > 1 &&
+                     this.outputUnit == ImageAssembleConstants.Rem &&
+                     float.TryParse(termValue.Substring(0, termValue.Length - 3), out length))
+            {
+                this.AssignXy(termNode, (float?)(length / this.outputUnitFactor), termNode.UnaryOperator.SignInt(), Source.Px);
+            }
+            else if (termValue.EndsWith(ImageAssembleConstants.Em, StringComparison.OrdinalIgnoreCase) &&
+                     termValue.Length > 1 &&
+                     this.outputUnit == ImageAssembleConstants.Em &&
+                     float.TryParse(termValue.Substring(0, termValue.Length - 2), out length))
+            {
+                // length = this. CALC!
+                this.AssignXy(termNode, (float?)(length / this.outputUnitFactor), termNode.UnaryOperator.SignInt(), Source.Px);
             }
             else if (termValue.EndsWith(ImageAssembleConstants.Percentage, StringComparison.OrdinalIgnoreCase) &&
                      termValue.Length > 1 &&
@@ -362,8 +409,9 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="termNode">The term node</param>
         /// <param name="updatedTermNode">The new term node</param>
         /// <param name="updatedX">The new X position</param>
+        /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
         /// <returns>Returns true if term is updated</returns>
-        internal bool UpdateTermForX(TermNode termNode, out TermNode updatedTermNode, float? updatedX)
+        internal bool UpdateTermForX(TermNode termNode, out TermNode updatedTermNode, float? updatedX, double webGreaseBackgroundDpi)
         {
             if (termNode == this.XTermNode)
             {
@@ -372,9 +420,10 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 if (this.X == 0 || this.XSource == Source.Px)
                 {
                     var finalX = this.X + updatedX;
+                    var calcX = (float?)Math.Round(finalX.GetValueOrDefault() * this.outputUnitFactor / webGreaseBackgroundDpi, 3);
 
                     // Create a term with new x
-                    updatedTermNode = new TermNode(finalX.UnaryOperator(), finalX.Pixels(), null, null, null);
+                    updatedTermNode = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(outputUnit), null, null, null);
                 }
                 else
                 {
@@ -393,8 +442,9 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="termNode">The term node</param>
         /// <param name="updatedTermNode">The new term node</param>
         /// <param name="updatedY">The new Y position</param>
+        /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
         /// <returns>Returns true if term is updated</returns>
-        internal bool UpdateTermForY(TermNode termNode, out TermNode updatedTermNode, float? updatedY)
+        internal bool UpdateTermForY(TermNode termNode, out TermNode updatedTermNode, float? updatedY, double webGreaseBackgroundDpi)
         {
             if (termNode == this.YTermNode)
             {
@@ -403,9 +453,10 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 if (this.Y == 0 || this.YSource == Source.Px)
                 {
                     var finalY = this.Y + updatedY;
+                    var calcY = (float?)Math.Round(finalY.GetValueOrDefault() * this.outputUnitFactor / webGreaseBackgroundDpi, 3);
 
                     // Create a term with new y
-                    updatedTermNode = new TermNode(finalY.UnaryOperator(), finalY.Pixels(), null, null, null);
+                    updatedTermNode = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(outputUnit), null, null, null);
                 }
                 else
                 {
@@ -428,8 +479,9 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// }</example>
         /// <param name="updatedX">The updated x</param>
         /// <param name="updatedY">The updated y</param>
+        /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
         /// <returns>The new declaration node with updated values</returns>
-        internal DeclarationNode UpdateBackgroundPositionNode(float? updatedX, float? updatedY)
+        internal DeclarationNode UpdateBackgroundPositionNode(float? updatedX, float? updatedY, double webGreaseBackgroundDpi)
         {
             if (this.DeclarationNode == null)
             {
@@ -449,7 +501,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 // Try updating X
                 if (!isXUpdated)
                 {
-                    isXUpdated = this.UpdateTermForX(termWithOperatorNode.TermNode, out updatedTermNode, updatedX);
+                    isXUpdated = this.UpdateTermForX(termWithOperatorNode.TermNode, out updatedTermNode, updatedX, webGreaseBackgroundDpi);
 
                     if (isXUpdated)
                     {
@@ -472,7 +524,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 // Try updating Y
                 if (!isYUpdated)
                 {
-                    isYUpdated = this.UpdateTermForY(termWithOperatorNode.TermNode, out updatedTermNode, updatedY);
+                    isYUpdated = this.UpdateTermForY(termWithOperatorNode.TermNode, out updatedTermNode, updatedY, webGreaseBackgroundDpi);
 
                     if (isYUpdated)
                     {
@@ -497,7 +549,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             }
 
             // Add any missing X or Y
-            AddingMissingXAndY(updatedX, updatedY, isXUpdated, isYUpdated, indexX, indexY, updatedTermsWithOperators);
+            AddingMissingXAndY(updatedX, updatedY, isXUpdated, isYUpdated, indexX, indexY, updatedTermsWithOperators, webGreaseBackgroundDpi);
 
             return this.DeclarationNode.CreateDeclarationNode(updatedTermsWithOperators);
         }

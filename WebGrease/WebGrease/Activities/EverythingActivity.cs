@@ -409,7 +409,10 @@ namespace WebGrease.Activities
                                    BannedSelectors = new HashSet<string>(cssConfig.RemoveSelectors.ToArray()),
                                    HackSelectors = new HashSet<string>(cssConfig.ForbiddenSelectors.ToArray()),
                                    ImageAssembleReferencesToIgnore = new HashSet<string>(spriteConfig.ImagesToIgnore.ToArray()),
-                                   HashedImagesLogFile = imagesLogFile
+                                   HashedImagesLogFile = imagesLogFile,
+                                   OutputUnit = spriteConfig.OutputUnit,
+                                   OutputUnitFactor = spriteConfig.OutputUnitFactor,
+                                   IgnoreImagesWithNonDefaultBackgroundSize = spriteConfig.IgnoreImagesWithNonDefaultBackgroundSize
                                };
 
             _logInformation(string.Format(CultureInfo.InvariantCulture, "MinifyCSS Called --> rootInputPath:{0}, searchFilter:{1}, configName:{2}, excludeSelectors:{3},  hackSelectors:{4}, shouldMinify:{5}, shouldValidateLowerCase: {6}, shouldExcludeProperties:{7}", rootInputPath, searchFilter, cssConfig.Name, string.Join(",", minifier.BannedSelectors), string.Join(",", minifier.HackSelectors), minifier.ShouldMinify, minifier.ShouldValidateForLowerCase, minifier.ShouldExcludeProperties));

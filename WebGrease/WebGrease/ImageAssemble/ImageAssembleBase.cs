@@ -156,13 +156,20 @@ namespace WebGrease.ImageAssemble
 
                         this.SaveImage(newImage);
 
+                        // Add the sprite image size to the imagemap output element.
+                        this.ImageXmlMap.UpdateSize(this.AssembleFileName, newImage.Width, newImage.Height);
+
                         // Hash the saved file using MD5 hashing algorithm
                         this.HashImage();
                     }
                 }
                 else if (inputImages.Count == 1)
                 {
-                    this.PassThroughImage(inputImages.Values.First(), inputImages.Keys.First());
+                    var image = inputImages.Values.First();
+                    this.PassThroughImage(image, inputImages.Keys.First());
+
+                    // Add the sprite image size to the imagemap output element.
+                    this.ImageXmlMap.UpdateSize(this.AssembleFileName, image.Width, image.Height);
 
                     // Hash the saved file using MD5 hashing algorithm
                     this.HashImage();

@@ -42,6 +42,7 @@ namespace WebGrease.Activities
             this.ShouldAssembleBackgroundImages = true;
             this.AdditionalImageAssemblyBuckets = new List<ImageAssemblyScanInput>();
             this.ImageAssembleReferencesToIgnore = new HashSet<string>();
+            this.OutputUnitFactor = 1;
         }
 
         /// <summary>Gets or sets Source File.</summary>
@@ -70,6 +71,15 @@ namespace WebGrease.Activities
 
         /// <summary>Gets BannedSelectors.</summary>
         internal HashSet<string> BannedSelectors { get; set; }
+
+        /// <summary>Gets OutputUnit (Default: px, other possible values: rem/em etc..).</summary>
+        public string OutputUnit { get; set; }
+
+        /// <summary>Gets OutputUnitFactor (Default: 1, example value for 10px based REM: 0.625</summary>
+        public double OutputUnitFactor { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether to ignore images that have a background-size property set to non-default ('auto' or 'auto auto').</summary>
+        public bool IgnoreImagesWithNonDefaultBackgroundSize { get; set; }
 
         /// <summary>Gets or sets Image Assembly Scan Output.</summary>
         /// <remarks>Optional - Needed only when image spriting is needed.</remarks>
@@ -256,7 +266,7 @@ namespace WebGrease.Activities
                 }
             }
 
-            this._imageAssemblyScanVisitor = new ImageAssemblyScanVisitor(this.SourceFile, hashedImagesToIgnore, this.AdditionalImageAssemblyBuckets);
+            this._imageAssemblyScanVisitor = new ImageAssemblyScanVisitor(this.SourceFile, hashedImagesToIgnore, this.AdditionalImageAssemblyBuckets, this.IgnoreImagesWithNonDefaultBackgroundSize, this.OutputUnit, this.OutputUnitFactor);
             stylesheetNode = stylesheetNode.Accept(this._imageAssemblyScanVisitor);
 
             // Save the Pretty Print Css
@@ -274,7 +284,7 @@ namespace WebGrease.Activities
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         private AstNode ExecuteImageAssemblyUpdate(AstNode stylesheetNode, IEnumerable<string> spriteLogFiles)
         {
-            this._imageAssemblyUpdateVisitor = new ImageAssemblyUpdateVisitor(this.SourceFile, spriteLogFiles);
+            this._imageAssemblyUpdateVisitor = new ImageAssemblyUpdateVisitor(this.SourceFile, spriteLogFiles, this.OutputUnit, this.OutputUnitFactor);
             stylesheetNode = stylesheetNode.Accept(this._imageAssemblyUpdateVisitor);
 
             // Save the Pretty Print Css

@@ -28,6 +28,21 @@ namespace WebGrease.Css.Visitor
     public sealed class ImageAssemblyScanVisitor : NodeVisitor
     {
         /// <summary>
+        /// The value used to determine if the visitor should ignore images that have a non-default background-size value set.
+        /// </summary>
+        private readonly bool _ignoreImagesWithNonDefaultBackgroundSize;
+
+        /// <summary>
+        /// Output unit to use for image spriting (default will be "px")
+        /// </summary>
+        private readonly string outputUnit;
+
+        /// <summary>
+        /// Output unit factor to use for image spriting (default is 1)
+        /// </summary>
+        private readonly double outputUnitFactor;
+
+        /// <summary>
         /// The css path
         /// </summary>
         private readonly string _cssPath;
@@ -64,7 +79,10 @@ namespace WebGrease.Css.Visitor
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
         /// <param name="imageReferencesToIgnore">The list of image references to ignore</param>
         /// <param name="additionalImageAssemblyBuckets">The list of additional image references to scan</param>
-        public ImageAssemblyScanVisitor(string cssPath, IEnumerable<string> imageReferencesToIgnore, IEnumerable<ImageAssemblyScanInput> additionalImageAssemblyBuckets)
+        /// <param name="ignoreImagesWithNonDefaultBackgroundSize">The value used to determine if the visitor should ignore images that have a non-default background-size value set. </param>
+        /// <param name="outputUnit">The output unit.</param>
+        /// <param name="outputUnitFactor">The output unit factor.</param>
+        public ImageAssemblyScanVisitor(string cssPath, IEnumerable<string> imageReferencesToIgnore, IEnumerable<ImageAssemblyScanInput> additionalImageAssemblyBuckets, bool ignoreImagesWithNonDefaultBackgroundSize = false, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d)
         {
             Contract.Requires(!string.IsNullOrWhiteSpace(cssPath));
 
@@ -73,6 +91,11 @@ namespace WebGrease.Css.Visitor
 
             // Normalize css path
             _cssPath = cssPath.GetFullPathWithLowercase();
+
+            // Determine if the visitor should ignore images that have a non-default background-size value set.
+            this._ignoreImagesWithNonDefaultBackgroundSize = ignoreImagesWithNonDefaultBackgroundSize;
+            this.outputUnit = outputUnit;
+            this.outputUnitFactor = outputUnitFactor;
 
             if (imageReferencesToIgnore != null)
             {
@@ -208,6 +231,8 @@ namespace WebGrease.Css.Visitor
                 Background backgroundNode;
                 BackgroundImage backgroundImageNode;
                 BackgroundPosition backgroundPositionNode;
+                DeclarationNode backgroundSize;
+                DeclarationNode webGreaseBackgroundDpiNode;
 
                 var imagesCriteriaFailedUrls = new List<string>();
 
@@ -216,10 +241,15 @@ namespace WebGrease.Css.Visitor
                     parent, // For printing the Pretty Print Node for logging
                     out backgroundNode, 
                     out backgroundImageNode, 
-                    out backgroundPositionNode, 
+                    out backgroundPositionNode,
+                    out backgroundSize,
+                    out webGreaseBackgroundDpiNode,
                     imagesCriteriaFailedUrls, // Images which don't pass the spriting criteria
                     _imageReferencesToIgnore, // Images which should not be considered for spriting
-                    _imageAssemblyAnalysisLog))
+                    _imageAssemblyAnalysisLog,
+                    this.outputUnit,
+                    this.outputUnitFactor,
+                    _ignoreImagesWithNonDefaultBackgroundSize))
                 {
                     // Store the list of failed urls
                     imagesCriteriaFailedUrls.ForEach(imagesCriteriaFailedUrl =>

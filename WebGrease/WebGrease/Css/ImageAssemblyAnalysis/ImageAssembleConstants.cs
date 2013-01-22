@@ -28,6 +28,16 @@ namespace WebGrease.Css.ImageAssemblyAnalysis
         public const string BackgroundPosition = "background-position";
 
         /// <summary>
+        /// Background Size property name
+        /// </summary>
+        public const string BackgroundSize = "background-size";
+
+        /// <summary>
+        /// WebGrease background dpi property name, use to determine the factor of the positioning and the background size.
+        /// </summary>
+        public const string WebGreaseBackgroundDpi = "-wg-background-dpi";
+
+        /// <summary>
         /// Background Declaration property name
         /// </summary>
         public const string Background = "background";
@@ -83,6 +93,16 @@ namespace WebGrease.Css.ImageAssemblyAnalysis
         public const string Px = "px";
 
         /// <summary>
+        /// Measurement units in Rem
+        /// </summary>
+        public const string Rem = "rem";
+
+        /// <summary>
+        /// Measurement units in Em
+        /// </summary>
+        public const string Em = "em";
+
+        /// <summary>
         /// Measurement units in %
         /// </summary>
         public const string Percentage = "%";
@@ -110,7 +130,17 @@ namespace WebGrease.Css.ImageAssemblyAnalysis
         /// <summary>
         /// Px format string
         /// </summary>
-        public const string PxFormat = "{0}px";
+        public const string PxFormat = "{0}" + Px;
+
+        /// <summary>
+        /// Px format string
+        /// </summary>
+        public const string RemFormat = "{0}" + Rem;
+
+        /// <summary>
+        /// Px format string
+        /// </summary>
+        public const string EmFormat = "{0}" + Em;
 
         /// <summary>
         /// Log original file element name

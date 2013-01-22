@@ -1,0 +1,45 @@
+﻿.media {
+    background: url(images/bullet-media.gif) no-repeat 0 0;
+    padding-left: 2rem;
+}
+
+.bullet {
+    background: url(images/bullet-media.gif) no-repeat right 0;
+    -wg-background-dpi: 2;
+    padding-left: 2rem;
+}
+
+.bullet1 {
+    background: url(images/foo.jpg) no-repeat right -2rem;
+    background-size: auto auto;
+    -wg-background-dpi: 4;
+    padding-left: 2rem;
+}
+
+.bullet2 {
+    background: url(images/bar.jpg) no-repeat 1rem -1rem;
+    background-size: auto;
+    padding-left: 2rem;
+}
+
+.bullet3 {
+    background: url(images/bullet-media.gif) no-repeat -2rem 4rem;
+    background-size: 20px auto;
+    padding-left: 2rem;
+}
+
+.bullet4 {
+    background: url(images/media.gif) no-repeat -1rem -5rem;
+    padding-left: 2rem;
+}
+
+.bullet5 {
+    background: url(images/bullet-media.gif) no-repeat 10rem 2rem;
+    background-size: 20px auto;
+    padding-left: 2rem;
+}
+
+.bullet6 {
+    background: url(images/media.gif) no-repeat -8.7rem 1.4rem;
+    padding-left: 2rem;
+}

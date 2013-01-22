@@ -284,7 +284,7 @@ namespace WebGrease.ImageAssemble
 
             // Select the output node with existing file name
             var node = from outNode in this.root.Elements("output")
-                       where outNode.Attribute("file") != null && oldName == outNode.Attribute("file").Value
+                       where (string)outNode.Attribute("file") == oldName
                        select outNode;
 
             if (node.Count() > 0)
@@ -298,6 +298,42 @@ namespace WebGrease.ImageAssemble
             }
 
             return isUpdated;
+        }
+
+        /// <summary>
+        /// Sets the height and width attribute of the output element with the file to the given width and height.
+        /// </summary>
+        /// <param name="file">The file name.</param>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        public void UpdateSize(string file, int width, int height)
+        {
+            this.UpdateOrSetOutputAttribute(file, "width", width.ToString(CultureInfo.InvariantCulture));
+            this.UpdateOrSetOutputAttribute(file, "height", height.ToString(CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>
+        /// Updates or sets and attribute on the output elementthat has the file attribute matching the 
+        /// </summary>
+        /// <param name="file">The file</param>
+        /// <param name="attributeName">The attributeName</param>
+        /// <param name="value">The value</param>
+        private void UpdateOrSetOutputAttribute(string file, string attributeName, string value)
+        {
+            var outputElement = this.root.Elements("output").FirstOrDefault(e => (string)e.Attribute("file") == file);
+            if (outputElement == null)
+            {
+                return;
+            }
+
+            var attribute = outputElement.Attribute(attributeName);
+            if (attribute == null)
+            {
+                attribute = new XAttribute(attributeName, value);
+                outputElement.Add(attribute);
+                return;
+            }
+            attribute.Value = value;
         }
     }
 }

@@ -100,6 +100,9 @@ namespace WebGrease.Configuration
         /// <summary>Gets or sets the default CSS minification configuration</summary>
         internal IDictionary<string, CssMinificationConfig> DefaultCssMinification { get; set; }
 
+        /// <summary>Gets or sets the default spriting configuration</summary>
+        internal IDictionary<string, CssSpritingConfig> DefaultSpriting { get; set; }
+
         /// <summary>Gets or sets the default preprocessing configuration.</summary>
         internal PreprocessingConfig DefaultPreprocessing { get; set; }
 
@@ -126,7 +129,7 @@ namespace WebGrease.Configuration
 
             foreach (var cssFileSetElement in element.Descendants("CssFileSet"))
             {
-                var cssSet = new CssFileSet(cssFileSetElement, this.SourceDirectory, this.DefaultLocales, this.DefaultCssMinification, this.DefaultThemes, this.DefaultPreprocessing);
+                var cssSet = new CssFileSet(cssFileSetElement, this.SourceDirectory, this.DefaultLocales, this.DefaultCssMinification, this.DefaultSpriting, this.DefaultThemes, this.DefaultPreprocessing);
                 this.CssFileSets.Add(cssSet);
             }
 
@@ -190,6 +193,11 @@ namespace WebGrease.Configuration
                     case "CssMinification":
                         // get the default CSS minification configuration
                         this.LoadDefaultCssMinification(settingElement);
+                        break;
+
+                    case "Spriting":
+                        // get the default CSS minification configuration
+                        this.LoadDefaultSpriting(settingElement);
                         break;
 
                     case "JsMinification":
@@ -296,6 +304,23 @@ namespace WebGrease.Configuration
             }
 
             this.DefaultCssMinification[miniConfig.Name] = miniConfig;
+        }
+
+        /// <summary>
+        /// Get the default spriting configuration collection
+        /// </summary>
+        /// <param name="element">XML element from the Settings section</param>
+        private void LoadDefaultSpriting(XElement element)
+        {
+            // create a configuration object from the markup and set it in the dictionary.
+            // create the dictionary if it hasn't been created yet.
+            var miniConfig = new CssSpritingConfig(element);
+            if (this.DefaultSpriting == null)
+            {
+                this.DefaultSpriting = new Dictionary<string, CssSpritingConfig>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            this.DefaultSpriting[miniConfig.Name] = miniConfig;
         }
     }
 }

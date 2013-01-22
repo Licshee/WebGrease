@@ -21,8 +21,12 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
     {
         /// <summary>Initializes a new instance of the AssembledImage class</summary>
         /// <param name="element">The element having the list of inputs</param>
-        internal AssembledImage(XContainer element)
+        /// <param name="spriteWidth">The width of the sprite containing the image.</param>
+        /// <param name="spriteHeight">The height of the sprite containing the image.</param>
+        internal AssembledImage(XContainer element, int? spriteWidth, int? spriteHeight)
         {
+            SpriteWidth = spriteWidth;
+            SpriteHeight = spriteHeight;
             if (element != null)
             {
                 element.Elements().ForEach(childElement =>
@@ -49,6 +53,16 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
                                                });
             }
         }
+
+        /// <summary>
+        /// Gets the relative output file path
+        /// </summary>
+        internal int? SpriteWidth { get; private set; }
+
+        /// <summary>
+        /// Gets the relative output file path
+        /// </summary>
+        internal int? SpriteHeight { get; private set; }
 
         /// <summary>
         /// Gets or sets the relative output file path

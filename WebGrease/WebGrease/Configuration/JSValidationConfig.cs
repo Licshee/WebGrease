@@ -53,7 +53,8 @@ namespace WebGrease.Configuration
                     case "Analyze":
                         this.ShouldAnalyze = value.TryParseBool();
                         break;
-                    case "AnalayzeArguments":
+                    case "AnalayzeArguments": // TYPO! but let's keep it in case someone noticed and it using it.
+                    case "AnalyzeArguments":
                         this.AnalyzeArguments = !value.IsNullOrWhitespace() ? value : Strings.DefaultAnalyzeArgs;
                         break;
                 }

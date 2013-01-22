@@ -45,6 +45,10 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
                     .Elements(ImageAssembleConstants.OutputElementName)
                     .ForEach(outputElement =>
                                  {
+                                     // Get the total sprite width and height.
+                                     var spriteWidth = (int?)outputElement.Attribute("width");
+                                     var spriteHeight = (int?)outputElement.Attribute("height");
+
                                      var fileAttribute = outputElement.Attribute(ImageAssembleConstants.FileAttributeName);
 
                                      // This is a case of images ignored by image assembler
@@ -74,7 +78,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
                                      outputElement.Descendants(ImageAssembleConstants.InputElementName).ForEach(inputElement =>
                                                                                                                     {
                                                                                                                         // Load the input image object
-                                                                                                                        var inputImage = new AssembledImage(inputElement);
+                                                                                                                        var inputImage = new AssembledImage(inputElement, spriteWidth, spriteHeight);
 
                                                                                                                         // Validate the original file path
                                                                                                                         var originalFilePath = inputImage.OriginalFilePath;

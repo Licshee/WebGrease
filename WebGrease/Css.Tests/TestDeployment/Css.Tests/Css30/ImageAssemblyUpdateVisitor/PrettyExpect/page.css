@@ -1,11 +1,13 @@
 @page:left
 {
+  /* -wg-sprite-position:10px 200px; */
   background-repeat:no-repeat;
   background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
   background-position:10px 200px
 }
 @page:right
 {
+  /* -wg-sprite-position:-10px -200px; */
   background-repeat:no-repeat;
   background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
   background-position:-10px -200px

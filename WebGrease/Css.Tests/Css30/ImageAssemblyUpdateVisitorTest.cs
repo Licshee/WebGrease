@@ -17,6 +17,7 @@ namespace Css.Tests.Css30
     using TestSuite;
     using WebGrease.Css;
     using WebGrease.Css.Ast;
+    using WebGrease.Css.ImageAssemblyAnalysis;
     using WebGrease.Css.Visitor;
 
     /// <summary>
@@ -117,6 +118,25 @@ namespace Css.Tests.Css30
             PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName, new List<NodeVisitor> { visitor });
         }
 
+        /// <summary>A test for using a different unit and scale factor.</summary>
+        [TestMethod]
+        public void ImageUpdateVisitorRemTest()
+        {
+            const string FileName = @"imageupdatevisitorrem.css";
+            var fileInfo = new FileInfo(Path.Combine(ActualDirectory, FileName));
+
+            var styleSheetNode = CssParser.Parse(fileInfo);
+            Assert.IsNotNull(styleSheetNode);
+
+            // use REM units, and scale the number by 1/10.
+            var visitor = CreateVisitor(fileInfo.FullName, ImageAssembleConstants.Rem, 0.1);
+            styleSheetNode = styleSheetNode.Accept(visitor) as StyleSheetNode;
+            Assert.IsNotNull(styleSheetNode);
+
+            MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { visitor });
+            PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName, new List<NodeVisitor> { visitor });
+        }
+
         /// <summary>A test for media background selectors which should be sprited.</summary>
         [TestMethod]
         public void MediaTest()
@@ -156,13 +176,13 @@ namespace Css.Tests.Css30
         /// <summary>Creates the visitor.</summary>
         /// <param name="cssPath">The css path.</param>
         /// <returns>The update visitor.</returns>
-        private static ImageAssemblyUpdateVisitor CreateVisitor(string cssPath)
+        private static ImageAssemblyUpdateVisitor CreateVisitor(string cssPath, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d)
         {
             var xmlPath = cssPath + ".xml";
             var xmlPathLazyLoad = cssPath + ".lazyload.xml";
             XDocument.Parse(XDocument.Load(xmlPath).ToString().Replace("[FolderPath]", new FileInfo(xmlPath).DirectoryName)).Save(xmlPath);
             XDocument.Parse(XDocument.Load(xmlPathLazyLoad).ToString().Replace("[FolderPath]", new FileInfo(xmlPathLazyLoad).DirectoryName)).Save(xmlPathLazyLoad);
-            return new ImageAssemblyUpdateVisitor(cssPath, new[] { xmlPath, xmlPathLazyLoad });
+            return new ImageAssemblyUpdateVisitor(cssPath, new[] { xmlPath, xmlPathLazyLoad }, outputUnit, outputUnitFactor);
         }
     }
 }

@@ -24,13 +24,15 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         ///   background: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif) no-repeat -10px -200px;
         /// }</summary>
         /// <param name="declarationAstNode">The background declaration node</param>
-        internal Background(DeclarationNode declarationAstNode)
+        /// <param name="outputUnit">The output unit.</param>
+        /// <param name="outputUnitFactor">The output unit factor.</param>
+        internal Background(DeclarationNode declarationAstNode, string outputUnit, double outputUnitFactor)
         {
             Contract.Requires(declarationAstNode != null);
 
             this.DeclarationAstNode = declarationAstNode;
             this.BackgroundImage = new BackgroundImage();
-            this.BackgroundPosition = new BackgroundPosition();
+            this.BackgroundPosition = new BackgroundPosition(outputUnit, outputUnitFactor);
             this.BackgroundRepeat = new BackgroundRepeat();
 
             var expr = declarationAstNode.ExprNode;
@@ -90,8 +92,9 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="updatedUrl">The updated url</param>
         /// <param name="updatedX">The updated x</param>
         /// <param name="updatedY">The updated y</param>
+        /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
         /// <returns>The new declaration node with updated values</returns>
-        internal DeclarationNode UpdateBackgroundNode(string updatedUrl, int? updatedX, int? updatedY)
+        internal DeclarationNode UpdateBackgroundNode(string updatedUrl, int? updatedX, int? updatedY, double webGreaseBackgroundDpi)
         {
             var isUrlUpdated = false;
             var isXUpdated = false;
@@ -117,10 +120,10 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 }
 
 
-// Try updating X
+                // Try updating X
                 if (!isXUpdated)
                 {
-                    isXUpdated = this.BackgroundPosition.UpdateTermForX(termWithOperatorNode.TermNode, out updatedTermNode, updatedX);
+                    isXUpdated = this.BackgroundPosition.UpdateTermForX(termWithOperatorNode.TermNode, out updatedTermNode, updatedX, webGreaseBackgroundDpi);
 
                     if (isXUpdated)
                     {
@@ -143,7 +146,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 // Try updating Y
                 if (!isYUpdated)
                 {
-                    isYUpdated = this.BackgroundPosition.UpdateTermForY(termWithOperatorNode.TermNode, out updatedTermNode, updatedY);
+                    isYUpdated = this.BackgroundPosition.UpdateTermForY(termWithOperatorNode.TermNode, out updatedTermNode, updatedY, webGreaseBackgroundDpi);
 
                     if (isYUpdated)
                     {
@@ -168,7 +171,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             }
 
             // Add any missing X or Y
-            BackgroundPosition.AddingMissingXAndY(updatedX, updatedY, isXUpdated, isYUpdated, indexX, indexY, updatedTermsWithOperators);
+            BackgroundPosition.AddingMissingXAndY(updatedX, updatedY, isXUpdated, isYUpdated, indexX, indexY, updatedTermsWithOperators, webGreaseBackgroundDpi);
 
             return this.DeclarationAstNode.CreateDeclarationNode(updatedTermsWithOperators);
         }

@@ -57,9 +57,10 @@ namespace WebGrease.Configuration
         /// </summary>
         /// <param name="defaultLocales">The default set of locales.</param>
         /// <param name="defaultMinification">The default set of minification configs.</param>
+        /// <param name="defaultSpriting">The default set of spriting configs.</param>
         /// <param name="defaultThemes">The default set of themes.</param>
         /// <param name="defaultPreprocessing">The default pre processing config.</param>
-        internal CssFileSet(IList<string> defaultLocales, IDictionary<string, CssMinificationConfig> defaultMinification, IList<string> defaultThemes, PreprocessingConfig defaultPreprocessing)
+        internal CssFileSet(IList<string> defaultLocales, IDictionary<string, CssMinificationConfig> defaultMinification, IDictionary<string, CssSpritingConfig> defaultSpriting, IList<string> defaultThemes, PreprocessingConfig defaultPreprocessing)
             : this()
         {
             // if we were given a default set of locales, add them to the list
@@ -89,6 +90,15 @@ namespace WebGrease.Configuration
                 }
             }
 
+            // if we were given a default set of spriting configs, copy them now
+            if (defaultSpriting != null && defaultSpriting.Count > 0)
+            {
+                foreach (var configuration in defaultSpriting.Keys)
+                {
+                    this.ImageSpriting[configuration] = defaultSpriting[configuration];
+                }
+            }
+
             if (defaultPreprocessing != null)
             {
                 this.Preprocessing = defaultPreprocessing;
@@ -102,10 +112,11 @@ namespace WebGrease.Configuration
         /// <param name="sourceDirectory">The base directory.</param>
         /// <param name="defaultLocales">The default set of locales.</param>
         /// <param name="defaultMinification">The default set of minification configs.</param>
+        /// <param name="defaultSpriting">The default set of spriting configs. </param>
         /// <param name="defaultThemes">The default set of themes.</param>
         /// <param name="defaultPreprocessing">The default pre processing config.</param>
-        internal CssFileSet(XElement cssFileSetElement, string sourceDirectory, IList<string> defaultLocales, IDictionary<string, CssMinificationConfig> defaultMinification, IList<string> defaultThemes, PreprocessingConfig defaultPreprocessing)
-            : this(defaultLocales, defaultMinification, defaultThemes, defaultPreprocessing)
+        internal CssFileSet(XElement cssFileSetElement, string sourceDirectory, IList<string> defaultLocales, IDictionary<string, CssMinificationConfig> defaultMinification, IDictionary<string, CssSpritingConfig> defaultSpriting, IList<string> defaultThemes, PreprocessingConfig defaultPreprocessing)
+            : this(defaultLocales, defaultMinification, defaultSpriting, defaultThemes, defaultPreprocessing)
         {
             Contract.Requires(cssFileSetElement != null);
             Contract.Requires(!string.IsNullOrWhiteSpace(sourceDirectory));

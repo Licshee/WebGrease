@@ -202,6 +202,9 @@
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css.lazyload.xml" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorrem.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorrem.css.lazyload.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorrem.css.xml" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarations.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarations.css.lazyload.xml" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorshorthanddeclarations.css.xml" />
@@ -218,12 +221,14 @@
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\page.css.lazyload.xml" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\page.css.xml" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorlongdeclarations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorrem.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorshorthanddeclarations.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorshorthanddeclarationsfirstposition.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorshorthanddeclarationssecondposition.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\media.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\page.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorlongdeclarations.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorrem.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorshorthanddeclarations.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorshorthanddeclarationsfirstposition.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorshorthanddeclarationssecondposition.css" />

@@ -30,17 +30,37 @@ namespace WebGrease.Css.Extensions
             return number < 0 ? ImageAssembleConstants.Subtract : null;
         }
 
-        /// <summary>Returns the pixels term from the int value</summary>
+        /// <summary>
+        /// Returns the css value from the float value with the unit: em, rem or px (default if unit is not recognized)
+        /// Round the value of the rem/em to 3 decimals numbers.
+        /// </summary>
         /// <param name="number">The int number</param>
+        /// <param name="unit">The unit of the measurement</param>
         /// <returns>The unary value</returns>
-        internal static string Pixels(this float? number)
+        internal static string CssUnitValue(this float? number, string unit = "px")
         {
             if (number == null)
             {
                 return null;
             }
 
-            return number.Value == 0 ? ImageAssembleConstants.Zero : string.Format(CultureInfo.CurrentUICulture, ImageAssembleConstants.PxFormat, Math.Ceiling(Math.Abs(number.Value)));
+            string format;
+            var value = Math.Abs(number.Value);
+            switch (unit)
+            {
+                case ImageAssembleConstants.Em:
+                    format = ImageAssembleConstants.EmFormat;
+                    break;
+                case ImageAssembleConstants.Rem:
+                    format = ImageAssembleConstants.RemFormat;
+                    break;
+                default:
+                case ImageAssembleConstants.Px:
+                    format = ImageAssembleConstants.PxFormat;
+                    break;
+            }
+
+            return value == 0 ? ImageAssembleConstants.Zero : string.Format(CultureInfo.InvariantCulture, format, value);
         }
 
         /// <summary>Parses the float text.</summary>

@@ -179,8 +179,8 @@ namespace WebGrease.Css.Visitor
             rulesetNode.Declarations.ForEach((declaration, last) =>
                                                  {
                                                      // Invoke the Declaration visitor
-                                                     declaration.Accept(this);
-                                                     if (!last)
+                                                     var result = declaration.Accept(this);
+                                                     if (!last && result != null)
                                                      {
                                                          _printerFormatter.AppendLine(CssConstants.Semicolon);
                                                      }
@@ -548,6 +548,13 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitDeclarationNode(DeclarationNode declarationNode)
         {
+            // Exclude what would have been a comment.
+            var isComment = declarationNode.Property.StartsWith("/", StringComparison.OrdinalIgnoreCase);
+            if (!_printerFormatter.PrettyPrint && isComment)
+            {
+                return null;
+            }
+
             // declaration
             // : property ':' S* expr prio?
             // ;
@@ -560,6 +567,12 @@ namespace WebGrease.Css.Visitor
             // expr prio?
             // Invoke the ExprNode visitor
             declarationNode.ExprNode.Accept(this);
+            if (isComment)
+            {
+                _printerFormatter.AppendLine();
+                return null;
+            }
+
             _printerFormatter.Append(declarationNode.Prio);
 
             return declarationNode;
@@ -716,8 +729,8 @@ namespace WebGrease.Css.Visitor
             _printerFormatter.IncrementIndentLevel();
             pageNode.Declarations.ForEach((declaration, last) =>
                                               {
-                                                  declaration.Accept(this);
-                                                  if (!last)
+                                                  var result = declaration.Accept(this);
+                                                  if (!last && result != null)
                                                   {
                                                       _printerFormatter.AppendLine(CssConstants.Semicolon);
                                                   }
@@ -974,8 +987,8 @@ namespace WebGrease.Css.Visitor
             _printerFormatter.IncrementIndentLevel();
             keyFramesBlockNode.DeclarationNodes.ForEach((declarationNode, last) =>
                                                             {
-                                                                declarationNode.Accept(this);
-                                                                if (!last)
+                                                                var result = declarationNode.Accept(this);
+                                                                if (!last && result != null)
                                                                 {
                                                                     _printerFormatter.AppendLine(CssConstants.Semicolon);
                                                                 }

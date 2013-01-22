@@ -430,7 +430,7 @@ namespace Microsoft.Ajax.Utilities
                 }
             }
 
-            if (throwWarning)
+            if (throwWarning && variableField.Declarations.Count > 0)
             {
                 // not referenced -- throw a warning, assuming it hasn't been "removed" 
                 // via an optimization or something.
