@@ -895,7 +895,16 @@ namespace Microsoft.Ajax.Utilities
                 if (node.FunctionType == FunctionType.Declaration && 
                     !string.IsNullOrEmpty(node.Name))
                 {
-                    CurrentLexicalScope.LexicallyDeclaredNames.Add(node);
+                    var lexicalScope = CurrentLexicalScope;
+                    lexicalScope.LexicallyDeclaredNames.Add(node);
+
+                    if (lexicalScope != CurrentVariableScope)
+                    {
+                        // the current lexical scope is the variable scope.
+                        // this is ES6 syntax: a function declaration inside a block scope. Not allowed
+                        // in ES5 code, so throw a warning.
+                        node.NameContext.HandleError(JSError.MisplacedFunctionDeclaration, false);
+                    }
                 }
             }
         }
