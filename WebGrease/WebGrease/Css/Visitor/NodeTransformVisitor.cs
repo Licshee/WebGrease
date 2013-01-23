@@ -32,6 +32,7 @@ namespace WebGrease.Css.Visitor
 
             return new StyleSheetNode(
                 styleSheet.CharSetString, 
+                styleSheet.Dpi,
                 styleSheet.Imports, 
                 styleSheet.Namespaces, 
                 styleSheet.StyleSheetRules.Select(styleSheetRule => (StyleSheetRuleNode)styleSheetRule.Accept(this)).ToSafeReadOnlyCollection());

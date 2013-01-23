@@ -3,9 +3,9 @@
   /* -wg-sprite-position:10px 200px; */
   background-repeat:no-repeat;
   background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
-  background-position:1rem 20rem;
-  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 1) (imageposition:Left); */
-  background-size:30rem 123.4rem
+  background-position:0.5rem 10rem;
+  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 2) (imageposition:Left); */
+  background-size:15rem 61.7rem
 }
 #test2
 {
@@ -21,13 +21,13 @@
 }
 #test4
 {
-  /* -wg-sprite-position:-200px -2000px; */
+  /* -wg-sprite-position:200px 2000px; */
   /* -wg-original-position:center 10px; */
   background-repeat:no-repeat;
-  background-position:center -199rem;
+  background-position:center -99.5rem;
   background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
-  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 1) (imageposition:Center); */
-  background-size:30rem 123.4rem
+  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 2) (imageposition:Center); */
+  background-size:15rem 61.7rem
 }
 #test5
 {
@@ -39,15 +39,15 @@
 {
   /* -wg-sprite-position:10px 200px; */
   /* -wg-original-position:10px 200px; */
-  background:2rem 40rem url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif) no-repeat;
-  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 1) (imageposition:Left); */
-  background-size:30rem 123.4rem
+  background:1rem 20rem url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif) no-repeat;
+  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 2) (imageposition:Left); */
+  background-size:15rem 61.7rem
 }
 #test7
 {
-  /* -wg-sprite-position:-10px -200px; */
+  /* -wg-sprite-position:10px 200px; */
   /* -wg-original-position:-10px 200px; */
-  background:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif) -2rem 0 no-repeat;
-  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 1) (imageposition:Left); */
-  background-size:30rem 123.4rem
+  background:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif) -1rem 0 no-repeat;
+  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 2) (imageposition:Left); */
+  background-size:15rem 61.7rem
 }

@@ -24,6 +24,10 @@ MEDIA_SYM
     : '@media'
     ;
 
+WG_DPI_SYM
+    : '@-wg-dpi'
+    ;
+
 PAGE_SYM
     : '@page'
     ;

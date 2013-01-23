@@ -12,6 +12,7 @@ namespace WebGrease.Css
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Diagnostics.Contracts;
+    using System.Globalization;
     using System.Linq;
     using Antlr.Runtime.Tree;
     using Ast;
@@ -34,6 +35,7 @@ namespace WebGrease.Css
 
             return new StyleSheetNode(
                 CreateCharsetNode(styleSheetTree),
+                CreateDpiNode(styleSheetTree),
                 CreateImportNodes(styleSheetTree),
                 CreateNamespaceNodes(styleSheetTree),
                 CreateStyleSheetRulesNodes(styleSheetTree));
@@ -51,6 +53,28 @@ namespace WebGrease.Css
 
             var charset = styleSheetTree.Children(T(CssParser.CHARSET)).FirstOrDefault();
             return charset != null ? StringOrUriBasedValue(charset.Children(T(CssParser.STRINGBASEDVALUE)).FirstChildText()) : null;
+        }
+
+        /// <summary>Creates the dpi node.</summary>
+        /// <param name="styleSheetTree">The styleSheet tree.</param>
+        /// <returns>The dpi value.</returns>
+        private static double? CreateDpiNode(CommonTree styleSheetTree)
+        {
+            if (styleSheetTree == null)
+            {
+                return null;
+            }
+
+            var dpiRule = styleSheetTree.Children(T(CssParser.WG_DPI)).FirstOrDefault();
+            var dpiString = dpiRule != null ? dpiRule.Children(T(CssParser.DPI)).FirstChildText() : null;
+
+            double dpi;
+            if (double.TryParse(dpiString, NumberStyles.Any, CultureInfo.InvariantCulture, out dpi))
+            {
+                return dpi;
+            }
+
+            return null;
         }
 
         /// <summary>Gets the ruleset media page nodes.</summary>

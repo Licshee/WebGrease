@@ -284,7 +284,13 @@ namespace WebGrease.Activities
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         private AstNode ExecuteImageAssemblyUpdate(AstNode stylesheetNode, IEnumerable<string> spriteLogFiles)
         {
-            this._imageAssemblyUpdateVisitor = new ImageAssemblyUpdateVisitor(this.SourceFile, spriteLogFiles, this.OutputUnit, this.OutputUnitFactor);
+            var specificStyleSheet = stylesheetNode as StyleSheetNode;
+            this._imageAssemblyUpdateVisitor = new ImageAssemblyUpdateVisitor(
+                this.SourceFile, 
+                spriteLogFiles, 
+                specificStyleSheet == null ? 1d : specificStyleSheet.Dpi.GetValueOrDefault(1d), 
+                this.OutputUnit, 
+                this.OutputUnitFactor);
             stylesheetNode = stylesheetNode.Accept(this._imageAssemblyUpdateVisitor);
 
             // Save the Pretty Print Css

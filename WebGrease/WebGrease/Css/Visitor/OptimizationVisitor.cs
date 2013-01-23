@@ -91,7 +91,7 @@ namespace WebGrease.Css.Visitor
             var styleSheetRuleNodes = ruleSetMediaPageDictionary.Values.Cast<StyleSheetRuleNode>().ToList();
 
             // Create a new object with updated rulesets list.
-            return new StyleSheetNode(styleSheet.CharSetString, styleSheet.Imports, styleSheet.Namespaces, styleSheetRuleNodes.AsSafeReadOnly());
+            return new StyleSheetNode(styleSheet.CharSetString, styleSheet.Dpi, styleSheet.Imports, styleSheet.Namespaces, styleSheetRuleNodes.AsSafeReadOnly());
         }
 
         /// <summary>Computes the merged set of RulesetNode based on the declarations</summary>

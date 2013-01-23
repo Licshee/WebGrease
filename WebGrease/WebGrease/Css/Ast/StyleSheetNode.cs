@@ -5,6 +5,7 @@
 // <summary>
 //   styleSheet:
 //   [ CHARSET_SYM STRING ';' ]?
+//   [ WG_DPI_SYM NUMBER ';']?
 //   [S|CDO|CDC]* [ import [S|CDO|CDC]* ]* [ namespace [S|CDO|CDC]* ]*
 //   [ [ ruleset | media | page | keyframes ] [S|CDO|CDC]* ]*
 // </summary>
@@ -23,22 +24,29 @@ namespace WebGrease.Css.Ast
     public sealed class StyleSheetNode : AstNode
     {
         /// <summary>Initializes a new instance of the StyleSheetNode class</summary>
-        /// <param name="charSetString">Character String</param>
+        /// <param name="charSet">Character String</param>
+        /// <param name="dpi">DPI value</param>
         /// <param name="imports">Imports list</param>
         /// <param name="namespaces">The list of namespaces</param>
         /// <param name="styleSheetRules">StyleSheet nodes dictionary</param>
-        public StyleSheetNode(string charSetString, ReadOnlyCollection<ImportNode> imports, ReadOnlyCollection<NamespaceNode> namespaces, ReadOnlyCollection<StyleSheetRuleNode> styleSheetRules)
+        public StyleSheetNode(string charSet, double? dpi, ReadOnlyCollection<ImportNode> imports, ReadOnlyCollection<NamespaceNode> namespaces, ReadOnlyCollection<StyleSheetRuleNode> styleSheetRules)
         {
-            this.CharSetString = charSetString ?? string.Empty;
+            this.CharSetString = charSet ?? string.Empty;
             this.Imports = imports ?? new List<ImportNode>(0).AsReadOnly();
             this.Namespaces = namespaces ?? new List<NamespaceNode>(0).AsReadOnly();
             this.StyleSheetRules = styleSheetRules ?? new List<StyleSheetRuleNode>(0).AsReadOnly();
+            this.Dpi = dpi;
         }
 
         /// <summary>
         /// Gets Character Set string
         /// </summary>
         public string CharSetString { get; private set; }
+
+        /// <summary>
+        /// Gets the dpi specified by a dpi at-rule
+        /// </summary>
+        public double? Dpi { get; private set; }
 
         /// <summary>
         /// Gets Imports list

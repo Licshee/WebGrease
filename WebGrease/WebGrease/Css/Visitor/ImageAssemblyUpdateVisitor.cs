@@ -50,12 +50,17 @@ namespace WebGrease.Css.Visitor
         /// </summary>
         private readonly List<AssembledImage> _inputImages;
 
+        /// <summary>
+        /// The default DPI to use for the entire stylesheet
+        /// </summary>
+        private readonly double defaultDpi;
+
         /// <summary>Initializes a new instance of the ImageAssemblyUpdateVisitor class</summary>
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
         /// <param name="logFiles">The log path which contains the image map after spriting</param>
         /// <param name="outputUnit">The output unit </param>
         /// <param name="outputUnitFactor">The output unit factor. </param>
-        public ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<string> logFiles, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1)
+        public ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<string> logFiles, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1)
         {
             Contract.Requires(!string.IsNullOrWhiteSpace(cssPath));
             Contract.Requires(logFiles != null);
@@ -63,6 +68,9 @@ namespace WebGrease.Css.Visitor
             // Output unit and factor
             this.outputUnit = outputUnit;
             this.outputUnitFactor = outputUnitFactor;
+
+            // default dpi is 1
+            defaultDpi = dpi;
 
             // Normalize css path
             _cssPath = cssPath.GetFullPathWithLowercase();
@@ -95,8 +103,7 @@ namespace WebGrease.Css.Visitor
         {
             var updatedStyleSheetRuleNodes = new List<StyleSheetRuleNode>();
             styleSheet.StyleSheetRules.ForEach(styleSheetRuleNode => updatedStyleSheetRuleNodes.Add((StyleSheetRuleNode)styleSheetRuleNode.Accept(this)));
-
-            return new StyleSheetNode(styleSheet.CharSetString, styleSheet.Imports, styleSheet.Namespaces, updatedStyleSheetRuleNodes.AsReadOnly());
+            return new StyleSheetNode(styleSheet.CharSetString, styleSheet.Dpi, styleSheet.Imports, styleSheet.Namespaces, updatedStyleSheetRuleNodes.AsReadOnly());
         }
 
         /// <summary>The <see cref="RulesetNode"/> visit implementation</summary>
@@ -177,7 +184,7 @@ namespace WebGrease.Css.Visitor
                 var webGreaseBackgroundDpi =
                     webGreaseBackgroundDpiNode != null
                     ? double.Parse(webGreaseBackgroundDpiNode.ExprNode.TermNode.NumberBasedValue, NumberStyles.Any, CultureInfo.InvariantCulture)
-                    : 1;
+                    : defaultDpi;
 
                 // At this point, there should be atleast one "background" or "background-image" node found.
                 // In addition, there can be an optional "background-position" node

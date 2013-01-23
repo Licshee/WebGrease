@@ -383,6 +383,7 @@
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\charset2.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\colors.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\document.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\dpi.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\functions.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\important.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\datauri.css" />
@@ -419,6 +420,7 @@
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\declarationwithnumberterm.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\declarationwithstringterm.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\document.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\dpi.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\fontface.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\functions.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\MinifiedExpect\gradient.css" />
@@ -449,6 +451,7 @@
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\declarationwithnumberterm.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\declarationwithstringterm.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\document.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\dpi.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\fontface.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\functions.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\PrettyExpect\gradient.css" />
