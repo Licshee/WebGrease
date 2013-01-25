@@ -53,5 +53,16 @@ namespace Css.Tests.Css30
             MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
             PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
         }
+
+        /// <summary>A test for border optimization.</summary>
+        [TestMethod]
+        public void OptimizeBorder()
+        {
+            const string FileName = @"border.css";
+            var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
+            Assert.IsNotNull(styleSheetNode);
+            MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
+            PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
+        }
     }
 }

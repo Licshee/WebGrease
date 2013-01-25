@@ -373,8 +373,11 @@
     <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadRulesetWithUppercaseDeclarationValue.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadRulesetWithUppercaseSelector.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\Intl.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\Actual\border.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\Actual\Ruleset.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\MinifiedExpect\border.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\MinifiedExpect\Ruleset.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\PrettyExpect\border.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\PrettyExpect\Ruleset.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\animations.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\Parser\Actual\background.css" />

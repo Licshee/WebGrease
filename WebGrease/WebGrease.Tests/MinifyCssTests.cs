@@ -26,7 +26,7 @@ namespace WebGrease.Tests
         public void MinifiesGoodCssTest()
         {
             var goodCssContent = "p {color:red;}\r\np {margin: 10px}\r\np {width: 10px}\r\nbody {margin: 1em;}";
-            var expected = "p{width:10px;margin:10px;color:red}body{margin:1em}";
+            var expected = "p{color:red;margin:10px;width:10px}body{margin:1em}";
 
             var minifier = new CssMinifier();
             var actual = minifier.Minify(goodCssContent);
@@ -34,7 +34,7 @@ namespace WebGrease.Tests
 
             // pretty print is the only other option right now; should add indents, new lines etc.
             minifier.ShouldMinify = false;
-            expected = "p\r\n{\r\n  width:10px;\r\n  margin:10px;\r\n  color:red\r\n}\r\nbody\r\n{\r\n  margin:1em\r\n}\r\n";
+            expected = "p\r\n{\r\n  color:red;\r\n  margin:10px;\r\n  width:10px\r\n}\r\nbody\r\n{\r\n  margin:1em\r\n}\r\n";
             actual = minifier.Minify(goodCssContent);
             Assert.AreEqual<string>(actual, expected);
         }

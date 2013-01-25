@@ -1,4 +1,6 @@
 div
 {
-    float: 0 0 0.5% 0;
+    /* leading zeros should be trimmed off integer portions, and trailing zeros off the decimal fraction portion. */
+    /* units on a zero value should also be removed (zero is zero, no matter what the units) */
+    float: 0.0rem 0.00px 0.500% 00%;
 }

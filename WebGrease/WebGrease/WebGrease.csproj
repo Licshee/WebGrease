@@ -369,6 +369,7 @@
     <Compile Include="Css\Extensions\CommonTreeExtensions.cs" />
     <Compile Include="Css\Extensions\ListExtensions.cs" />
     <Compile Include="Css\Extensions\NumberExtensions.cs" />
+    <Compile Include="Css\Extensions\OrderedDictionaryExtensions.cs" />
     <Compile Include="Css\ImageAssemblyAnalysis\ImageAssembleConstants.cs" />
     <Compile Include="Css\ImageAssemblyAnalysis\ImageAssembleException.cs" />
     <Compile Include="Css\ImageAssemblyAnalysis\ImageAssemblyScanInput.cs" />

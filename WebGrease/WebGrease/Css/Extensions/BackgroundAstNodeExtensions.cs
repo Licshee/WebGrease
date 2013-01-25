@@ -69,9 +69,9 @@ namespace WebGrease.Css.Extensions
         /// <param name="imageReferencesInInvalidDeclarations">The list of urls which are valid but could not pass the other conditions in a list of declarations</param>
         /// <param name="imageReferencesToIgnore">The urls which should be igoned while scan</param>
         /// <param name="imageAssemblyAnalysisLog">The logging object</param>
+        /// <param name="outputUnit">The output unit</param>
         /// <param name="outputUnitFactor">The output unit factor.</param>
         /// <param name="ignoreImagesWithNonDefaultBackgroundSize">Determines whether to ignore images that have a non-default background image set.</param>
-        /// <param name="outputUnit">The output unit</param>
         /// <returns>The declaration node which matches the criteria</returns>
         internal static bool TryGetBackgroundDeclaration(
             this IEnumerable<DeclarationNode> declarationAstNodes, 

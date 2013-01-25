@@ -1,0 +1,21 @@
+﻿div
+{
+    /* add something that would be alphabetically at the end*/
+    width: 50%;
+
+    /* does NOT specify the width - same as default "medium" */
+    border: solid red;
+}
+
+div
+{
+    /* just gets overridden by the last one */
+    border-width:none;
+
+    /* add something more rules alphabetically sprinkled around */
+    azimuth: 60deg;
+
+    /* these widths override the first one specified in this ruleset */
+    /* these widths should also override the not-specified default widths of the border shorthand */
+    border-width: 1rem 2rem;
+}

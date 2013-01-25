@@ -114,21 +114,37 @@ namespace WebGrease.Css.Visitor
 
             // Combine the declarations preserving the order (later key takes preference with in a scope of ruleset).
             // This could have been a simple dictionary merge but it would break the backward compatibility here with 
-            // previous release of Csl. The unique declarations in destination are gathered first followed by unique 
-            // declarations in source which are not found in destination declaration.
-            // Note - This scenario is pretty bug prone not knowing the semantics of css here. A short-hand property can really
-            // lead to fall apart of this optimization. Discuss with product owner about this.
+            // previous release of Csl. The unique declarations in source not found in the destination are gathered first 
+            // followed by unique declarations in destination.
+            // Example:
+            //  div
+            //  {
+            //      k1:v1;
+            //      k2:v2;
+            //  }
+            //  div
+            //  {
+            //      k1:v3;
+            //      k3:v4;
+            //  }
+            //
+            // becomes:
+            //
+            //  div
+            //  {
+            //      k2:v2;
+            //      k1:v3;
+            //      k3:v4;
+            //  }
             var uniqueDestinationDeclarations = UniqueDeclarations(destinationRuleset);
             var uniqueSourceDeclarations = UniqueDeclarations(sourceRuleset);
-
-            // Append source selectors to destination now (with preserving order)
-            foreach (DeclarationNode sourceDeclaration in uniqueSourceDeclarations.Values)
+            foreach (DeclarationNode declaration in uniqueDestinationDeclarations.Values)
             {
-                AddUpdateDictionary(uniqueDestinationDeclarations, sourceDeclaration, false);
+                uniqueSourceDeclarations.AppendWithOverride(declaration, d => d.Property);
             }
 
             // Convert dictionary to list
-            var resultDeclarations = uniqueDestinationDeclarations.Values.Cast<DeclarationNode>().ToList();
+            var resultDeclarations = uniqueSourceDeclarations.Values.Cast<DeclarationNode>().ToList();
             return new RulesetNode(destinationRuleset.SelectorsGroupNode, resultDeclarations.AsReadOnly());
         }
 
@@ -138,7 +154,7 @@ namespace WebGrease.Css.Visitor
         private static OrderedDictionary UniqueDeclarations(RulesetNode rulesetNode)
         {
             var dictionary = new OrderedDictionary();
-            rulesetNode.Declarations.ForEach(declarationNode => AddUpdateDictionary(dictionary, declarationNode, true));
+            rulesetNode.Declarations.ForEach(declarationNode => dictionary.AppendWithOverride(declarationNode, d => d.Property));
             return dictionary;
         }
 
@@ -156,25 +172,6 @@ namespace WebGrease.Css.Visitor
             var dictionary = UniqueDeclarations(rulesetNode);
             var resultDeclarations = dictionary.Values.Cast<DeclarationNode>().ToList();
             return new RulesetNode(rulesetNode.SelectorsGroupNode, resultDeclarations.AsReadOnly());
-        }
-
-        /// <summary>Adds or updates the dictionary after checking the presence of declaration property key</summary>
-        /// <param name="dictionary">The dictionary to update</param>
-        /// <param name="declarationNode">The declaration node</param>
-        /// <param name="clobber">Determines if the exisitng entry should be overwritten</param>
-        private static void AddUpdateDictionary(IDictionary dictionary, DeclarationNode declarationNode, bool clobber)
-        {
-            if (dictionary.Contains(declarationNode.Property))
-            {
-                if (clobber)
-                {
-                    dictionary[declarationNode.Property] = declarationNode;
-                }
-            }
-            else
-            {
-                dictionary.Add(declarationNode.Property, declarationNode);
-            }
         }
     }
 }
