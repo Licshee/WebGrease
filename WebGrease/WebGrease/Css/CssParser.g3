@@ -36,7 +36,6 @@ tokens
     DOCUMENT;
     DOCUMENT_MATCHNAME;
     DOCUMENT_SYMBOL;
-    DPI;
     EXPR;
     SELECTOR_EXPRESSION;
     FUNCTIONBASEDVALUE;
@@ -115,12 +114,12 @@ main
 
 // styleSheet
 //  : [ CHARSET_SYM STRING ';' ]?
-//    [S|CDO|CDC]* [wg_dpi [ CDO S* | CDC S* ]*]? [ import [ CDO S* | CDC S* ]* ]* [ namespace [ CDO S* | CDC S* ]* ]* 
+//    [S|CDO|CDC]* [ import [ CDO S* | CDC S* ]* ]* [ namespace [ CDO S* | CDC S* ]* ]* 
 //    [ [ ruleset | media | page | keyframes ] [ CDO S* | CDC S* ]* ]*
 //  ;
 styleSheet
-    : ((CHARSET_SYM STRING SEMICOLON)? wg_dpi? styleimport* namespace* styleSheetrules*)
-    -> ^(STYLESHEET ^(CHARSET ^(STRINGBASEDVALUE STRING))? ^(WG_DPI wg_dpi)? ^(IMPORTS styleimport*)? ^(NAMESPACES namespace*)? styleSheetrules*)
+    : ((CHARSET_SYM STRING SEMICOLON)? styleimport* namespace* styleSheetrules*)
+    -> ^(STYLESHEET ^(CHARSET ^(STRINGBASEDVALUE STRING))? ^(IMPORTS styleimport*)? ^(NAMESPACES namespace*)? styleSheetrules*)
     ;
 
 // import
@@ -147,7 +146,7 @@ namespace_prefix
 
 wg_dpi
     : WG_DPI_SYM NUMBER SEMICOLON
-    -> ^(DPI NUMBER)
+    -> ^(WG_DPI NUMBER)
     ;
 
 // media
@@ -464,7 +463,7 @@ stringoruri
     ;
 
 styleSheetrules
-    : ruleset|media|page|keyframes|document
+    : ruleset|media|page|keyframes|document|wg_dpi
     ;
 
 // prio

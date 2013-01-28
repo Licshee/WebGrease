@@ -66,12 +66,17 @@ namespace WebGrease.Css
             }
 
             var dpiRule = styleSheetTree.Children(T(CssParser.WG_DPI)).FirstOrDefault();
-            var dpiString = dpiRule != null ? dpiRule.Children(T(CssParser.DPI)).FirstChildText() : null;
-
-            double dpi;
-            if (double.TryParse(dpiString, NumberStyles.Any, CultureInfo.InvariantCulture, out dpi))
+            if (dpiRule != null)
             {
-                return dpi;
+                var dpiString = dpiRule.FirstChildText();
+                if (dpiString != null)
+                {
+                    double dpi;
+                    if (double.TryParse(dpiString, NumberStyles.Any, CultureInfo.InvariantCulture, out dpi))
+                    {
+                        return dpi;
+                    }
+                }
             }
 
             return null;

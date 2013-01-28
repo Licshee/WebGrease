@@ -1,7 +1,19 @@
 ﻿/* comment */
 @-wg-dpi 2.4;
 
+@-wg-dpi 2;
+
 body
 {
     font-weight: bold;
 }
+
+@-wg-dpi 1.0;
+
+div
+{
+    color: red;
+}
+
+@-wg-dpi 3.141;
+

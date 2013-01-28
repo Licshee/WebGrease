@@ -4,9 +4,9 @@
   /* -wg-background-dpi:2; */
   background-repeat:no-repeat;
   background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
-  background-position:0.5rem 10rem;
-  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 2) (imageposition:Left); */
-  background-size:15rem 61.7rem
+  background-position:5px 100px;
+  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 1) (dpi: 2) (imageposition:Left); */
+  background-size:150px 617px
 }
 #test2
 {
@@ -26,10 +26,10 @@
   /* -wg-original-position:center 10px; */
   /* -wg-background-dpi:2; */
   background-repeat:no-repeat;
-  background-position:center -99rem;
+  background-position:center -990px;
   background-image:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif);
-  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 2) (imageposition:Center); */
-  background-size:15rem 61.7rem
+  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 1) (dpi: 2) (imageposition:Center); */
+  background-size:150px 617px
 }
 #test5
 {
@@ -42,16 +42,16 @@
   /* -wg-sprite-position:10px 200px; */
   /* -wg-original-position:10px 200px; */
   /* -wg-background-dpi:2; */
-  background:1.5rem 30rem url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif) no-repeat;
-  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 2) (imageposition:Left); */
-  background-size:15rem 61.7rem
+  background:15px 300px url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif) no-repeat;
+  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 1) (dpi: 2) (imageposition:Left); */
+  background-size:150px 617px
 }
 #test7
 {
   /* -wg-sprite-position:10px 200px; */
   /* -wg-original-position:-10px 200px; */
   /* -wg-background-dpi:2; */
-  background:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif) -1.5rem 10rem no-repeat;
-  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 0.1) (dpi: 2) (imageposition:Left); */
-  background-size:15rem 61.7rem
+  background:url(../../i/00/07e0b955ce73f92a8c57c7028c7d01.gif) -15px 100px no-repeat;
+  /* -wg-background-size-params: (sprite size: 300px 1234px) (output unit factor: 1) (dpi: 2) (imageposition:Left); */
+  background-size:150px 617px
 }

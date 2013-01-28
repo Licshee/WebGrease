@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<images>
+  <output file="[FolderPath]/../../i/00/07E0B955CE73F92A8C57C7028C7D01.gif" width="300" height="1234">
+    <input>
+      <originalfile>[FolderPath]/../../i/02/3118D8F3781159C8341246BBF2B4CA.gif</originalfile>
+      <width>300</width>
+      <height>117</height>
+      <xposition>10</xposition>
+      <yposition>200</yposition>
+      <positioninsprite>Left</positioninsprite>
+    </input>
+    <input>
+      <originalfile>[FolderPath]/../../i/03/69A3A49A93A636AB2E9235F2237F36.gif</originalfile>
+      <width>140</width>
+      <height>19</height>
+      <xposition>-10</xposition>
+      <yposition>-200</yposition>
+      <positioninsprite>Left</positioninsprite>
+    </input>
+    <input>
+      <originalfile>[FolderPath]/../../i/03/69A3A49A93A636AB2E9235F2237F36.gif</originalfile>
+      <width>140</width>
+      <height>19</height>
+      <xposition>-200</xposition>
+      <yposition>-2000</yposition>
+      <positioninsprite>Center</positioninsprite>
+    </input>
+    <input>
+      <originalfile>[FolderPath]/../../i/03/69A3A49A93A636AB2E9235F2237F36.gif</originalfile>
+      <width>140</width>
+      <height>19</height>
+      <xposition>-200</xposition>
+      <yposition>-5000</yposition>
+      <positioninsprite>Right</positioninsprite>
+    </input>
+  </output>
+</images>

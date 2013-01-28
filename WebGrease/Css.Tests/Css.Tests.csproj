@@ -199,6 +199,9 @@
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\spritingcandidateswithbuckets.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\spritingcandidateswithignore.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\toomanylengthsexception.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitordpi.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitordpi.css.lazyload.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitordpi.css.xml" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css.lazyload.xml" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\imageupdatevisitorlongdeclarations.css.xml" />
@@ -220,6 +223,7 @@
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\page.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\page.css.lazyload.xml" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\Actual\page.css.xml" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitordpi.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorlongdeclarations.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorrem.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorshorthanddeclarations.css" />
@@ -227,6 +231,7 @@
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\imageupdatevisitorshorthanddeclarationssecondposition.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\media.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\MinifiedExpect\page.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitordpi.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorlongdeclarations.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorrem.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyUpdateVisitor\PrettyExpect\imageupdatevisitorshorthanddeclarations.css" />

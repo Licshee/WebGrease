@@ -419,8 +419,12 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 // Update X when it is 0 or in pixels
                 if (this.X == 0 || this.XSource == Source.Px)
                 {
-                    var finalX = this.X + updatedX;
-                    var calcX = (float?)Math.Round(finalX.GetValueOrDefault() * this.outputUnitFactor / webGreaseBackgroundDpi, 3);
+                    // we need to adjust the physical pixel of the new sprite position according to dpi to get client pixels.
+                    // then we add the client-pixels position from the source.
+                    // then we multiply by the output unit factor and update the result.
+                    var calcX = (float?)Math.Round(
+                        (this.X.GetValueOrDefault() + (updatedX.GetValueOrDefault() / webGreaseBackgroundDpi)) * this.outputUnitFactor, 
+                        3);
 
                     // Create a term with new x
                     updatedTermNode = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(outputUnit), null, null, null);
@@ -452,8 +456,12 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 // Update Y when it is in zero or pixels
                 if (this.Y == 0 || this.YSource == Source.Px)
                 {
-                    var finalY = this.Y + updatedY;
-                    var calcY = (float?)Math.Round(finalY.GetValueOrDefault() * this.outputUnitFactor / webGreaseBackgroundDpi, 3);
+                    // we need to adjust the physical pixel of the new sprite position according to dpi to get client pixels.
+                    // then we add the client-pixels position from the source.
+                    // then we multiply by the output unit factor and update the result.
+                    var calcY = (float?)Math.Round(
+                        (this.Y.GetValueOrDefault() + (updatedY.GetValueOrDefault() / webGreaseBackgroundDpi)) * this.outputUnitFactor,
+                        3);
 
                     // Create a term with new y
                     updatedTermNode = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(outputUnit), null, null, null);

@@ -180,7 +180,7 @@ namespace WebGrease.Css.Visitor
                 }
 
                 // if we have a background DPI node, then use it to calculate the DPI we should be using,
-                // otherwise just assume it's 1x.
+                // otherwise use the default DPI given to the visitor in constructor (default is 1.0).
                 var webGreaseBackgroundDpi =
                     webGreaseBackgroundDpiNode != null
                     ? double.Parse(webGreaseBackgroundDpiNode.ExprNode.TermNode.NumberBasedValue, NumberStyles.Any, CultureInfo.InvariantCulture)
@@ -195,7 +195,12 @@ namespace WebGrease.Css.Visitor
                 {
                     // we had a -wg-background-dpi declaration node - comment it out now and move it to the top
                     updatedDeclarations.RemoveAt(ix);
-                    updatedDeclarations.Insert(0, CreateDebugDeclarationComment("-wg-background-dpi", webGreaseBackgroundDpi.ToString(CultureInfo.InvariantCulture)));
+                    updatedDeclarations.Insert(0, CreateDpiComment(webGreaseBackgroundDpi));
+                }
+                else if (webGreaseBackgroundDpi != 1.0)
+                {
+                    // not a normal-DPI (1x) -- output a comment at the top stating what our DPI really is
+                    updatedDeclarations.Insert(0, CreateDpiComment(webGreaseBackgroundDpi));
                 }
 
                 // Empty object to be discovered from log
@@ -338,6 +343,14 @@ namespace WebGrease.Css.Visitor
             return value == null ? "center" : value.Value.ToString(CultureInfo.InvariantCulture);
         }
 
+        /// <summary>
+        /// Create a declaration comment that indicates the original position of the background image from the source
+        /// </summary>
+        /// <param name="xPosition">x position</param>
+        /// <param name="xSource">x position source</param>
+        /// <param name="yPosition">y position</param>
+        /// <param name="ySource">y position source</param>
+        /// <returns>new declaration node</returns>
         private static DeclarationNode CreateDebugOriginalPositionComment(float? xPosition, Source? xSource, float? yPosition, Source? ySource)
         {
             var xExists = xPosition != null || xSource != null;
@@ -352,11 +365,33 @@ namespace WebGrease.Css.Visitor
             return CreateDebugDeclarationComment("-wg-original-position", GetPositionString(xPosition, xSource) + " " + GetPositionString(yPosition, ySource));
         }
 
+        /// <summary>
+        /// Create a declaration comment that indicates the absolute pixel position of the source image in the generated sprite
+        /// </summary>
+        /// <param name="xPixels">x position in pixels</param>
+        /// <param name="yPixels">y position in pixels</param>
+        /// <returns>new declaration node</returns>
         private static DeclarationNode CreateDebugSpritePositionComment(int? xPixels, int? yPixels)
         {
             return CreateDebugDeclarationComment("-wg-sprite-position", Math.Abs(xPixels.GetValueOrDefault()) + "px " + Math.Abs(yPixels.GetValueOrDefault()) + "px");
         }
 
+        /// <summary>
+        /// Create a declaration comment that indicates the DPI being used for the sprite calculations
+        /// </summary>
+        /// <param name="dpi">dpi</param>
+        /// <returns>new declaration node</returns>
+        private static DeclarationNode CreateDpiComment(double dpi)
+        {
+            return CreateDebugDeclarationComment("-wg-background-dpi", dpi.ToString(CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>
+        /// Create a debug declaration comment: /* property: propertyValue; */
+        /// </summary>
+        /// <param name="propertyName">name of the property</param>
+        /// <param name="propertyValue">value of the property</param>
+        /// <returns>new declaration node</returns>
         private static DeclarationNode CreateDebugDeclarationComment(string propertyName, string propertyValue)
         {
             return new DeclarationNode("/* " + propertyName, new ExprNode(new TermNode(string.Empty, null, propertyValue + "; */", null, null), null), string.Empty);
@@ -367,18 +402,18 @@ namespace WebGrease.Css.Visitor
         /// </summary>
         /// <param name="updatedDeclarations">The updated declarations.</param>
         /// <param name="backgroundSizeNode">The node containing the possible existing background size.</param>
-        /// <param name="webGreaseBackgroundDpi">The background dpi.</param>
+        /// <param name="dpiFactor">The background dpi.</param>
         /// <param name="assembledImage">The assembled image.</param>
-        private void SetBackgroundSize(List<DeclarationNode> updatedDeclarations, DeclarationNode backgroundSizeNode, double webGreaseBackgroundDpi, AssembledImage assembledImage)
+        private void SetBackgroundSize(List<DeclarationNode> updatedDeclarations, DeclarationNode backgroundSizeNode, double dpiFactor, AssembledImage assembledImage)
         {
-            if (this.outputUnit == ImageAssembleConstants.Rem || this.outputUnit == ImageAssembleConstants.Em)
+            if (backgroundSizeNode != null)
             {
-                if (backgroundSizeNode != null)
-                {
-                    updatedDeclarations.Remove(backgroundSizeNode);
-                }
+                updatedDeclarations.Remove(backgroundSizeNode);
+            }
 
-                updatedDeclarations.AddRange(this.CreateBackgroundSizeNode(assembledImage, webGreaseBackgroundDpi));
+            if (dpiFactor != 1d)
+            {
+                updatedDeclarations.AddRange(this.CreateBackgroundSizeNode(assembledImage, dpiFactor));
             }
         }
 
@@ -386,12 +421,12 @@ namespace WebGrease.Css.Visitor
         /// Returns the background size node with the correctly adjusted values for dpi and output units.
         /// </summary>
         /// <param name="assembledImage">The assembled image.</param>
-        /// <param name="webGreaseBackgroundDpi">The background dpi.</param>
+        /// <param name="dpiFactor">The background dpi.</param>
         /// <returns>The background-size node.</returns>
-        private IEnumerable<DeclarationNode> CreateBackgroundSizeNode(AssembledImage assembledImage, double webGreaseBackgroundDpi)
+        private IEnumerable<DeclarationNode> CreateBackgroundSizeNode(AssembledImage assembledImage, double dpiFactor)
         {
-            var calcWidth = (float?)Math.Round((assembledImage.SpriteWidth ?? 0d) * this.outputUnitFactor / webGreaseBackgroundDpi, 3);
-            var calcHeight = (float?)Math.Round((assembledImage.SpriteHeight ?? 0d) * this.outputUnitFactor / webGreaseBackgroundDpi, 3);
+            var calcWidth = (float?)Math.Round((assembledImage.SpriteWidth ?? 0d) * this.outputUnitFactor / dpiFactor, 3);
+            var calcHeight = (float?)Math.Round((assembledImage.SpriteHeight ?? 0d) * this.outputUnitFactor / dpiFactor, 3);
 
             var widthTermNode = new TermNode(
                 calcWidth.UnaryOperator(),
@@ -420,7 +455,7 @@ namespace WebGrease.Css.Visitor
 
             return new[] { 
                 // add a comment to help with sprite debugging
-                CreateDebugDeclarationComment("-wg-background-size-params", " (sprite size: " + assembledImage.SpriteWidth + "px " + assembledImage.SpriteHeight + "px) (output unit factor: " + outputUnitFactor + ") (dpi: " + webGreaseBackgroundDpi + ") (imageposition:" + assembledImage.ImagePosition + ")"),
+                CreateDebugDeclarationComment("-wg-background-size-params", " (sprite size: " + assembledImage.SpriteWidth + "px " + assembledImage.SpriteHeight + "px) (output unit factor: " + outputUnitFactor + ") (dpi: " + dpiFactor + ") (imageposition:" + assembledImage.ImagePosition + ")"),
                 newBackgroundSizeNode
             };
         }

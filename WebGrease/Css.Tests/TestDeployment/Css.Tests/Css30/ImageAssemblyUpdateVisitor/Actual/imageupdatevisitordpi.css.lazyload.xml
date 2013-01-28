@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<images>
+  <output file="">
+    <input>
+      <originalfile>ani.gif</originalfile>
+      <comment>Animated GIF</comment>
+    </input>
+  </output>
+</images>

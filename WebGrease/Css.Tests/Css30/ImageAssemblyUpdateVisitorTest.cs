@@ -137,6 +137,25 @@ namespace Css.Tests.Css30
             PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName, new List<NodeVisitor> { visitor });
         }
 
+        /// <summary>A test for using a different unit and scale factor.</summary>
+        [TestMethod]
+        public void ImageUpdateVisitorDpiTest()
+        {
+            const string FileName = @"imageupdatevisitordpi.css";
+            var fileInfo = new FileInfo(Path.Combine(ActualDirectory, FileName));
+
+            var styleSheetNode = CssParser.Parse(fileInfo);
+            Assert.IsNotNull(styleSheetNode);
+            Assert.IsNotNull(styleSheetNode.Dpi);
+
+            var visitor = CreateVisitor(fileInfo.FullName, styleSheetNode.Dpi.GetValueOrDefault(1d));
+            styleSheetNode = styleSheetNode.Accept(visitor) as StyleSheetNode;
+            Assert.IsNotNull(styleSheetNode);
+
+            MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { visitor });
+            PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName, new List<NodeVisitor> { visitor });
+        }
+
         /// <summary>A test for media background selectors which should be sprited.</summary>
         [TestMethod]
         public void MediaTest()

@@ -452,6 +452,7 @@
     <EmbeddedResource Include="Css\CssStrings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>CssStrings.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="ImageAssemble\ImageAssembleStrings.resx">
       <LastGenOutput>ImageAssembleStrings.Designer.cs</LastGenOutput>
