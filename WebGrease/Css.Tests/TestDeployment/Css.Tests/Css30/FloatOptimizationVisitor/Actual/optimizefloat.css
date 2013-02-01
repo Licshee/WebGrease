@@ -3,4 +3,7 @@ div
     /* leading zeros should be trimmed off integer portions, and trailing zeros off the decimal fraction portion. */
     /* units on a zero value should also be removed (zero is zero, no matter what the units) */
     float: 0.0rem 0.00px 0.500% 00%;
+
+    /* also need to make sure we go inside functions */
+    background:rgba(0255, 0.100, 0.000, 0.8);
 }

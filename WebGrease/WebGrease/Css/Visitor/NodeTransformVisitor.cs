@@ -133,7 +133,9 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitFunctionNode(FunctionNode functionNode)
         {
-            return new FunctionNode(functionNode.FunctionName, (ExprNode)functionNode.ExprNode.Accept(this));
+            // function might not have ANY expression within it.
+            var exprNode = functionNode.ExprNode != null ? functionNode.ExprNode.Accept(this) : null;
+            return new FunctionNode(functionNode.FunctionName, (ExprNode)exprNode);
         }
 
         /// <summary>The <see cref="Ast.Selectors.PseudoNode"/> visit implementation</summary>

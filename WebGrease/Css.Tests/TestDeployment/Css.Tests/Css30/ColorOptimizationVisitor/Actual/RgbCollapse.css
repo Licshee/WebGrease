@@ -1,0 +1,15 @@
+﻿body
+{
+    /* don't convert? */
+    color: rgb(.333, 0.100, .4142235);
+    border-color: rgb(100, 200, 300);
+
+    /* convert */
+    background-color: rgb( 255,   204, 119);
+}
+
+div
+{
+    /* don't convert rgbA */
+    color: rgba(50, 217, 12, 88);
+}

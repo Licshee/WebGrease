@@ -36,6 +36,7 @@ namespace WebGrease.Css.Visitor
                 throw new ArgumentNullException("termNode");
             }
 
+            var funcNode = termNode.FunctionNode;
             var numberBasedValue = termNode.NumberBasedValue;
             if (!string.IsNullOrWhiteSpace(numberBasedValue))
             {
@@ -62,8 +63,14 @@ namespace WebGrease.Css.Visitor
                     return new TermNode(termNode.UnaryOperator, string.Concat(leftNumber, rightNumber, units), termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
                 }
             }
+            else if (funcNode != null)
+            {
+                // this visitor should never convert a function node to anything other than
+                // a function node, so just force the conversion.
+                funcNode = (FunctionNode)funcNode.Accept(this);
+            }
 
-            return new TermNode(termNode.UnaryOperator, numberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+            return new TermNode(termNode.UnaryOperator, numberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, funcNode);
         }
     }
 }

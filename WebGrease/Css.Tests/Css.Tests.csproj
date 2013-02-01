@@ -78,6 +78,7 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Css30\ColorOptimizationVisitorTest.cs" />
     <Compile Include="Css30\SelectorValidationOptimizationVisitorTest.cs" />
     <Compile Include="Css30\ValidateLowercaseVisitorTest.cs" />
     <Compile Include="Css30\FloatOptimizationVisitorTest.cs" />
@@ -183,6 +184,12 @@
     <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_WorldWidePage.css" />
     <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_WorldWidePage_ie.css" />
     <Content Include="TestDeployment\Css.Tests\Css21\Sites\www.msn.com\zh-sg\css\01-black_sg_Site_zh-sg_WorldWidePage_ie6.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ColorOptimizationVisitor\Actual\HexCollapse.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ColorOptimizationVisitor\Actual\RgbCollapse.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ColorOptimizationVisitor\MinifiedExpect\HexCollapse.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ColorOptimizationVisitor\MinifiedExpect\RgbCollapse.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ColorOptimizationVisitor\PrettyExpect\HexCollapse.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ColorOptimizationVisitor\PrettyExpect\RgbCollapse.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\Actual\ExcludeByKeys.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\Actual\ExcludeByValues.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ExcludePropertyVisitor\MinifiedExpect\ExcludeByKeys.css" />
