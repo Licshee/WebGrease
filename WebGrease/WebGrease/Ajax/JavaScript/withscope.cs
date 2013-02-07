@@ -39,6 +39,17 @@ namespace Microsoft.Ajax.Utilities
                 // a with-statement does not get automatically renamed
                 outerField.CanCrunch = false;
 
+                // if the outer field is an undefined global, then we want to flag it with a
+                // special attribute that tells us that it might not actually be an undefined global,
+                // because it might just be a property reference on the with-object.
+                if (outerField.FieldType == FieldType.UndefinedGlobal)
+                {
+                    do
+                    {
+                        outerField.Attributes |= FieldAttributes.RTSpecialName;
+                    } while ((outerField = outerField.OuterField) != null);
+                }
+
                 return withField;
             });
         }

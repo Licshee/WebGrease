@@ -34,7 +34,7 @@ namespace Microsoft.Ajax.Utilities
         WithField,
         CatchError,
         GhostCatch,
-        GhostFunctionExpression,
+        GhostFunction,
         UndefinedGlobal,
     }
 
@@ -196,6 +196,36 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public bool IsOuterReference
+        {
+            get
+            {
+                if (this.OuterField != null)
+                {
+                    // there is an outer field reference.
+                    // go up the chain and make sure that there is a non-placeholder field
+                    // somewhere up there. If there is nothing but placeholders (ghosts), then
+                    // this is not an outer field.
+                    var outerField = this.OuterField;
+                    while (outerField != null)
+                    {
+                        if (!outerField.IsPlaceholder)
+                        {
+                            // we found an outer field that is not a placeholder, therefore
+                            // the original field IS an outer field.
+                            return true;
+                        }
+
+                        outerField = outerField.OuterField;
+                    }
+                }
+
+                // if we get here, then we didn't find any real (non-placeholder)
+                // outer field, so we are not an outer reference.
+                return false;
+            }
+        }
+
         // we'll set this after analyzing all the variables in the
         // script in order to shrink it down even further
         public string CrunchedName
@@ -340,7 +370,7 @@ namespace Microsoft.Ajax.Utilities
                     IsPlaceholder = true;
                     break;
 
-                case FieldType.GhostFunctionExpression:
+                case FieldType.GhostFunction:
                     CanCrunch = OuterField == null ? true : OuterField.CanCrunch;
                     IsFunction = true;
                     IsPlaceholder = true;

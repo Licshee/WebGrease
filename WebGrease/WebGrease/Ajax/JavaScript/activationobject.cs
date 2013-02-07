@@ -98,7 +98,7 @@ namespace Microsoft.Ajax.Utilities
         public ICollection<INameDeclaration> LexicallyDeclaredNames { get; private set; }
 
         public ICollection<ParameterDeclaration> GhostedCatchParameters { get; private set; }
-        public ICollection<FunctionObject> GhostedNamedFunctionExpressions { get; private set; }
+        public ICollection<FunctionObject> GhostedFunctions { get; private set; }
 
         #endregion
 
@@ -128,7 +128,7 @@ namespace Microsoft.Ajax.Utilities
             LexicallyDeclaredNames = new HashSet<INameDeclaration>();
 
             GhostedCatchParameters = new HashSet<ParameterDeclaration>();
-            GhostedNamedFunctionExpressions = new HashSet<FunctionObject>();
+            GhostedFunctions = new HashSet<FunctionObject>();
         }
 
         #region scope setup methods
@@ -311,8 +311,9 @@ namespace Microsoft.Ajax.Utilities
         private void UnreferencedFunction(JSVariableField variableField, FunctionObject functionObject)
         {
             // if there is no name, then ignore this declaration because it's malformed.
-            // (won't be a function expression because those are automatically refernced)
-            if (functionObject.Name != null)
+            // (won't be a function expression because those are automatically referenced).
+            // also ignore ghosted function fields.
+            if (functionObject.Name != null && variableField.FieldType != FieldType.GhostFunction)
             {
                 // if the function name isn't a simple identifier, then leave it there and mark it as
                 // not renamable because it's probably one of those darn IE-extension event handlers or something.

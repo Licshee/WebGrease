@@ -132,7 +132,7 @@ namespace Microsoft.Ajax.Utilities
             blockScope.VarDeclaredNames.CopyItemsTo(blockScope.Parent.VarDeclaredNames);
             blockScope.ChildScopes.CopyItemsTo(blockScope.Parent.ChildScopes);
             blockScope.GhostedCatchParameters.CopyItemsTo(blockScope.Parent.GhostedCatchParameters);
-            blockScope.GhostedNamedFunctionExpressions.CopyItemsTo(blockScope.Parent.GhostedNamedFunctionExpressions);
+            blockScope.GhostedFunctions.CopyItemsTo(blockScope.Parent.GhostedFunctions);
 
             // remove it from its parent's collection of child scopes
             blockScope.Parent.ChildScopes.Remove(blockScope);
@@ -271,9 +271,9 @@ namespace Microsoft.Ajax.Utilities
                 ResolveGhostedCatchParameter(scope, catchParameter);
             }
 
-            foreach (var namedFuncExpr in scope.GhostedNamedFunctionExpressions)
+            foreach (var ghostFunc in scope.GhostedFunctions)
             {
-                ResolveGhostedNamedFunctionExpression(scope, namedFuncExpr);
+                ResolveGhostedFunctions(scope, ghostFunc);
             }
 
             // recurse
@@ -339,7 +339,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        private static void ResolveGhostedNamedFunctionExpression(ActivationObject scope, FunctionObject funcObject)
+        private static void ResolveGhostedFunctions(ActivationObject scope, FunctionObject funcObject)
         {
             var functionField = funcObject.VariableField;
 
@@ -348,14 +348,15 @@ namespace Microsoft.Ajax.Utilities
             if (ghostField == null)
             {
                 // nothing; good to go. Add a ghosted field to keep track of it.
-                ghostField = new JSVariableField(FieldType.GhostFunctionExpression, funcObject.Name, 0, funcObject)
+                ghostField = new JSVariableField(FieldType.GhostFunction, funcObject.Name, 0, funcObject)
                 {
-                    OriginalContext = functionField.OriginalContext.Clone()
+                    OriginalContext = functionField.OriginalContext.Clone(),
+                    CanCrunch = funcObject.VariableField.IfNotNull(v => v.CanCrunch)
                 };
 
                 scope.AddField(ghostField);
             }
-            else if (ghostField.FieldType == FieldType.GhostFunctionExpression)
+            else if (ghostField.FieldType == FieldType.GhostFunction)
             {
                 // there is, but it's another ghosted function expression.
                 // what if a lookup is resolved to this field later? We probably still need to
@@ -860,7 +861,7 @@ namespace Microsoft.Ajax.Utilities
 
                     // add this function object to the list of function objects the variable scope
                     // will need to ghost later
-                    CurrentVariableScope.GhostedNamedFunctionExpressions.Add(node);
+                    CurrentVariableScope.GhostedFunctions.Add(node);
                 }
 
                 node.FunctionScope = new FunctionScope(parentScope, node.FunctionType != FunctionType.Declaration, m_settings, node)
@@ -902,8 +903,10 @@ namespace Microsoft.Ajax.Utilities
                     {
                         // the current lexical scope is the variable scope.
                         // this is ES6 syntax: a function declaration inside a block scope. Not allowed
-                        // in ES5 code, so throw a warning.
+                        // in ES5 code, so throw a warning and ghost this function in the outer variable scope 
+                        // to make sure that we don't generate any naming collisions.
                         node.NameContext.HandleError(JSError.MisplacedFunctionDeclaration, false);
+                        CurrentVariableScope.GhostedFunctions.Add(node);
                     }
                 }
             }

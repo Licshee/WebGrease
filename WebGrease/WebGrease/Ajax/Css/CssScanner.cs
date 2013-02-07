@@ -583,6 +583,7 @@ namespace Microsoft.Ajax.Utilities
               );
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private CssToken ScanAtKeyword()
         {
             NextChar();
@@ -747,6 +748,7 @@ namespace Microsoft.Ajax.Utilities
             return (token != null ? token : new CssToken(TokenType.Character, '!', m_context));
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private CssToken ScanUnicodeRange()
         {
             // when called, the current character is the character *after* U+
@@ -1408,6 +1410,7 @@ namespace Microsoft.Ajax.Utilities
             return nmChar;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private string GetString()
         {
             string str = null;

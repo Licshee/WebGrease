@@ -184,6 +184,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         /// <param name="left">left-side operand</param>
         /// <param name="right">right-side operand</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void EvalThisOperator(BinaryOperator node, ConstantWrapper left, ConstantWrapper right)
         {
             // we can evaluate these operators if we know both operands are literal
@@ -395,6 +396,7 @@ namespace Microsoft.Ajax.Utilities
         /// <param name="thisConstant">second constant</param>
         /// <param name="otherConstant">first constant</param>
         /// <param name="leftOperator">first operator</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void EvalToTheLeft(BinaryOperator node, ConstantWrapper thisConstant, ConstantWrapper otherConstant, BinaryOperator leftOperator)
         {
             if (leftOperator.OperatorToken == JSToken.Plus && node.OperatorToken == JSToken.Plus)
@@ -550,6 +552,7 @@ namespace Microsoft.Ajax.Utilities
         /// <param name="thisConstant">second constant</param>
         /// <param name="otherConstant">first constant</param>
         /// <param name="leftOperator">first operator</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void EvalFarToTheLeft(BinaryOperator node, ConstantWrapper thisConstant, ConstantWrapper otherConstant, BinaryOperator leftOperator)
         {
             if (leftOperator.OperatorToken == JSToken.Minus)
@@ -640,6 +643,7 @@ namespace Microsoft.Ajax.Utilities
         /// <param name="thisConstant">first constant</param>
         /// <param name="otherConstant">second constant</param>
         /// <param name="leftOperator">second operator</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void EvalToTheRight(BinaryOperator node, ConstantWrapper thisConstant, ConstantWrapper otherConstant, BinaryOperator rightOperator)
         {
             if (node.OperatorToken == JSToken.Plus)
@@ -766,6 +770,7 @@ namespace Microsoft.Ajax.Utilities
         /// <param name="thisConstant">first constant</param>
         /// <param name="otherConstant">second constant</param>
         /// <param name="rightOperator">second operator</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void EvalFarToTheRight(BinaryOperator node, ConstantWrapper thisConstant, ConstantWrapper otherConstant, BinaryOperator rightOperator)
         {
             if (rightOperator.OperatorToken == JSToken.Minus)
@@ -1795,6 +1800,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void DoBinaryOperator(BinaryOperator node)
         {
             if (m_parser.Settings.EvalLiteralExpressions)
@@ -2257,6 +2263,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private void DoUnaryNode(UnaryOperator node)
         {
             if (!node.OperatorInConditionalCompilationComment

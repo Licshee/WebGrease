@@ -205,6 +205,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public void Visit(BinaryOperator node)
         {
             if (node != null)
@@ -501,10 +502,8 @@ namespace Microsoft.Ajax.Utilities
                 m_startOfStatement = false;
                 if (!string.IsNullOrEmpty(node.Label))
                 {
-                    // NO PAGE BREAKS ALLOWED HERE, so don't rely on the automatic
-                    // space-inserting code to separate the break from the label.
-                    // insert a space now.
-                    Output(' ');
+                    // NO PAGE BREAKS ALLOWED HERE
+                    m_noLineBreaks = true;
                     if (Settings.LocalRenaming != LocalRenaming.KeepAll
                         && Settings.IsModificationAllowed(TreeModifications.LocalRenaming))
                     {
@@ -1000,9 +999,8 @@ namespace Microsoft.Ajax.Utilities
                 m_startOfStatement = false;
                 if (!string.IsNullOrEmpty(node.Label))
                 {
-                    // NO PAGE BREAKS ALLOWED HERE, so don't rely on the automatic-space
-                    // insertion mode or it might insert a newline
-                    Output(' ');
+                    // NO PAGE BREAKS ALLOWED HERE
+                    m_noLineBreaks = true;
                     if (Settings.LocalRenaming != LocalRenaming.KeepAll
                         && Settings.IsModificationAllowed(TreeModifications.LocalRenaming))
                     {
@@ -1391,6 +1389,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public void Visit(IfNode node)
         {
             if (node != null)
@@ -1670,7 +1669,7 @@ namespace Microsoft.Ajax.Utilities
                 // so let's FORCE the insert-space logic here.
                 if (JSScanner.IsValidIdentifierPart(m_lastCharacter))
                 {
-                    Output(' ');
+                    OutputSpaceOrLineBreak();
                 }
 
                 var symbol = StartSymbol(node);
@@ -2088,6 +2087,7 @@ namespace Microsoft.Ajax.Utilities
                 m_startOfStatement = false;
                 if (node.Operand != null)
                 {
+                    m_noLineBreaks = true;
                     node.Operand.Accept(this);
                 }
 
@@ -2345,6 +2345,10 @@ namespace Microsoft.Ajax.Utilities
                         AcceptNodeWithParens(node.Operand, node.Operand.Precedence < node.Precedence);
                     }
 
+                    // the only postfix unary operators are ++ and --, and when in the postfix position,
+                    // line breaks are NOT allowed between the operand and the operator.
+                    // doesn't seem to need this flag set here, but set it anyways just in case.
+                    m_noLineBreaks = true;
                     Output(OperatorString(node.OperatorToken));
                     MarkSegment(node, null, node.OperatorContext);
                     m_startOfStatement = false;

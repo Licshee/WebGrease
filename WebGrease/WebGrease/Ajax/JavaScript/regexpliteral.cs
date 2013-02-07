@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -28,7 +29,13 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                return true;
+                // actually, if the regular expression uses the "g" global flag,
+                // then we DON'T want to treat it like a constant and possibly remove
+                // a single-referenced variable. This is because the global regex in
+                // a variable can have multiple calls to the exec() method, which continues
+                // on from where it left off. But if you call exec() on a literal, even if
+                // the "g" flag is set, it always starts at the beginning.
+                return (PatternSwitches ?? "").IndexOf("g", StringComparison.OrdinalIgnoreCase) < 0;
             }
         }
 

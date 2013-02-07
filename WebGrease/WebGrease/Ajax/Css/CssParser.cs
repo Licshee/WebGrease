@@ -1323,6 +1323,7 @@ namespace Microsoft.Ajax.Utilities
             return Parsed.True;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private Parsed ParseDeclarationList(bool allowMargins)
         {
             var parsed = Parsed.Empty;
@@ -1924,6 +1925,7 @@ namespace Microsoft.Ajax.Utilities
             return parsed;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private Parsed ParseAttrib()
         {
             Parsed parsed = Parsed.False;
@@ -2343,6 +2345,7 @@ namespace Microsoft.Ajax.Utilities
             return parsed;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private Parsed ParseTerm(bool wasEmpty)
         {
             Parsed parsed = Parsed.False;
@@ -2638,7 +2641,7 @@ namespace Microsoft.Ajax.Utilities
             return text;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification="No, we want to output lower-case here")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "No, we want to output lower-case here")]
         private Parsed ParseFunction()
         {
             Parsed parsed = Parsed.False;
@@ -3643,7 +3646,7 @@ namespace Microsoft.Ajax.Utilities
                 CurrentTokenType);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
         private bool Append(object obj, TokenType tokenType)
         {
             bool outputText = false;

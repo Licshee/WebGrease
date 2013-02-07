@@ -36,6 +36,7 @@ namespace Microsoft.Ajax.Utilities
             m_scopeStack.Push(parser.GlobalScope);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public override void Visit(BinaryOperator node)
         {
             if (node != null)
@@ -566,7 +567,7 @@ namespace Microsoft.Ajax.Utilities
             return lastStatementIndex >= 0 ? node[lastStatementIndex] : null;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1809:AvoidExcessiveLocals")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1809:AvoidExcessiveLocals"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
         public override void Visit(Block node)
         {
             if (node != null)
@@ -1488,6 +1489,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public override void Visit(CallNode node)
         {
             if (node != null)
@@ -2161,11 +2163,13 @@ namespace Microsoft.Ajax.Utilities
                     // simply treat it like every other function declaration in this scope. Firefox, however, won't
                     // add this function declaration's name to the containing scope until the function declaration
                     // is actually "executed." So if you try to call it BEFORE, you will get a "not defined" error.
-                    if (!node.IsSourceElement && node.FunctionType == FunctionType.Declaration)
-                    {
-                        node.Context.HandleError(JSError.MisplacedFunctionDeclaration, true);
-                    }
 
+                    // TODO: take this out for now, because we will throw this error in the resolution process
+                    // until we can get this worked out properly.
+                    //if (!node.IsSourceElement && node.FunctionType == FunctionType.Declaration)
+                    //{
+                    //    (node.NameContext ?? node.Context).HandleError(JSError.MisplacedFunctionDeclaration, true);
+                    //}
 
                     // we need to make sure the function isn't named "eval" or "arguments"
                     if (string.CompareOrdinal(node.Name, "eval") == 0
@@ -2245,6 +2249,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public override void Visit(IfNode node)
         {
             if (node != null)
@@ -2796,6 +2801,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public override void Visit(Switch node)
         {
             if (node != null)
