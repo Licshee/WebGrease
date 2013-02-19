@@ -312,103 +312,111 @@ namespace Microsoft.Ajax.Utilities
             // clear out the list of namespaces
             m_namespaces.Clear();
 
-            // pre-process the comments
-            var resetToHacks = false;
-            try
+            if (source.IsNullOrWhiteSpace())
             {
-                // see if we need to re-encode the text based on a @charset rule
-                // at the front.
-                source = HandleCharset(source);
-
-                if (Settings.CommentMode == CssComment.Hacks)
-                {
-                    // change the various hacks to important comments so they will be kept
-                    // in the output
-                    source = s_regexHack1.Replace(source, "/*! \\*/${inner}/*!*/");
-                    source = s_regexHack2.Replace(source, "/*!/*//*/${inner}/**/");
-                    source = s_regexHack3.Replace(source, "/*!/*/${inner}/*!*/");
-                    source = s_regexHack4.Replace(source, "/*!*/");
-                    source = s_regexHack5.Replace(source, "/*!*/");
-                    source = s_regexHack6.Replace(source, "/*!*/");
-                    source = s_regexHack7.Replace(source, "/*!*/");
-
-                    // now that we've changed all our hack comments to important comments, we can
-                    // change the flag to Important so all non-important hacks are removed. 
-                    // And set a flag to remind us to change it back before we exit, or the NEXT
-                    // file we process will have the wrong setting.
-                    Settings.CommentMode = CssComment.Important;
-                    resetToHacks = true;
-                }
-
-                // set up for the parse
-                using (StringReader reader = new StringReader(source))
-                {
-                    m_scanner = new CssScanner(reader);
-                    m_scanner.AllowEmbeddedAspNetBlocks = this.Settings.AllowEmbeddedAspNetBlocks;
-                    m_scanner.ScannerError += (sender, ea) =>
-                        {
-                            OnCssError(ea.Exception);
-                        };
-                    m_scanner.ContextChange += (sender, ea) =>
-                        {
-                            FileContext = ea.FileContext;
-                        };
-
-                    // create the string builder into which we will be 
-                    // building our crunched stylesheet
-                    m_parsed = new StringBuilder();
-
-                    // get the first token
-                    NextToken();
-
-                    try
-                    {
-                        switch (Settings.CssType)
-                        {
-                            case CssType.FullStyleSheet:
-                                // parse a style sheet!
-                                ParseStylesheet();
-                                break;
-
-                            case CssType.DeclarationList:
-                                ParseDeclarationList(false);
-                                break;
-
-                            default:
-                                Debug.Fail("UNEXPECTED CSS TYPE");
-                                goto case CssType.FullStyleSheet;
-                        }
-
-                        if (!m_scanner.EndOfFile)
-                        {
-                            string errorMessage = CssStrings.ExpectedEndOfFile;
-                            throw new CssScannerException(
-                                (int)CssErrorCode.ExpectedEndOfFile,
-                                0,
-                                m_currentToken.Context.Start.Line,
-                                m_currentToken.Context.Start.Char,
-                                errorMessage);
-                        }
-                    }
-                    catch (CssException exc)
-                    {
-                        // show the error
-                        OnCssError(exc);
-                    }
-
-                    // get the crunched string and dump the string builder
-                    // (we don't need it anymore)
-                    source = m_parsed.ToString();
-                    m_parsed = null;
-                }
+                // null or blank - return an empty string
+                source = string.Empty;
             }
-            finally
+            else
             {
-                // if we had changed our setting object...
-                if (resetToHacks)
+                // pre-process the comments
+                var resetToHacks = false;
+                try
                 {
-                    // ...be sure to change it BACK for next time.
-                    Settings.CommentMode = CssComment.Hacks;
+                    // see if we need to re-encode the text based on a @charset rule
+                    // at the front.
+                    source = HandleCharset(source);
+
+                    if (Settings.CommentMode == CssComment.Hacks)
+                    {
+                        // change the various hacks to important comments so they will be kept
+                        // in the output
+                        source = s_regexHack1.Replace(source, "/*! \\*/${inner}/*!*/");
+                        source = s_regexHack2.Replace(source, "/*!/*//*/${inner}/**/");
+                        source = s_regexHack3.Replace(source, "/*!/*/${inner}/*!*/");
+                        source = s_regexHack4.Replace(source, "/*!*/");
+                        source = s_regexHack5.Replace(source, "/*!*/");
+                        source = s_regexHack6.Replace(source, "/*!*/");
+                        source = s_regexHack7.Replace(source, "/*!*/");
+
+                        // now that we've changed all our hack comments to important comments, we can
+                        // change the flag to Important so all non-important hacks are removed. 
+                        // And set a flag to remind us to change it back before we exit, or the NEXT
+                        // file we process will have the wrong setting.
+                        Settings.CommentMode = CssComment.Important;
+                        resetToHacks = true;
+                    }
+
+                    // set up for the parse
+                    using (StringReader reader = new StringReader(source))
+                    {
+                        m_scanner = new CssScanner(reader);
+                        m_scanner.AllowEmbeddedAspNetBlocks = this.Settings.AllowEmbeddedAspNetBlocks;
+                        m_scanner.ScannerError += (sender, ea) =>
+                            {
+                                OnCssError(ea.Exception);
+                            };
+                        m_scanner.ContextChange += (sender, ea) =>
+                            {
+                                FileContext = ea.FileContext;
+                            };
+
+                        // create the string builder into which we will be 
+                        // building our crunched stylesheet
+                        m_parsed = new StringBuilder();
+
+                        // get the first token
+                        NextToken();
+
+                        try
+                        {
+                            switch (Settings.CssType)
+                            {
+                                case CssType.FullStyleSheet:
+                                    // parse a style sheet!
+                                    ParseStylesheet();
+                                    break;
+
+                                case CssType.DeclarationList:
+                                    ParseDeclarationList(false);
+                                    break;
+
+                                default:
+                                    Debug.Fail("UNEXPECTED CSS TYPE");
+                                    goto case CssType.FullStyleSheet;
+                            }
+
+                            if (!m_scanner.EndOfFile)
+                            {
+                                string errorMessage = CssStrings.ExpectedEndOfFile;
+                                throw new CssScannerException(
+                                    (int)CssErrorCode.ExpectedEndOfFile,
+                                    0,
+                                    m_currentToken.Context.Start.Line,
+                                    m_currentToken.Context.Start.Char,
+                                    errorMessage);
+                            }
+                        }
+                        catch (CssException exc)
+                        {
+                            // show the error
+                            OnCssError(exc);
+                        }
+
+                        // get the crunched string and dump the string builder
+                        // (we don't need it anymore)
+                        source = m_parsed.ToString();
+                        m_parsed = null;
+                    }
+                }
+                finally
+                {
+                    // if we had changed our setting object...
+                    if (resetToHacks)
+                    {
+                        // ...be sure to change it BACK for next time.
+                        Settings.CommentMode = CssComment.Hacks;
+                    }
                 }
             }
 
@@ -468,7 +476,7 @@ namespace Microsoft.Ajax.Utilities
                 ReportError(0, CssErrorCode.PossibleCharsetError);
                 source = source.Substring(2);
             }
-            else if (source[0] == '\ufeff')
+            else if (source.Length > 0 && source[0] == '\ufeff')
             {
                 // properly-decoded UNICODE BOM was at the front. Everything should be okay, but strip it
                 // so it doesn't interfere with the rest of the processing.
