@@ -15,8 +15,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		WebGrease.vsmdi = WebGrease.vsmdi
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Antlr3.Runtime_vs2010", "..\Ref\Antlr\Runtime\antlr-dotnet-tool-3.3.1.7705_src\antlr\main\runtime\CSharp3\Sources\Antlr3.Runtime\Antlr3.Runtime_vs2010.csproj", "{8FDC0A87-9005-4D5A-AB75-E55CEB575559}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Css.Tests", "Css.Tests\Css.Tests.csproj", "{5999ACB9-5E2D-411F-A3F2-083733A97957}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageAssemble.Tests", "ImageAssemble.Tests\ImageAssemble.Tests.csproj", "{8010B922-DC34-4827-B51E-32633CC9F338}"
@@ -65,21 +63,6 @@ Global
 		{6257263E-2961-41FC-A8FA-634CFA859E75}.ReleaseAndSigned|Mixed Platforms.ActiveCfg = ReleaseAndSigned|Any CPU
 		{6257263E-2961-41FC-A8FA-634CFA859E75}.ReleaseAndSigned|Mixed Platforms.Build.0 = ReleaseAndSigned|Any CPU
 		{6257263E-2961-41FC-A8FA-634CFA859E75}.ReleaseAndSigned|x86.ActiveCfg = ReleaseAndSigned|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.Release|x86.ActiveCfg = Release|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.ReleaseAndSigned|Any CPU.ActiveCfg = ReleaseAndSigned|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.ReleaseAndSigned|Any CPU.Build.0 = ReleaseAndSigned|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.ReleaseAndSigned|Mixed Platforms.ActiveCfg = ReleaseAndSigned|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.ReleaseAndSigned|Mixed Platforms.Build.0 = ReleaseAndSigned|Any CPU
-		{8FDC0A87-9005-4D5A-AB75-E55CEB575559}.ReleaseAndSigned|x86.ActiveCfg = ReleaseAndSigned|Any CPU
 		{5999ACB9-5E2D-411F-A3F2-083733A97957}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5999ACB9-5E2D-411F-A3F2-083733A97957}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5999ACB9-5E2D-411F-A3F2-083733A97957}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU

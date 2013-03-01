@@ -58,6 +58,9 @@
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Antlr3.Runtime">
+      <HintPath>..\packages\Antlr.3.4.1.9004\lib\Antlr3.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Msn.Web.Build.Sdk">
       <HintPath>..\..\Ref\LegacyCssParser\Msn.Web.Build.Sdk.dll</HintPath>
@@ -629,10 +632,6 @@
     <Shadow Include="Test References\WebGrease.accessor" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Ref\Antlr\Runtime\antlr-dotnet-tool-3.3.1.7705_src\antlr\main\runtime\CSharp3\Sources\Antlr3.Runtime\Antlr3.Runtime_vs2010.csproj">
-      <Project>{8FDC0A87-9005-4D5A-AB75-E55CEB575559}</Project>
-      <Name>Antlr3.Runtime_vs2010</Name>
-    </ProjectReference>
     <ProjectReference Include="..\WebGrease\WebGrease.csproj">
       <Project>{E853D38C-EFD5-495E-853B-69FFE19FA199}</Project>
       <Name>WebGrease</Name>
@@ -640,6 +639,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Css.Tests.dll.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
