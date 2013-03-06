@@ -246,6 +246,11 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public virtual void Visit(EmptyStatement node)
+        {
+            // no children
+        }
+
         public virtual void Visit(ForIn node)
         {
             if (node != null)

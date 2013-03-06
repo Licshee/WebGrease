@@ -331,6 +331,12 @@ namespace Microsoft.Ajax.Utilities
             IsValid = false;
         }
 
+        public void Visit(EmptyStatement node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
         public void Visit(ForIn node)
         {
             // invalid! ignore

@@ -280,6 +280,11 @@ namespace Microsoft.Ajax.Utilities
             Debug.Fail("shouldn't get here");
         }
 
+        public void Visit(EmptyStatement node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
         public void Visit(ForIn node)
         {
             Debug.Fail("shouldn't get here");

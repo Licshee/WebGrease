@@ -788,7 +788,7 @@ namespace Microsoft.Ajax.Utilities
                         throw new EndOfFileException(); // abort parsing, get back to the main parse routine
                     case JSToken.Semicolon:
                         // make an empty statement
-                        statement = new Block(m_currentToken.Clone(), this);
+                        statement = new EmptyStatement(m_currentToken.Clone(), this);
                         GetNextToken();
                         return statement;
                     case JSToken.RightCurly:
@@ -1201,6 +1201,20 @@ namespace Microsoft.Ajax.Utilities
                             if (IndexOfToken(NoSkipTokenSet.s_StartStatementNoSkipTokenSet, exc) == -1)
                                 throw;
                         }
+                    }
+
+                    // make sure any important comments before the closing brace are kept
+                    if (m_importantComments.Count > 0
+                        && m_settings.PreserveImportantComments
+                        && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
+                    {
+                        // we have important comments before the EOF. Add the comment(s) to the program.
+                        foreach (var importantComment in m_importantComments)
+                        {
+                            codeBlock.Append(new ImportantComment(importantComment, this));
+                        }
+
+                        m_importantComments.Clear();
                     }
                 }
                 catch (RecoveryTokenException exc)
@@ -3563,6 +3577,20 @@ namespace Microsoft.Ajax.Utilities
                             if (IndexOfToken(NoSkipTokenSet.s_StartStatementNoSkipTokenSet, exc) == -1)
                                 throw;
                         }
+                    }
+
+                    // make sure any important comments before the closing brace are kept
+                    if (m_importantComments.Count > 0
+                        && m_settings.PreserveImportantComments
+                        && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
+                    {
+                        // we have important comments before the EOF. Add the comment(s) to the program.
+                        foreach (var importantComment in m_importantComments)
+                        {
+                            body.Append(new ImportantComment(importantComment, this));
+                        }
+
+                        m_importantComments.Clear();
                     }
 
                     body.Context.UpdateWith(m_currentToken);

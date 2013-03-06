@@ -337,9 +337,10 @@ namespace Microsoft.Ajax.Utilities
         private void UnnestBlocks(Block node)
         {
             // walk the list of items backwards -- if we come
-            // to any blocks, unnest the block recursively. We walk backwards because
-            // we could be adding any number of statements and we don't want to have
-            // to modify the counter
+            // to any blocks, unnest the block recursively. 
+            // Remove any empty statements as well.
+            // We walk backwards because we could be adding any number of statements 
+            // and we don't want to have to modify the counter.
             for (int ndx = node.Count - 1; ndx >= 0; --ndx)
             {
                 var nestedBlock = node[ndx] as Block;
@@ -359,6 +360,11 @@ namespace Microsoft.Ajax.Utilities
                         // go backwards so we can just keep using the same index
                         node.InsertRange(ndx, nestedBlock.Children);
                     }
+                }
+                else if (node[ndx] is EmptyStatement)
+                {
+                    // remove empty statements (lone semicolons)
+                    node.RemoveAt(ndx);
                 }
                 else if (ndx > 0)
                 {

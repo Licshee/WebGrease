@@ -728,6 +728,11 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public void Visit(EmptyStatement node)
+        {
+            // nothing to do
+        }
+
         public void Visit(ForIn node)
         {
             if (node != null)

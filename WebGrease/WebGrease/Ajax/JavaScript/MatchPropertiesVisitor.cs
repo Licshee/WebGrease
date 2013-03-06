@@ -248,6 +248,11 @@ namespace Microsoft.Ajax.Utilities
             // not applicable; terminate
         }
 
+        public void Visit(EmptyStatement node)
+        {
+            // not applicable; terminate
+        }
+
         public void Visit(ForIn node)
         {
             // not applicable; terminate

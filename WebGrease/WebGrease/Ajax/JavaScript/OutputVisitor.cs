@@ -1151,6 +1151,16 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public void Visit(EmptyStatement node)
+        {
+            if (node != null)
+            {
+                // empty statement is just a semicolon
+                OutputPossibleLineBreak(';');
+                MarkSegment(node, null, node.Context);
+            }
+        }
+
         public void Visit(ForIn node)
         {
             if (node != null)
@@ -1436,6 +1446,13 @@ namespace Microsoft.Ajax.Utilities
 
                     m_startOfStatement = true;
                     node.TrueBlock[0].Accept(this);
+                    if (node.TrueBlock[0] is ImportantComment)
+                    {
+                        // the true-block only contained a single important comment.
+                        // that's not a true statement, so terminate it with an empty-statement
+                        // semicolon
+                        OutputPossibleLineBreak(';');
+                    }
 
                     if (node.FalseBlock != null && node.FalseBlock.Count > 0
                         && node.TrueBlock[0].RequiresSeparator)
@@ -2973,6 +2990,14 @@ namespace Microsoft.Ajax.Utilities
                 if (block[0].HideFromOutput)
                 {
                     // semicolon-replacement cannot generate an empty statement
+                    OutputPossibleLineBreak(';');
+                    MarkSegment(block, null, block.Context);
+                }
+                else if (block[0] is ImportantComment)
+                {
+                    // not a REAL statement, so follow the comment with a semicolon to
+                    // be the actual statement for this block.
+                    block[0].Accept(this);
                     OutputPossibleLineBreak(';');
                     MarkSegment(block, null, block.Context);
                 }
