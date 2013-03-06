@@ -61,6 +61,9 @@
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Antlr3.Runtime">
+      <HintPath>..\packages\Antlr.3.4.1.9004\lib\Antlr3.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Build.Framework" />
     <Reference Include="Microsoft.Build.Utilities.v4.0" />
     <Reference Include="Microsoft.CSharp" />
@@ -161,10 +164,6 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="..\..\Ref\Antlr\Runtime\antlr-dotnet-tool-3.3.1.7705_src\antlr\main\runtime\CSharp3\Sources\Antlr3.Runtime\Antlr3.Runtime_vs2010.csproj">
-      <Project>{8FDC0A87-9005-4D5A-AB75-E55CEB575559}</Project>
-      <Name>Antlr3.Runtime_vs2010</Name>
-    </ProjectReference>
     <ProjectReference Include="..\WebGrease.Build\WebGrease.Build.csproj">
       <Project>{0B335917-CF6E-418A-BF4E-2870D25B660E}</Project>
       <Name>WebGrease.Build</Name>
