@@ -467,7 +467,8 @@ namespace Microsoft.Ajax.Utilities
                             && reference.VariableField != null
                             && reference.VariableField.OuterField == null
                             && reference.VariableField.CanCrunch
-                            && varDecl.Index < reference.Index)
+                            && varDecl.Index < reference.Index
+                            && !IsIterativeReference(varDecl.Initializer, reference))
                         {
                             // so we have a declaration assigning a constant value, and only one
                             // reference reading that value. replace the reference with the constant
@@ -498,6 +499,79 @@ namespace Microsoft.Ajax.Utilities
                     }
                 }
             }
+        }
+
+        private static bool IsIterativeReference(AstNode initializer, INameReference reference)
+        {
+            // we only care about array and regular expressions with the global switch at this point.
+            // if it's not one of those types, then go ahead and assume iterative reference doesn't matter.
+            var regExp = initializer as RegExpLiteral;
+            if (initializer is ArrayLiteral 
+                || (regExp != null && regExp.PatternSwitches != null && regExp.PatternSwitches.IndexOf("g", StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                // get the parent block for the initializer. We'll use this as a stopping point in our loop.
+                var parentBlock = GetParentBlock(initializer);
+
+                // walk up the parent chain from the reference. If we find a while, a for, or a do-while,
+                // then we know this reference is iteratively called.
+                // stop when the parent is null, the same block containing the initializer, or a function object.
+                // (because a function object will step out of scope, and we know we should be in the same scope)
+                var child = reference as AstNode;
+                var parent = child.Parent;
+                while (parent != null && parent != parentBlock && !(parent is FunctionObject))
+                {
+                    // while or do-while is iterative -- the condition and the body are both called repeatedly.
+                    if (parent is WhileNode || parent is DoWhile)
+                    {
+                        return true;
+                    }
+
+                    // for-statements call the condition, the incrementer, and the body repeatedly, but not the
+                    // initializer.
+                    var forNode = parent as ForNode;
+                    if (forNode != null && child != forNode.Initializer)
+                    {
+                        return true;
+                    }
+
+                    // in forin-statements, only the body is repeated, the collection is evaluated only once.
+                    var forInStatement = parent as ForIn;
+                    if (forInStatement != null && child == forInStatement.Body)
+                    {
+                        return true;
+                    }
+
+                    // go up
+                    child = parent;
+                    parent = parent.Parent;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Return the first Block node in the tree starting from the given node and working up through the parent nodes.
+        /// </summary>
+        /// <param name="node">initial node</param>
+        /// <returns>first block node in the node tree</returns>
+        private static Block GetParentBlock(AstNode node)
+        {
+            while(node != null)
+            {
+                // see if the current node is a block, and if so, return it.
+                var block = node as Block;
+                if (block != null)
+                {
+                    return block;
+                }
+
+                // try the parent
+                node = node.Parent;
+            }
+
+            // if we get here, we never found a parent block.
+            return null;
         }
 
         private void ManualRenameFields()

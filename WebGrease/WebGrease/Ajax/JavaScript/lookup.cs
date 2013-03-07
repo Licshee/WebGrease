@@ -51,10 +51,18 @@ namespace Microsoft.Ajax.Utilities
                 else
                 {
                     // not a binary op -- but we might still be an "assignment" if we are an increment or decrement operator.
-                    // otherwise we are not an assignment
                     var unaryOp = Parent as UnaryOperator;
                     isAssign = unaryOp != null
                         && (unaryOp.OperatorToken == JSToken.Increment || unaryOp.OperatorToken == JSToken.Decrement);
+
+                    if (!isAssign)
+                    {
+                        // AND if we are the variable of a for-in statement, we are an "assignment".
+                        // (if the forIn variable is a var, then it wouldn't be a lookup, so we don't have to worry about
+                        // going up past a var-decl intermediate node)
+                        var forIn = Parent as ForIn;
+                        isAssign = forIn != null && this == forIn.Variable;
+                    }
                 }
 
                 return isAssign;

@@ -694,18 +694,7 @@ namespace Microsoft.Ajax.Utilities
                         }
                     }
 
-                    if (m_importantComments.Count > 0
-                        && m_settings.PreserveImportantComments
-                        && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
-                    {
-                        // we have important comments before the EOF. Add the comment(s) to the program.
-                        foreach(var importantComment in m_importantComments)
-                        {
-                            program.Append(new ImportantComment(importantComment, this));
-                        }
-
-                        m_importantComments.Clear();
-                    }
+                    AppendImportantComments(program);
                 }
                 finally
                 {
@@ -1204,18 +1193,7 @@ namespace Microsoft.Ajax.Utilities
                     }
 
                     // make sure any important comments before the closing brace are kept
-                    if (m_importantComments.Count > 0
-                        && m_settings.PreserveImportantComments
-                        && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
-                    {
-                        // we have important comments before the EOF. Add the comment(s) to the program.
-                        foreach (var importantComment in m_importantComments)
-                        {
-                            codeBlock.Append(new ImportantComment(importantComment, this));
-                        }
-
-                        m_importantComments.Clear();
-                    }
+                    AppendImportantComments(codeBlock);
                 }
                 catch (RecoveryTokenException exc)
                 {
@@ -3580,18 +3558,7 @@ namespace Microsoft.Ajax.Utilities
                     }
 
                     // make sure any important comments before the closing brace are kept
-                    if (m_importantComments.Count > 0
-                        && m_settings.PreserveImportantComments
-                        && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
-                    {
-                        // we have important comments before the EOF. Add the comment(s) to the program.
-                        foreach (var importantComment in m_importantComments)
-                        {
-                            body.Append(new ImportantComment(importantComment, this));
-                        }
-
-                        m_importantComments.Clear();
-                    }
+                    AppendImportantComments(body);
 
                     body.Context.UpdateWith(m_currentToken);
                     fncCtx.UpdateWith(m_currentToken);
@@ -3642,6 +3609,26 @@ namespace Microsoft.Ajax.Utilities
                     ParametersContext = paramsContext,
                     Body = body
                 };
+        }
+
+        private void AppendImportantComments(Block block)
+        {
+            if (block != null)
+            {
+                // make sure any important comments before the closing brace are kept
+                if (m_importantComments.Count > 0
+                    && m_settings.PreserveImportantComments
+                    && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
+                {
+                    // we have important comments before the EOF. Add the comment(s) to the program.
+                    foreach (var importantComment in m_importantComments)
+                    {
+                        block.Append(new ImportantComment(importantComment, this));
+                    }
+
+                    m_importantComments.Clear();
+                }
+            }
         }
 
         //---------------------------------------------------------------------------------------
