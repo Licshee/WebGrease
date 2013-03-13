@@ -752,9 +752,17 @@ namespace Microsoft.Ajax.Utilities
         // ParseXXX routine does it as well, it should return directly from the switch statement
         // without any further execution in the ParseStatement
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
-        private AstNode ParseStatement(bool fSourceElement)
+        private AstNode ParseStatement(bool fSourceElement, bool skipImportantComment = false)
         {
             AstNode statement = null;
+
+            // if we want to skip important comments, now is a good time to clear anything we may 
+            // have picked up already.
+            if (skipImportantComment)
+            {
+                m_importantComments.Clear();
+            }
+
             if (m_importantComments.Count > 0 
                 && m_settings.PreserveImportantComments
                 && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
@@ -905,12 +913,15 @@ namespace Microsoft.Ajax.Utilities
                                     m_labelTable.Add(id, new LabelInfo(m_blockType.Count, labelNestCount));
                                     if (JSToken.EndOfFile != m_currentToken.Token)
                                     {
+                                        // ignore any important comments between the label and its statement
+                                        // because important comments are treated like statements, and we want
+                                        // to make sure the label is attached to the right REAL statement.
                                         statement = new LabeledStatement(statement.Context.Clone(), this)
                                             {
                                                 Label = id,
                                                 ColonContext = colonContext,
                                                 NestCount = labelNestCount,
-                                                Statement = ParseStatement(fSourceElement)
+                                                Statement = ParseStatement(fSourceElement, true)
                                             };
                                     }
                                     else
@@ -1667,7 +1678,8 @@ namespace Microsoft.Ajax.Utilities
                 try
                 {
                     // parse a Statement, not a SourceElement
-                    trueBranch = ParseStatement(false);
+                    // and ignore any important comments that spring up right here.
+                    trueBranch = ParseStatement(false, true);
                 }
                 catch (RecoveryTokenException exc)
                 {
@@ -1716,7 +1728,8 @@ namespace Microsoft.Ajax.Utilities
                     try
                     {
                         // parse a Statement, not a SourceElement
-                        falseBranch = ParseStatement(false);
+                        // and ignore any important comments that spring up right here.
+                        falseBranch = ParseStatement(false, true);
                     }
                     catch (RecoveryTokenException exc)
                     {
@@ -1923,7 +1936,8 @@ namespace Microsoft.Ajax.Utilities
                     try
                     {
                         // parse a Statement, not a SourceElement
-                        body = ParseStatement(false);
+                        // and ignore any important comments that spring up right here.
+                        body = ParseStatement(false, true);
                     }
                     catch (RecoveryTokenException exc)
                     {
@@ -2058,7 +2072,8 @@ namespace Microsoft.Ajax.Utilities
                     try
                     {
                         // parse a Statement, not a SourceElement
-                        body = ParseStatement(false);
+                        // and ignore any important comments that spring up right here.
+                        body = ParseStatement(false, true);
                     }
                     catch (RecoveryTokenException exc)
                     {
@@ -2122,7 +2137,8 @@ namespace Microsoft.Ajax.Utilities
                 try
                 {
                     // parse a Statement, not a SourceElement
-                    body = ParseStatement(false);
+                    // and ignore any important comments that spring up right here.
+                    body = ParseStatement(false, true);
                 }
                 catch (RecoveryTokenException exc)
                 {
@@ -2317,7 +2333,8 @@ namespace Microsoft.Ajax.Utilities
                 try
                 {
                     // parse a Statement, not a SourceElement
-                    body = ParseStatement(false);
+                    // and ignore any important comments that spring up right here.
+                    body = ParseStatement(false, true);
                 }
                 catch (RecoveryTokenException exc)
                 {
@@ -2672,7 +2689,8 @@ namespace Microsoft.Ajax.Utilities
                 try
                 {
                     // parse a Statement, not a SourceElement
-                    AstNode statement = ParseStatement(false);
+                    // and ignore any important comments that spring up right here.
+                    AstNode statement = ParseStatement(false, true);
 
                     // but make sure we save it as a block
                     block = statement as Block;
