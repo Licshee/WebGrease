@@ -234,6 +234,7 @@
     <Compile Include="Ajax\JavaScript\directiveprologue.cs" />
     <Compile Include="Ajax\JavaScript\documentcontext.cs" />
     <Compile Include="Ajax\JavaScript\dowhile.cs" />
+    <Compile Include="Ajax\JavaScript\emptystatement.cs" />
     <Compile Include="Ajax\JavaScript\EvaluateLiteralVisitor.cs" />
     <Compile Include="Ajax\JavaScript\expr.cs" />
     <Compile Include="Ajax\JavaScript\FinalPassVisitor.cs" />

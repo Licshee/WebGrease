@@ -7,3 +7,8 @@ div
     /* also need to make sure we go inside functions */
     background:rgba(0255, 0.100, 0.000, 0.8);
 }
+
+.foo 
+{
+    animation: 0.5s cubic-bezier(0.5, 0, 0.5, 1) 0s alternate none 2 logoAnim;
+}

@@ -1023,10 +1023,18 @@ namespace Microsoft.Ajax.Utilities
                                 break;
                         }
 
-                        // if the number is zero, it really doesn't matter what the dimensions are so we can remove it.
-                        // HOWEVER, if we don't recognize the dimension, leave it -- it could be a browser hack or some
+                        // if the number is zero, it really doesn't matter what the dimensions are so we can remove it
+                        // EXCEPT for Angles, Times, Frequencies, and Resolutions - they should not get their units
+                        // stripped, since we can only do that for LENGTHS as per the specs.
+                        // And percentages, since 0% is the same as 0. (true?)
+                        // ALSO, if we don't recognize the dimension, leave it -- it could be a browser hack or some
                         // other intentional construct.
-                        if (num == "0" && tokenType != TokenType.Dimension)
+                        if (num == "0" 
+                            && tokenType != TokenType.Dimension
+                            && tokenType != TokenType.Angle
+                            && tokenType != TokenType.Time
+                            && tokenType != TokenType.Frequency
+                            && tokenType != TokenType.Resolution)
                         {
                             token = new CssToken(TokenType.Number, num, m_context);
                         }

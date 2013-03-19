@@ -24,7 +24,13 @@ namespace WebGrease.Css.Visitor
         /// <summary>
         /// The compiled regular expression for identifying numbers with units
         /// </summary>
-        private static readonly Regex NumberBasedValue = new Regex(@"^(([0-9]+)([\.]?[0-9]*))(\s*[a-z%]*)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex NumberBasedValue = new Regex(@"^(([0-9]+)([\.]?[0-9]*))([a-z%]*)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        /// <summary>
+        /// Units that fall into the Length category. 
+        /// Units that match this regular expression can be removed from a zero numeric value.
+        /// </summary>
+        private static readonly Regex LengthUnits = new Regex(@"^(em|ex|ch|rem|vw|vh|vmin|vmax|cm|mm|in|px|pt|pc)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>The <see cref="Ast.TermNode"/> visit implementation</summary>
         /// <param name="termNode">The term AST node</param>
@@ -44,12 +50,23 @@ namespace WebGrease.Css.Visitor
                 if (match.Success)
                 {
                     var fullNumber = match.Result("$1").ParseFloat(); // Say - 001.2400
+                    var units = match.Result("$4"); // Say % or px
 
-
-// No units, just return the zero
+                    // for zero values that are LENGTHS, we can omit the units altogether.
                     if (fullNumber == 0)
                     {
-                        return new TermNode(termNode.UnaryOperator, "0", termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+                        // number is zero
+                        if (string.IsNullOrEmpty(units) || units == "%" || LengthUnits.IsMatch(units))
+                        {
+                            // either no units, or we can drop the units altogether (length or percentage) and just return the zero by itself
+                            return new TermNode(termNode.UnaryOperator, "0", termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+                        }
+                        else
+                        {
+                            // but we can't drop the units for Angles, Times, Frequencies, or Resolutions,
+                            // and we shouldn't drop them for any unknown units.
+                            return new TermNode(termNode.UnaryOperator, string.Concat("0", units), termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+                        }
                     }
 
                     var leftNumber = match.Result("$2").TrimStart("0".ToCharArray()); // Say 001
@@ -59,7 +76,6 @@ namespace WebGrease.Css.Visitor
                         rightNumber = string.Empty;
                     }
 
-                    var units = match.Result("$4"); // Say %
                     return new TermNode(termNode.UnaryOperator, string.Concat(leftNumber, rightNumber, units), termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
                 }
             }
