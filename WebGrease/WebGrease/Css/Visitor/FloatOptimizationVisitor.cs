@@ -27,10 +27,11 @@ namespace WebGrease.Css.Visitor
         private static readonly Regex NumberBasedValue = new Regex(@"^(([0-9]+)([\.]?[0-9]*))([a-z%]*)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
-        /// Units that fall into the Length category. 
+        /// Units that fall into the Length and RelativeLength categories. 
+        /// (please keep in sync with the lexer information)
         /// Units that match this regular expression can be removed from a zero numeric value.
         /// </summary>
-        private static readonly Regex LengthUnits = new Regex(@"^(em|ex|ch|rem|vw|vh|vmin|vmax|cm|mm|in|px|pt|pc)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex LengthUnits = new Regex(@"^(cm|mm|in|px|pt|pc|em|ex|ch|rem|vw|vh|vmin|vmax|fr|gr)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>The <see cref="Ast.TermNode"/> visit implementation</summary>
         /// <param name="termNode">The term AST node</param>

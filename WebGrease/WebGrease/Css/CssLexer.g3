@@ -190,16 +190,19 @@ URI
     : 'url('(.*)(CIRCLE_END) {$text = RemoveUrlEdgeWhitespaces(RemoveComments($text)); }
     ;
 
+// The LENGTH and RELATIVELENGTH types listed below can have their units removed during optimization if the numeric value is zero.
+// If any new units are added to either of these, be sure to update the corresponding LengthUnits regular expression 
+// in the FloatOptimizationVisitor class accordingly.
 LENGTH
-    : NUMBER ((P)(X) | (C)(M) | (M)(M) | (I)(N) | (P)(T) | (P)(C)) UNICODE_ESCAPE_HACK?
+    : NUMBER ((C)(M) | (M)(M) | (I)(N) | (P)(X) | (P)(T) | (P)(C)) UNICODE_ESCAPE_HACK?
     ;
 
 RELATIVELENGTH
-    : NUMBER ((E)(M) | (R)(E)(M) | (E)(X) | (C)(H) | (V)(W) | (V)(H) | (V)(M)(I)(N) | (F)(R) | (G)(R)) UNICODE_ESCAPE_HACK?
+    : NUMBER ((E)(M) | (E)(X) | (C)(H) | (R)(E)(M) | (V)(W) | (V)(H) | (V)(M)(I)(N) | (V)(M)(A)(X) | (F)(R) | (G)(R)) UNICODE_ESCAPE_HACK?
     ;
 
 ANGLE
-    : NUMBER ((D)(E)(G) | (R)(A)(D) | (G)(R)(A)(D) | (T)(U)(R)(N)) UNICODE_ESCAPE_HACK?
+    : NUMBER ((D)(E)(G) | (G)(R)(A)(D) | (R)(A)(D) | (T)(U)(R)(N)) UNICODE_ESCAPE_HACK?
     ;
 
 RESOLUTION
