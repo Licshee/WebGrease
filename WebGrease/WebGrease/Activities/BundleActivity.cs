@@ -68,7 +68,6 @@ namespace WebGrease.Activities
             {
                 this.logInformation("Begin CSS bundle pipeline.");
                 assembler.AddSemicolons = false;
-                assembler.CanUseSingleLineComment = false;
 
                 foreach (var fileSet in cssFileSets)
                 {
@@ -106,7 +105,6 @@ namespace WebGrease.Activities
             {
                 this.logInformation("Begin JS bundle pipeline.");
                 assembler.AddSemicolons = true;
-                assembler.CanUseSingleLineComment = true;
 
                 foreach (var fileSet in jsFileSets)
                 {

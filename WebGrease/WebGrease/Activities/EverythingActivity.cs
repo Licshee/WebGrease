@@ -676,7 +676,6 @@ namespace WebGrease.Activities
                     logError = (e,s1,s2) => this._logError(e,s1,s2),
                     logExtendedError = this._logExtended,
                     AddSemicolons = fileType == FileType.JavaScript,
-                    CanUseSingleLineComment = fileType == FileType.JavaScript,
                 };
 
             foreach (var inputSpec in inputSpecs)

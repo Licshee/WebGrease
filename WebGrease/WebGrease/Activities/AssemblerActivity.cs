@@ -58,9 +58,6 @@ namespace WebGrease.Activities
         /// <summary>Gets or sets a flag indicating whether to append semicolons between bundled files that don't already end in them</summary>
         internal bool AddSemicolons { get; set; }
 
-        /// <summary>Gets or sets a flag indicating whether the single-line comment format can be used</summary>
-        internal bool CanUseSingleLineComment { get; set; }
-
         /// <summary>The execute method for the activity under question.</summary>
         internal void Execute()
         {
@@ -131,22 +128,20 @@ namespace WebGrease.Activities
         /// <param name="preprocessingConfig">The configuration for the preprocessing.</param>
         private void AppendFile(TextWriter writer, string input, PreprocessingConfig preprocessingConfig = null)
         {
+            // Add a newline to make sure what comes next doesn't get mistakenly attached to the end of
+            // a single-line comment or anything. add two so we get an easy-to-read separation between files
+            // for debugging purposes.
+            writer.WriteLine();
+            writer.WriteLine();
+
             // if we want to separate files with semicolons and the previous file didn't have one, add one now
             if (this.AddSemicolons && !this.endedInSemicolon)
             {
                 writer.Write(';');
             }
 
-            // Add the file source comment
+            writer.WriteLine("/* {0} */".InvariantFormat(input));
             writer.WriteLine();
-            if (this.CanUseSingleLineComment)
-            {
-                writer.WriteLine("///#SOURCE 1 1 {0}".InvariantFormat(input));
-            }
-            else
-            {
-                writer.WriteLine("/*/#SOURCE 1 1 {0} */".InvariantFormat(input));
-            }
 
             // Add the css/javascript code
             var content = File.ReadAllText(input, Encoding.UTF8);
