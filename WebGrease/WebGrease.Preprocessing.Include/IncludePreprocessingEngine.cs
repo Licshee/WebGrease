@@ -1,4 +1,18 @@
-﻿using System;
+﻿// ----------------------------------------------------------------------------------------------------
+// <copyright file="IncludePreprocessingEngine.cs" company="Microsoft Corporation">
+//   Copyright Microsoft Corporation, all rights reserved.
+// </copyright>
+// <summary>
+//   This preprocessing engine, if enabled through config (<Settings><Preprocessing Engine="include" /></Settings>)
+//   Will read the file's content and replace any wgInclude("[fileOrPath]","?[searchPattern]") with the contents of what is in the filePath variable. ([searchPattern] is Optional)
+//   If the [fileOrPath] variable is a file it will include the file and replace the wgInclude statement with the contents of the file.
+//   If it is a path it will either use the optional [searchPattern] or take all files in the folder.
+//   it does this non-recursively, only 1 level is include.
+//   Files included by wgInclude are not processed for more wgInclude's, it only works for files directly called by WebGrease.
+//   it will add /* WGINCLUDE: {filename} */ in the output above the content's of the file.
+//   If the file or directory does not exist it will just silently remove the wgInclude.
+// </summary>
+// ----------------------------------------------------------------------------------------------------
 
 namespace WebGrease.Preprocessing.Include
 {
@@ -7,7 +21,6 @@ namespace WebGrease.Preprocessing.Include
     using System.IO;
     using System.Text.RegularExpressions;
 
-    using WebGrease.Activities;
     using WebGrease.Configuration;
 
     /// <summary>
@@ -23,12 +36,17 @@ namespace WebGrease.Preprocessing.Include
     [Export(typeof(IPreprocessingEngine))]
     public class IncludePreprocessingEngine : IPreprocessingEngine
     {
+        /// <summary>The include match regex pattern.</summary>
         private const string IncludeMatchPattern = @"wgInclude\s*\(\s*(?<quote>[""'])(?<fileOrPath>.*?)\k<quote>(\s*,\s*(?<quote2>[""'])(?<searchPattern>.*?)\k<quote2>)?\s*\)\s*;?";
 
+        /// <summary>The include regex.</summary>
         private static readonly Regex IncludeRegex = new Regex(IncludeMatchPattern, RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+        /// <summary>The context.</summary>
+        private IWebGreaseContext context;
+
         /// <summary>
-        /// The name of the prepriocesor, used for matching the the engines attribute in the config.
+        /// Gets the name of the prepriocesor, used for matching the the engines attribute in the config.
         /// The includeengine uses : "include"
         /// </summary>
         public string Name
@@ -50,27 +68,39 @@ namespace WebGrease.Preprocessing.Include
             return true;
         }
 
+        /// <summary>The initialize.</summary>
+        /// <param name="webGreaseContext">The context.</param>
+        public void Initialize(IWebGreaseContext webGreaseContext)
+        {
+            this.context = webGreaseContext;
+        }
+
         /// <summary>
         /// Processed the contents of the file and returns the processed content.
-        /// returns null if anything went wrong, and reports any errors through the lof delegates.
+        /// returns null if anything went wrong, and reports any errors through the lot delegates.
         /// </summary>
         /// <param name="fileContent">The content of the file.</param>
         /// <param name="fullFileName">The full filename.</param>
         /// <param name="preprocessConfig">The pre processing configuration</param>
-        /// <param name="logInformation">The log information delegate.</param>
-        /// <param name="logError">The log error delegate.</param>
-        /// <param name="logExtendedError">The log extended error delegate.</param>
         /// <returns>The processed contents or null of an error occurred.</returns>
-        public string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig, Action<string> logInformation = null, LogError logError = null, LogExtendedError logExtendedError = null)
+        public string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig)
         {
-            var fi = new FileInfo(fullFileName);
-            var workingFolder = fi.DirectoryName;
-            if (!string.IsNullOrWhiteSpace(fileContent))
+            this.context.Measure.Start(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process, "WgInclude");
+            try
             {
-                fileContent = IncludeRegex.Replace(fileContent, (match) => ReplaceInputs(match, workingFolder));
-            }
+                var fi = new FileInfo(fullFileName);
+                var workingFolder = fi.DirectoryName;
+                if (!string.IsNullOrWhiteSpace(fileContent))
+                {
+                    fileContent = IncludeRegex.Replace(fileContent, match => ReplaceInputs(match, workingFolder));
+                }
 
-            return fileContent;
+                return fileContent;
+            }
+            finally
+            {
+                this.context.Measure.End(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process, "WgInclude");
+            }
         }
 
         /// <summary>
@@ -87,9 +117,9 @@ namespace WebGrease.Preprocessing.Include
             {
                 var searchPattern = match.Groups["searchPattern"].Value.Trim();
                 filesToInclude.AddRange(
-                    (!String.IsNullOrWhiteSpace(searchPattern))
-                    ? Directory.GetFiles(fileOrPath, searchPattern)
-                    : Directory.GetFiles(fileOrPath));
+                    !string.IsNullOrWhiteSpace(searchPattern)
+                        ? Directory.GetFiles(fileOrPath, searchPattern)
+                        : Directory.GetFiles(fileOrPath));
             }
             else if (File.Exists(fileOrPath))
             {
@@ -100,8 +130,9 @@ namespace WebGrease.Preprocessing.Include
             foreach (var file in filesToInclude)
             {
                 result += "/* WGINCLUDE: {0} */\r\n".InvariantFormat(file);
-                result += File.ReadAllText(file) +"\r\n";
+                result += File.ReadAllText(file) + "\r\n";
             }
+
             return result;
         }
     }

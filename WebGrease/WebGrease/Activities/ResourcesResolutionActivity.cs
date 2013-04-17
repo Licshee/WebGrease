@@ -18,9 +18,14 @@ namespace WebGrease.Activities
     /// <summary>The class which is responsible for resolving the resources hierarchy.</summary>
     internal sealed class ResourcesResolutionActivity
     {
+        /// <summary>The context.</summary>
+        private readonly IWebGreaseContext context;
+
         /// <summary>Initializes a new instance of the <see cref="ResourcesResolutionActivity"/> class.</summary>
-        public ResourcesResolutionActivity()
+        /// <param name="context">The context.</param>
+        public ResourcesResolutionActivity(IWebGreaseContext context)
         {
+            this.context = context;
             this.ResourceKeys = new List<string>();
         }
 
@@ -61,6 +66,9 @@ namespace WebGrease.Activities
         /// <value>The list of locales or themes.</value>
         internal IList<string> ResourceKeys { get; private set; }
 
+        /// <summary>Gets or sets the measure name.</summary>
+        internal string MeasureName { get; set; }
+
         /// <summary>When overridden in a derived class, executes the task.</summary>
         internal void Execute()
         {
@@ -75,6 +83,7 @@ namespace WebGrease.Activities
 
             try
             {
+                this.context.Measure.Start("ResourcesResolutionActivity", this.MeasureName, this.ResourceTypeFilter.ToString());
                 ResourcesResolver.Factory(this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory).ResolveHierarchy();
             }
             catch (ResourceOverrideException resourceOverrideException)
@@ -88,6 +97,10 @@ namespace WebGrease.Activities
             catch (Exception exception)
             {
                 throw new WorkflowException("ResourcesResolutionActivity - Error happened while executing the resolve resources activity", exception);
+            }
+            finally
+            {
+                this.context.Measure.End("ResourcesResolutionActivity", this.MeasureName, this.ResourceTypeFilter.ToString());
             }
         }
     }

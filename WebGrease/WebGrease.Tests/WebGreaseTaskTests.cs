@@ -113,7 +113,7 @@ namespace WebGrease.Tests
             ExecuteBuildTask("Everything", testRootPath, errorEventArgs.Add);
             Assert.AreEqual(0, errorEventArgs.Count);
 
-            var log = XDocument.Load(testRootPath + @"Log\" + testName + @".webgrease\css_log.xml");
+            var log = XDocument.Load(testRootPath + @"Log\css_log.xml");
             var outputs = log.Descendants("Output");
             return outputs.Select(o => (string)o).ToDictionary(o => o, o => File.ReadAllText(testRootPath + o));
         }

@@ -15,6 +15,8 @@ namespace WebGrease.Tests
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+    using WebGrease.Configuration;
+
     /// <summary>
     /// This is a test class for ResourcesResolutionActivityTest and is intended
     /// to contain all ResourcesResolutionActivityTest Unit Tests.
@@ -34,14 +36,14 @@ namespace WebGrease.Tests
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\ResourcesResolutionActivityTest\Input\Content");
             var destinationDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\ResourcesResolutionActivityTest\Output");
-            var resourcesResolutionActivity = new ResourcesResolutionActivity
-                                                  {
-                                                      SourceDirectory = sourceDirectory,
-                                                      ResourceTypeFilter = ResourceType.Themes,
-                                                      ApplicationDirectoryName = "App",
-                                                      SiteDirectoryName = "Site1",
-                                                      DestinationDirectory = Path.Combine(destinationDirectory, @"ToolsLogs\Resources\Themes")
-                                                  };
+            var resourcesResolutionActivity = new ResourcesResolutionActivity(new WebGreaseContext(new WebGreaseConfiguration()))
+            {
+                SourceDirectory = sourceDirectory,
+                ResourceTypeFilter = ResourceType.Themes,
+                ApplicationDirectoryName = "App",
+                SiteDirectoryName = "Site1",
+                DestinationDirectory = Path.Combine(destinationDirectory, @"ToolsLogs\Resources\Themes")
+            };
 
             resourcesResolutionActivity.ResourceKeys.Add("01-black");
             resourcesResolutionActivity.ResourceKeys.Add("02-red");

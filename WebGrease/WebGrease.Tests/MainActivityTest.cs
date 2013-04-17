@@ -35,10 +35,11 @@ namespace WebGrease.Tests
             var sourceDirectory = Path.Combine(testSourceDirectory, @"Input\Integration\Debug\Content");
             var destinationDirectory = Path.Combine(testSourceDirectory, @"Output\Integration\Debug\sc");
             var logsDirectory = Path.Combine(testSourceDirectory, @"Output\Integration\Debug\logs");
-            var webGreaseConfigurationRoot = new WebGreaseConfiguration(configurationFile, sourceDirectory, destinationDirectory, logsDirectory);
-            Assert.IsNotNull(webGreaseConfigurationRoot);
 
-            var mainActivity = new EverythingActivity(webGreaseConfigurationRoot, null, (e, m, f) => Console.WriteLine("File: {0},Message:{1}\r\nException:{2}", f, m, e.InnerException.Message), null, "Debug");
+            var webGreaseConfigurationRoot = new WebGreaseConfiguration(configurationFile, "Debug", sourceDirectory, destinationDirectory, logsDirectory);
+            var context = new WebGreaseContext(webGreaseConfigurationRoot, null, null, (e, m, f) => Console.WriteLine("File: {0},Message:{1}\r\nException:{2}", f, m, e.InnerException.Message));
+            
+            var mainActivity = new EverythingActivity(context);
             var success = mainActivity.Execute();
 
             Assert.IsTrue(success);

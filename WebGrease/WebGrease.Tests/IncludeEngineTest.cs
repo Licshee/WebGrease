@@ -10,6 +10,7 @@ namespace Microsoft.WebGrease.Tests
 
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+    using global::WebGrease;
     using global::WebGrease.Configuration;
     using global::WebGrease.Preprocessing.Include;
     using global::WebGrease.Tests;
@@ -24,6 +25,7 @@ namespace Microsoft.WebGrease.Tests
         {
             var includeFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\IncludeTest\Test1\test1.js");
             var ie = new IncludePreprocessingEngine();
+            ie.Initialize(new WebGreaseContext(new WebGreaseConfiguration()));
             var result = ie.Process(File.ReadAllText(includeFile), includeFile, new PreprocessingConfig());
 
             Assert.IsTrue(result.Contains("included1();"));

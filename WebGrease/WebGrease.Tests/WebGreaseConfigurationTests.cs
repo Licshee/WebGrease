@@ -30,7 +30,7 @@ namespace WebGrease.Tests
         {
             var configurationFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\sample1.webgrease.config");
             var configDirectory = Path.GetDirectoryName(configurationFile);
-            var webGreaseConfigurationRoot = new WebGreaseConfiguration(configurationFile, configDirectory, configDirectory, configDirectory);
+            var webGreaseConfigurationRoot = new WebGreaseConfiguration(configurationFile, null, configDirectory, configDirectory, configDirectory);
             Assert.IsNotNull(webGreaseConfigurationRoot);
 
             var imageDirectories = webGreaseConfigurationRoot.ImageDirectories;
@@ -68,13 +68,13 @@ namespace WebGrease.Tests
             var spriteConfiguration = cssSet1.ImageSpriting["RElease"];
             Assert.IsTrue(spriteConfiguration.ShouldAutoSprite);
             Assert.IsTrue(spriteConfiguration.ShouldAutoVersionBackgroundImages);
-            
+
             var locales = cssSet1.Locales;
             Assert.IsNotNull(locales);
             Assert.IsTrue(locales.Count == 2);
             Assert.IsTrue(locales[0] == "en-us");
             Assert.IsTrue(locales[1] == "fr-ca");
-            
+
             var themes = cssSet1.Themes;
             Assert.IsNotNull(themes);
             Assert.IsTrue(themes.Count == 2);
@@ -115,18 +115,16 @@ namespace WebGrease.Tests
         public void WebGreaseArgumentConfigTest1()
         {
             // setup args
-            var args = new[] {"-m", @"-in:C:\temp", @"-out:c:\output.js"};
+            var args = new[] { "-m", @"-in:C:\temp", @"-out:c:\output.js" };
 
             WebGreaseConfiguration config;
-            string type;
-            var mode = Program.GenerateConfiguration(args, out config, out type);
-            Assert.IsTrue(mode == ActivityMode.Minify);
+            var mode = Program.GenerateConfiguration(args, out config);
 
-            
+            Assert.IsTrue(mode == ActivityMode.Minify);
             Assert.IsTrue(config.JSFileSets.Count == 1);
             Assert.IsTrue(config.JSFileSets[0].InputSpecs.Count == 1);
             Assert.IsTrue(config.CssFileSets[0].InputSpecs.Count == 0);
-            Assert.AreEqual(@"C:\temp",config.JSFileSets[0].InputSpecs[0].Path);
+            Assert.AreEqual(@"C:\temp", config.JSFileSets[0].InputSpecs[0].Path);
         }
 
         /// <summary>
@@ -136,13 +134,13 @@ namespace WebGrease.Tests
         public void WebGreaseArgumentConfigTest2()
         {
             // setup args
-            var args = new[] {"-b", @"-in:C:\temp", @"-out:c:\output.css", @"-images:c:\images" };
+            var args = new[] { "-b", @"-in:C:\temp", @"-out:c:\output.css", @"-images:c:\images" };
 
             WebGreaseConfiguration config;
 
             string type;
-            var mode = Program.GenerateConfiguration(args, out config, out type);
-            
+            var mode = Program.GenerateConfiguration(args, out config);
+
             // only 1 mode at a time is supported on the CLI
             Assert.IsTrue(mode == ActivityMode.Bundle);
 
@@ -165,7 +163,7 @@ namespace WebGrease.Tests
 
             WebGreaseConfiguration config;
             string type;
-            var mode = Program.GenerateConfiguration(args, out config, out type);
+            var mode = Program.GenerateConfiguration(args, out config);
 
             Assert.IsTrue(mode == ActivityMode.AutoName);
 
@@ -185,31 +183,31 @@ namespace WebGrease.Tests
             // parse the configuration file
             var configurationFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\withDefaults.webgrease.config");
             var configDirectory = Path.GetDirectoryName(configurationFile);
-            var webGreaseConfigurationRoot = new WebGreaseConfiguration(configurationFile, configDirectory, configDirectory, configDirectory);
+            var webGreaseConfigurationRoot = new WebGreaseConfiguration(configurationFile, null, configDirectory, configDirectory, configDirectory);
             Assert.IsNotNull(webGreaseConfigurationRoot);
 
             // there should be two CSS file sets and two JS file sets
             Assert.IsTrue(webGreaseConfigurationRoot.CssFileSets.Count == 2);
             Assert.IsTrue(webGreaseConfigurationRoot.JSFileSets.Count == 2);
 
-            ValidateCssFileSet(webGreaseConfigurationRoot.CssFileSets[0], 
-                new[] {"en-us","en-ca","fr-ca","en-gb"}, 
-                new[] {"Red","Orange","Yellow","Green","Blue","Violet"}, 
-                new CssMinificationConfig { Name="Retail", ShouldMinify=true, ShouldValidateLowerCase=true, ForbiddenSelectors=new[] {"body"} },
-                new CssMinificationConfig { Name="Debug", ShouldMinify=false, ShouldValidateLowerCase=false, ForbiddenSelectors=new string[]{}});
-            ValidateCssFileSet(webGreaseConfigurationRoot.CssFileSets[1], 
-                new[] { "zh-sg","zh-tw","zh-hk"}, 
-                new[] {"Pink","Green" },
-                new CssMinificationConfig { Name="Retail", ShouldMinify = false, ShouldValidateLowerCase=false, ForbiddenSelectors=new string[]{} },
+            ValidateCssFileSet(webGreaseConfigurationRoot.CssFileSets[0],
+                new[] { "en-us", "en-ca", "fr-ca", "en-gb" },
+                new[] { "Red", "Orange", "Yellow", "Green", "Blue", "Violet" },
+                new CssMinificationConfig { Name = "Retail", ShouldMinify = true, ShouldValidateLowerCase = true, ForbiddenSelectors = new[] { "body" } },
+                new CssMinificationConfig { Name = "Debug", ShouldMinify = false, ShouldValidateLowerCase = false, ForbiddenSelectors = new string[] { } });
+            ValidateCssFileSet(webGreaseConfigurationRoot.CssFileSets[1],
+                new[] { "zh-sg", "zh-tw", "zh-hk" },
+                new[] { "Pink", "Green" },
+                new CssMinificationConfig { Name = "Retail", ShouldMinify = false, ShouldValidateLowerCase = false, ForbiddenSelectors = new string[] { } },
                 null);
 
             ValidateJsFileSet(webGreaseConfigurationRoot.JSFileSets[0],
                 new[] { "en-us", "en-ca", "fr-ca", "en-gb" },
                 new JsMinificationConfig { Name = "Retail", ShouldMinify = true, GlobalsToIgnore = "jQuery;$;define", MinificationArugments = "-evals:safe -fnames:lock" },
                 new JsMinificationConfig { Name = "Debug", ShouldMinify = false, GlobalsToIgnore = "FooBar", MinificationArugments = string.Empty });
-            ValidateJsFileSet(webGreaseConfigurationRoot.JSFileSets[1], 
-                new[] { "es-es","es-mx","es-ar" }, 
-                new JsMinificationConfig {Name="Retail", ShouldMinify=false, GlobalsToIgnore=string.Empty, MinificationArugments=string.Empty},
+            ValidateJsFileSet(webGreaseConfigurationRoot.JSFileSets[1],
+                new[] { "es-es", "es-mx", "es-ar" },
+                new JsMinificationConfig { Name = "Retail", ShouldMinify = false, GlobalsToIgnore = string.Empty, MinificationArugments = string.Empty },
                 null);
         }
 

@@ -322,6 +322,15 @@
     <Compile Include="Configuration\JSValidationConfig.cs" />
     <Compile Include="Configuration\PreprocessingConfig.cs" />
     <Compile Include="Configuration\WebGreaseConfiguration.cs" />
+    <Compile Include="IWebGreaseContext.cs" />
+    <Compile Include="LogManager.cs" />
+    <Compile Include="TimeMeasure\ITimeMeasure.cs" />
+    <Compile Include="TimeMeasure\NullTimeMeasure.cs" />
+    <Compile Include="TimeMeasure\TimeMeasure.cs" />
+    <Compile Include="TimeMeasure\TimeMeasureExtensions.cs" />
+    <Compile Include="TimeMeasure\TimeMeasureItem.cs" />
+    <Compile Include="TimeMeasure\TimeMeasureNames.cs" />
+    <Compile Include="TimeMeasure\TimeMeasureResult.cs" />
     <Compile Include="Css\Ast\AllowedImportData.cs" />
     <Compile Include="Css\Ast\Animation\KeyFramesBlockNode.cs" />
     <Compile Include="Css\Ast\Animation\KeyFramesNode.cs" />
@@ -431,6 +440,7 @@
     </Compile>
     <Compile Include="Strings.cs" />
     <Compile Include="Activities\FileHasherActivity.cs" />
+    <Compile Include="WebGreaseContext.cs" />
     <Compile Include="WorkflowException.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -465,6 +475,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ResourceStrings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
       <LastGenOutput>ResourceStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
@@ -473,6 +484,7 @@
       <Link>CustomDictionary.xml</Link>
     </CodeAnalysisDictionary>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\Ref\StyleCop 4.6\StyleCop.Targets" />
   <Import Project="..\WebGrease.Build.targets" />

@@ -10,11 +10,11 @@
 
 namespace WebGrease.Tests
 {
-    using System.Diagnostics;
     using System.IO;
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+    using WebGrease.Configuration;
 
     /// <summary>This is a test class for FileHasherActivityTest and is intended
     /// to contain all FileHasherActivityTest Unit Tests</summary>
@@ -32,7 +32,7 @@ namespace WebGrease.Tests
         public void FileHasherActivityPreserveSourceDirectoryTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Input");
-            var fileHasherActivity = new FileHasherActivity();
+            var fileHasherActivity = new FileHasherActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             fileHasherActivity.SourceDirectories.Add(sourceDirectory);
             var destinationDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Output\FileHasherActivityPreserveSourceDirectory");
             fileHasherActivity.DestinationDirectory = destinationDirectory;
@@ -57,7 +57,7 @@ namespace WebGrease.Tests
         public void FileHasherActivityNoPreserveSourceDirectoryTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Input");
-            var fileHasherActivity = new FileHasherActivity();
+            var fileHasherActivity = new FileHasherActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             fileHasherActivity.SourceDirectories.Add(sourceDirectory);
             var destinationDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Output\FileHasherActivityNoPreserveSourceDirectory");
             fileHasherActivity.DestinationDirectory = destinationDirectory;
@@ -79,7 +79,7 @@ namespace WebGrease.Tests
         public void FileHasherActivityFilterTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Input");
-            var fileHasherActivity = new FileHasherActivity();
+            var fileHasherActivity = new FileHasherActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             fileHasherActivity.SourceDirectories.Add(sourceDirectory);
             var destinationDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Output\FileHasherActivityFilterTest");
             fileHasherActivity.DestinationDirectory = destinationDirectory;

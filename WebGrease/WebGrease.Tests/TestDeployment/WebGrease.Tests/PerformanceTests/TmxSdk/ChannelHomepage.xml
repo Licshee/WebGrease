@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebGrease>
+  <Settings>
+    <ImageDirectories>Images</ImageDirectories>
+    <ImageExtensions>*.png;*.jpg;*.jpeg;*.gif;*.ico;*.svg</ImageExtensions>
+    <TokensDirectory>Shared</TokensDirectory>
+    <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
+    <!-- these settings apply to each file set defined in this config -->
+    <Locales>ja-jp;fi-fi;zh-sg;generic-generic</Locales>
+    <Themes>Resolution1x;Resolution14x;Resolution15x;Resolution18x;Resolution2x;Resolution225x;Resolution24x</Themes>
+    <CssMinification config="Debug">
+      <Minify>False</Minify>
+      <ValidateLowerCase>True</ValidateLowerCase>
+    </CssMinification>
+    <CssMinification config="Release">
+      <Minify>True</Minify>
+      <ValidateLowerCase>True</ValidateLowerCase>
+    </CssMinification>
+  </Settings>
+  <CssFileSet output="ChannelHomepage.classic.pc.w3c.css">
+    <Spriting config="Debug">
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\css\ChannelHomepage.classic.pc.w3c.css</Input>
+      <!-- common -->
+      <Input optional="true">shared\css\classic\common</Input>
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet output="ChannelHomepage.classic.pc.ms.ie7.css">
+    <Spriting config="Debug">
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\css\ChannelHomepage.classic.pc.ms.ie7.css</Input>
+      <!-- common -->
+      <Input optional="true">shared\css\classic\common</Input>
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet output="ChannelHomepage.classic.pc.ms.ie8.css">
+    <Spriting config="Debug">
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\css\ChannelHomepage.classic.pc.ms.ie8.css</Input>
+      <!-- common -->
+      <Input optional="true">shared\css\classic\common</Input>
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet output="ChannelHomepage.classic.pc.ms.ie9.css">
+    <Spriting config="Debug">
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\css\ChannelHomepage.classic.pc.ms.ie9.css</Input>
+      <!-- common -->
+      <Input optional="true">shared\css\classic\common</Input>
+    </Inputs>
+  </CssFileSet>
+</WebGrease>

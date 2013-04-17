@@ -1,0 +1,716 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="adChoicesLanguage" xml:space="preserve">
+    <value>zh_sg</value>
+  </data>
+  <data name="ArticleBody.H2.FontFamily" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="ArticleBody.H2.FontSize" xml:space="preserve">
+    <value>2.4rem</value>
+  </data>
+  <data name="ArticleBody.H2.FontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="ArticleBody.H2.LineHeight" xml:space="preserve">
+    <value>2.6rem</value>
+  </data>
+  <data name="ArticleBody.H2.Padding" xml:space="preserve">
+    <value>1.5rem 0 1rem</value>
+  </data>
+  <data name="ArticleBody.H3.FontFamily" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="ArticleBody.H3.FontSize" xml:space="preserve">
+    <value>1.9rem</value>
+  </data>
+  <data name="ArticleBody.H3.FontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="ArticleBody.H3.LineHeight" xml:space="preserve">
+    <value>2.5rem</value>
+  </data>
+  <data name="ArticleBody.H3.Padding" xml:space="preserve">
+    <value>1rem 0</value>
+  </data>
+  <data name="ArticleBody.H4.FontFamily" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="ArticleBody.H4.FontSize" xml:space="preserve">
+    <value>1.7rem</value>
+  </data>
+  <data name="ArticleBody.H4.FontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="ArticleBody.H4.LineHeight" xml:space="preserve">
+    <value>2.3rem</value>
+  </data>
+  <data name="ArticleBody.H4.Padding" xml:space="preserve">
+    <value>.5rem 0</value>
+  </data>
+  <data name="ArticleBody.H5.FontFamily" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="ArticleBody.H5.FontSize" xml:space="preserve">
+    <value>1.7rem</value>
+  </data>
+  <data name="ArticleBody.H5.FontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="ArticleBody.H5.LineHeight" xml:space="preserve">
+    <value>2.3rem</value>
+  </data>
+  <data name="ArticleBody.H5.Padding" xml:space="preserve">
+    <value>.5rem 0</value>
+  </data>
+  <data name="articleH1MarginTop" xml:space="preserve">
+    <value>-.4rem</value>
+  </data>
+  <data name="BreakingNews.Ms.Mobile.BorderWidth" xml:space="preserve">
+    <value>.8rem 0 .4rem</value>
+  </data>
+  <data name="BreakingNews.Ms.NoSnap.App.BorderWidth" xml:space="preserve">
+    <value>.9rem 1.5rem .6rem 1rem</value>
+  </data>
+  <data name="BreakingNews.Ms.NoSnap.Browse.BorderWidth" xml:space="preserve">
+    <value>1rem</value>
+  </data>
+  <data name="BreakingNews.Webkit.Mobile.BorderWidth" xml:space="preserve">
+    <value>.8rem 0 .4rem</value>
+  </data>
+  <data name="Classic.BreakingNewsLineHeight" xml:space="preserve">
+    <value>1.9</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H2.FontFamily" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H2.FontSize" xml:space="preserve">
+    <value>2.4rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H2.FontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H2.LineHeight" xml:space="preserve">
+    <value>2.6rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H2.Padding" xml:space="preserve">
+    <value>0 0 1.4rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H3.FontFamily" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H3.FontSize" xml:space="preserve">
+    <value>2.4rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H3.FontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H3.LineHeight" xml:space="preserve">
+    <value>2.6rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H3.Padding" xml:space="preserve">
+    <value>0 0 1.4rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H4.FontFamily" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H4.FontSize" xml:space="preserve">
+    <value>1.8rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H4.FontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H4.LineHeight" xml:space="preserve">
+    <value>2.2rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H4.Padding" xml:space="preserve">
+    <value>0 0 1.2rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H5.FontFamily" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H5.FontSize" xml:space="preserve">
+    <value>1.8rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H5.FontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H5.LineHeight" xml:space="preserve">
+    <value>2.2rem</value>
+  </data>
+  <data name="Classic.Mobile.ArticleBody.H5.Padding" xml:space="preserve">
+    <value>0 0 1.2rem</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilyExtraLarge" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilyLarge" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilyMedium" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilyMediumLarge" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilyNormal" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilyNormalLight" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilySemiBold" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilySmall" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontFamilySmall2" xml:space="preserve">
+    <value>dengxian, stheititc, "droid sans", sans-serif</value>
+  </data>
+  <data name="Classic.Mobile.fontSizeExtraLarge" xml:space="preserve">
+    <value>2.4rem</value>
+  </data>
+  <data name="Classic.Mobile.fontSizeLarge" xml:space="preserve">
+    <value>2rem</value>
+  </data>
+  <data name="Classic.Mobile.fontSizeMedium" xml:space="preserve">
+    <value>1.8rem</value>
+  </data>
+  <data name="Classic.Mobile.fontSizeMediumLarge" xml:space="preserve">
+    <value>2.2rem</value>
+  </data>
+  <data name="Classic.Mobile.fontSizeNormal" xml:space="preserve">
+    <value>1.6rem</value>
+  </data>
+  <data name="Classic.Mobile.fontSizeSmall" xml:space="preserve">
+    <value>1.3rem</value>
+  </data>
+  <data name="Classic.Mobile.fontSizeSmall2" xml:space="preserve">
+    <value>1.2rem</value>
+  </data>
+  <data name="Classic.Mobile.fontWeightExtraLarge" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="Classic.Mobile.fontWeightLarge" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="Classic.Mobile.fontWeightMedium" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="Classic.Mobile.fontWeightMediumLarge" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="Classic.Mobile.fontWeightNormal" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="Classic.Mobile.fontWeightSmall" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="Classic.Mobile.fontWeightSmall2" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="Classic.Mobile.lineHeightExtraLarge" xml:space="preserve">
+    <value>3rem</value>
+  </data>
+  <data name="Classic.Mobile.lineHeightLarge" xml:space="preserve">
+    <value>2.3rem</value>
+  </data>
+  <data name="Classic.Mobile.lineHeightMedium" xml:space="preserve">
+    <value>2.5rem</value>
+  </data>
+  <data name="Classic.Mobile.lineHeightMediumLarge" xml:space="preserve">
+    <value>2.8rem</value>
+  </data>
+  <data name="Classic.Mobile.lineHeightNormal" xml:space="preserve">
+    <value>2.2rem</value>
+  </data>
+  <data name="Classic.Mobile.lineHeightSmall" xml:space="preserve">
+    <value>1.8rem</value>
+  </data>
+  <data name="Classic.Mobile.lineHeightSmall2" xml:space="preserve">
+    <value>1.7rem</value>
+  </data>
+  <data name="Classic.PC.BodyCopyFontSize" xml:space="preserve">
+    <value>1.6em</value>
+  </data>
+  <data name="Classic.PC.BodyCopyLineHeight" xml:space="preserve">
+    <value>1.563</value>
+    <comment>25px</comment>
+  </data>
+  <data name="Classic.PC.ExtraLargeFontSize" xml:space="preserve">
+    <value>3em</value>
+  </data>
+  <data name="Classic.PC.ExtraLargeLineHeight" xml:space="preserve">
+    <value>1.467</value>
+    <comment>44px</comment>
+  </data>
+  <data name="Classic.PC.ExtraSmallFontSize" xml:space="preserve">
+    <value>1.1em</value>
+  </data>
+  <data name="Classic.PC.ExtraSmallLineHeight" xml:space="preserve">
+    <value>1.182</value>
+    <comment>13px</comment>
+  </data>
+  <data name="Classic.PC.FontFamily" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="Classic.PC.Medium2FontSize" xml:space="preserve">
+    <value>1.9em</value>
+  </data>
+  <data name="Classic.PC.Medium2LineHeight" xml:space="preserve">
+    <value>1.368</value>
+    <comment>26px</comment>
+  </data>
+  <data name="Classic.PC.MediumFontSize" xml:space="preserve">
+    <value>1.9em</value>
+  </data>
+  <data name="Classic.PC.MediumLargeFontSize" xml:space="preserve">
+    <value>2em</value>
+  </data>
+  <data name="Classic.PC.MediumLargeLineHeight" xml:space="preserve">
+    <value>1.25</value>
+    <comment>25px</comment>
+  </data>
+  <data name="Classic.PC.MediumLineHeight" xml:space="preserve">
+    <value>1.474</value>
+    <comment>28px</comment>
+  </data>
+  <data name="Classic.PC.NormalFontSize" xml:space="preserve">
+    <value>1.6em</value>
+  </data>
+  <data name="Classic.PC.NormalLineHeight" xml:space="preserve">
+    <value>1.25</value>
+    <comment>20px</comment>
+  </data>
+  <data name="Classic.PC.Small2FontSize" xml:space="preserve">
+    <value>1.2em</value>
+  </data>
+  <data name="Classic.PC.Small2LineHeight" xml:space="preserve">
+    <value>1.417</value>
+    <comment>17px</comment>
+  </data>
+  <data name="Classic.PC.SmallFontSize" xml:space="preserve">
+    <value>1.3em</value>
+  </data>
+  <data name="Classic.PC.SmallLineHeight" xml:space="preserve">
+    <value>1.385</value>
+    <comment>18px</comment>
+  </data>
+  <data name="clusterAnchorParaPadding" xml:space="preserve">
+    <value>.5rem 1rem</value>
+  </data>
+  <data name="clusterH2Margin" xml:space="preserve">
+    <value>0 0 .5rem</value>
+  </data>
+  <data name="clusterH2Padding" xml:space="preserve">
+    <value>1rem 0 0</value>
+  </data>
+  <data name="clusterMaxHeight" xml:space="preserve">
+    <value>5.3rem</value>
+  </data>
+  <data name="clusterTilePadding" xml:space="preserve">
+    <value>1.3rem 1.5rem</value>
+  </data>
+  <data name="featureTileFigcaptionAppMaxHeight" xml:space="preserve">
+    <value>7.8rem</value>
+  </data>
+  <data name="fontFamilyBodyCopy" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilyBodyCopyMobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontFamilyClassic" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilyExtraLarge" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilyExtraLargeMobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontFamilyLarge" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilyLarge2" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+    <comment>Note: Large2 is only used in NoSnap. There isn't a mobile equivalent for this font.</comment>
+  </data>
+  <data name="fontFamilyLargeMobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontFamilyMedium" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilyMediumLarge" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilyMediumLargeMobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontFamilyMediumMobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontFamilyNormal" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilyNormalLight" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilyNormalLightMobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontFamilyNormalMobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontFamilySemiBold" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilySmall" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilySmall2" xml:space="preserve">
+    <value>"microsoft yahei"</value>
+  </data>
+  <data name="fontFamilySmall2Mobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontFamilySmallMobile" xml:space="preserve">
+    <value>"microsoft yahei", dengxian</value>
+  </data>
+  <data name="fontSizeBodyCopy" xml:space="preserve">
+    <value>1.7rem</value>
+  </data>
+  <data name="fontSizeExtraLarge" xml:space="preserve">
+    <value>3.8rem</value>
+  </data>
+  <data name="fontSizeExtraLargeMobile" xml:space="preserve">
+    <value>2.4rem</value>
+  </data>
+  <data name="fontSizeLarge" xml:space="preserve">
+    <value>3rem</value>
+  </data>
+  <data name="fontSizeLarge2" xml:space="preserve">
+    <value>2.4rem</value>
+  </data>
+  <data name="fontSizeLargeMobile" xml:space="preserve">
+    <value>2rem</value>
+  </data>
+  <data name="fontSizeMedium" xml:space="preserve">
+    <value>1.9rem</value>
+  </data>
+  <data name="fontSizeMediumLarge" xml:space="preserve">
+    <value>2.4rem</value>
+  </data>
+  <data name="fontSizeMediumLargeMobile" xml:space="preserve">
+    <value>2.2rem</value>
+  </data>
+  <data name="fontSizeMediumMobile" xml:space="preserve">
+    <value>1.8rem</value>
+  </data>
+  <data name="fontSizeNormal" xml:space="preserve">
+    <value>1.7rem</value>
+  </data>
+  <data name="fontSizeNormalMobile" xml:space="preserve">
+    <value>1.6rem</value>
+  </data>
+  <data name="fontSizeSmall" xml:space="preserve">
+    <value>1.3rem</value>
+  </data>
+  <data name="fontSizeSmall2" xml:space="preserve">
+    <value>1.2rem</value>
+  </data>
+  <data name="fontSizeSmall2Mobile" xml:space="preserve">
+    <value>1.2rem</value>
+  </data>
+  <data name="fontSizeSmallMobile" xml:space="preserve">
+    <value>1.3rem</value>
+  </data>
+  <data name="fontWeightBodyCopy" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightBodyCopyMobile" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightExtraLarge" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightExtraLargeMobile" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightLarge" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightLarge2" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightLargeMobile" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightMedium" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightMediumLarge" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightMediumLargeMobile" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightMediumMobile" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightNormal" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightNormalMobile" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightSmall" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightSmall2" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightSmall2Mobile" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="fontWeightSmallMobile" xml:space="preserve">
+    <value>normal</value>
+  </data>
+  <data name="galleryAbstractFontWeight" xml:space="preserve">
+    <value>bold</value>
+  </data>
+  <data name="galleryNavHeight" xml:space="preserve">
+    <value>4.7rem</value>
+  </data>
+  <data name="headerAnchorActiveMargin" xml:space="preserve">
+    <value>2.5rem</value>
+  </data>
+  <data name="headerAnchorChannelMargin" xml:space="preserve">
+    <value>2rem</value>
+  </data>
+  <data name="headerDivAMarginTopSnap" xml:space="preserve">
+    <value>1.5rem</value>
+  </data>
+  <data name="LandingPage.FeaturedHeading.LineHeight" xml:space="preserve">
+    <value>4.3rem</value>
+  </data>
+  <data name="LandingPage.FeaturedHeading.PaddingTop" xml:space="preserve">
+    <value>.3rem</value>
+  </data>
+  <data name="LandingPage.Infopane.HasImageMaxHeight" xml:space="preserve">
+    <value>6.8rem</value>
+  </data>
+  <data name="LandingPage.Infopane.HasImagePaddingBottom" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="LandingPage.Infopane.HasImagePaddingTop" xml:space="preserve">
+    <value>1rem</value>
+  </data>
+  <data name="LandingPage.Infopane.LineHeightMediumLarge" xml:space="preserve">
+    <value>2.6rem</value>
+  </data>
+  <data name="LandingPage.Infopane.MarginBottom" xml:space="preserve">
+    <value>.3rem</value>
+  </data>
+  <data name="LandingPage.Infopane.ParagraphBorderBottom" xml:space="preserve">
+    <value>.6rem</value>
+  </data>
+  <data name="LandingPage.TenPxGutter" xml:space="preserve">
+    <value>.4rem</value>
+  </data>
+  <data name="lineHeightBodyCopy" xml:space="preserve">
+    <value>2.6rem</value>
+  </data>
+  <data name="lineHeightExtraLarge" xml:space="preserve">
+    <value>4.8rem</value>
+  </data>
+  <data name="lineHeightExtraLargeMobile" xml:space="preserve">
+    <value>3rem</value>
+  </data>
+  <data name="lineHeightLarge" xml:space="preserve">
+    <value>3.2rem</value>
+  </data>
+  <data name="lineHeightLarge2" xml:space="preserve">
+    <value>2.6rem</value>
+  </data>
+  <data name="lineHeightLargeMobile" xml:space="preserve">
+    <value>2.3rem</value>
+  </data>
+  <data name="lineHeightMedium" xml:space="preserve">
+    <value>2.5rem</value>
+  </data>
+  <data name="lineHeightMediumLarge" xml:space="preserve">
+    <value>2.6rem</value>
+  </data>
+  <data name="lineHeightMediumLargeMobile" xml:space="preserve">
+    <value>2.8rem</value>
+  </data>
+  <data name="lineHeightMediumMobile" xml:space="preserve">
+    <value>2.5rem</value>
+  </data>
+  <data name="lineHeightMediumMobileX2" xml:space="preserve">
+    <value>3.6rem</value>
+    <comment>value = (lineHeightMediumMobile value )(2)</comment>
+  </data>
+  <data name="lineHeightNormal" xml:space="preserve">
+    <value>2.3rem</value>
+  </data>
+  <data name="lineHeightNormalMobile" xml:space="preserve">
+    <value>2.2rem</value>
+  </data>
+  <data name="lineHeightSmall" xml:space="preserve">
+    <value>1.8rem</value>
+  </data>
+  <data name="lineHeightSmall2" xml:space="preserve">
+    <value>1.7rem</value>
+  </data>
+  <data name="lineHeightSmall2Mobile" xml:space="preserve">
+    <value>1.7rem</value>
+  </data>
+  <data name="lineHeightSmallMobile" xml:space="preserve">
+    <value>1.8rem</value>
+  </data>
+  <data name="marginBottomAd" xml:space="preserve">
+    <value>4.2rem</value>
+  </data>
+  <data name="paddingTopInfopaneTitle" xml:space="preserve">
+    <value>1rem</value>
+  </data>
+  <data name="paddingTopMediumLarge" xml:space="preserve">
+    <value>0.3rem</value>
+  </data>
+  <data name="videoArticleFooterSpanPaddingBottom" xml:space="preserve">
+    <value>0.2rem</value>
+  </data>
+  <data name="videoArticleFooterSpanPaddingTop" xml:space="preserve">
+    <value>0.8rem</value>
+  </data>
+  <data name="videoArticleSectionParaMarginTop" xml:space="preserve">
+    <value>1.8rem</value>
+  </data>
+  <data name="videoRelatedArticleImgTop" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="videoRelatedTitleDivHeight" xml:space="preserve">
+    <value>3.9rem</value>
+  </data>
+</root>

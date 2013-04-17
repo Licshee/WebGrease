@@ -42,25 +42,25 @@ namespace WebGrease
                 }
 
                 WebGreaseConfiguration config;
-                string configType;
-                ActivityMode mode = GenerateConfiguration(args, out config, out configType);
+                var mode = GenerateConfiguration(args, out config);
+                var context = new WebGreaseContext(config);
 
                 switch (mode)
                 {
                     case ActivityMode.Minify:
-                        ExecuteMinification(config, configType);
+                        ExecuteMinification(context);
                         break;
                     case ActivityMode.Validate:
-                        ExecuteValidation(config, configType);
+                        ExecuteValidation(context);
                         break;
                     case ActivityMode.Bundle:
-                        ExecuteBundling(config, configType);
+                        ExecuteBundling(context);
                         break;
                     case ActivityMode.AutoName:
-                        ExecuteHashFiles(config, configType);
+                        ExecuteHashFiles(context);
                         break;
                     case ActivityMode.SpriteImages:
-                        ExecuteImageSpriting(config, configType);
+                        ExecuteImageSpriting(context);
                         break;
                     default:
                         Console.WriteLine(ResourceStrings.Usage);
@@ -76,15 +76,12 @@ namespace WebGrease
             return 0;
         }
 
-        /// <summary>
-        /// Processes css files for images to merge (sprite)
-        /// </summary>
-        /// <param name="config"></param>
-        /// <param name="configType"></param>
-        private static void ExecuteImageSpriting(WebGreaseConfiguration config, string configType)
+        /// <summary>Processes css files for images to merge (sprite)</summary>
+        /// <param name="context">The context.</param>
+        private static void ExecuteImageSpriting(IWebGreaseContext context)
         {
             // whiles this uses the minification activity, it is only assembling images
-            var spriter = new MinifyCssActivity
+            var spriter = new MinifyCssActivity(context) 
             {
                 ShouldMinify = false,
                 ShouldOptimize = false,
@@ -92,14 +89,14 @@ namespace WebGrease
             };
 
 
-            foreach (var fileSet in config.CssFileSets.Where(file => file.InputSpecs.Any()))
+            foreach (var fileSet in context.Configuration.CssFileSets.Where(file => file.InputSpecs.Any()))
             {
                 // for each file set, get the configuration and setup the assembler object.
-                var spriteConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.ImageSpriting, configType);
+                var spriteConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.ImageSpriting, context.Configuration.ConfigType);
 
                 if (spriteConfig.ShouldAutoSprite)
                 {
-                    var outputPath = GetOutputFolder(fileSet.Output, config.DestinationDirectory);
+                    var outputPath = GetOutputFolder(fileSet.Output, context.Configuration.DestinationDirectory);
                     var directoryName = string.IsNullOrWhiteSpace(Path.GetExtension(outputPath)) ? outputPath : Path.GetDirectoryName(outputPath);
 
                     spriter.ShouldAssembleBackgroundImages = spriteConfig.ShouldAutoSprite;
@@ -138,33 +135,31 @@ namespace WebGrease
             }
         }
 
-        /// <summary>
-        /// Renames the input files into unique hash values based on their contents.
-        /// </summary>
-        /// <param name="config"></param>
+        /// <summary>Renames the input files into unique hash values based on their contents.</summary>
+        /// <param name="context">The context.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Generalized catch/log/display pattern"),
         System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "This isn't terribly complex.")]
-        private static void ExecuteHashFiles(WebGreaseConfiguration config, string configType)
+        private static void ExecuteHashFiles(IWebGreaseContext context)
         {
-            var hasher = new FileHasherActivity
+            var hasher = new FileHasherActivity(context) 
             {
                 CreateExtraDirectoryLevelFromHashes = true,
                 ShouldPreserveSourceDirectoryStructure = false
             };
 
             // images
-            if (config.ImageDirectories.Any())
+            if (context.Configuration.ImageDirectories.Any())
             {
-                hasher.LogFileName = Path.Combine(config.LogsDirectory, Strings.ImagesLogFile);
-                hasher.DestinationDirectory = GetOutputFolder(null, config.DestinationDirectory);
-                foreach (var imageDirectory in config.ImageDirectories.Distinct())
+                hasher.LogFileName = Path.Combine(context.Configuration.LogsDirectory, Strings.ImagesLogFile);
+                hasher.DestinationDirectory = GetOutputFolder(null, context.Configuration.DestinationDirectory);
+                foreach (var imageDirectory in context.Configuration.ImageDirectories.Distinct())
                 {
                     hasher.SourceDirectories.Add(imageDirectory);
                 }
 
-                if (config.ImageExtensions != null && config.ImageExtensions.Any())
+                if (context.Configuration.ImageExtensions != null && context.Configuration.ImageExtensions.Any())
                 {
-                    hasher.FileTypeFilter = string.Join(new string(Strings.FileFilterSeparator), config.ImageExtensions.ToArray());
+                    hasher.FileTypeFilter = string.Join(new string(Strings.FileFilterSeparator), context.Configuration.ImageExtensions.ToArray());
                 }
 
                 hasher.Execute();
@@ -172,16 +167,16 @@ namespace WebGrease
             }
 
             // css
-            if (config.CssFileSets.Any(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
+            if (context.Configuration.CssFileSets.Any(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
             {
-                hasher.LogFileName = Path.Combine(config.LogsDirectory, Strings.CssLogFile);
-                foreach (var fileSet in config.CssFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
+                hasher.LogFileName = Path.Combine(context.Configuration.LogsDirectory, Strings.CssLogFile);
+                foreach (var fileSet in context.Configuration.CssFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
                 {
-                    var cssConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Autonaming, configType);
+                    var cssConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Autonaming, context.Configuration.ConfigType);
 
                     if (cssConfig.ShouldAutoName)
                     {
-                        var outputPath = GetOutputFolder(fileSet.Output, config.DestinationDirectory);
+                        var outputPath = GetOutputFolder(fileSet.Output, context.Configuration.DestinationDirectory);
                         hasher.DestinationDirectory = string.IsNullOrWhiteSpace(Path.GetExtension(outputPath)) ? outputPath : Path.GetDirectoryName(outputPath);
                         foreach (var inputFolder in
                             fileSet.InputSpecs
@@ -209,16 +204,16 @@ namespace WebGrease
             }
 
             // js
-            if (config.JSFileSets.Any(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
+            if (context.Configuration.JSFileSets.Any(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
             {
-                hasher.LogFileName = Path.Combine(config.LogsDirectory, Strings.JsLogFile);
-                foreach (var fileSet in config.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
+                hasher.LogFileName = Path.Combine(context.Configuration.LogsDirectory, Strings.JsLogFile);
+                foreach (var fileSet in context.Configuration.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
                 {
-                    var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Autonaming, configType);
+                    var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Autonaming, context.Configuration.ConfigType);
 
                     if (jsConfig.ShouldAutoName)
                     {
-                        var outputPath = GetOutputFolder(fileSet.Output, config.DestinationDirectory);
+                        var outputPath = GetOutputFolder(fileSet.Output, context.Configuration.DestinationDirectory);
                         hasher.DestinationDirectory = string.IsNullOrWhiteSpace(Path.GetExtension(outputPath)) ? outputPath : Path.GetDirectoryName(outputPath);
                         hasher.CreateExtraDirectoryLevelFromHashes = true;
                         foreach (var inputFolder in
@@ -244,26 +239,25 @@ namespace WebGrease
             }
         }
 
-        /// <summary>
-        /// Executes a bundling operation on the configuration data
-        /// </summary>
-        /// <param name="config"></param>
-        private static void ExecuteBundling(WebGreaseConfiguration config, string configType)
+        /// <summary>Executes a bundling operation on the configuration data</summary>
+        /// <param name="context">The context.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
+        private static void ExecuteBundling(IWebGreaseContext context)
         {
-            var assembler = new AssemblerActivity();
+            var assembler = new AssemblerActivity(context);
             
             // CSS filesets should not append semicolons between files, nor use single-line comments
             assembler.AddSemicolons = false;
 
-            foreach (var fileSet in config.CssFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
+            foreach (var fileSet in context.Configuration.CssFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
             {
-                var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, configType);
+                var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, context.Configuration.ConfigType);
 
                 if (jsConfig.ShouldBundleFiles)
                 {
                     // for each file set (that isn't empty of inputs)
                     // bundle the files, however this can only be done on filesets that have an output value of a file (ie: has an extension)
-                    var outputfile = GetOutputFolder(fileSet.Output, config.DestinationDirectory);
+                    var outputfile = GetOutputFolder(fileSet.Output, context.Configuration.ConfigType);
 
                     if (Path.GetExtension(outputfile).IsNullOrWhitespace())
                     {
@@ -292,16 +286,16 @@ namespace WebGrease
 
             // JS filesets SHOULD append semicolons between files, and use single-line comments
             assembler.AddSemicolons = true;
+            foreach (var fileSet in context.Configuration.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
 
-            foreach (var fileSet in config.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
             {
-                var cssConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, configType);
+                var cssConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, context.Configuration.ConfigType);
 
                 if (cssConfig.ShouldBundleFiles)
                 {
                     // for each file set (that isn't empty of inputs)
                     // bundle the files, however this can only be done on filesets that have an output value of a file (ie: has an extension)
-                    var outputfile = GetOutputFolder(fileSet.Output, config.DestinationDirectory);
+                    var outputfile = GetOutputFolder(fileSet.Output, context.Configuration.DestinationDirectory);
 
                     if (Path.GetExtension(outputfile).IsNullOrWhitespace())
                     {
@@ -328,18 +322,16 @@ namespace WebGrease
             }
         }
 
-        /// <summary>
-        /// Executes the Validation/Analysis task on javascript files
-        /// </summary>
-        /// <param name="config"></param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
-        private static void ExecuteValidation(WebGreaseConfiguration config, string configType)
+        /// <summary>Executes the Validation/Analysis task on javascript files</summary>
+        /// <param name="context">The context.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all on purpose")]
+        private static void ExecuteValidation(IWebGreaseContext context)
         {
-            var jsValidator = new MinifyJSActivity();
+            var jsValidator = new MinifyJSActivity(context);
 
-            foreach (var fileSet in config.JSFileSets.Where(set => set.InputSpecs.Any()))
+            foreach (var fileSet in context.Configuration.JSFileSets.Where(set => set.InputSpecs.Any()))
             {
-                var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Validation, configType);
+                var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Validation, context.Configuration.ConfigType);
 
                 if (jsConfig.ShouldAnalyze)
                 {
@@ -350,7 +342,7 @@ namespace WebGrease
                         jsValidator.ShouldAnalyze = jsConfig.ShouldAnalyze;
                         jsValidator.AnalyzeArgs = jsConfig.AnalyzeArguments;
                         jsValidator.SourceFile = file;
-                        var outputPath = GetOutputFolder(fileSet.Output, config.DestinationDirectory);
+                        var outputPath = GetOutputFolder(fileSet.Output, context.Configuration.DestinationDirectory);
                         jsValidator.DestinationFile = GetOutputFilename(file, outputPath);
 
                         try
@@ -359,7 +351,7 @@ namespace WebGrease
                         }
                         catch (Exception ex)
                         {
-                            if (ex.InnerException != null && ex.InnerException is BuildWorkflowException)
+                            if (ex.InnerException is BuildWorkflowException)
                             {
                                 HandleError(ex.InnerException, file);
                             }
@@ -377,33 +369,32 @@ namespace WebGrease
         /// <summary>
         /// Executes the minification task
         /// </summary>
-        /// <param name="config">config settings to be used. Only used for the input/output settings.</param>
-        private static void ExecuteMinification(WebGreaseConfiguration config, string configType)
+        /// <param name="context">context with settings to be used. Only used for the input/output settings.</param>
+        private static void ExecuteMinification(IWebGreaseContext context)
         {
-            var jsCruncher = new MinifyJSActivity();
-            var cssCruncher = new MinifyCssActivity();
+            var jsCruncher = new MinifyJSActivity(context);
+            var cssCruncher = new MinifyCssActivity(context);
 
             // only run the crunchers if the configuration has files for that particular file type
-            foreach (var fileSet in config.JSFileSets.Where(set => set.InputSpecs.Any()))
+            foreach (var fileSet in context.Configuration.JSFileSets.Where(set => set.InputSpecs.Any()))
             {
-                ProcessJsFileSet(jsCruncher, fileSet, config, configType);
+                ProcessJsFileSet(jsCruncher, fileSet, context.Configuration.ConfigType, context.Configuration.DestinationDirectory);
             }
 
             // do the same thing for CSS files... nested loops are fun!
-            foreach (var fileSet in config.CssFileSets.Where(set => set.InputSpecs.Any()))
+            foreach (var fileSet in context.Configuration.CssFileSets.Where(set => set.InputSpecs.Any()))
             {
-                ProcessCssFileSet(cssCruncher, fileSet, config, configType);
+                ProcessCssFileSet(cssCruncher, fileSet, context.Configuration.ConfigType, context.Configuration.DestinationDirectory);
             }
         }
 
-        /// <summary>
-        /// Process an individual JavaScript file set
-        /// </summary>
+        /// <summary>Process an individual JavaScript file set</summary>
         /// <param name="jsCruncher">minify js activity</param>
         /// <param name="fileSet">js file set</param>
-        /// <param name="config">webgrease configuration</param>
         /// <param name="configType">config type</param>
-        private static void ProcessJsFileSet(MinifyJSActivity jsCruncher, JSFileSet fileSet, WebGreaseConfiguration config, string configType)
+        /// <param name="baseOutputPath">The base Output Path.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
+        private static void ProcessJsFileSet(MinifyJSActivity jsCruncher, JSFileSet fileSet, string configType, string baseOutputPath)
         {
             var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Minification, configType);
 
@@ -430,7 +421,7 @@ namespace WebGrease
                     jsCruncher.ShouldAnalyze = false; // we are minimizing, not validating
 
                     jsCruncher.SourceFile = file;
-                    var outputPath = GetOutputFolder(fileSet.Output, config.DestinationDirectory);
+                    var outputPath = GetOutputFolder(fileSet.Output, baseOutputPath);
                     jsCruncher.DestinationFile = GetOutputFilename(file, outputPath, true);
 
                     try
@@ -446,14 +437,13 @@ namespace WebGrease
             }
         }
 
-        /// <summary>
-        /// Process individual CSS file set
-        /// </summary>
+        /// <summary>Process individual CSS file set</summary>
         /// <param name="cssCruncher">minify css activity</param>
         /// <param name="fileSet">css file set</param>
-        /// <param name="config">webgrease configuration</param>
         /// <param name="configType">config type</param>
-        private static void ProcessCssFileSet(MinifyCssActivity cssCruncher, CssFileSet fileSet, WebGreaseConfiguration config, string configType)
+        /// <param name="baseOutputPath">The base Output Path.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
+        private static void ProcessCssFileSet(MinifyCssActivity cssCruncher, CssFileSet fileSet, string configType, string baseOutputPath)
         {
             var cssConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Minification, configType);
 
@@ -477,7 +467,7 @@ namespace WebGrease
 
                     // we are just minifying. Image assembly is a different action.
                     cssCruncher.ShouldAssembleBackgroundImages = false;
-                    var outputPath = GetOutputFolder(fileSet.Output, config.DestinationDirectory);
+                    var outputPath = GetOutputFolder(fileSet.Output, baseOutputPath);
                     cssCruncher.DestinationFile = GetOutputFilename(file, outputPath, true);
 
                     try
@@ -508,7 +498,6 @@ namespace WebGrease
         /// <summary>Generates the configuration object from command line parameters.</summary>
         /// <param name="args">The command line args.</param>
         /// <param name="wgConfig">The web grease configuration root.</param>
-        /// <param name="configType">name of the config sections to use.</param>
         /// <example>
         /// WebGrease.exe /?
         /// WebGrease.exe -in:foo.js out:bar.js
@@ -516,7 +505,7 @@ namespace WebGrease
         /// </example>
         /// <returns>The configuration object.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
-        internal static ActivityMode GenerateConfiguration(IEnumerable<string> args, out WebGreaseConfiguration wgConfig, out string configType)
+        internal static ActivityMode GenerateConfiguration(IEnumerable<string> args, out WebGreaseConfiguration wgConfig)
         {
             // reset activity flag since this is a new run
             _isActivityAlreadySet = false;
@@ -529,9 +518,8 @@ namespace WebGrease
             string logPath = Environment.CurrentDirectory;
             string tokenPath = null;
             string imagePath = null;
-            configType = string.Empty;
-
-            ActivityMode activityToRun = ActivityMode.ShowHelp;
+            string configType = null;
+            var activityToRun = ActivityMode.ShowHelp;
 
             // process the arguments into variables
             foreach (string arg in args)
@@ -588,6 +576,9 @@ namespace WebGrease
                         case "TYPE":
                             configType = value;
                             break;
+                        case "TOKENS":
+                            tokenPath = value;
+                            break;
                         default:
                             // show usage help
                             activityToRun = ActivityMode.ShowHelp;
@@ -599,7 +590,7 @@ namespace WebGrease
             if (activityToRun == ActivityMode.ShowHelp)
             {
                 // something wasn't right with the parameter inputs. return false and a null config.
-                wgConfig = null;
+                wgConfig = new WebGreaseConfiguration();
             }
             else
             {
@@ -608,26 +599,26 @@ namespace WebGrease
                     try
                     {
                         // use the config file as a base, and set overrides based on CLI input
-                        wgConfig = new WebGreaseConfiguration(configFileName, inputPath, outputPath, logPath);
+                        wgConfig = new WebGreaseConfiguration(configFileName, configType, inputPath, outputPath, logPath);
                     }
                     catch (Exception ex)
                     {
                         HandleError(ex, null, ResourceStrings.ConfigurationFileParseError);
-                        wgConfig = new WebGreaseConfiguration();
+                        wgConfig = new WebGreaseConfiguration(configType);
                         return ActivityMode.ShowHelp;
                     }
                 }
                 else
                 {
                     // manual build up of configuration data
-                    wgConfig = new WebGreaseConfiguration();
-
+                    wgConfig = new WebGreaseConfiguration(configType);
+                    
                     // initialize these to the current directory. Manual CLI paramters (not config files), will have their relative paths
                     // computed into the generated input specs.
                     wgConfig.SourceDirectory = Environment.CurrentDirectory;
                     wgConfig.DestinationDirectory = Environment.CurrentDirectory;
 
-                    wgConfig = CreateInputSpecs(wgConfig, inputPath, outputPath);
+                    AddInputSpecs(wgConfig, inputPath, outputPath);
                 }
 
                 wgConfig = OverrideConfig(wgConfig, logPath, tokenPath, imagePath);
@@ -649,23 +640,21 @@ namespace WebGrease
                 DisplayErrors(new[] { ResourceStrings.MultipleSwitches });
                 return ActivityMode.ShowHelp;
             }
+
             _isActivityAlreadySet = true;
             return activityMode;
         }
 
-        /// <summary>
-        /// Creates the input spec objects based on input and output paths.
-        /// </summary>
+        /// <summary>Creates the input spec objects based on input and output paths.</summary>
         /// <param name="wgConfig">Config object to use.</param>
         /// <param name="inputPath">Input path from the command parameters</param>
         /// <param name="outputPath">output path from the command parameters</param>
-        /// <returns>the updated configuration object.</returns>
-        private static WebGreaseConfiguration CreateInputSpecs(WebGreaseConfiguration wgConfig, string inputPath, string outputPath)
+        private static void AddInputSpecs(WebGreaseConfiguration wgConfig, string inputPath, string outputPath)
         {
             if (inputPath.IsNullOrWhitespace() && outputPath.IsNullOrWhitespace())
             {
                 // no paths need to be overriden.
-                return wgConfig;
+                return;
             }
 
             string outputPathExtension = Path.GetExtension(outputPath);
@@ -673,6 +662,7 @@ namespace WebGrease
 
             bool createCssInput = false;
             bool createJsInput = false;
+
             // Set the file filter to the extension of the output path (if it's a file)
             if (!outputPathExtension.IsNullOrWhitespace())
             {
@@ -732,8 +722,6 @@ namespace WebGrease
 
             wgConfig.JSFileSets.Add(jsFileSet);
             wgConfig.CssFileSets.Add(cssFileSet);
-
-            return wgConfig;
         }
 
         /// <summary>
@@ -744,7 +732,6 @@ namespace WebGrease
         /// <param name="tokenPath">token file path</param>
         /// <param name="imagePath">image file path</param>
         /// <returns>an overriden config object</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
         private static WebGreaseConfiguration OverrideConfig(WebGreaseConfiguration wgConfig, string logPath, string tokenPath, string imagePath)
         {
             // images path

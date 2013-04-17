@@ -15,6 +15,8 @@ namespace WebGrease.Tests
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+    using WebGrease.Configuration;
+
     /// <summary>This is a test class for MinifyJSActivityTest and is intended
     /// to contain all MinifyJSActivityTest Unit Tests</summary>
     [TestClass]
@@ -31,7 +33,7 @@ namespace WebGrease.Tests
         public void JSMinificationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyJSActivityTest");
-            var minifyJSActivity = new MinifyJSActivity();
+            var minifyJSActivity = new MinifyJSActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyJSActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case1\test1.js");
             minifyJSActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case1\test1.js");
             minifyJSActivity.MinifyArgs = "/global:jQuery";
@@ -51,7 +53,7 @@ namespace WebGrease.Tests
         public void JSAnalysisTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyJSActivityTest");
-            var minifyJSActivity = new MinifyJSActivity();
+            var minifyJSActivity = new MinifyJSActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyJSActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case2\test1.js");
             minifyJSActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case2\test1.js");
             minifyJSActivity.MinifyArgs = "/global:jQuery";

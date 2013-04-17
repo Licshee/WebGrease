@@ -35,12 +35,11 @@ namespace WebGrease
         /// </summary>
         public bool ShouldMinify { get; set; }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CssMinifier"/> class with default settings.
-        /// </summary>
-        public CssMinifier()
+        /// <summary>Initializes a new instance of the <see cref="CssMinifier"/> class with default settings.</summary>
+        /// <param name="context">The context.</param>
+        public CssMinifier(IWebGreaseContext context)
         {
-            this.CssActivity = new MinifyCssActivity() {
+            this.CssActivity = new MinifyCssActivity(context) {
                 ShouldMinify = true, 
                 ShouldOptimize = true,
                 ShouldValidateForLowerCase = false,
