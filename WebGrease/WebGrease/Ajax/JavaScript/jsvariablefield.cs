@@ -58,6 +58,7 @@ namespace Microsoft.Ajax.Utilities
         public bool IsFunction { get; internal set; }
         public bool IsAmbiguous { get; set; }
         public bool IsPlaceholder { get; set; }
+        public bool HasNoReferences { get; set; }
         public bool InitializationOnly { get; set; }
         public int Position { get; set; }
         public bool WasRemoved { get; set; }

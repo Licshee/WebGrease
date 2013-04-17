@@ -24,6 +24,15 @@ namespace WebGrease.Activities
     /// <summary>The main activity.</summary>
     internal sealed class EverythingActivity
     {
+        /// <summary>
+        /// private enumeration for the type of files being worked on
+        /// </summary>
+        private enum FileType
+        {
+            JavaScript,
+            Stylesheet
+        }
+
         /// <summary>The images destination directory name.</summary>
         private const string ImagesDestinationDirectoryName = "i";
 
@@ -201,7 +210,7 @@ namespace WebGrease.Activities
                 {
                     _logInformation("Bundling css files.");
                     var outputFile = Path.Combine(_staticAssemblerDirectory, cssFileSet.Output);
-                    if (!BundleFiles(cssFileSet.InputSpecs, outputFile, cssFileSet.Preprocessing))
+                    if (!BundleFiles(cssFileSet.InputSpecs, outputFile, cssFileSet.Preprocessing, FileType.Stylesheet))
                     {
                         // bundling failed
                         _logError(null, "There were errors encountered while bundling files.");
@@ -276,7 +285,7 @@ namespace WebGrease.Activities
                     _logInformation("Bundling js files.");
                     var outputFile = Path.Combine(_staticAssemblerDirectory, jsFileSet.Output);
                     // bundle
-                    if (!BundleFiles(jsFileSet.InputSpecs, outputFile, jsFileSet.Preprocessing))
+                    if (!BundleFiles(jsFileSet.InputSpecs, outputFile, jsFileSet.Preprocessing, FileType.JavaScript))
                     {
                         // bundling failed
                         _logError(null, "There were errors encountered while bundling files.");
@@ -653,17 +662,21 @@ namespace WebGrease.Activities
         /// <param name="inputSpecs">A collection of files to be processed</param>
         /// <param name="outputFile">name of the output file</param>
         /// <param name="preprocessing"> </param>
+        /// <param name="fileType">JavaScript of Stylesheets</param>
         /// <returns>a value indicating whether the operation was successful</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private bool BundleFiles(IEnumerable<InputSpec> inputSpecs, string outputFile, PreprocessingConfig preprocessing = null)
+        private bool BundleFiles(IEnumerable<InputSpec> inputSpecs, string outputFile, PreprocessingConfig preprocessing, FileType fileType)
         {
             // now we have the input prepared, so use Assembler activity to create the one file to use as input (if we were't assembling, we'd need to grab all) 
+            // we are bundling either JS or CSS files -- for JS files we want to append semicolons between them and use single-line comments; for CSS file we don't.
             var assemblerActivity = new AssemblerActivity
                 {
                     PreprocessingConfig = preprocessing,
                     logInformation = this._logInformation,
                     logError = (e,s1,s2) => this._logError(e,s1,s2),
                     logExtendedError = this._logExtended,
+                    AddSemicolons = fileType == FileType.JavaScript,
+                    CanUseSingleLineComment = fileType == FileType.JavaScript,
                 };
 
             foreach (var inputSpec in inputSpecs)

@@ -251,6 +251,10 @@ namespace WebGrease
         private static void ExecuteBundling(WebGreaseConfiguration config, string configType)
         {
             var assembler = new AssemblerActivity();
+            
+            // CSS filesets should not append semicolons between files, nor use single-line comments
+            assembler.AddSemicolons = false;
+            assembler.CanUseSingleLineComment = false;
 
             foreach (var fileSet in config.CssFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
             {
@@ -286,6 +290,10 @@ namespace WebGrease
                     }
                 }
             }
+
+            // JS filesets SHOULD append semicolons between files, and use single-line comments
+            assembler.AddSemicolons = true;
+            assembler.CanUseSingleLineComment = true;
 
             foreach (var fileSet in config.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
             {

@@ -214,6 +214,10 @@ namespace Microsoft.Ajax.Utilities
             m_scanner.NewModule += (sender, ea) =>
                 {
                     m_newModule = true;
+
+                    // we also want to assume that we found a newline character after
+                    // the comment
+                    m_foundEndOfLine = true;
                 };
         }
 
