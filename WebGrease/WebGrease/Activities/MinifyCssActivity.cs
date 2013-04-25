@@ -25,6 +25,9 @@ namespace WebGrease.Activities
     /// <summary>Implements the multiple steps in Css pipeline</summary>
     internal sealed class MinifyCssActivity
     {
+        /// <summary>The context.</summary>
+        private readonly IWebGreaseContext context;
+
         /// <summary>The image assembly scan visitor.</summary>
         private ImageAssemblyScanVisitor _imageAssemblyScanVisitor;
 
@@ -32,8 +35,10 @@ namespace WebGrease.Activities
         private ImageAssemblyUpdateVisitor _imageAssemblyUpdateVisitor;
 
         /// <summary>Initializes a new instance of the <see cref="MinifyCssActivity"/> class.</summary>
-        internal MinifyCssActivity()
+        /// <param name="context"></param>
+        internal MinifyCssActivity(IWebGreaseContext context)
         {
+            this.context = context;
             this.HackSelectors = new HashSet<string>();
             this.BannedSelectors = new HashSet<string>();
             this.ShouldExcludeProperties = true;
@@ -122,18 +127,25 @@ namespace WebGrease.Activities
                 return cssContent;
             }
 
-            var css = string.Empty;
+            this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity);
+            string css;
 
             try
             {
+                this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Parse);
                 AstNode stylesheetNode = CssParser.Parse(cssContent, shouldLog);
                 css = ApplyConfiguredVisitors(stylesheetNode);
+                this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Parse);
             }
             catch (Exception exception)
             {
                 // give back the original unmodified
                 css = cssContent;
                 this.ParserException = exception;
+            }
+            finally
+            {
+                this.context.Measure.End(TimeMeasureNames.MinifyCssActivity);
             }
 
             return css;
@@ -157,10 +169,13 @@ namespace WebGrease.Activities
                 throw new ArgumentException("MinifyCssActivity - The destination file cannot be null or whitespace.");
             }
 
+            this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity);
             try
             {
                 // Load the Css parser and stylesheet Ast
+                this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Parse);
                 AstNode stylesheetNode = CssParser.Parse(new FileInfo(this.SourceFile), false);
+                this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Parse);
 
                 var css = ApplyConfiguredVisitors(stylesheetNode);
 
@@ -169,7 +184,12 @@ namespace WebGrease.Activities
             }
             catch (Exception exception)
             {
-                throw new WorkflowException("MinifyCssActivity - Error happened while executing the css pipeline activity.", exception);
+                throw new WorkflowException(
+                    "MinifyCssActivity - Error happened while executing the css pipeline activity.", exception);
+            }
+            finally
+            {
+                this.context.Measure.End(TimeMeasureNames.MinifyCssActivity);
             }
         }
 
@@ -180,6 +200,8 @@ namespace WebGrease.Activities
         /// <returns>Processed node either minified or pretty printed.</returns>
         private string ApplyConfiguredVisitors(AstNode stylesheetNode)
         {
+            this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Validate);
+
             // Step # 1 - Remove the Css properties from Ast which need to be excluded (Bridging)
             if (this.ShouldExcludeProperties)
             {
@@ -204,12 +226,16 @@ namespace WebGrease.Activities
                 stylesheetNode = stylesheetNode.Accept(new SelectorValidationOptimizationVisitor(this.BannedSelectors, false, false));
             }
 
+            this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Validate);
+
             // Step # 5 - Run the Css optimization visitors
             if (this.ShouldOptimize)
             {
+                this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Optimize);
                 stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor());
                 stylesheetNode = stylesheetNode.Accept(new ColorOptimizationVisitor());
                 stylesheetNode = stylesheetNode.Accept(new FloatOptimizationVisitor());
+                this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Optimize);
             }
 
             // The image assembly is a 3 step process:
@@ -218,6 +244,8 @@ namespace WebGrease.Activities
             // 3. Update the Css with generated images followed by Pretty Print
             if (this.ShouldAssembleBackgroundImages)
             {
+                this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Sprite);
+
                 // Step # 6 - Execute the pipeline for image assembly scan
                 stylesheetNode = this.ExecuteImageAssemblyScan(stylesheetNode);
 
@@ -244,6 +272,8 @@ namespace WebGrease.Activities
 
                 // Step # 8 - Execute the pipeline for image assembly update
                 stylesheetNode = this.ExecuteImageAssemblyUpdate(stylesheetNode, spriteLogFiles);
+
+                this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Sprite);
             }
 
             return this.ShouldMinify ? stylesheetNode.MinifyPrint() : stylesheetNode.PrettyPrint();
@@ -270,7 +300,8 @@ namespace WebGrease.Activities
             stylesheetNode = stylesheetNode.Accept(this._imageAssemblyScanVisitor);
 
             // Save the Pretty Print Css
-            FileHelper.WriteFile(this.ImageAssembleScanDestinationFile, stylesheetNode.PrettyPrint(), Encoding.UTF8);
+            // TODO: RTUIT: Why do we save the pretty print? Do we need it? Maybe only use in #DEBUG? Have found no difference/errors when commenting this out.
+            // FileHelper.WriteFile(this.ImageAssembleUpdateDestinationFile, stylesheetNode.PrettyPrint(), Encoding.UTF8);
 
             // Save the Scan Css (Single file per css)
             this._imageAssemblyScanVisitor.ImageAssemblyAnalysisLog.Save(this.ImageAssembleScanDestinationFile + Strings.ScanLogExtension);

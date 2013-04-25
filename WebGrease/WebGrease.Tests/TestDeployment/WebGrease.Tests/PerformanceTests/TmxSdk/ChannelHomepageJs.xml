@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebGrease>
+  <Settings>
+    <TokensDirectory>Shared</TokensDirectory>
+    <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
+    <!-- these settings apply to each file set defined in this config -->
+    <Locales>generic-generic</Locales>
+    <JsMinification config="Release">
+      <Minify>True</Minify>
+      <MinifyArguments>-h -debug:F -fnames:onlyref -rename:all -unused:remove</MinifyArguments>
+      <GlobalsToIgnore>jQuery;Msn;define;require</GlobalsToIgnore>
+    </JsMinification>
+    <JsMinification config="Debug">
+      <Minify>False</Minify>
+      <MinifyArguments>-debug -p</MinifyArguments>
+      <GlobalsToIgnore>jQuery;Msn;define;require</GlobalsToIgnore>
+    </JsMinification>
+  </Settings>
+  <JsFileSet output="channelHomepage.classic.pc.w3c.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\channelHomepage.classic.pc.w3c.js</Input>
+      <!-- common -->
+      <Input optional="true">shared\js\classic\common</Input>
+      <Input optional="true">shared\js\classic\w3c</Input>
+    </Inputs>
+  </JsFileSet>
+  <JsFileSet output="channelHomepage.classic.pc.ms.ie7.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\channelHomepage.classic.pc.ms.ie7.js</Input>
+      <!-- common -->
+      <Input optional="true">shared\js\classic\common</Input>
+      <Input optional="true">shared\js\classic\ms\ie7</Input>
+    </Inputs>
+  </JsFileSet>
+  <JsFileSet output="channelHomepage.classic.pc.ms.ie8.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\channelHomepage.classic.pc.ms.ie8.js</Input>
+      <!-- common -->
+      <Input optional="true">shared\js\classic\common</Input>
+      <Input optional="true">shared\js\classic\ms\ie8</Input>
+    </Inputs>
+  </JsFileSet>
+  <JsFileSet output="channelHomepage.classic.pc.ms.ie9.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\channelHomepage.classic.pc.ms.ie9.js</Input>
+      <!-- common -->
+      <Input optional="true">shared\js\classic\common</Input>
+      <Input optional="true">shared\js\classic\ms\ie9</Input>
+    </Inputs>
+  </JsFileSet>
+</WebGrease>

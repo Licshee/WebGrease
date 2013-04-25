@@ -11,12 +11,15 @@
 namespace WebGrease.Build
 {
     using System;
-    using System.Globalization;
+    using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
 
     using Activities;
-    using Configuration;
+
     using Microsoft.Build.Utilities;
+
+    using WebGrease.Configuration;
 
     /// <summary>
     /// Build time task for executing web grease runtime.
@@ -34,37 +37,82 @@ namespace WebGrease.Build
             {
                 // get a list of the files in the configuration folder
                 var fullPathToConfigFiles = Path.GetFullPath(this.ConfigurationPath);
-
-                foreach (var configFile in Directory.GetFiles(fullPathToConfigFiles))
+                var totalMeasure = new List<TimeMeasureResult>();
+                var first = true;
+                foreach (var configFile in Directory.GetFiles(fullPathToConfigFiles).Select(f => new FileInfo(f)))
                 {
                     this.LogInformation("Processing " + configFile);
-                    var configFileInfo = new FileInfo(configFile);
-                    var configSpecificLogPath = Path.Combine(this.LogFolderPath, Path.GetFileNameWithoutExtension(configFileInfo.Name));
-                    var config = new WebGreaseConfiguration(configFile, this.RootInputPath, this.RootOutputPath, configSpecificLogPath, this.ApplicationRootPath);
+                    var config = new WebGreaseConfiguration(
+                                    configFile.FullName,
+                                    this.ConfigType,
+                                    this.RootInputPath,
+                                    this.RootOutputPath,
+                                    this.LogFolderPath,
+                                    this.ToolsTempPath,
+                                    this.ApplicationRootPath,
+                                    this.PreprocessingPluginPath)
+                                    {
+                                        Measure = this.Measure
+                                    };
 
+                    var context = new WebGreaseContext(
+                        config,
+                        this.LogInformation,
+                        this.WarningsAsErrors ? this.LogExtendedError : (LogExtendedError)this.LogExtendedWarning, 
+                        this.LogError,
+                        this.LogExtendedError);
+
+                    context.Measure.Start(TimeMeasureNames.Unidentified);
                     switch ((this.Activity ?? string.Empty).ToUpperInvariant())
                     {
                         case ("BUNDLE"):
                             this.LogInformation("Activity: Bundle");
-                            var bundleActivity = new BundleActivity(config, this.LogInformation, this.LogError, this.LogExtendedError, this.ConfigType, this.PreprocessingPluginPath);
+                            var bundleActivity = new BundleActivity(context);
+
                             // execute the bundle pipeline
                             result = bundleActivity.Execute() && result;
                             break;
                         case ("EVERYTHING"):
                         default:
                             this.LogInformation("Activity: Everything");
-                            var everythingActivity = new EverythingActivity(config, this.LogInformation, this.LogError, this.LogExtendedError, this.ConfigType, this.PreprocessingPluginPath);
+                            var everythingActivity = new EverythingActivity(context);
+                            
+                            // Only hash images for the first go around, is the same every time.
+                            everythingActivity.SkipHashImages = !first;
+
                             // execute the full pipeline
                             result = everythingActivity.Execute() && result;
                             break;
                     }
 
+                    context.Measure.End(TimeMeasureNames.Unidentified);
+
+                    if (context.Configuration.Measure)
+                    {
+                        var measureFile = configFile.Name + ".measure";
+                        var measurePath = Path.Combine(this.RootOutputPath, measureFile);
+                        File.WriteAllText(measurePath + ".txt", context.Measure.Results.GetTextTable(configFile.FullName));
+                        File.WriteAllText(measurePath + ".csv", context.Measure.Results.GetCsv());
+
+                        totalMeasure.Add(context.Measure.Results);
+                    }
+
+                    first = false;
+                }
+
+                if (this.Measure)
+                {
+                    var totalMeasureFile = new DirectoryInfo(fullPathToConfigFiles).Name + ".measure";
+                    var totalMeasurePath = Path.Combine(this.RootOutputPath, totalMeasureFile);
+                    File.WriteAllText(
+                        totalMeasurePath + ".txt", 
+                        totalMeasure.GetTextTable(fullPathToConfigFiles) + "\r\n\r\n" + totalMeasure.Group(tm => tm.IdParts.FirstOrDefault()).GetTextTable(fullPathToConfigFiles));
+                    File.WriteAllText(totalMeasurePath + ".csv", totalMeasure.GetCsv());
                 }
             }
             catch (Exception exception)
             {
                 this.LogError(exception, null, null);
-
                 result = false;
             }
 
@@ -118,6 +166,21 @@ namespace WebGrease.Build
         public string LogFolderPath { get; set; }
 
         /// <summary>
+        /// Gets or sets the folder path used as temp folder.
+        /// </summary>
+        public string ToolsTempPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets if warnings should be logged as errors.
+        /// </summary>
+        public bool WarningsAsErrors { get; set; }
+
+        /// <summary>
+        /// Gets or sets if it should measure and write measure files in the output folder.
+        /// </summary>
+        public bool Measure { get; set; }
+
+        /// <summary>
         /// Method for logging information messages to the build output.
         /// </summary>
         /// <param name="message">message to log</param>
@@ -140,10 +203,27 @@ namespace WebGrease.Build
         /// <param name="message">The message</param>
         private void LogExtendedError(string subcategory, string errorCode, string helpKeyword, string file, int? lineNumber, int? columnNumber, int? endLineNumber, int? endColumnNumber, string message)
         {
-            this.Log.LogError(subcategory, errorCode, helpKeyword, this.ChangeToOriginalProjectLocation(file), lineNumber ?? 0, columnNumber ?? 0, endLineNumber ?? 0, endColumnNumber ?? 0, message);
+            this.Log.LogError(subcategory, errorCode, helpKeyword, this.ChangeToOriginalProjectLocation(file), lineNumber ?? 0, columnNumber ?? 0, endLineNumber ?? lineNumber ?? 0, endColumnNumber ?? columnNumber ?? 0, message);
         }
 
-        /// TODO: RTUIT: Make this work for bundled files as well. (By reading the /* filename */ comments in the file, this should probably throw both exceptions then, to the bundled amnd the original.
+        /// <summary>
+        /// Logs an extended error
+        /// </summary>
+        /// <param name="subcategory">The sub category</param>
+        /// <param name="errorCode">The error code</param>
+        /// <param name="helpKeyword">The help keyword</param>
+        /// <param name="file">The file</param>
+        /// <param name="lineNumber">The line number</param>
+        /// <param name="columnNumber">The column number</param>
+        /// <param name="endLineNumber">The end line number</param>
+        /// <param name="endColumnNumber">The end column number</param>
+        /// <param name="message">The message</param>
+        private void LogExtendedWarning(string subcategory, string errorCode, string helpKeyword, string file, int? lineNumber, int? columnNumber, int? endLineNumber, int? endColumnNumber, string message)
+        {
+            this.Log.LogWarning(subcategory, errorCode, helpKeyword, this.ChangeToOriginalProjectLocation(file), lineNumber ?? 0, columnNumber ?? 0, endLineNumber ?? lineNumber ?? 0, endColumnNumber ?? columnNumber ?? 0, message);
+        }
+
+        /// TODO: RTUIT: Make this work for bundled files as well. (By available using source maps)
         /// <summary>
         /// This method is used when handling syntaxt error's thrown by any of the sub methods/activities.
         /// Changes the file the error originated in from the folder it is processed in to the location of the actual file in the project if it exists.

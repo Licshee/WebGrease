@@ -1,0 +1,160 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebGrease>
+  <Settings>
+    <ImageDirectories>Images</ImageDirectories>
+    <ImageExtensions>*.png;*.jpg;*.jpeg;*.gif;*.ico;*.svg</ImageExtensions>
+    <TokensDirectory>Shared</TokensDirectory>
+    <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
+    <!-- these settings apply to each file set defined in this config -->
+    <Locales>ja-jp;fi-fi;zh-sg;generic-generic</Locales>
+    <Themes>Resolution1x;Resolution14x;Resolution15x;Resolution18x;Resolution2x;Resolution225x;Resolution24x</Themes>
+    <CssMinification config="Debug">
+      <Minify>False</Minify>
+      <ValidateLowerCase>True</ValidateLowerCase>
+    </CssMinification>
+    <CssMinification config="Release">
+      <Minify>True</Minify>
+      <ValidateLowerCase>True</ValidateLowerCase>
+    </CssMinification>
+  </Settings>
+  <CssFileSet output="landingpage.tmx.pc.ms.css">
+    <Spriting config="Debug">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Css\landingpage.tmx.pc.ms.css</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Css\Global\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\Common\</Input>
+      <!-- pc -->
+      <Input optional="true">shared\Css\Global\PC\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\PC\Common\</Input>
+      <!-- pc.app -->
+      <!-- mobile -->
+      <!-- mobile.app -->
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet output="landingpage.tmx.pc.ms.app.css">
+    <Spriting config="Debug">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Css\landingpage.tmx.pc.ms.app.css</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Css\Global\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\Common\</Input>
+      <!-- pc -->
+      <Input optional="true">shared\Css\Global\PC\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\PC\Common\</Input>
+      <!-- pc.app -->
+      <Input optional="true">shared\Css\Global\PC\App\</Input>
+      <Input optional="true">shared\Css\landingpage\PC\App\</Input>
+      <!-- mobile -->
+      <!-- mobile.app -->
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet output="landingpage.tmx.mobile.ms.css">
+    <Spriting config="Debug">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Css\landingpage.tmx.mobile.ms.css</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Css\Global\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\Common\</Input>
+      <!-- pc -->
+      <!-- pc.app -->
+      <!-- mobile -->
+      <Input optional="true">shared\Css\Global\mobile\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\mobile\Common\</Input>
+      <!-- mobile.app -->
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet output="landingpage.tmx.mobile.ms.app.css">
+    <Spriting config="Debug">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Css\landingpage.tmx.mobile.ms.app.css</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Css\Global\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\Common\</Input>
+      <!-- pc -->
+      <!-- pc.app -->
+      <!-- mobile -->
+      <Input optional="true">shared\Css\Global\mobile\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\mobile\Common\</Input>
+      <!-- mobile.app -->
+      <Input optional="true">shared\Css\Global\mobile\App\</Input>
+      <Input optional="true">shared\Css\landingpage\mobile\App\</Input>
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet output="landingpage.tmx.mobile.webkit.css">
+    <Spriting config="Debug">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Spriting config="Release">
+      <OutputUnit>rem</OutputUnit>
+      <OutputUnitFactor>0.1</OutputUnitFactor>
+      <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    </Spriting>
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Css\landingpage.tmx.mobile.webkit.css</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Css\Global\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\Common\</Input>
+      <!-- pc -->
+      <!-- pc.app -->
+      <!-- mobile -->
+      <Input optional="true">shared\Css\Global\mobile\Common\</Input>
+      <Input optional="true">shared\Css\landingpage\mobile\Common\</Input>
+      <!-- mobile.app -->
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet output="landingpage.core.css">
+    <Inputs>
+      <!-- Core SDK Files -->
+      <Input>metrosdk\css\landingpage.core.css</Input>
+    </Inputs>
+  </CssFileSet>
+</WebGrease>

@@ -22,14 +22,19 @@ namespace WebGrease.Activities
     /// <summary>Copies sources to destination, with new file name based on hash of content.</summary>
     internal sealed class FileHasherActivity
     {
+        /// <summary>The context.</summary>
+        private readonly IWebGreaseContext context;
+
         /// <summary>
         /// Renamed Files Log.
         /// </summary>
         private readonly Dictionary<string, List<string>> m_renamedFilesLog = new Dictionary<string, List<string>>();
 
         /// <summary>Initializes a new instance of the <see cref="FileHasherActivity"/> class.</summary>
-        internal FileHasherActivity()
+        /// <param name="context"></param>
+        internal FileHasherActivity(IWebGreaseContext context)
         {
+            this.context = context;
             this.SourceDirectories = new List<string>();
         }
 
@@ -59,6 +64,9 @@ namespace WebGrease.Activities
         /// </summary>
         /// <value>The optional base prefix to add for output path.</value>
         internal string BasePrefixToAddToOutputPath { get; set; }
+
+        /// <summary>Gets or sets the file type name.</summary>
+        internal string FileTypeName { get; set; }
 
         /// <summary>
         /// Gets or sets the BasePrefixToRemoveFromOutputPathInLog.
@@ -105,10 +113,12 @@ namespace WebGrease.Activities
 
             try
             {
+                this.context.Measure.Start(TimeMeasureNames.FileHasherActivity, this.FileTypeName);
                 if (this.SourceDirectories == null || this.SourceDirectories.Count == 0)
                 {
                     // No action for directory not present
-                    Trace.TraceInformation("FileHasherActivity - No source directories passed and hence no action taken for the activity.");
+                    Trace.TraceInformation(
+                        "FileHasherActivity - No source directories passed and hence no action taken for the activity.");
                     return;
                 }
 
@@ -137,7 +147,11 @@ namespace WebGrease.Activities
                     if (!Directory.Exists(sourceDirectory))
                     {
                         // No action for directory not present
-                        Trace.TraceWarning(string.Format(CultureInfo.InvariantCulture, "FileHasherActivity - Could not locate the source directory at {0}", sourceDirectory));
+                        Trace.TraceWarning(
+                            string.Format(
+                                CultureInfo.InvariantCulture,
+                                "FileHasherActivity - Could not locate the source directory at {0}",
+                                sourceDirectory));
                         continue;
                     }
 
@@ -150,7 +164,12 @@ namespace WebGrease.Activities
             }
             catch (Exception exception)
             {
-                throw new WorkflowException("FileHasherActivity - Error happened while executing the activity.", exception);
+                throw new WorkflowException(
+                    "FileHasherActivity - Error happened while executing the activity.", exception);
+            }
+            finally
+            {
+                this.context.Measure.End(TimeMeasureNames.FileHasherActivity, this.FileTypeName);
             }
         }
 

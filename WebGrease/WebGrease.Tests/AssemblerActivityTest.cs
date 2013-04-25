@@ -36,13 +36,10 @@ namespace WebGrease.Tests
         [TestMethod]
         public void WithPreprocessorFiles()
         {
-            // TODO: RTUIT: Move next line to setup
-            PreprocessingManager.Instance.Initialize();
-
             var preprocessingConfig = new PreprocessingConfig(XElement.Parse("<Preprocessing><Engines>sass</Engines></Preprocessing>"));
 
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\AssemblerActivityTest\");
-            var assemblerActivity = new AssemblerActivity();
+            var assemblerActivity = new AssemblerActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             assemblerActivity.PreprocessingConfig = preprocessingConfig;
 
             assemblerActivity.Inputs.Add(new InputSpec { Path = Path.Combine(sourceDirectory, @"Input\Case4\Stylesheet1.scss") });
@@ -67,7 +64,7 @@ namespace WebGrease.Tests
         public void OnlyFiles()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\AssemblerActivityTest");
-            var assemblerActivity = new AssemblerActivity();
+            var assemblerActivity = new AssemblerActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             assemblerActivity.Inputs.Add(new InputSpec { Path = Path.Combine(sourceDirectory, @"Input\Case1\Script1.js") });
             assemblerActivity.Inputs.Add(new InputSpec { Path = Path.Combine(sourceDirectory, @"Input\Case1\Script2.js") });
             assemblerActivity.OutputFile = Path.Combine(sourceDirectory, @"Output\Case1\all.js");
@@ -87,7 +84,7 @@ namespace WebGrease.Tests
         public void OnlyDirectories()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\AssemblerActivityTest");
-            var assemblerActivity = new AssemblerActivity();
+            var assemblerActivity = new AssemblerActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             assemblerActivity.Inputs.Add(new InputSpec { Path = Path.Combine(sourceDirectory, @"Input\Case2\a") });
             assemblerActivity.Inputs.Add(new InputSpec { Path = Path.Combine(sourceDirectory, @"Input\Case2\b") });
             assemblerActivity.OutputFile = Path.Combine(sourceDirectory, @"Output\Case2\all.js");
@@ -108,7 +105,7 @@ namespace WebGrease.Tests
         public void DirectoriesWithWildCards()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\AssemblerActivityTest");
-            var assemblerActivity = new AssemblerActivity();
+            var assemblerActivity = new AssemblerActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             assemblerActivity.Inputs.Add(new InputSpec { Path = Path.Combine(sourceDirectory, @"Input\Case3\a"), SearchPattern = "script*.js" });
             assemblerActivity.Inputs.Add(new InputSpec { Path = Path.Combine(sourceDirectory, @"Input\Case3\b"), SearchPattern = "script*.js" });
             assemblerActivity.Inputs.Add(new InputSpec { Path = Path.Combine(sourceDirectory, @"Input\Case3\d"), SearchPattern = "script*.js", SearchOption = SearchOption.TopDirectoryOnly });

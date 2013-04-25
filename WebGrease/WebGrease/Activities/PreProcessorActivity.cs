@@ -1,13 +1,8 @@
-// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="PreprocessorActivity.cs" company="Microsoft">
-//   Copyright Microsoft Corporation, all rights reserved
+// ----------------------------------------------------------------------------------------------------
+// <copyright file="PreprocessorActivity.cs" company="Microsoft Corporation">
+//   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
-// <summary>
-//   The pre processor activity
-// </summary>
-// --------------------------------------------------------------------------------------------------------------------
-
-
+// ----------------------------------------------------------------------------------------------------
 namespace WebGrease.Activities
 {
     using System;
@@ -16,22 +11,20 @@ namespace WebGrease.Activities
     using System.Text;
 
     using WebGrease.Configuration;
-    using WebGrease.Preprocessing;
 
     /// <summary>The pre processor activity.</summary>
     internal sealed class PreprocessorActivity
     {
-        internal Action<string> LogInformation;
-
-        internal LogError LogError;
-
-        internal LogExtendedError LogExtendedError;
+        /// <summary>The context.</summary>
+        private readonly IWebGreaseContext context;
 
         #region Constructors and Destructors
 
         /// <summary>Initializes a new instance of the <see cref="PreprocessorActivity"/> class.</summary>
-        public PreprocessorActivity()
+        /// <param name="context">The context.</param>
+        internal PreprocessorActivity(IWebGreaseContext context)
         {
+            this.context = context;
             this.Inputs = new List<string>();
         }
 
@@ -53,19 +46,21 @@ namespace WebGrease.Activities
         internal string OutputFolder { get; set; }
 
         /// <summary>
-        /// If the activity needs to use hashed filenames or not.
-        /// </summary>
-        internal bool UseHashedFileNames { get; set; }
-
-        /// <summary>
         /// The preprocessing configuration
         /// </summary>
         internal PreprocessingConfig PreprocessingConfig { get; set; }
+
+        /// <summary>
+        /// If the activity needs to use hashed filenames or not.
+        /// </summary>
+        internal bool UseHashedFileNames { get; set; }
 
         #endregion
 
         #region Methods
 
+        /// <summary>The execute.</summary>
+        /// <returns>The list of processed files.</returns>
         internal IEnumerable<string> Execute()
         {
             var preprocessedFiles = new List<string>();
@@ -83,7 +78,7 @@ namespace WebGrease.Activities
                 }
 
                 var content = File.ReadAllText(file);
-                content = PreprocessingManager.Instance.Process(content, file, this.PreprocessingConfig, this.LogInformation, this.LogError, this.LogExtendedError);
+                content = this.context.Preprocessing.Process(content, file, this.PreprocessingConfig);
                 if (content == null)
                 {
                     throw new WorkflowException("An error occurred while processing the file: " + file);
@@ -97,23 +92,20 @@ namespace WebGrease.Activities
             return preprocessedFiles;
         }
 
-        /// <summary>
-        /// Gets the target file.
-        /// </summary>
-        /// <param name="fi"></param>
-        /// <returns></returns>
+        /// <summary>Gets the target file.</summary>
+        /// <param name="fi">The file info</param>
+        /// <returns>The file</returns>
         private string GetTargetFile(FileSystemInfo fi)
         {
-            if (UseHashedFileNames)
+            if (this.UseHashedFileNames)
             {
                 return Path.Combine(
-                    this.OutputFolder, Guid.NewGuid().ToString().Replace("-", "") + "." + DefaultExtension.Trim('.'));
+                    this.OutputFolder, Guid.NewGuid().ToString().Replace("-", string.Empty) + "." + this.DefaultExtension.Trim('.'));
             }
 
-            return
-                fi.Extension.Trim('.').Equals(this.DefaultExtension.Trim('.'), StringComparison.OrdinalIgnoreCase)
-                    ? Path.Combine(this.OutputFolder, fi.Name + ".processed." + this.DefaultExtension.Trim('.'))
-                    : Path.Combine(this.OutputFolder, fi.Name + "." + this.DefaultExtension.Trim('.'));
+            return fi.Extension.Trim('.').Equals(this.DefaultExtension.Trim('.'), StringComparison.OrdinalIgnoreCase)
+                       ? Path.Combine(this.OutputFolder, fi.Name + ".processed." + this.DefaultExtension.Trim('.'))
+                       : Path.Combine(this.OutputFolder, fi.Name + "." + this.DefaultExtension.Trim('.'));
         }
 
         #endregion

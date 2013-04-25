@@ -16,7 +16,6 @@ namespace WebGrease.Preprocessing.Sass
     using System.Text;
     using System.Text.RegularExpressions;
 
-    using WebGrease.Activities;
     using WebGrease.Configuration;
 
     /// <summary>
@@ -90,18 +89,14 @@ namespace WebGrease.Preprocessing.Sass
         /// <summary>The ruby root path</summary>
         private static string rubyRootPath;
 
+        /// <summary>The context.</summary>
+        private IWebGreaseContext context;
+
         #endregion
 
         #region Constructors and Destructors
 
-        /// <summary>
-        /// Creates the SassPreprocessingEngine
-        /// </summary>
-        #endregion
-
-        #region Public Properties
-
-        /// <summary>The name of this preprocessor (Name has to be set in a configuration for the preprocessor to be used)</summary>
+        /// <summary>Gets the name of this pre-processor (Name has to be set in a configuration for the pre-processor to be used)</summary>
         public string Name
         {
             get
@@ -127,20 +122,28 @@ namespace WebGrease.Preprocessing.Sass
             return fi.Extension.EndsWith(sassConfig.SassExtension, StringComparison.OrdinalIgnoreCase) || fi.Extension.EndsWith(sassConfig.ScssExtension, StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// The main method for Preprocessing, this is where the preprocessor gets passed the full content, parses it and returns the parsed content.
-        /// </summary>
+        /// <summary>The initialize.</summary>
+        /// <param name="webGreaseContext">The web grease context.</param>
+        public void Initialize(IWebGreaseContext webGreaseContext)
+        {
+            if (webGreaseContext == null)
+            {
+                throw new ArgumentNullException("webGreaseContext");
+            }
+
+            this.context = webGreaseContext;
+        }
+
+        /// <summary>The main method for Preprocessing, this is where the preprocessor gets passed the full content, parses it and returns the parsed content.</summary>
         /// <param name="fileContent">Content of the file to parse.</param>
         /// <param name="fullFileName">The full filename</param>
         /// <param name="preprocessConfig">The configuration.</param>
         /// <returns>The processed content.</returns>
-        /// <param name="logInformation">The information log delegate.</param>
-        /// <param name="logError">The error log delegate </param>
-        /// <param name="logExtendedError">The extended log error delegate.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Is meant to catch all, if delete fails it is not important, it isn in the temp folder.")]
-        public string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig, Action<string> logInformation, LogError logError, LogExtendedError logExtendedError)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Is meant to catch all, if delete fails it is not important, it is in the temp folder.")]
+        public string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig)
         {
-            logInformation("Sass: Processing contents for file {0}".InvariantFormat(fullFileName));
+            this.context.Measure.Start(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process, "Sass");
+            this.context.Log.Information("Sass: Processing contents for file {0}".InvariantFormat(fullFileName));
 
             fileContent = ParseImports(fileContent, fullFileName);
 
@@ -149,7 +152,7 @@ namespace WebGrease.Preprocessing.Sass
             try
             {
                 File.WriteAllText(tempFile, fileContent, Encoding.UTF8);
-                return ProcessFile(tempFile, fi.DirectoryName, fullFileName, logInformation, logError, logExtendedError);
+                return ProcessFile(tempFile, fi.DirectoryName, fullFileName, this.context);
             }
             finally
             {
@@ -160,6 +163,8 @@ namespace WebGrease.Preprocessing.Sass
                 catch (Exception)
                 {
                 }
+
+                this.context.Measure.End(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process, "Sass");
             }
         }
 
@@ -172,10 +177,14 @@ namespace WebGrease.Preprocessing.Sass
         private static string ParseImports(string fileContent, string fullFileName)
         {
             var fi = new FileInfo(fullFileName);
-            var workingFolder = fi.DirectoryName+"\\";
-            return ImportsPattern.Replace(fileContent, (match) => ReplaceImports(match, workingFolder));
+            var workingFolder = fi.DirectoryName + "\\";
+            return ImportsPattern.Replace(fileContent, match => ReplaceImports(match, workingFolder));
         }
 
+        /// <summary>The replace imports.</summary>
+        /// <param name="match">The match.</param>
+        /// <param name="workingFolder">The working folder.</param>
+        /// <returns>The <see cref="string"/>.</returns>
         private static string ReplaceImports(Match match, string workingFolder)
         {
             var path = match.Groups["path"].Value;
@@ -194,16 +203,14 @@ namespace WebGrease.Preprocessing.Sass
                 return string.Empty;
             }
 
-            var files =
-                (!string.IsNullOrWhiteSpace(pattern)
-                    ? Directory.GetFiles(pathInfo.FullName, pattern)
-                    : Directory.GetFiles(pathInfo.FullName));
+            var files = !string.IsNullOrWhiteSpace(pattern)
+                            ? Directory.GetFiles(pathInfo.FullName, pattern)
+                            : Directory.GetFiles(pathInfo.FullName);
 
             return 
                 string.Join(
                     " ", 
-                    files.Select(file =>
-                        "@import \"{0}\";".InvariantFormat(MakeRelativePath(workingFolder, file).Replace("\\","/"))));
+                    files.Select(file => "@import \"{0}\";".InvariantFormat(MakeRelativePath(workingFolder, file).Replace("\\", "/"))));
         }
 
         /// <summary>
@@ -212,11 +219,17 @@ namespace WebGrease.Preprocessing.Sass
         /// <param name="fromPath">Contains the directory that defines the start of the relative path.</param>
         /// <param name="toPath">Contains the path that defines the endpoint of the relative path.</param>
         /// <returns>The relative path from the start directory to the end path.</returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public static String MakeRelativePath(String fromPath, String toPath)
+        private static string MakeRelativePath(string fromPath, string toPath)
         {
-            if (String.IsNullOrEmpty(fromPath)) throw new ArgumentNullException("fromPath");
-            if (String.IsNullOrEmpty(toPath)) throw new ArgumentNullException("toPath");
+            if (string.IsNullOrEmpty(fromPath))
+            {
+                throw new ArgumentNullException("fromPath");
+            }
+
+            if (string.IsNullOrEmpty(toPath))
+            {
+                throw new ArgumentNullException("toPath");
+            }
 
             var fromUri = new Uri(fromPath);
             var toUri = new Uri(toPath);
@@ -226,7 +239,6 @@ namespace WebGrease.Preprocessing.Sass
 
             return relativePath.Replace('/', Path.DirectorySeparatorChar);
         }
-
 
         #endregion
 
@@ -239,7 +251,6 @@ namespace WebGrease.Preprocessing.Sass
         /// <returns>The Sass Config</returns>
         private static SassConfig GetConfig(PreprocessingConfig preprocessConfig)
         {
-            //TODO: RTUIT: Make the creation of the config cached
             return new SassConfig(preprocessConfig);
         }
 
@@ -289,7 +300,7 @@ namespace WebGrease.Preprocessing.Sass
             }
             catch (Exception ex)
             {
-                throw new PreprocessingException("Unable to initialize the web grease sass preprocessor:\r\n "+ex, ex);
+                throw new PreprocessingException("Unable to initialize the web grease sass preprocessor:\r\n " + ex, ex);
             }
         }
 
@@ -304,20 +315,19 @@ namespace WebGrease.Preprocessing.Sass
         /// <param name="fullFileName">The full filename</param>
         /// <param name="workingDirectory">The working directory</param>
         /// <param name="originalFilename">The original filename</param>
-        /// <param name="logInformation">The information log delegate.</param>
-        /// <param name="logError">The error log delegate </param>
-        /// <param name="logExtendedError">The extended log error delegate.</param>
+        /// <param name="context">The webgrease context</param>
         /// <returns>The parsed content of the file.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch-all on purpose...")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Need to figure out why this is saying this...")]
-        private static string ProcessFile(string fullFileName, string workingDirectory, string originalFilename, Action<string> logInformation, LogError logError, LogExtendedError logExtendedError)
+        private static string ProcessFile(string fullFileName, string workingDirectory, string originalFilename, IWebGreaseContext context)
         {
             // One time initialization (Lazy<bool>)
             if (Initialized.Value)
             {
                 try
                 {
-                    logInformation("Sassing: {0}".InvariantFormat(originalFilename));
+                    context.Log.Information("Sassing: {0}".InvariantFormat(originalFilename));
+                    
                     // Determine all the file and paths
                     var targetFile = new FileInfo(Path.Combine(Directory.GetCurrentDirectory(), fullFileName));
                     var targetFolder = workingDirectory ?? targetFile.DirectoryName;
@@ -332,6 +342,7 @@ namespace WebGrease.Preprocessing.Sass
 
                         // get the standard output
                         var result = proc.StandardOutput.ReadToEnd();
+                        
                         // get the standard error
                         var errorResult = proc.StandardError.ReadToEnd();
 
@@ -353,14 +364,14 @@ namespace WebGrease.Preprocessing.Sass
                                 // If the file is the same as the error, use the original filename (Initial file is copied in place)
                                 // Else use whatever file we get passed as the error file.
                                 var errorFile = 
-                                    (fullFileInfo.FullName.Equals(errorFileInfo.FullName, StringComparison.OrdinalIgnoreCase))
+                                    fullFileInfo.FullName.Equals(errorFileInfo.FullName, StringComparison.OrdinalIgnoreCase)
                                     ? originalFilename
                                     : errorFileInfo.FullName;
                                 
                                 // Unused for now: var file = match.Groups["file"].Value.Trim();
                                 var line = match.Groups["line"].Value.TryParseInt32();
 
-                                logExtendedError(
+                                context.Log.ExtendedError(
                                     "Sass", 
                                     null, 
                                     null, 
@@ -373,8 +384,9 @@ namespace WebGrease.Preprocessing.Sass
 
                                 return null;
                             }
+
                             // throw a general exception.
-                            logError(null, errorResult);
+                            context.Log.Error(null, errorResult);
                             return null;
                         }
 
@@ -386,10 +398,11 @@ namespace WebGrease.Preprocessing.Sass
                 }
                 catch (Exception ex)
                 {
-                    logError(ex, "Unknown error occured while trying to pre process sass file '{0}' to css: {1}".InvariantFormat(originalFilename, ex.Message), null);
+                    context.Log.Error(ex, "Unknown error occured while trying to pre process sass file '{0}' to css: {1}".InvariantFormat(originalFilename, ex.Message));
                     return null;
                 }
             }
+
             return null;
         }
 

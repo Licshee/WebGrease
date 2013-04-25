@@ -1,11 +1,11 @@
-// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="MinifyJSActivity.cs" company="Microsoft">
-//   Copyright Microsoft Corporation, all rights reserved
+// ----------------------------------------------------------------------------------------------------
+// <copyright file="MinifyJSActivity.cs" company="Microsoft Corporation">
+//   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
 // <summary>
 //   This task will call the minifier with settings from the args, and output the files to the specified directory
 // </summary>
-// --------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
 
 namespace WebGrease.Activities
 {
@@ -18,6 +18,16 @@ namespace WebGrease.Activities
     /// <summary>This task will call the minifier with settings from the args, and output the files to the specified directory</summary>
     internal sealed class MinifyJSActivity
     {
+        /// <summary>The context.</summary>
+        private readonly IWebGreaseContext context;
+
+        /// <summary>Initializes a new instance of the <see cref="MinifyJSActivity"/> class.</summary>
+        /// <param name="context">The context.</param>
+        public MinifyJSActivity(IWebGreaseContext context)
+        {
+            this.context = context;
+        }
+
         /// <summary>Gets or sets SourceFile.</summary>
         internal string SourceFile { get; set; }
 
@@ -48,11 +58,6 @@ namespace WebGrease.Activities
         /// <value>True if the files should be minified.</value>
         internal bool ShouldMinify { get; set; }
 
-        /// <summary>
-        /// Gets or sets the object to use to log any errors
-        /// </summary>
-        internal LogExtendedError LogExtendedError { get; set; }
-
         /// <summary>When overridden in a derived class, executes the task.</summary>
         internal void Execute()
         {
@@ -68,9 +73,10 @@ namespace WebGrease.Activities
 
             try
             {
+                this.context.Measure.Start(TimeMeasureNames.MinifyJsActivity);
+
                 // Initialize the minifier
-                var minifier = new Minifier();
-                minifier.FileName = this.SourceFile;
+                var minifier = new Minifier { FileName = this.SourceFile };
                 var minifierSettings = this.GetMinifierSettings(minifier);
 
                 var output = minifier.MinifyJavaScript(File.ReadAllText(this.SourceFile), minifierSettings.JSSettings);
@@ -79,12 +85,12 @@ namespace WebGrease.Activities
                 if (minifier.ErrorList != null && minifier.ErrorList.Count > 0)
                 {
                     string exceptionMessage;
-                    if (LogExtendedError != null)
+                    if (this.context.Log.HasExtendedErrorHandler)
                     {
                         // log each message individually so we can click through into the source
                         foreach (var errorMessage in minifier.ErrorList)
                         {
-                            LogExtendedError(                                
+                            this.context.Log.ExtendedError(
                                 errorMessage.Subcategory,
                                 errorMessage.ErrorCode,
                                 errorMessage.HelpKeyword,
@@ -111,15 +117,22 @@ namespace WebGrease.Activities
                         exceptionMessage = errorMessageForException.ToString();
                     }
 
-                    throw new BuildWorkflowException(exceptionMessage, "MinifyJSActivity", ErrorCode.Default, null, this.SourceFile, 0, 0, 0, 0, null);
+                    throw new BuildWorkflowException(
+                        exceptionMessage, "MinifyJSActivity", ErrorCode.Default, null, this.SourceFile, 0, 0, 0, 0, null);
                 }
 
                 // Write to disk
-                FileHelper.WriteFile(this.DestinationFile, output, CreateOutputEncoding(minifierSettings.EncodingOutputName));
+                FileHelper.WriteFile(
+                    this.DestinationFile, output, CreateOutputEncoding(minifierSettings.EncodingOutputName));
             }
             catch (Exception exception)
             {
-                throw new WorkflowException("MinifyJSActivity - Error happened while executing the minify JS activity", exception);
+                throw new WorkflowException(
+                    "MinifyJSActivity - Error happened while executing the minify JS activity", exception);
+            }
+            finally
+            {
+                this.context.Measure.End(TimeMeasureNames.MinifyJsActivity);
             }
         }
 
@@ -169,7 +182,7 @@ namespace WebGrease.Activities
             {
                 // default minification settings (except make sure the file is properly terminated
                 // in case it gets concatenated with other JS files later on)
-                defaultJSSettings = new CodeSettings()
+                defaultJSSettings = new CodeSettings
                     {
                         TermSemicolons = true
                     };
@@ -177,7 +190,7 @@ namespace WebGrease.Activities
             else
             {
                 // set a bunch of switches to skip most of the minification of the code
-                defaultJSSettings = new CodeSettings()
+                defaultJSSettings = new CodeSettings
                     {
                         OutputMode = OutputMode.MultipleLines,
                         PreserveFunctionNames = true,

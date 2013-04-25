@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebGrease>
+  <Settings>
+    <TokensDirectory>Shared</TokensDirectory>
+    <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
+    <!-- these settings apply to each file set defined in this config -->
+    <Locales>generic-generic</Locales>
+    <JsMinification config="Release">
+      <Minify>True</Minify>
+      <MinifyArguments>-h -debug:F -fnames:onlyref -rename:all -unused:remove</MinifyArguments>
+      <GlobalsToIgnore>jQuery;Msn;define;require</GlobalsToIgnore>
+    </JsMinification>
+    <JsMinification config="Debug">
+      <Minify>False</Minify>
+      <MinifyArguments>-debug -p</MinifyArguments>
+      <GlobalsToIgnore>jQuery;Msn;define;require</GlobalsToIgnore>
+    </JsMinification>
+  </Settings>
+  <JsFileSet output="landingPage.tmx.pc.ms.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\landingPage.tmx.pc.ms.js</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Js\Global\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\Common\</Input>
+      <!-- pc -->
+      <Input optional="true">shared\Js\Global\PC\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\PC\Common\</Input>
+      <!-- pc.app -->
+      <!-- mobile -->
+      <!-- mobile.app -->
+    </Inputs>
+  </JsFileSet>
+  <JsFileSet output="landingPage.tmx.pc.ms.app.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\landingPage.tmx.pc.ms.app.js</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Js\Global\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\Common\</Input>
+      <!-- pc -->
+      <Input optional="true">shared\Js\Global\PC\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\PC\Common\</Input>
+      <!-- pc.app -->
+      <Input optional="true">shared\Js\Global\PC\App\</Input>
+      <Input optional="true">shared\Js\landingPage\PC\App\</Input>
+      <!-- mobile -->
+      <!-- mobile.app -->
+    </Inputs>
+  </JsFileSet>
+  <JsFileSet output="landingPage.tmx.mobile.ms.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\landingPage.tmx.mobile.ms.js</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Js\Global\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\Common\</Input>
+      <!-- pc -->
+      <!-- pc.app -->
+      <!-- mobile -->
+      <Input optional="true">shared\Js\Global\mobile\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\mobile\Common\</Input>
+      <Input optional="true">shared\Js\Global\mobile\Browse\</Input>
+      <Input optional="true">shared\Js\landingPage\mobile\Browse\</Input>
+      <!-- mobile.app -->
+    </Inputs>
+  </JsFileSet>
+  <JsFileSet output="landingPage.tmx.mobile.ms.app.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\landingPage.tmx.mobile.ms.app.js</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Js\Global\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\Common\</Input>
+      <!-- pc -->
+      <!-- pc.app -->
+      <!-- mobile -->
+      <Input optional="true">shared\Js\Global\mobile\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\mobile\Common\</Input>
+      <Input optional="true">shared\Js\Global\mobile\Browse\</Input>
+      <Input optional="true">shared\Js\landingPage\mobile\Browse\</Input>
+      <!-- mobile.app -->
+      <Input optional="true">shared\Js\Global\mobile\App\</Input>
+      <Input optional="true">shared\Js\landingPage\mobile\App\</Input>
+    </Inputs>
+  </JsFileSet>
+  <JsFileSet output="landingPage.tmx.mobile.webkit.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\landingPage.tmx.mobile.webkit.js</Input>
+      <!-- Application files -->
+      <!-- common -->
+      <Input optional="true">shared\Js\Global\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\Common\</Input>
+      <!-- pc -->
+      <!-- pc.app -->
+      <!-- mobile -->
+      <Input optional="true">shared\Js\Global\mobile\Common\</Input>
+      <Input optional="true">shared\Js\landingPage\mobile\Common\</Input>
+      <Input optional="true">shared\Js\Global\mobile\Browse\</Input>
+      <Input optional="true">shared\Js\landingPage\mobile\Browse\</Input>
+      <!-- mobile.app -->
+    </Inputs>
+  </JsFileSet>
+</WebGrease>

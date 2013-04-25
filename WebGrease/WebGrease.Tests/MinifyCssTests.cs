@@ -13,6 +13,8 @@ namespace WebGrease.Tests
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+    using WebGrease.Configuration;
+
     /// <summary>
     /// This is a test class for using MinifyCss and is intended to contain all MinifyCss Unit Tests
     /// </summary>
@@ -28,7 +30,7 @@ namespace WebGrease.Tests
             var goodCssContent = "p {color:red;}\r\np {margin: 10px}\r\np {width: 10px}\r\nbody {margin: 1em;}";
             var expected = "p{color:red;margin:10px;width:10px}body{margin:1em}";
 
-            var minifier = new CssMinifier();
+            var minifier = new CssMinifier(new WebGreaseContext(new WebGreaseConfiguration()));
             var actual = minifier.Minify(goodCssContent);
             Assert.AreEqual<string>(actual, expected);
 
@@ -46,7 +48,7 @@ namespace WebGrease.Tests
         public void MinifierErrorsTest()
         {
             var badCss = "p {color:red;}\r\np {margin: 10px}\r\np {width: }\r\nbody margin: 1em;}";
-            var minifier = new CssMinifier();
+            var minifier = new CssMinifier(new WebGreaseContext(new WebGreaseConfiguration()));
             var output = minifier.Minify(badCss);
             Assert.IsTrue(minifier.Errors.Count > 0);
             Assert.IsTrue(minifier.Errors[0].StartsWith("(3"), "first error should be on line 3");
@@ -58,7 +60,7 @@ namespace WebGrease.Tests
         [TestMethod]
         public void MinifyComplexCaseTest()
         {
-            var minifier = new CssMinifier();
+            var minifier = new CssMinifier(new WebGreaseContext(new WebGreaseConfiguration()));
             var filePath = Path.Combine(TestDeploymentPaths.TestDirectory, @"css.tests\css30\sites\vsteam\jquery-combined.css");
             var css = File.ReadAllText(filePath);
             var actual = minifier.Minify(css);

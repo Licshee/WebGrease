@@ -8,7 +8,6 @@ namespace WebGrease.Preprocessing
 {
     using System;
 
-    using WebGrease.Activities;
     using WebGrease.Configuration;
 
     /// <summary>
@@ -40,12 +39,13 @@ namespace WebGrease.Preprocessing
         /// <param name="fileContent">Content of the file to parse.</param>
         /// <param name="fullFileName">The full filename</param>
         /// <param name="preprocessConfig">The configuration.</param>
-        /// <param name="logInformation">The information log delegate.</param>
-        /// <param name="logError">The error log delegate </param>
-        /// <param name="logExtendedError">The extended log error delegate.</param>
         /// <returns>The processed content.</returns>
-        string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig, Action<string> logInformation = null, LogError logError = null, LogExtendedError logExtendedError = null);
+        string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig);
 
         #endregion
+
+        /// <summary>The initialize.</summary>
+        /// <param name="webGreaseContext">The context.</param>
+        void Initialize(IWebGreaseContext webGreaseContext);
     }
 }

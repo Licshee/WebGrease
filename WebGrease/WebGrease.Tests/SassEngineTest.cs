@@ -6,7 +6,9 @@ namespace Microsoft.WebGrease.Tests
 
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+    using global::WebGrease;
     using global::WebGrease.Activities;
+    using global::WebGrease.Configuration;
     using global::WebGrease.Preprocessing.Sass;
     using global::WebGrease.Tests;
 
@@ -83,14 +85,13 @@ $margin: 16px;
 
         private static string ProcessSass(string content, string filename, LogExtendedError logExtendedError = null)
         {
-            return new SassPreprocessingEngine()
+            var sassPreprocessingEngine = new SassPreprocessingEngine();
+            sassPreprocessingEngine.Initialize(new WebGreaseContext(new WebGreaseConfiguration(), null, null, null, logExtendedError));
+            return sassPreprocessingEngine
                 .Process(
                     content, 
                     filename, 
-                    null, 
-                    (s1) => { }, 
-                    (s1, s2, s3) => { }, 
-                    logExtendedError ?? ((s1, s2, s3, s4, s5, s6, s7, s8, errorMessage) => { }));
+                    null);
         }
 
         [TestMethod]

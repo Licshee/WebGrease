@@ -20,9 +20,14 @@ namespace WebGrease.Activities
     /// <summary>The class responsible for expanding the JS resource keys.</summary>
     internal sealed class JSLocalizationActivity
     {
+        /// <summary>The context.</summary>
+        private readonly IWebGreaseContext context;
+
         /// <summary>Initializes a new instance of the <see cref="JSLocalizationActivity"/> class.</summary>
-        internal JSLocalizationActivity()
+        /// <param name="context">The context.</param>
+        internal JSLocalizationActivity(IWebGreaseContext context)
         {
+            this.context = context;
             this.JsLocalizationInputs = new List<JSLocalizationInput>();
         }
 
@@ -56,6 +61,7 @@ namespace WebGrease.Activities
 
             try
             {
+                this.context.Measure.Start(TimeMeasureNames.JSLocalizationActivity);
                 Directory.CreateDirectory(this.DestinationDirectory);
                 foreach (var jsLocalizationInput in this.JsLocalizationInputs.Where(_ => (_ != null && !string.IsNullOrWhiteSpace(_.DestinationFile))))
                 {
@@ -75,6 +81,10 @@ namespace WebGrease.Activities
             catch (Exception exception)
             {
                 throw new WorkflowException("JSLocalizationActivity - Error happened while executing the expand js resources activity.", exception);
+            }
+            finally
+            {
+                this.context.Measure.End(TimeMeasureNames.JSLocalizationActivity);
             }
         }
 

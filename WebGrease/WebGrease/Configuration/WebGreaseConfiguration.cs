@@ -21,8 +21,13 @@ namespace WebGrease.Configuration
     using WebGrease.Preprocessing;
 
     /// <summary>The web grease configuration root.</summary>
-    internal sealed class WebGreaseConfiguration
+    public class WebGreaseConfiguration
     {
+        /// <summary>
+        /// The configuration type
+        /// </summary>
+        public string ConfigType { get; private set; }
+
         /// <summary>
         /// The source directory for all paths in configuration.
         /// </summary>
@@ -53,6 +58,16 @@ namespace WebGrease.Configuration
         /// </summary>
         public string LogsDirectory { get; set; }
 
+        /// <summary>
+        /// The tools temp directory.
+        /// </summary>
+        public string ToolsTempDirectory { get; set; }
+
+        /// <summary>
+        /// The path to the pre processing plugin assemblies
+        /// </summary>
+        public string PreprocessingPluginPath { get; private set; }
+
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
         internal WebGreaseConfiguration()
         {
@@ -65,15 +80,27 @@ namespace WebGrease.Configuration
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
+        /// <param name="configType">Configuration type (debug/release)</param>
+        /// <param name="preprocessingPluginPath">The path to the pre processing plugin assemblies.</param>
+        internal WebGreaseConfiguration(string configType, string preprocessingPluginPath = null)
+            : this()
+        {
+            ConfigType = configType;
+            PreprocessingPluginPath = preprocessingPluginPath;
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
         /// <param name="configurationFile">The configuration File.</param>
+        /// <param name="configType">Configuration type (debug/release)</param>
         /// <param name="sourceDirectory">The source directory, if not supplied, all relative paths are assumed
-        /// to be relative to location of configuration file.
-        /// </param>
+        /// to be relative to location of configuration file.</param>
         /// <param name="destinationDirectory">The destination directory where the statics should be generated.</param>
         /// <param name="logsDirectory">The directory where the logs will be generated.</param>
+        /// <param name="toolsTempDirectory">The tools Temp Directory.</param>
         /// <param name="appRootDirectory">root directory of the application. Used for generating relative urls from the root. If not provided, the current directory is used.</param>
-        internal WebGreaseConfiguration(string configurationFile, string sourceDirectory, string destinationDirectory, string logsDirectory, string appRootDirectory = null)
-            : this()
+        /// <param name="preprocessingPluginPath">The path to the pre processing plugin assemblies.</param>
+        internal WebGreaseConfiguration(string configurationFile, string configType, string sourceDirectory, string destinationDirectory, string logsDirectory, string toolsTempDirectory = null, string appRootDirectory = null, string preprocessingPluginPath = null)
+            : this(configType, preprocessingPluginPath)
         {
             Contract.Requires(File.Exists(configurationFile));
             Contract.Requires(!string.IsNullOrWhiteSpace(destinationDirectory));
@@ -82,10 +109,16 @@ namespace WebGrease.Configuration
             this.SourceDirectory = sourceDirectory;
             this.DestinationDirectory = destinationDirectory;
             this.LogsDirectory = logsDirectory;
+            this.ToolsTempDirectory = toolsTempDirectory;
             this.ApplicationRootDirectory = appRootDirectory ?? System.Environment.CurrentDirectory;
+
             Directory.CreateDirectory(destinationDirectory);
             Directory.CreateDirectory(logsDirectory);
-            this.Parse(configurationFile);
+            
+            if (configurationFile != null)
+            {
+                this.Parse(configurationFile);
+            }
         }
 
         /// <summary>Gets or sets the default list of locales</summary>
@@ -117,6 +150,9 @@ namespace WebGrease.Configuration
 
         /// <summary>Gets or sets the javascript file sets to be used.</summary>
         internal IList<JSFileSet> JSFileSets { get; set; }
+
+        /// <summary>Gets or sets the value that determines if webgrease measures it tasks.</summary>
+        internal bool Measure { get; set; }
 
         /// <summary>Parses the configurations segments.</summary>
         /// <param name="configurationFile">The configuration file.</param>

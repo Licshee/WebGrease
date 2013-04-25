@@ -14,6 +14,7 @@ namespace WebGrease.Tests
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+    using WebGrease.Configuration;
 
     /// <summary>
     /// This is a test class for JSLocalizationActivityTest and is intended
@@ -33,7 +34,7 @@ namespace WebGrease.Tests
         public void JSLocalizationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\JSLocalizationActivityTest");
-            var jsLocalizationActivity = new JSLocalizationActivity { DestinationDirectory = Path.Combine(sourceDirectory, "Output"), ResourcesDirectory = Path.Combine(sourceDirectory, @"Input\ToolsLogs\Resources\Locales") };
+            var jsLocalizationActivity = new JSLocalizationActivity(new WebGreaseContext(new WebGreaseConfiguration())) { DestinationDirectory = Path.Combine(sourceDirectory, "Output"), ResourcesDirectory = Path.Combine(sourceDirectory, @"Input\ToolsLogs\Resources\Locales") };
             var jsLocalizationInput = new JSLocalizationInput { SourceFile = Path.Combine(sourceDirectory, @"input\input1.js"), DestinationFile = "input1" };
             jsLocalizationInput.Locales.Add("en-us");
             jsLocalizationActivity.JsLocalizationInputs.Add(jsLocalizationInput);

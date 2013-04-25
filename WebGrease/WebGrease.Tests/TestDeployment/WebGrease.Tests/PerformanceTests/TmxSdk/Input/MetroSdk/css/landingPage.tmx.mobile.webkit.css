@@ -1,0 +1,1281 @@
+﻿
+/* C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Tmx\basePage\basePage.tmx.mobile.webkit.scss */
+
+@-wg-dpi %WebGrease.Dpi%;
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  /* <=iOS4, <= Android  2.3 */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none; }
+
+body {
+  font-family: %Classic.Mobile.fontFamilyNormal%;
+  font-size: %Classic.Mobile.fontSizeNormal%;
+  font-weight: %Classic.Mobile.fontWeightNormal%;
+  line-height: %Classic.Mobile.lineHeightNormal%;
+  color: %darkgray%; }
+  body.lp #main > h1 {
+    display: none; }
+
+a {
+  text-decoration: none; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: %Classic.Mobile.fontFamilyNormal%;
+  font-size: %Classic.Mobile.fontSizeNormal%;
+  font-weight: %Classic.Mobile.fontWeightNormal%;
+  line-height: %Classic.Mobile.lineHeightNormal%;
+  text-transform: lowercase; }
+
+h1 {
+  font-family: %Classic.Mobile.fontFamilyExtraLarge%;
+  font-size: %Classic.Mobile.fontSizeExtraLarge%;
+  font-weight: %Classic.Mobile.fontWeightExtraLarge%;
+  line-height: %Classic.Mobile.lineHeightExtraLarge%;
+  text-transform: none; }
+
+img {
+  border: 0;
+  max-width: 100%; }
+
+input {
+  border-radius: 0; }
+
+ul.inline, ul.inline li {
+  list-style: none; }
+
+/* theme colors 
+---------------------------------------------------*/
+.cluster > .fg.slate,
+.bg.slate,
+#toc .heading.slate,
+#toc .heading.slate a {
+  background-color: %slate%;
+  color: %white%; }
+
+*:not(.cluster) > .fg.slate,
+*:not(.cluster) > .fg.slate:visited,
+*:not(.cluster) > .heading.fg.slate a,
+.moretab .slate,
+.related .heading.slate,
+.related .heading.slate a {
+  background-color: transparent;
+  color: %slate%; }
+
+a.network.slate svg {
+  fill: %slate%; }
+
+.cluster > .fg.indigo,
+.bg.indigo,
+#toc .heading.indigo,
+#toc .heading.indigo a {
+  background-color: %indigo%;
+  color: %white%; }
+
+*:not(.cluster) > .fg.indigo,
+*:not(.cluster) > .fg.indigo:visited,
+*:not(.cluster) > .heading.fg.indigo a,
+.moretab .indigo,
+.related .heading.indigo,
+.related .heading.indigo a {
+  background-color: transparent;
+  color: %indigo%; }
+
+a.network.indigo svg {
+  fill: %indigo%; }
+
+.cluster > .fg.msnblue,
+.bg.msnblue,
+#toc .heading.msnblue,
+#toc .heading.msnblue a {
+  background-color: %msnblue%;
+  color: %white%; }
+
+*:not(.cluster) > .fg.msnblue,
+*:not(.cluster) > .fg.msnblue:visited,
+*:not(.cluster) > .heading.fg.msnblue a,
+.moretab .msnblue,
+.related .heading.msnblue,
+.related .heading.msnblue a {
+  background-color: transparent;
+  color: %msnblue%; }
+
+a.network.msnblue svg {
+  fill: %msnblue%; }
+
+.cluster > .fg.blue,
+.bg.blue,
+#toc .heading.blue,
+#toc .heading.blue a {
+  background-color: %blue%;
+  color: %white%; }
+
+*:not(.cluster) > .fg.blue,
+*:not(.cluster) > .fg.blue:visited,
+*:not(.cluster) > .heading.fg.blue a,
+.moretab .blue,
+.related .heading.blue,
+.related .heading.blue a {
+  background-color: transparent;
+  color: %blue%; }
+
+a.network.blue svg {
+  fill: %blue%; }
+
+.cluster > .fg.aquamarine,
+.bg.aquamarine,
+#toc .heading.aquamarine,
+#toc .heading.aquamarine a {
+  background-color: %aquamarine%;
+  color: %white%; }
+
+*:not(.cluster) > .fg.aquamarine,
+*:not(.cluster) > .fg.aquamarine:visited,
+*:not(.cluster) > .heading.fg.aquamarine a,
+.moretab .aquamarine,
+.related .heading.aquamarine,
+.related .heading.aquamarine a {
+  background-color: transparent;
+  color: %aquamarine%; }
+
+a.network.aquamarine svg {
+  fill: %aquamarine%; }
+
+.cluster > .fg.green,
+.bg.green,
+#toc .heading.green,
+#toc .heading.green a {
+  background-color: %green%;
+  color: %white%; }
+
+*:not(.cluster) > .fg.green,
+*:not(.cluster) > .fg.green:visited,
+*:not(.cluster) > .heading.fg.green a,
+.moretab .green,
+.related .heading.green,
+.related .heading.green a {
+  background-color: transparent;
+  color: %green%; }
+
+a.network.green svg {
+  fill: %green%; }
+
+.cluster > .fg.orange,
+.bg.orange,
+#toc .heading.orange,
+#toc .heading.orange a {
+  background-color: %orange%;
+  color: %white%; }
+
+*:not(.cluster) > .fg.orange,
+*:not(.cluster) > .fg.orange:visited,
+*:not(.cluster) > .heading.fg.orange a,
+.moretab .orange,
+.related .heading.orange,
+.related .heading.orange a {
+  background-color: transparent;
+  color: %orange%; }
+
+a.network.orange svg {
+  fill: %orange%; }
+
+.cluster > .fg.pink,
+.bg.pink,
+#toc .heading.pink,
+#toc .heading.pink a {
+  background-color: %pink%;
+  color: %white%; }
+
+*:not(.cluster) > .fg.pink,
+*:not(.cluster) > .fg.pink:visited,
+*:not(.cluster) > .heading.fg.pink a,
+.moretab .pink,
+.related .heading.pink,
+.related .heading.pink a {
+  background-color: transparent;
+  color: %pink%; }
+
+a.network.pink svg {
+  fill: %pink%; }
+
+.heading.bg a {
+  color: %white%; }
+
+.featured figcaption {
+  position: relative;
+  height: 9.4rem; }
+
+#header a.network {
+  height: 4rem;
+  margin-top: 0.6rem;
+  width: 7rem; }
+
+.mobilead {
+  margin-bottom: 1rem; }
+
+body > section:nth-of-type(1).mobilead {
+  margin: 1rem 0 0; }
+
+#mobilead {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  line-height: 0.5rem;
+  border: 0;
+  text-align: center; }
+  #mobilead .hide {
+    display: none; }
+
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+#breakingnews {
+  background: %red%;
+  border: solid %red%;
+  border-width: %BreakingNews.Webkit.Mobile.BorderWidth%;
+  color: %white%;
+  display: inline-block;
+  margin: 1.5rem 1rem 0 0;
+  padding: 0 1rem;
+  width: 100%; }
+  #breakingnews a {
+    color: %white%; }
+  #breakingnews p {
+    display: inline; }
+    #breakingnews p:nth-child(2):before {
+      content: "|";
+      padding: 0 .8rem; }
+
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+#foot {
+  clear: both; }
+  #foot footer {
+    clear: both;
+    padding-top: 2rem; }
+    #foot footer a,
+    #foot footer span {
+      display: inline-block;
+      margin-right: 2rem; }
+    #foot footer a,
+    #foot footer a:link,
+    #foot footer a:visited,
+    #foot footer a:hover,
+    #foot footer a:active,
+    #foot footer span {
+      color: %mediumgray%;
+      font-family: %Classic.Mobile.fontFamilySmall2%;
+      font-size: %Classic.Mobile.fontSizeSmall2%;
+      font-weight: %Classic.Mobile.fontWeightSmall%;
+      line-height: %Classic.Mobile.lineHeightSmall2%; }
+    #foot footer .cobrand a,
+    #foot footer .cobrand span {
+      margin-right: 0; }
+
+#foot footer {
+  text-align: center; }
+
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+body > div.head {
+  -ms-zoom: 1;
+  margin-bottom: 1.6rem; }
+  body > div.head:before, body > div.head:after {
+    content: "\0020";
+    display: block;
+    height: 0;
+    overflow: hidden; }
+  body > div.head:after {
+    clear: both; }
+
+a.network.slate {
+  background: transparent url('hash(/images/msnlogo/msn_logo_slate_Mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+body.slate #header .carat {
+  background: transparent url('hash(/images/NavigationCarat/navigationcarat_slate_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+a.network.indigo {
+  background: transparent url('hash(/images/msnlogo/msn_logo_indigo_Mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+body.indigo #header .carat {
+  background: transparent url('hash(/images/NavigationCarat/navigationcarat_indigo_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+a.network.msnblue {
+  background: transparent url('hash(/images/msnlogo/msn_logo_msnblue_Mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+body.msnblue #header .carat {
+  background: transparent url('hash(/images/NavigationCarat/navigationcarat_msnblue_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+a.network.blue {
+  background: transparent url('hash(/images/msnlogo/msn_logo_blue_Mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+body.blue #header .carat {
+  background: transparent url('hash(/images/NavigationCarat/navigationcarat_blue_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+a.network.aquamarine {
+  background: transparent url('hash(/images/msnlogo/msn_logo_aquamarine_Mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+body.aquamarine #header .carat {
+  background: transparent url('hash(/images/NavigationCarat/navigationcarat_aquamarine_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+a.network.green {
+  background: transparent url('hash(/images/msnlogo/msn_logo_green_Mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+body.green #header .carat {
+  background: transparent url('hash(/images/NavigationCarat/navigationcarat_green_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+a.network.orange {
+  background: transparent url('hash(/images/msnlogo/msn_logo_orange_Mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+body.orange #header .carat {
+  background: transparent url('hash(/images/NavigationCarat/navigationcarat_orange_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+a.network.pink {
+  background: transparent url('hash(/images/msnlogo/msn_logo_pink_Mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+body.pink #header .carat {
+  background: transparent url('hash(/images/NavigationCarat/navigationcarat_pink_%MetroSdk.Resolution%.png)') no-repeat 0 0; }
+
+#header {
+  white-space: nowrap; }
+  #header > div {
+    float: left;
+    margin-left: .2rem; }
+    #header > div a, #header > div a:link, #header > div a:visited, #header > div a:hover, #header > div a:active {
+      margin-top: .2rem; }
+    #header > div a.carat {
+      display: block;
+      margin: 0 0 0 .6rem;
+      width: 2rem;
+      height: 2rem;
+      float: left;
+      position: relative;
+      top: 1.5rem; }
+    #header > div a.channel h1,
+    #header > div a.channel span, #header > div a.cobrand h1, #header > div a.cobrand span {
+      -ms-text-overflow: ellipsis;
+      -webkit-text-overflow: ellipsis;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      font-family: %Classic.Mobile.fontFamilyLarge%;
+      font-size: %Classic.Mobile.fontSizeLarge%;
+      font-weight: %Classic.Mobile.fontWeightLarge%;
+      line-height: %Classic.Mobile.lineHeightLarge%;
+      display: block;
+      float: left;
+      margin-top: 1.3rem;
+      max-width: 16.4rem;
+      text-transform: lowercase; }
+    #header > div a.channel {
+      margin-top: %headerAnchorChannelMarginMobile%; }
+      #header > div a.channel.longtitle {
+        clear: left;
+        display: block;
+        margin: .1rem 0 0; }
+        #header > div a.channel.longtitle h1,
+        #header > div a.channel.longtitle span {
+          margin-top: .4rem;
+          max-width: none; }
+        #header > div a.channel.longtitle,
+        #header > div a.channel.longtitle + .carat {
+          float: left; }
+        #header > div a.channel.longtitle + .carat {
+          top: .7rem; }
+    #header > div a.cobrand {
+      padding-top: 1.1rem; }
+      #header > div a.cobrand + .channel:not(.longtitle) {
+        margin-left: .5rem; }
+    #header > div a.network {
+      display: inline-block;
+      height: 3rem;
+      width: 7rem;
+      float: left;
+      z-index: 1; }
+      #header > div a.network span {
+        display: none; }
+  .expand #header {
+    visibility: hidden; }
+  #header .inner {
+    display: none; }
+
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+body.username .mobilead,
+body.username .head,
+body.username #maincontent,
+body.username footer,
+body.username #fbcount,
+body.username #twcount,
+body.username #langtoggle {
+  display: none !important; }
+body.username #sign-in-out {
+  height: auto; }
+body.username #language-social #username {
+  left: 0;
+  max-width: 100%;
+  padding: 3rem 1rem;
+  position: fixed;
+  text-align: %Global.Left%;
+  top: 0;
+  width: 100%;
+  z-index: 1001; }
+  body.username #language-social #username a,
+  body.username #language-social #username button {
+    font-family: %Classic.Mobile.fontFamilyMedium%;
+    font-size: %Classic.Mobile.fontSizeMedium%;
+    font-weight: %Classic.Mobile.fontWeightMedium%;
+    line-height: %Classic.Mobile.lineHeightMedium%; }
+  body.username #language-social #username button {
+    margin-left: 1rem; }
+    body.username #language-social #username button:hover {
+      cursor: auto; }
+  body.username #language-social #username ul a {
+    color: %darkgray%;
+    width: 100%; }
+  body.username #language-social #username ul, body.username #language-social #username ul li {
+    display: block; }
+  body.username #language-social #username ul li {
+    padding-left: 1rem;
+    padding-top: 2rem; }
+
+#fbcount {
+  background: transparent url('hash(/images/social/header/facebook_%MetroSdk.Resolution%.png)') no-repeat 0 0.6rem; }
+
+#fbcount,
+#twcount,
+#langtoggle,
+#sign-in-out,
+#username {
+  cursor: pointer;
+  height: 2.6rem;
+  margin-top: .5rem;
+  margin-bottom: .5rem; }
+
+#fbcount,
+#twcount {
+  display: inline-block;
+  margin-left: 2rem;
+  min-height: 2.6rem;
+  padding-left: 2.5rem; }
+  #fbcount:first-child,
+  #twcount:first-child {
+    margin-left: 0; }
+
+#language-social {
+  list-style: none;
+  margin-top: 1rem;
+  text-align: center;
+  width: 100%; }
+  #language-social + footer {
+    padding-top: .3rem; }
+  #language-social a,
+  #language-social button {
+    font-family: %Classic.Mobile.fontFamilySmall2%;
+    font-size: %Classic.Mobile.fontSizeSmall2%;
+    font-weight: %Classic.Mobile.fontWeightSmall%;
+    line-height: %Classic.Mobile.lineHeightSmall2%;
+    color: #666;
+    text-transform: uppercase; }
+  #language-social button {
+    background: 0;
+    border: 0; }
+    #language-social button:hover {
+      cursor: pointer; }
+
+#username ul {
+  display: none; }
+
+#twcount {
+  background: transparent url('hash(/images/social/header/twitter_%MetroSdk.Resolution%.png)') no-repeat 0 0.6rem; }
+
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+body.mobilemenu #maincontent,
+body.mobilemenu .mobilead,
+body.mobilemenu #foot {
+  display: none; }
+
+#nav-bg {
+  display: none; }
+
+#nav {
+  display: none; }
+  .mobilemenu #nav {
+    display: block;
+    background-color: %white%;
+    height: 100%;
+    width: 100%;
+    padding: 3rem 1rem;
+    position: absolute;
+    z-index: 1; }
+    .mobilemenu #nav .outer {
+      height: 100%;
+      list-style: none;
+      white-space: nowrap; }
+      .mobilemenu #nav .outer,
+      .mobilemenu #nav .outer li.current h1 {
+        font-family: %Classic.Mobile.fontFamilyMedium%;
+        font-size: %Classic.Mobile.fontSizeMedium%;
+        font-weight: %Classic.Mobile.fontWeightMedium%;
+        line-height: %Classic.Mobile.lineHeightMedium%; }
+      .mobilemenu #nav .outer li {
+        display: inline-block;
+        min-height: 4rem;
+        width: 100%;
+        float: %Global.Left%;
+        clear: %Global.Left%; }
+        .mobilemenu #nav .outer li a {
+          display: inline-block;
+          text-transform: lowercase;
+          padding: 0.4rem 0.4rem 2rem 0rem; }
+          .mobilemenu #nav .outer li a.current {
+            font-family: %Classic.Mobile.fontFamilyNormal%; }
+            .mobilemenu #nav .outer li a.current + .inner {
+              display: block; }
+              .mobilemenu #nav .outer li a.current + .inner a {
+                padding-left: 2.4rem; }
+          .mobilemenu #nav .outer li a:not(.current) {
+            color: %darkgray%; }
+        .mobilemenu #nav .outer li .inner {
+          display: none; }
+
+.ad {
+  display: none; }
+
+body {
+  margin: 0 1rem 2rem;
+  overflow-x: hidden; }
+
+body.landing #aside,
+body.landing #toc {
+  display: none;
+  /* hack */ }
+
+body.landing #main div.ad {
+  float: right; }
+
+#maincontent {
+  position: relative; }
+
+.touchnavigation {
+  bottom: 0;
+  color: #888;
+  -webkit-opacity: 0;
+  opacity: 0;
+  position: absolute;
+  top: 0; }
+  .touchnavigation .subtitle {
+    font-family: %Classic.Mobile.fontFamilyExtraLarge%;
+    font-size: %Classic.Mobile.fontSizeExtraLarge%;
+    font-weight: %Classic.Mobile.fontWeightExtraLarge%;
+    line-height: %Classic.Mobile.lineHeightExtraLarge%;
+    color: %mediumgray%; }
+  .touchnavigation.navprev {
+    left: -100%;
+    right: 100%;
+    margin: 0 1rem 0 -1rem; }
+  .touchnavigation.navnext {
+    left: 100%;
+    right: -100%;
+    margin: 0 -1rem 0 1rem; }
+
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+.pollheading .heading {
+  font-family: %Classic.Mobile.fontFamilyMediumLarge%;
+  font-size: %Classic.Mobile.fontSizeMediumLarge%;
+  font-weight: %Classic.Mobile.fontWeightMediumLarge%;
+  line-height: %Classic.Mobile.lineHeightMediumLarge%;
+  max-height: 2.8rem; }
+.pollheading .responses {
+  font-family: %Classic.Mobile.fontFamilyNormal%;
+  font-size: %Classic.Mobile.fontSizeNormal%;
+  font-weight: %Classic.Mobile.fontWeightNormal%;
+  line-height: %Classic.Mobile.lineHeightNormal%;
+  max-height: 1.8rem; }
+
+.poll,
+.poll .skiptoresult,
+.poll .backtovoting,
+.poll li .question label {
+  font-family: %Classic.Mobile.fontFamilyNormal%;
+  font-size: %Classic.Mobile.fontSizeNormal%;
+  font-weight: %Classic.Mobile.fontWeightNormal%;
+  line-height: %Classic.Mobile.lineHeightNormal%; }
+.poll h3,
+.poll .votebtn {
+  font-family: %Classic.Mobile.fontFamilyMedium%;
+  font-size: %Classic.Mobile.fontSizeMedium%;
+  font-weight: %Classic.Mobile.fontWeightMedium%;
+  line-height: %Classic.Mobile.lineHeightMedium%; }
+.poll h3 {
+  max-height: 4rem; }
+.poll label {
+  max-height: 3.6rem; }
+
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+#search {
+  border: solid .1rem #bebebe;
+  height: 3rem;
+  width: 3rem;
+  margin-top: 1rem;
+  position: absolute;
+  right: 1rem;
+  -webkit-transition: width .22s ease-out 0s;
+  transition: width .22s ease-out 0s; }
+  #search div.binglogo {
+    background: transparent url('hash(/images/binglogo_%MetroSdk.Resolution%.png)') no-repeat %Global.Left% 0.4rem;
+    position: absolute;
+    right: 0;
+    top: 0;
+    padding-left: 5.6rem; }
+  .expand #search {
+    float: none;
+    background: %white%;
+    width: 100%; }
+    .expand #search input[type=search] {
+      right: 2.9rem;
+      display: block; }
+  #search input[type=search] {
+    background: transparent url('hash(/images/binglogo_%MetroSdk.Resolution%.png)') no-repeat %Global.Right% 0.1rem;
+    border: none;
+    display: none;
+    font-size: %Classic.Mobile.fontSizeNormal%;
+    height: 2.8rem;
+    padding: 0 5.6rem 0 .9rem;
+    position: absolute;
+    left: 0;
+    top: 0; }
+    #search input[type=search]::-webkit-input-placeholder {
+      padding-top: .2rem;
+      font-size: 1.2rem; }
+  #search input[type=submit].text {
+    font-family: %Classic.Mobile.fontFamilyNormal%;
+    font-size: %Classic.Mobile.fontSizeNormal%;
+    font-weight: %Classic.Mobile.fontWeightNormal%;
+    line-height: %Classic.Mobile.lineHeightNormal%;
+    background-color: %bingorange%;
+    border: solid 0.1rem %white%;
+    color: %white%;
+    display: none;
+    height: 2.8rem;
+    padding: 0 1.5rem; }
+  #search input[type=submit].image {
+    font-family: %Classic.Mobile.fontFamilyNormal%;
+    font-size: %Classic.Mobile.fontSizeNormal%;
+    font-weight: %Classic.Mobile.fontWeightNormal%;
+    line-height: %Classic.Mobile.lineHeightNormal%;
+    background: %bingorange% url('hash(/images/spyglass_mobile_%MetroSdk.Resolution%.png)') no-repeat 0 0;
+    border: solid 0.1rem %white%;
+    color: %white%;
+    display: inline;
+    height: 2.8rem;
+    width: 2.8rem;
+    padding: 0;
+    position: absolute;
+    right: 0;
+    top: 0; }
+  #search label {
+    display: none; }
+  #search #sw_as {
+    margin-top: 2.8rem;
+    position: relative;
+    z-index: 1001; }
+    #search #sw_as .sa_as,
+    #search #sw_as .sw_b3 {
+      max-width: 100%; }
+    #search #sw_as .sa_as {
+      padding-top: 0.1rem; }
+    #search #sw_as .sw_b3 {
+      overflow: hidden; }
+  #search .sa_drw li {
+    font-size: 100%; }
+  #search .sa_hd_first {
+    margin-left: 0; }
+  #search.long {
+    height: 3rem;
+    width: 17rem; }
+    #search.long input[type=search] {
+      -webkit-appearance: none;
+      background: none;
+      display: block;
+      height: 2.8rem;
+      width: 17rem; }
+    #search.long #sw_as {
+      width: 17rem; }
+    #search.long .sa_drw li {
+      font-family: %Classic.Mobile.fontFamilyNormal%;
+      font-size: %Classic.Mobile.fontSizeNormal%;
+      font-weight: %Classic.Mobile.fontWeightNormal%;
+      line-height: %Classic.Mobile.lineHeightNormal%;
+      white-space: normal; }
+      #search.long .sa_drw li {
+        line-height: 2rem; }
+      #search.long .sa_drw li strong {
+        font-weight: bold; }
+
+
+/* C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Tmx\landingPage\landingPage.tmx.mobile.webkit.scss */
+
+/* Media Query definitions */
+/* Font Style Short Hand */
+/* media queries sizes */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* Left & Right */
+/* might extend with zone-limit in the future */
+@media screen {
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  .dept {
+    float: left;
+    clear: none; }
+    .dept a:not(.adfeedback),
+    .dept p {
+      color: %white%;
+      width: 100%; }
+    .dept a {
+      background-color: transparent;
+      display: block;
+      height: 100%;
+      overflow: hidden; }
+    .dept .bg:not(.noimage) img {
+      display: block;
+      width: 100%; }
+    .dept .bg:not(.noimage) p {
+      background-color: rgba(0, 0, 0, 0.7);
+      bottom: 0;
+      position: absolute; }
+    .dept .noimage img {
+      display: none; }
+    .dept .noimage p {
+      height: 100%; }
+
+  #featured .featured.filler {
+    display: none; }
+
+  /* Media Query definitions */
+  /* Font Style Short Hand */
+  /* media queries sizes */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* Left & Right */
+  /* might extend with zone-limit in the future */
+  .heading.bg,
+  .heading.bg a, .heading.fg, .heading.fg a {
+    -ms-text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap; }
+
+  #main > h1,
+  #main > h2,
+  #main .deptcluster > h2 {
+    display: none; }
+
+  /* Media Query definitions */
+  /* Font Style Short Hand */
+  /* media queries sizes */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* Left & Right */
+  /* might extend with zone-limit in the future */
+  .cluster,
+  .ip {
+    font-family: 'segoe ui';
+    font-size: 1.8rem; }
+    .cluster a,
+    .ip a {
+      color: %white%;
+      position: relative; }
+    .cluster li,
+    .ip li {
+      display: inline-block;
+      list-style: none;
+      vertical-align: top; }
+      .cluster li.noimage:not(.hasimage) p,
+      .ip li.noimage:not(.hasimage) p {
+        height: 30rem; }
+    .cluster p,
+    .ip p {
+      background: rgba(0, 0, 0, 0.8);
+      left: 0;
+      overflow: hidden;
+      position: absolute;
+      width: 100%;
+      white-space: normal; }
+    .cluster ul,
+    .ip ul {
+      font-size: 0;
+      white-space: nowrap; }
+
+  .ip .hasimage p {
+    bottom: .5rem; }
+  .ip .noimage:not(.hasimage) p {
+    background: rgba(0, 0, 0, 0.2); }
+
+  .slidecount {
+    display: table;
+    height: .5rem;
+    opacity: .9;
+    position: relative; }
+    .slidecount span {
+      border: solid rgba(0, 0, 0, 0.6);
+      border-width: 0 .1rem .05rem;
+      display: table-cell;
+      height: .6rem;
+      line-height: .6rem;
+      opacity: 1; }
+      .slidecount span:not(.selected) {
+        background-color: rgba(255, 255, 255, 0.5); }
+      .slidecount span:last-child {
+        border-left-color: %black%;
+        border-right-color: %black%; }
+      .slidecount span:not(:last-child) {
+        border-left-color: %black%;
+        border-right-color: transparent; }
+
+  #aside,
+  #toc {
+    display: none; }
+
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  .pollcontainer.featured .pollheading {
+    height: 4.3rem;
+    margin-bottom: .8rem; }
+    .pollcontainer.featured .pollheading .heading {
+      padding: 0 1rem;
+      color: %white%; }
+    .pollcontainer.featured .pollheading .responses {
+      padding-right: 1rem;
+      color: %white%; }
+
+  .featured .poll label {
+    max-height: 1.8rem; }
+  .featured .poll h3 {
+    margin-bottom: 0.8rem; }
+  .featured .poll .barcontainer {
+    margin-bottom: 0; }
+  .featured .poll li .question {
+    margin-bottom: 2.1rem; }
+    .featured .poll li .question label {
+      max-height: 2.2rem; }
+  .featured .poll li.last,
+  .featured .poll li.last .result {
+    margin-bottom: 0; }
+  .featured .poll li.last .question {
+    margin-bottom: 2rem; }
+  .featured .poll li .result {
+    margin-bottom: 0.5rem; }
+  .featured .poll footer .result {
+    margin-top: 0; }
+
+  body.slate .pollcontainer.featured .pollheading {
+    background-color: %slate%; }
+
+  body.indigo .pollcontainer.featured .pollheading {
+    background-color: %indigo%; }
+
+  body.msnblue .pollcontainer.featured .pollheading {
+    background-color: %msnblue%; }
+
+  body.blue .pollcontainer.featured .pollheading {
+    background-color: %blue%; }
+
+  body.aquamarine .pollcontainer.featured .pollheading {
+    background-color: %aquamarine%; }
+
+  body.green .pollcontainer.featured .pollheading {
+    background-color: %green%; }
+
+  body.orange .pollcontainer.featured .pollheading {
+    background-color: %orange%; }
+
+  body.pink .pollcontainer.featured .pollheading {
+    background-color: %pink%; }
+
+  /* Media Query definitions */
+  /* Font Style Short Hand */
+  /* media queries sizes */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* Left & Right */
+  /* might extend with zone-limit in the future */
+  .cluster .videoicon span, .dept .videoicon span, .ip .videoicon a > span {
+    position: absolute; }
+  .cluster .videoicon span, .dept .videoicon span {
+    background: transparent url('hash(/images/video/videolt_%MetroSdk.Resolution%.png)') 0 0 no-repeat;
+    width: 1.4rem;
+    height: 1.4rem; }
+  .dept .videoicon {
+    position: relative; }
+    .dept .videoicon span {
+      bottom: .7rem; }
+
+  .dept.cluster1 {
+    height: 14.5rem; }
+  .dept.cluster2.tilegroupa, .dept.cluster2.tilegroupc {
+    height: 30rem; }
+  .dept.cluster2.tilegroupb {
+    height: 14.5rem; }
+  .dept.cluster3.tilegroupa, .dept.cluster3.tilegroupb {
+    height: 30rem; }
+  .dept.cluster3.tilegroupc {
+    height: 45.5rem; }
+
+  #aside,
+  .ad,
+  .featured {
+    display: none; }
+
+  #featured .featured.filler {
+    display: none !important; }
+
+  .heading > a,
+  .heading > span {
+    margin-left: auto;
+    margin-right: auto;
+    display: block; }
+  .cluster .heading .chevron {
+    display: none; }
+
+  /* Media Query definitions */
+  /* Font Style Short Hand */
+  /* media queries sizes */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* Left & Right */
+  /* might extend with zone-limit in the future */
+  #content {
+    display: block; }
+
+  .cluster,
+  .ip {
+    width: 100%;
+    overflow: hidden;
+    margin: 0 .6rem 1rem 0; }
+    .cluster ul a,
+    .cluster img,
+    .ip ul a,
+    .ip img {
+      display: inline-block;
+      height: 17rem;
+      width: 30rem; }
+    .cluster li,
+    .ip li {
+      border: solid %white%;
+      border-width: 0 .1rem; }
+    .cluster .hasimage p,
+    .ip .hasimage p {
+      padding: .5rem .9rem .2rem; }
+    .cluster .hasimage.selected p,
+    .ip .hasimage.selected p {
+      border-bottom: solid .6rem transparent; }
+    .cluster .hasimage:not(.selected) p,
+    .ip .hasimage:not(.selected) p {
+      border-bottom: solid 1.1rem transparent;
+      bottom: 0; }
+    .cluster .selected:not(.noimage):not(.hasimage) p,
+    .ip .selected:not(.noimage):not(.hasimage) p {
+      max-height: 5.5rem; }
+    .cluster.invalid ul,
+    .ip.invalid ul {
+      width: 100%; }
+    .cluster.invalid li:nth-child(1),
+    .ip.invalid li:nth-child(1) {
+      display: table;
+      position: relative;
+      margin-left: auto;
+      margin-right: auto; }
+    .cluster.invalid .slidecount,
+    .ip.invalid .slidecount {
+      right: 0; }
+    .cluster.invalid li:not(.selected),
+    .cluster.invalid .slidecount span:not(.selected),
+    .ip.invalid li:not(.selected),
+    .ip.invalid .slidecount span:not(.selected) {
+      display: none; }
+
+  .cluster {
+    height: 21rem; }
+    .cluster .hasimage.selected p {
+      bottom: .5rem; }
+    .cluster .noimage:not(.hasimage) p {
+      background: rgba(0, 0, 0, 0.3); }
+    .cluster .noimage:not(.hasimage) p {
+      border-bottom: solid 2rem transparent;
+      padding: 1.2rem 1.5rem; }
+    .cluster .navtile {
+      display: none; }
+
+  .ip {
+    height: 17rem;
+    margin-bottom: .6rem; }
+    .ip .noimage:not(.hasimage) p {
+      padding: .9rem 1.5rem; }
+
+  .slidecount {
+    margin: 0 auto;
+    width: 30rem; }
+
+  .dept .videoicon span {
+    bottom: .5rem; }
+  .dept .videoicon p, #main .cluster .videoicon p, #main .ip .videoicon p {
+    padding-right: 2rem; }
+  .cluster .videoicon span, .ip .videoicon a > span {
+    bottom: 1.4rem;
+    right: .6rem; }
+  .ip .videoicon a > span {
+    background: transparent url('hash(/images/video/videolt_%MetroSdk.Resolution%.png)') 0 0 no-repeat;
+    width: 1.4rem;
+    height: 1.4rem; }
+
+  .leftarrow,
+  .rightarrow {
+    display: none; }
+
+  .cluster {
+    position: relative; }
+    #clusters .cluster {
+      height: 21.5rem; }
+    .cluster > ul {
+      height: 17rem; }
+      .cluster > ul img {
+        height: 17rem; }
+      .cluster > ul li.navtile {
+        display: none; }
+
+  /* Media Query definitions */
+  /* Font Style Short Hand */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* Left & Right */
+  /* might extend with zone-limit in the future */
+  .dept {
+    margin-bottom: 1rem;
+    position: relative; }
+    .dept.tilegroupa > :nth-child(1), .dept.tilegroupa > :nth-child(4), .dept.tilegroupb > :nth-child(3), .dept.tilegroupb > :nth-child(4), .dept.tilegroupc > :nth-child(1), .dept.tilegroupc > :nth-child(2) {
+      width: 30rem; }
+    .dept.tilegroupa > :nth-child(2), .dept.tilegroupa > :nth-child(3), .dept.tilegroupb > :nth-child(1), .dept.tilegroupb > :nth-child(2), .dept.tilegroupc > :nth-child(3), .dept.tilegroupc > :nth-child(4) {
+      width: 14.5rem; }
+    .dept .bg {
+      height: 14.5rem;
+      position: absolute; }
+      .dept .bg:not(.noimage) p {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        max-height: 4.8rem;
+        padding: .3rem 1rem .5rem; }
+    .dept p {
+      font-family: %Classic.Mobile.fontFamilyNormalLight%;
+      line-height: 2.1rem; }
+    .dept .noimage p {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 6;
+      -webkit-box-orient: vertical;
+      max-height: 14rem;
+      padding: 1.1rem 1.5rem 0; }
+    .dept.cluster1, .dept.cluster2, .dept.cluster3 {
+      width: 30rem; }
+      .dept.cluster1 .bg:first-child, .dept.cluster2 .bg:first-child, .dept.cluster3 .bg:first-child {
+        right: auto;
+        top: 0; }
+    .dept.cluster2.tilegroupa > :nth-child(2), .dept.cluster2.tilegroupc > :nth-child(2) {
+      right: auto;
+      top: 0; }
+    .dept.cluster2.tilegroupb > :nth-child(2) {
+      right: 0;
+      top: 0; }
+    .dept.cluster3.tilegroupa > :nth-child(2) {
+      right: auto;
+      bottom: 0; }
+    .dept.cluster3.tilegroupa > :nth-child(3) {
+      right: 0;
+      bottom: 0; }
+    .dept.cluster3.tilegroupb > :nth-child(2) {
+      right: 0;
+      top: 0; }
+    .dept.cluster3.tilegroupb > :nth-child(3) {
+      right: auto;
+      bottom: 0; }
+    .dept.cluster3.tilegroupc > :nth-child(2) {
+      right: auto;
+      top: 15.5rem; }
+    .dept.cluster3.tilegroupc > :nth-child(3) {
+      bottom: 0;
+      right: auto; }
+
+  .deptcluster {
+    margin-top: 1rem;
+    margin-bottom: -1rem; }
+
+  /* Media Query definitions */
+  /* Font Style Short Hand */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* Left & Right */
+  /* might extend with zone-limit in the future */
+  .heading > a,
+  .heading > span {
+    width: 29rem; }
+  .heading.text {
+    line-height: 4.5rem;
+    padding: 0 1rem; }
+  .cluster .heading {
+    font-family: %Classic.Mobile.fontFamilyLarge%;
+    font-size: %Classic.Mobile.fontSizeLarge%;
+    font-weight: %Classic.Mobile.fontWeightLarge%;
+    line-height: %Classic.Mobile.lineHeightLarge%;
+    height: 4.5rem;
+    padding: 0 1rem;
+    position: relative; }
+    .cluster .heading {
+      line-height: 4.3rem; }
+    .cluster .heading a {
+      color: %white%; }
+
+  /* Media Query definitions */
+  /* Font Style Short Hand */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* Left & Right */
+  /* might extend with zone-limit in the future */
+  .cluster .hasimage p,
+  .ip .hasimage p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; }
+  .cluster .hasimage.selected p,
+  .ip .hasimage.selected p {
+    max-height: 5.1rem; }
+  .cluster .hasimage:not(.selected) p,
+  .ip .hasimage:not(.selected) p {
+    max-height: 5.6rem; }
+  .cluster p,
+  .ip p {
+    font-family: %Classic.Mobile.fontFamilyNormal%;
+    font-size: %Classic.Mobile.fontSizeNormal%;
+    line-height: 1.95rem; }
+
+  .cluster .noimage:not(.hasimage) p, .ip .noimage:not(.hasimage) p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 7;
+    -webkit-box-orient: vertical; }
+  .ip .noimage:not(.hasimage) p {
+    border-bottom: solid 2.1rem transparent; }
+  .cluster .noimage:not(.hasimage) p {
+    max-height: 17rem; }
+
+  .cluster .slidecount {
+    top: -0.5rem; }
+  .ip .slidecount {
+    top: -1.7rem; }
+
+  #maincontent ul:not(.loaded):not(.invalid) li,
+  #maincontent ul:not(.loaded):not(.invalid) ~ .slidecount {
+    visibility: hidden; }
+
+  .cluster .videoicon span,
+  .dept .videoicon span,
+  .ip .videoicon span {
+    bottom: 1.4rem;
+    right: .5rem; } }
+/* Mobile Portrait */
+@media screen and (max-width: %MediaQueries.MobilePortraitMax%) {
+  .dept {
+    height: 45.5rem;
+    width: 30rem; }
+
+  /* Media Query definitions */
+  /* Font Style Short Hand */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* Left & Right */
+  /* might extend with zone-limit in the future */
+  .dept.tilegroupa > :nth-child(2), .dept.tilegroupa > :nth-child(3), .dept.tilegroupb > :nth-child(1), .dept.tilegroupb > :nth-child(2), .dept.tilegroupc > :nth-child(2) {
+    top: 15.5rem; }
+  .dept.tilegroupa > :nth-child(3), .dept.tilegroupb > :nth-child(2), .dept.tilegroupc > :nth-child(4) {
+    right: 0; }
+  .dept.tilegroupa > :nth-child(4), .dept.tilegroupb > :nth-child(4), .dept.tilegroupc > :nth-child(3), .dept.tilegroupc > :nth-child(4) {
+    bottom: 0; } }
+/* Mobile Landscape */
+@media screen and (min-width: %MediaQueries.MobileLandscapeMin%) {
+  .dept {
+    height: 30rem;
+    width: 45.5rem; }
+
+  .dept.tilegroupa > :nth-child(2), .dept.tilegroupb > :nth-child(1), .dept.tilegroupc > :nth-child(3) {
+    right: 0; }
+  .dept.tilegroupa > :nth-child(4), .dept.tilegroupb > :nth-child(4), .dept.tilegroupc > :nth-child(2) {
+    bottom: 0;
+    right: 0; }
+  .dept.tilegroupa > :nth-child(3), .dept.tilegroupb > :nth-child(2), .dept.tilegroupc > :nth-child(4) {
+    bottom: 0; } }
+

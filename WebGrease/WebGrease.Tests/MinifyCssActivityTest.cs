@@ -19,6 +19,8 @@ namespace WebGrease.Tests
     using Activities;
     using Css.ImageAssemblyAnalysis;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+    using WebGrease.Configuration;
     using WebGrease.Css;
 
     /// <summary>This is a test class for MinifyCssActivityTest and is intended
@@ -40,7 +42,7 @@ namespace WebGrease.Tests
         public void CssExcludePropertiesTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
-            var minifyCssActivity = new MinifyCssActivity();
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case1\ExcludeByKeys.css");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case1\ExcludeByKeys.css");
             minifyCssActivity.ShouldExcludeProperties = true;
@@ -60,7 +62,7 @@ namespace WebGrease.Tests
         public void CssLowerCaseValidationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
-            var minifyCssActivity = new MinifyCssActivity();
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case2\LowerCaseValidation.css");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case2\LowerCaseValidation.css");
             minifyCssActivity.ShouldValidateForLowerCase = true;
@@ -79,7 +81,7 @@ namespace WebGrease.Tests
         public void CssHackSelectorsTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
-            var minifyCssActivity = new MinifyCssActivity();
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case3\HackValidation.css");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case3\HackValidation.css");
             minifyCssActivity.ShouldAssembleBackgroundImages = false;
@@ -107,7 +109,7 @@ namespace WebGrease.Tests
         public void CssBannedSelectorsTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
-            var minifyCssActivity = new MinifyCssActivity();
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case4\HackValidation.css");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case4\HackValidation.css");
             foreach (var hack in BlackListedSelectors)
@@ -130,7 +132,7 @@ namespace WebGrease.Tests
         public void CssOptimizationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
-            var minifyCssActivity = new MinifyCssActivity();
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case5\OptimizationTest.css");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case5\OptimizationTest.css");
             minifyCssActivity.ShouldOptimize = true;
@@ -150,7 +152,7 @@ namespace WebGrease.Tests
         public void CssImageSpriteTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
-            var minifyCssActivity = new MinifyCssActivity();
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case6\SpriteTest.css");
             minifyCssActivity.ImageAssembleScanDestinationFile = Path.Combine(sourceDirectory, @"Output\Case6\SpriteTest_Scan.css");
             minifyCssActivity.ImageAssembleUpdateDestinationFile = Path.Combine(sourceDirectory, @"Output\Case6\SpriteTest_Update.css");
@@ -172,8 +174,10 @@ namespace WebGrease.Tests
             var testImage = "media.gif";
 
             Assert.IsTrue(File.Exists(outputFilePath));
-            outputFilePath = minifyCssActivity.ImageAssembleScanDestinationFile;
-            Assert.IsTrue(File.Exists(outputFilePath));
+            
+            // RTUIT: File generation commented in the minify code, since it does not seem to be used anywhere, save lots of performance
+            // outputFilePath = minifyCssActivity.ImageAssembleScanDestinationFile;
+            // Assert.IsTrue(File.Exists(outputFilePath));
 
             Assert.IsTrue(File.Exists(mapFilePath));
             // verify our test file is in the xml file and get the source folder and assembled file name.
@@ -209,7 +213,7 @@ namespace WebGrease.Tests
         {
             var sourceDirectory = Path.Combine(
                 TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
-            var minifyCssActivity = new MinifyCssActivity();
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case7\SpriteTest.css");
             minifyCssActivity.ImageAssembleScanDestinationFile = Path.Combine(
                 sourceDirectory, @"Output\Case7\SpriteTest_Scan.css");
@@ -232,8 +236,9 @@ namespace WebGrease.Tests
             var testImage = "media.gif";
 
             Assert.IsTrue(File.Exists(outputFilePath));
-            outputFilePath = minifyCssActivity.ImageAssembleScanDestinationFile;
-            Assert.IsTrue(File.Exists(outputFilePath));
+            // RTUIT: File generation commented in the minify code, since it does not seem to be used anywhere, save lots of performance
+            // outputFilePath = minifyCssActivity.ImageAssembleScanDestinationFile;
+            // Assert.IsTrue(File.Exists(outputFilePath));
 
             Assert.IsTrue(File.Exists(mapFilePath));
             // verify our test file is in the xml file and get the source folder and assembled file name.

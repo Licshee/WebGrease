@@ -21,14 +21,19 @@ namespace WebGrease.Activities
     /// <summary>Css Localization ActivityMode class</summary>
     internal sealed class CssLocalizationActivity
     {
+        /// <summary>The context.</summary>
+        private readonly IWebGreaseContext context;
+
         /// <summary>
         /// The image log document
         /// </summary>
         private RenamedFilesLogs renamedFilesLogs;
 
         /// <summary>Initializes a new instance of the <see cref="CssLocalizationActivity"/> class.</summary>
-        public CssLocalizationActivity()
+        /// <param name="context">The context.</param>
+        public CssLocalizationActivity(IWebGreaseContext context)
         {
+            this.context = context;
             this.CssLocalizationInputs = new List<CssLocalizationInput>();
         }
 
@@ -79,12 +84,14 @@ namespace WebGrease.Activities
 
             try
             {
+                this.context.Measure.Start(TimeMeasureNames.CssLocalizationActivity);
+
                 // Load the images log.
                 this.renamedFilesLogs = RenamedFilesLogs.LoadHashedImagesLogs(this.HashedImagesLogFile);
-                
+
                 // Create the destination directory if does not exist.
                 Directory.CreateDirectory(this.DestinationDirectory);
-                
+
                 foreach (var cssLocalizationInput in this.CssLocalizationInputs.Where(_ => (_ != null && !string.IsNullOrWhiteSpace(_.DestinationFile))))
                 {
                     var locales = cssLocalizationInput.Locales.Count == 0 ? new List<string> { Strings.DefaultLocale } : cssLocalizationInput.Locales;
@@ -106,6 +113,10 @@ namespace WebGrease.Activities
             catch (Exception exception)
             {
                 throw new WorkflowException("CssLocalizationActivity - Error happened while executing the expand css resources activity", exception);
+            }
+            finally
+            {
+                this.context.Measure.End(TimeMeasureNames.CssLocalizationActivity);
             }
         }
 
