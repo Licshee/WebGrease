@@ -494,6 +494,9 @@ namespace Microsoft.Ajax.Utilities
         {
             Parsed parsed = Parsed.False;
 
+            // ignore any semicolons that may be the result of concatenation on the part of AjaxMin
+            SkipSemicolons();
+
             // the @charset token can ONLY be at the top of the file
             if (CurrentTokenType == TokenType.CharacterSetSymbol)
             {
@@ -501,12 +504,14 @@ namespace Microsoft.Ajax.Utilities
             }
 
             // any number of S, Comment, CDO, or CDC elements
+            // (or semicolons possibly introduced via concatenation)
             ParseSCDOCDCComments();
 
             // any number of imports followed by S, Comment, CDO or CDC
             while (ParseImport() == Parsed.True)
             {
                 // any number of S, Comment, CDO, or CDC elements
+                // (or semicolons possibly introduced via concatenation)
                 ParseSCDOCDCComments();
             }
 
@@ -514,6 +519,7 @@ namespace Microsoft.Ajax.Utilities
             while (ParseNamespace() == Parsed.True)
             {
                 // any number of S, Comment, CDO, or CDC elements
+                // (or semicolons possibly introduced via concatenation)
                 ParseSCDOCDCComments();
             }
 
@@ -527,6 +533,7 @@ namespace Microsoft.Ajax.Utilities
 			  || ParseAspNetBlock() == Parsed.True)
             {
                 // any number of S, Comment, CDO or CDC elements
+                // (or semicolons possibly introduced via concatenation)
                 ParseSCDOCDCComments();
             }
 
@@ -541,6 +548,7 @@ namespace Microsoft.Ajax.Utilities
                 NextToken();
 
                 // might be a comment again; check just in case
+                // (or semicolons possibly introduced via concatenation)
                 ParseSCDOCDCComments();
 
                 // try the guts again
@@ -552,6 +560,7 @@ namespace Microsoft.Ajax.Utilities
 				  || ParseAspNetBlock() == Parsed.True)
                 {
                     // any number of S, Comment, CDO or CDC elements
+                    // (or semicolons possibly introduced via concatenation)
                     ParseSCDOCDCComments();
                 }
             }
@@ -598,9 +607,12 @@ namespace Microsoft.Ajax.Utilities
             while (CurrentTokenType == TokenType.Space
               || CurrentTokenType == TokenType.Comment
               || CurrentTokenType == TokenType.CommentOpen
-              || CurrentTokenType == TokenType.CommentClose)
+              || CurrentTokenType == TokenType.CommentClose
+              || (CurrentTokenType == TokenType.Character && CurrentTokenText == ";"))
             {
-                if (CurrentTokenType != TokenType.Space)
+                // don't output any space we encounter here, but do output comments.
+                // we also want to skip over any semicolons we may encounter at this point
+                if (CurrentTokenType != TokenType.Space && CurrentTokenType != TokenType.Character)
                 {
                     AppendCurrent();
                 }
@@ -3630,6 +3642,14 @@ namespace Microsoft.Ajax.Utilities
                 {
                     m_skippedSpace = true;
                 }
+            }
+        }
+
+        private void SkipSemicolons()
+        {
+            while (CurrentTokenType == TokenType.Character && CurrentTokenText == ";")
+            {
+                NextToken();
             }
         }
 
