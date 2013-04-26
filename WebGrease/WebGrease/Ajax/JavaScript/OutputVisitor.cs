@@ -1423,7 +1423,11 @@ namespace Microsoft.Ajax.Utilities
 
                 OutputPossibleLineBreak(')');
 
-                if (node.TrueBlock == null || node.TrueBlock.Count == 0)
+                if (node.TrueBlock != null && node.TrueBlock.ForceBraces)
+                {
+                    OutputBlockWithBraces(node.TrueBlock);
+                }
+                else if (node.TrueBlock == null || node.TrueBlock.Count == 0)
                 {
                     // no true-block; just output an empty statement
                     OutputPossibleLineBreak(';');
@@ -1473,25 +1477,15 @@ namespace Microsoft.Ajax.Utilities
                 }
                 else
                 {
-                    if (Settings.BlocksStartOnSameLine == BlockStart.NewLine
-                        || (Settings.BlocksStartOnSameLine == BlockStart.UseSource && node.TrueBlock.BraceOnNewLine))
-                    {
-                        NewLine();
-                    }
-                    else if (Settings.OutputMode == OutputMode.MultipleLines)
-                    {
-                        OutputPossibleLineBreak(' ');
-                    }
-
-                    node.TrueBlock.Accept(this);
+                    OutputBlockWithBraces(node.TrueBlock);
                 }
 
-                if (node.FalseBlock != null && node.FalseBlock.Count > 0)
+                if (node.FalseBlock != null && (node.FalseBlock.Count > 0 || node.FalseBlock.ForceBraces))
                 {
                     NewLine();
                     Output("else");
                     MarkSegment(node, null, node.ElseContext);
-                    if (node.FalseBlock.Count == 1)
+                    if (node.FalseBlock.Count == 1 && !node.FalseBlock.ForceBraces)
                     {
                         var statement = node.FalseBlock[0];
                         if (statement is IfNode)
@@ -1511,17 +1505,7 @@ namespace Microsoft.Ajax.Utilities
                     }
                     else
                     {
-                        if (Settings.BlocksStartOnSameLine == BlockStart.NewLine
-                            || (Settings.BlocksStartOnSameLine == BlockStart.UseSource && node.FalseBlock.BraceOnNewLine))
-                        {
-                            NewLine();
-                        }
-                        else if (Settings.OutputMode == OutputMode.MultipleLines)
-                        {
-                            OutputPossibleLineBreak(' ');
-                        }
-
-                        node.FalseBlock.Accept(this);
+                        OutputBlockWithBraces(node.FalseBlock);
                     }
                 }
 
@@ -2977,7 +2961,12 @@ namespace Microsoft.Ajax.Utilities
         /// <param name="block">block to output</param>
         private void OutputBlock(Block block)
         {
-            if (block == null || block.Count == 0)
+            if (block != null && block.ForceBraces)
+            {
+                // always output the braces
+                OutputBlockWithBraces(block);
+            }
+            else if (block == null || block.Count == 0)
             {
                 // semicolon-replacement cannot generate an empty statement
                 OutputPossibleLineBreak(';');
@@ -3010,18 +2999,24 @@ namespace Microsoft.Ajax.Utilities
             }
             else
             {
-                if (Settings.BlocksStartOnSameLine == BlockStart.NewLine
-                    || (Settings.BlocksStartOnSameLine == BlockStart.UseSource && block.BraceOnNewLine))
-                {
-                    NewLine();
-                }
-                else if (Settings.OutputMode == OutputMode.MultipleLines)
-                {
-                    OutputPossibleLineBreak(' ');
-                }
-
-                block.Accept(this);
+                // always output the braces
+                OutputBlockWithBraces(block);
             }
+        }
+
+        private void OutputBlockWithBraces(Block block)
+        {
+            if (Settings.BlocksStartOnSameLine == BlockStart.NewLine
+                || (Settings.BlocksStartOnSameLine == BlockStart.UseSource && block.BraceOnNewLine))
+            {
+                NewLine();
+            }
+            else if (Settings.OutputMode == OutputMode.MultipleLines)
+            {
+                OutputPossibleLineBreak(' ');
+            }
+
+            block.Accept(this);
         }
 
         private string InlineSafeString(string text)
