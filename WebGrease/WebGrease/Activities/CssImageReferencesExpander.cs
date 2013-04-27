@@ -14,6 +14,8 @@ namespace WebGrease.Activities
     using System.Linq;
     using System.Text.RegularExpressions;
 
+    using WebGrease.Configuration;
+
     /// <summary>Manages the hash naming of file outputs</summary>
     internal static class CssImageReferencesExpander
     {
@@ -49,28 +51,32 @@ namespace WebGrease.Activities
         /// <summary>Updates the file content with the new</summary>
         /// <param name="renamedFilesLogs">The renamed file log.</param>
         /// <param name="cssFileContent">The css file contents</param>
+        /// <param name="context"></param>
         /// <returns>The updated css file content</returns>
-        public static string UpdateForHashReferences(RenamedFilesLogs renamedFilesLogs, string cssFileContent)
+        public static string UpdateForHashReferences(RenamedFilesLogs renamedFilesLogs, string cssFileContent, IWebGreaseContext context)
         {
             if (renamedFilesLogs == null || cssFileContent == null)
             {
                 return cssFileContent;
             }
 
-            return UpdateFileContentsWithHashMatch(renamedFilesLogs, cssFileContent);
+            return UpdateFileContentsWithHashMatch(renamedFilesLogs, cssFileContent, context);
         }
 
         /// <summary>Updates the fileContent contents after the hash matches</summary>
         /// <param name="renamedFilesLogs">The renamed file log.</param>
         /// <param name="fileContent">The file contents</param>
+        /// <param name="context"></param>
         /// <returns>The updated css file content</returns>
-        private static string UpdateFileContentsWithHashMatch(RenamedFilesLogs renamedFilesLogs, string fileContent)
+        private static string UpdateFileContentsWithHashMatch(RenamedFilesLogs renamedFilesLogs, string fileContent, IWebGreaseContext context)
         {
             // Pass 1 - Regex on the url in css
             var urlExpansion = UrlRegex.Replace(fileContent, match =>
                                                                  {
                                                                      var originalImagePath = match.Groups[1].ToString();
                                                                      var hashedName = renamedFilesLogs.FindHashPath(originalImagePath);
+                                                                     var absoluteOriginalImagePath = System.IO.Path.Combine(context.Configuration.SourceDirectory, originalImagePath.Replace("/", @"\").Trim('\\'));
+                                                                     context.Cache.CurrentCacheSection.AddSourceDependency(absoluteOriginalImagePath);
                                                                      return !string.IsNullOrWhiteSpace(hashedName) ? match.Value.Replace(originalImagePath, hashedName) : match.Value;
                                                                  });
 
@@ -79,6 +85,8 @@ namespace WebGrease.Activities
                                                                     {
                                                                         var originalImagePath = match.Groups[1].ToString();
                                                                         var hashedName = renamedFilesLogs.FindHashPath(originalImagePath);
+                                                                        var absoluteOriginalImagePath = System.IO.Path.Combine(context.Configuration.SourceDirectory, originalImagePath.Replace("/", @"\").Trim('\\'));
+                                                                        context.Cache.CurrentCacheSection.AddSourceDependency(absoluteOriginalImagePath);
                                                                         if (!string.IsNullOrWhiteSpace(hashedName))
                                                                         {
                                                                             return hashedName;

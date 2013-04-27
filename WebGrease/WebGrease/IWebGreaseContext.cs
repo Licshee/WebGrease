@@ -5,6 +5,8 @@
 // ----------------------------------------------------------------------------------------------------
 namespace WebGrease
 {
+    using System.IO;
+
     using WebGrease.Configuration;
     using WebGrease.Preprocessing;
 
@@ -28,6 +30,17 @@ namespace WebGrease
         /// <summary>Gets the preprocessing.</summary>
         PreprocessingManager Preprocessing { get; }
 
+        /// <summary>Gets the cache manager.</summary>
+        ICacheManager Cache { get; }
+
         #endregion
+
+        string GetContentHash(string content);
+
+        string GetFileHash(string filePath);
+
+        string MakeRelative(string absolutePath, string relativePath = null);
+
+        string MakeAbsolute(string relativePath);
     }
 }

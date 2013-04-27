@@ -14,6 +14,8 @@ namespace WebGrease.Activities
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Xml.Linq;
+
     using Common;
     using Css;
     using Css.Ast;
@@ -22,9 +24,15 @@ namespace WebGrease.Activities
     using Css.Visitor;
     using ImageAssemble;
 
+    using WebGrease.Extensions;
+
     /// <summary>Implements the multiple steps in Css pipeline</summary>
     internal sealed class MinifyCssActivity
     {
+        private const string MinifiedCssResultCacheKey = "MinifyCssResultCacheKey";
+
+        private const string HashedImageCacheKey = "HashedImageCacheKey";
+
         /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
 
@@ -113,6 +121,9 @@ namespace WebGrease.Activities
         /// <summary>Gets or sets the path to the hashed images file</summary>
         internal string HashedImagesLogFile { get; set; }
 
+        /// <summary>Gets or sets the output path.</summary>
+        public string OutputPath { get; set; }
+
         /// <summary>
         /// Minifies the css content given, using current activity settings
         /// </summary>
@@ -170,8 +181,38 @@ namespace WebGrease.Activities
             }
 
             this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity);
+            var cacheSection = this.context.Cache.BeginSection(
+                "minifycss", 
+                this.SourceFile, 
+                new {
+                    this.ShouldExcludeProperties,
+                    this.ShouldValidateForLowerCase,
+                    this.ShouldOptimize,
+                    this.ShouldAssembleBackgroundImages,
+                    this.ShouldMinify,
+                    this.IgnoreImagesWithNonDefaultBackgroundSize,
+                    this.HackSelectors,
+                    this.BannedSelectors,
+                    this.ImageAssembleReferencesToIgnore,
+                    this.AdditionalImageAssemblyBuckets,
+                    this.OutputUnit,
+                    this.OutputUnitFactor,
+                    this.ImageAssemblyPadding
+                });
+
             try
             {
+                if (cacheSection.IsValid())
+                {
+                    cacheSection.RestoreFile(MinifiedCssResultCacheKey, this.DestinationFile, true);
+                    if (this.ShouldAssembleBackgroundImages)
+                    {
+                        cacheSection.RestoreFiles(HashedImageCacheKey, this.ImagesOutputDirectory, false);
+                    }
+
+                    return;
+                }
+
                 // Load the Css parser and stylesheet Ast
                 this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Parse);
                 AstNode stylesheetNode = CssParser.Parse(new FileInfo(this.SourceFile), false);
@@ -181,6 +222,8 @@ namespace WebGrease.Activities
 
                 // Step # 9 - Write the destination file to hard drive
                 FileHelper.WriteFile(this.DestinationFile, css, Encoding.UTF8);
+
+                cacheSection.AddResultFile(this.DestinationFile, MinifiedCssResultCacheKey, this.OutputPath);
             }
             catch (Exception exception)
             {
@@ -189,6 +232,7 @@ namespace WebGrease.Activities
             }
             finally
             {
+                cacheSection.EndSection();
                 this.context.Measure.End(TimeMeasureNames.MinifyCssActivity);
             }
         }
@@ -201,41 +245,51 @@ namespace WebGrease.Activities
         private string ApplyConfiguredVisitors(AstNode stylesheetNode)
         {
             this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Validate);
-
-            // Step # 1 - Remove the Css properties from Ast which need to be excluded (Bridging)
-            if (this.ShouldExcludeProperties)
+            try
             {
-                stylesheetNode = stylesheetNode.Accept(new ExcludePropertyVisitor());
-            }
+                // Step # 1 - Remove the Css properties from Ast which need to be excluded (Bridging)
+                if (this.ShouldExcludeProperties)
+                {
+                    stylesheetNode = stylesheetNode.Accept(new ExcludePropertyVisitor());
+                }
 
-            // Step # 2 - Validate for lower case
-            if (this.ShouldValidateForLowerCase)
+                // Step # 2 - Validate for lower case
+                if (this.ShouldValidateForLowerCase)
+                {
+                    stylesheetNode = stylesheetNode.Accept(new ValidateLowercaseVisitor());
+                }
+
+                // Step # 3 - Validate for Css hacks which don't work cross browser
+                if (this.HackSelectors != null && this.HackSelectors.Any())
+                {
+                    stylesheetNode = stylesheetNode.Accept(new SelectorValidationOptimizationVisitor(this.HackSelectors, false, true));
+                }
+
+                // Step # 4 - Remove any banned selectors which are exposed for page efficiency
+                if (this.BannedSelectors != null && this.BannedSelectors.Any())
+                {
+                    stylesheetNode = stylesheetNode.Accept(new SelectorValidationOptimizationVisitor(this.BannedSelectors, false, false));
+                }
+            }
+            finally
             {
-                stylesheetNode = stylesheetNode.Accept(new ValidateLowercaseVisitor());
+                this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Validate);
             }
-
-            // Step # 3 - Validate for Css hacks which don't work cross browser
-            if (this.HackSelectors != null && this.HackSelectors.Any())
-            {
-                stylesheetNode = stylesheetNode.Accept(new SelectorValidationOptimizationVisitor(this.HackSelectors, false, true));
-            }
-
-            // Step # 4 - Remove any banned selectors which are exposed for page efficiency
-            if (this.BannedSelectors != null && this.BannedSelectors.Any())
-            {
-                stylesheetNode = stylesheetNode.Accept(new SelectorValidationOptimizationVisitor(this.BannedSelectors, false, false));
-            }
-
-            this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Validate);
 
             // Step # 5 - Run the Css optimization visitors
             if (this.ShouldOptimize)
             {
                 this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Optimize);
-                stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor());
-                stylesheetNode = stylesheetNode.Accept(new ColorOptimizationVisitor());
-                stylesheetNode = stylesheetNode.Accept(new FloatOptimizationVisitor());
-                this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Optimize);
+                try
+                {
+                    stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor());
+                    stylesheetNode = stylesheetNode.Accept(new ColorOptimizationVisitor());
+                    stylesheetNode = stylesheetNode.Accept(new FloatOptimizationVisitor());
+                }
+                finally
+                {
+                    this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Optimize);
+                }
             }
 
             // The image assembly is a 3 step process:
@@ -244,8 +298,31 @@ namespace WebGrease.Activities
             // 3. Update the Css with generated images followed by Pretty Print
             if (this.ShouldAssembleBackgroundImages)
             {
-                this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Sprite);
+                stylesheetNode = this.AssembleBackgroundImages(stylesheetNode);
+            }
 
+            try
+            {
+                this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.PrintCss);
+                return this.ShouldMinify ? stylesheetNode.MinifyPrint() : stylesheetNode.PrettyPrint();
+            }
+            finally
+            {
+                this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.PrintCss);
+
+            }
+        }
+
+        /// <summary>
+        /// Assembles the background images
+        /// </summary>
+        /// <param name="stylesheetNode">the style sheet node</param>
+        /// <returns>The stylesheet node with the sprited images aplied.</returns>
+        private AstNode AssembleBackgroundImages(AstNode stylesheetNode)
+        {
+            this.context.Measure.Start(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Sprite);
+            try
+            {
                 // Step # 6 - Execute the pipeline for image assembly scan
                 stylesheetNode = this.ExecuteImageAssemblyScan(stylesheetNode);
 
@@ -263,20 +340,59 @@ namespace WebGrease.Activities
                     else
                     {
                         // Extra Buckets say "Lazy"
-                        spriteLogFile = this.ImageAssembleScanDestinationFile + scanOutput.ImageAssemblyScanInput.BucketName + Strings.XmlExtension;
+                        spriteLogFile = this.ImageAssembleScanDestinationFile + scanOutput.ImageAssemblyScanInput.BucketName
+                                        + Strings.XmlExtension;
                     }
 
                     spriteLogFiles.Add(spriteLogFile);
-                    this.ExecuteImageAssembly(scanOutput.ImageReferencesToAssemble, spriteLogFile);
+
+                    var cacheSection = this.context.Cache.BeginSection(
+                        "minifycss.sprite", 
+                        new { relativeSpriteCacheKey = this.GetRelativeSpriteCacheKey(scanOutput) });
+                    try
+                    {
+                        if (cacheSection.IsValid())
+                        {
+                            cacheSection.RestoreFiles(HashedImageCacheKey, this.ImagesOutputDirectory, false);
+                            continue;
+                        }
+
+                        this.ExecuteImageAssembly(scanOutput.ImageReferencesToAssemble, spriteLogFile);
+
+                        if (File.Exists(spriteLogFile))
+                        {
+                            foreach (var spritedFile in XDocument.Load(spriteLogFile).Elements("images").Elements("output").Select(e => (string)e.Attribute("file")))
+                            {
+                                cacheSection.AddResultFile(spritedFile, HashedImageCacheKey, this.ImagesOutputDirectory);
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        cacheSection.EndSection();
+                    }
                 }
 
                 // Step # 8 - Execute the pipeline for image assembly update
                 stylesheetNode = this.ExecuteImageAssemblyUpdate(stylesheetNode, spriteLogFiles);
 
+                return stylesheetNode;
+            }
+            finally
+            {
                 this.context.Measure.End(TimeMeasureNames.MinifyCssActivity, TimeMeasureNames.Sprite);
             }
+        }
 
-            return this.ShouldMinify ? stylesheetNode.MinifyPrint() : stylesheetNode.PrettyPrint();
+        private string GetRelativeSpriteCacheKey(ImageAssemblyScanOutput scanOutput)
+        {
+            return string.Join(
+                ">",
+                scanOutput.ImageReferencesToAssemble.Select(ir =>
+                        "{0}|{1}|{2}".InvariantFormat(
+                            this.context.MakeRelative(ir.ImagePath),
+                            ir.Position,
+                            string.Join(":", ir.DuplicateImagePaths.Select(dip => this.context.MakeRelative(dip))))));
         }
 
         /// <summary>Scans the css for the image path references</summary>
@@ -317,10 +433,10 @@ namespace WebGrease.Activities
         {
             var specificStyleSheet = stylesheetNode as StyleSheetNode;
             this._imageAssemblyUpdateVisitor = new ImageAssemblyUpdateVisitor(
-                this.SourceFile, 
-                spriteLogFiles, 
-                specificStyleSheet == null ? 1d : specificStyleSheet.Dpi.GetValueOrDefault(1d), 
-                this.OutputUnit, 
+                this.SourceFile,
+                spriteLogFiles,
+                specificStyleSheet == null ? 1d : specificStyleSheet.Dpi.GetValueOrDefault(1d),
+                this.OutputUnit,
                 this.OutputUnitFactor);
             stylesheetNode = stylesheetNode.Accept(this._imageAssemblyUpdateVisitor);
 
@@ -342,7 +458,7 @@ namespace WebGrease.Activities
             }
 
             Directory.CreateDirectory(this.ImagesOutputDirectory);
-            ImageAssembleGenerator.AssembleImages(imageReferences.ToSafeReadOnlyCollection(), SpritePackingType.Vertical, this.ImagesOutputDirectory, destinationLogFile, string.Empty, true);
+            ImageAssembleGenerator.AssembleImages(imageReferences.ToSafeReadOnlyCollection(), SpritePackingType.Vertical, this.ImagesOutputDirectory, destinationLogFile, string.Empty, true, this.context);
         }
     }
 }

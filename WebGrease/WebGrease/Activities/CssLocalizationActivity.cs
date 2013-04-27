@@ -149,7 +149,7 @@ namespace WebGrease.Activities
                 cssContent = ResourcesResolver.ExpandResourceKeys(cssContent, cssLocaleResources);
 
                 // Replace image refs in css
-                cssContent = CssImageReferencesExpander.UpdateForHashReferences(this.renamedFilesLogs, cssContent);
+                cssContent = CssImageReferencesExpander.UpdateForHashReferences(this.renamedFilesLogs, cssContent, this.context);
 
                 // Compute the output file name
                 var destinationFile = cssLocalizationInput.DestinationFile.EndsWith(Strings.Css, StringComparison.OrdinalIgnoreCase) ? cssLocalizationInput.DestinationFile : Path.Combine(this.DestinationDirectory, localeName, string.Format(CultureInfo.InvariantCulture, "{0}_{1}.{2}", themeName, cssLocalizationInput.DestinationFile, Strings.Css));

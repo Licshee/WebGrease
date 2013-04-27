@@ -28,8 +28,14 @@ namespace WebGrease
         /// <summary>The copy images to final destination.</summary>
         public const string CopyImagesToFinalDestination = "CopyImagesToFinalDestination";
 
-        /// <summary>The parse.</summary>
+        /// <summary>The everything activity.</summary>
+        public const string EverythingActivity = "EverythingActivity";
+
+        /// <summary>The file hasher activity.</summary>
         public const string FileHasherActivity = "FileHasherActivity";
+
+        /// <summary>The file hash.</summary>
+        public const string FileHash = "FileHash";
 
         /// <summary>The initialize.</summary>
         public const string Initialize = "Initialize";
@@ -57,6 +63,9 @@ namespace WebGrease
 
         /// <summary>The preprocessing.</summary>
         public const string Preprocessing = "Preprocessing";
+
+        /// <summary>The print css</summary>
+        public const string PrintCss = "PrintCss";
 
         /// <summary>The process.</summary>
         public const string Process = "Process";

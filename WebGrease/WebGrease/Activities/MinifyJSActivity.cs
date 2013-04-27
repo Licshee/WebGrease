@@ -18,6 +18,8 @@ namespace WebGrease.Activities
     /// <summary>This task will call the minifier with settings from the args, and output the files to the specified directory</summary>
     internal sealed class MinifyJSActivity
     {
+        private const string MinifyJsResultCacheKey = "MinifyJsResultCacheKey";
+
         /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
 
@@ -71,14 +73,29 @@ namespace WebGrease.Activities
                 throw new ArgumentException("MinifyJSActivity - The destination file cannot be null or whitespace.");
             }
 
+            this.context.Measure.Start(TimeMeasureNames.MinifyJsActivity);
+
+            // Initialize the minifier
+            var cacheSection = this.context.Cache.BeginSection(
+                "minifyjs",
+                this.SourceFile,
+                new
+                    {
+                        this.ShouldAnalyze,
+                        this.ShouldMinify,
+                        this.AnalyzeArgs,
+                    }); 
+            
             try
             {
-                this.context.Measure.Start(TimeMeasureNames.MinifyJsActivity);
+                if (cacheSection.IsValid())
+                {
+                    cacheSection.RestoreFile(MinifyJsResultCacheKey, this.DestinationFile);
+                    return;
+                }
 
-                // Initialize the minifier
                 var minifier = new Minifier { FileName = this.SourceFile };
                 var minifierSettings = this.GetMinifierSettings(minifier);
-
                 var output = minifier.MinifyJavaScript(File.ReadAllText(this.SourceFile), minifierSettings.JSSettings);
 
                 // throw if this file has errors, but show all that are found
@@ -90,7 +107,8 @@ namespace WebGrease.Activities
                         // log each message individually so we can click through into the source
                         foreach (var errorMessage in minifier.ErrorList)
                         {
-                            this.context.Log.ExtendedError(
+                            var errorHandler = (errorMessage.IsError ? this.context.Log.ExtendedError : this.context.Log.Warning);
+                            errorHandler(
                                 errorMessage.Subcategory,
                                 errorMessage.ErrorCode,
                                 errorMessage.HelpKeyword,
@@ -124,6 +142,8 @@ namespace WebGrease.Activities
                 // Write to disk
                 FileHelper.WriteFile(
                     this.DestinationFile, output, CreateOutputEncoding(minifierSettings.EncodingOutputName));
+
+                cacheSection.AddResultFile(this.DestinationFile, MinifyJsResultCacheKey);
             }
             catch (Exception exception)
             {
@@ -133,6 +153,7 @@ namespace WebGrease.Activities
             finally
             {
                 this.context.Measure.End(TimeMeasureNames.MinifyJsActivity);
+                cacheSection.EndSection();
             }
         }
 

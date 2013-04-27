@@ -153,8 +153,12 @@
     <Reference Include="Antlr3.Runtime">
       <HintPath>..\packages\Antlr.3.4.1.9004\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.5.0.4\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
@@ -168,6 +172,7 @@
     <Compile Include="Activities\CssLocalizationActivity.cs" />
     <Compile Include="Activities\CssLocalizationInput.cs" />
     <Compile Include="Activities\ErrorCode.cs" />
+    <Compile Include="Activities\FileType.cs" />
     <Compile Include="Activities\JSLocalizationActivity.cs" />
     <Compile Include="Activities\JSLocalizationInput.cs" />
     <Compile Include="Activities\CssImageReferencesExpander.cs" />
@@ -307,7 +312,15 @@
     <Compile Include="Ajax\Utilities\ResourceStrings.cs" />
     <Compile Include="Ajax\Utilities\SwitchParser.cs" />
     <Compile Include="BuildWorkflowException.cs" />
-    <Compile Include="Common\HashUtility.cs" />
+    <Compile Include="Cache\CacheManager.cs" />
+    <Compile Include="Cache\CacheResult.cs" />
+    <Compile Include="Cache\CacheSection.cs" />
+    <Compile Include="Cache\CacheSourceDependency.cs" />
+    <Compile Include="Cache\CacheVaryByFile.cs" />
+    <Compile Include="Cache\ICacheManager.cs" />
+    <Compile Include="Cache\ICacheSection.cs" />
+    <Compile Include="Cache\NullCacheManager.cs" />
+    <Compile Include="Cache\NullCacheSection.cs" />
     <Compile Include="Common\FileHelper.cs" />
     <Compile Include="Configuration\ActivityMode.cs" />
     <Compile Include="Configuration\ArgumentProcessor.cs" />
@@ -316,6 +329,7 @@
     <Compile Include="Configuration\CssFileSet.cs" />
     <Compile Include="Configuration\CssMinificationConfig.cs" />
     <Compile Include="Configuration\CssSpritingConfig.cs" />
+    <Compile Include="Configuration\IFileSet.cs" />
     <Compile Include="Configuration\InputSpec.cs" />
     <Compile Include="Configuration\JSFileSet.cs" />
     <Compile Include="Configuration\JSMinificationConfig.cs" />
@@ -415,7 +429,6 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="ImageAssemble\ArgumentParser.cs" />
     <Compile Include="ImageAssemble\ColorQuantizer.cs" />
-    <Compile Include="ImageAssemble\ImageAssembler.cs" />
     <Compile Include="ImageAssemble\ImageAssembleBase.cs" />
     <Compile Include="ImageAssemble\ImageAssembleGenerator.cs" />
     <Compile Include="ImageAssemble\ImageAssembleStrings.Designer.cs">

@@ -11,6 +11,7 @@ namespace WebGrease.Configuration
 {
     using System;
     using System.Collections.Generic;
+    using System.Configuration;
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Linq;
@@ -153,6 +154,40 @@ namespace WebGrease.Configuration
 
         /// <summary>Gets or sets the value that determines if webgrease measures it tasks.</summary>
         internal bool Measure { get; set; }
+
+        /// <summary>
+        /// Gets or sets the value that determines to use cache.
+        /// </summary>
+        public bool CacheEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the root path used for caching, this defaults to the ToolsTempPath.
+        /// Use the system temp folder (%temp%) if you want to enable this on the build server.
+        /// </summary>
+        public string CacheRootPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the unique key for the unique key, is required when enabling cache.
+        /// You should use the project Guid to make a distinction between cache for different projects when using a shared cache folder.
+        /// </summary>
+        public string CacheUniqueKey { get; set; }
+
+        /// <summary>
+        /// gets or sets the value that determines how long to keep cache items that have not been touched. (both read and right will touch a file)
+        /// </summary>
+        public TimeSpan CacheTimeout { get; set; }
+        
+        /// <summary>Determines if we are doing an incrmental, only works when caching is enabled (CacheEnabled=true).</summary>
+        public bool Incremental { get; set; }
+
+        /// <summary>Validates the current configuration, throws exceptions if it finds invalid configuration settings and combinations.</summary>
+        public void Validate()
+        {
+            if (this.Incremental && !this.CacheEnabled)
+            {
+                throw new ConfigurationErrorsException("Incremental only works when caching is also enabled (CacheEnabled=True)");
+            }
+        }
 
         /// <summary>Parses the configurations segments.</summary>
         /// <param name="configurationFile">The configuration file.</param>

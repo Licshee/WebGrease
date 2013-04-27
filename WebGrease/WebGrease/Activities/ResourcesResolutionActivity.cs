@@ -67,7 +67,7 @@ namespace WebGrease.Activities
         internal IList<string> ResourceKeys { get; private set; }
 
         /// <summary>Gets or sets the measure name.</summary>
-        internal string MeasureName { get; set; }
+        internal FileType FileType { get; set; }
 
         /// <summary>When overridden in a derived class, executes the task.</summary>
         internal void Execute()
@@ -83,8 +83,8 @@ namespace WebGrease.Activities
 
             try
             {
-                this.context.Measure.Start("ResourcesResolutionActivity", this.MeasureName, this.ResourceTypeFilter.ToString());
-                ResourcesResolver.Factory(this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory).ResolveHierarchy();
+                this.context.Measure.Start("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
+                ResourcesResolver.Factory(context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory).ResolveHierarchy();
             }
             catch (ResourceOverrideException resourceOverrideException)
             {
@@ -100,7 +100,7 @@ namespace WebGrease.Activities
             }
             finally
             {
-                this.context.Measure.End("ResourcesResolutionActivity", this.MeasureName, this.ResourceTypeFilter.ToString());
+                this.context.Measure.End("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
             }
         }
     }

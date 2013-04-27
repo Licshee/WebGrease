@@ -10,6 +10,7 @@
 namespace WebGrease.Activities
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
 
@@ -37,54 +38,37 @@ namespace WebGrease.Activities
         /// <returns>If the execution was successfull.</returns>
         internal bool Execute()
         {
-            var assembler = new AssemblerActivity(this.context);
+            var assembler = new AssemblerActivity(this.context) { InputIsOriginalSource = true };
+            var isValid = new Func<IFileSet, bool>(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace());
 
-            // CSS processing pipeline per file set in the config
-            var cssFileSets = this.context.Configuration.CssFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace());
-
-            if (cssFileSets.Any())
-            {
-                this.context.Log.Information("Begin CSS bundle pipeline.");
-                foreach (var fileSet in cssFileSets)
-                {
-                    var setConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, this.context.Configuration.ConfigType);
-
-                    if (setConfig.ShouldBundleFiles)
-                    {
-                        // for each file set (that isn't empty of inputs)
-                        // bundle the files, however this can only be done on filesets that have an output value of a file (ie: has an extension)
-                        var outputfile = Path.Combine(this.context.Configuration.DestinationDirectory, fileSet.Output);
-
-                        if (Path.GetExtension(outputfile).IsNullOrWhitespace())
-                        {
-                            Console.WriteLine(ResourceStrings.InvalidBundlingOutputFile, outputfile);
-                            continue;
-                        }
-
-                        assembler.OutputFile = outputfile;
-                        assembler.Inputs.Clear();
-                        assembler.PreprocessingConfig = fileSet.Preprocessing;
-
-                        foreach (var inputSpec in fileSet.InputSpecs)
-                        {
-                            assembler.Inputs.Add(inputSpec);
-                        }
-
-                        assembler.Execute();
-                    }
-                }
-
-                this.context.Log.Information("End Css bundle pipeline.");
-            }
-
-            var jsFileSets = this.context.Configuration.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace());
+            var jsFileSets = this.context.Configuration.JSFileSets.Where(isValid);
             if (jsFileSets.Any())
             {
-                this.context.Log.Information("Begin JS bundle pipeline.");
-                foreach (var fileSet in jsFileSets)
+                this.context.Log.Information("Begin js bundle pipeline");
+                this.Bundle(assembler, jsFileSets);
+                this.context.Log.Information("End js bundle pipeline");
+            }
+
+            var cssFileSets = this.context.Configuration.CssFileSets.Where(isValid);
+            if (cssFileSets.Any())
+            {
+                this.context.Log.Information("Begin css bundle pipeline");
+                this.Bundle(assembler, cssFileSets);
+                this.context.Log.Information("End css bundle pipeline");
+            }
+
+            this.context.Log.Information("End bundle pipeline");
+            return true;
+        }
+
+        private void Bundle(AssemblerActivity assembler, IEnumerable<IFileSet> fileSets)
+        {
+            // processing pipeline per file set in the config
+            if (fileSets.Any())
+            {
+                foreach (var fileSet in fileSets)
                 {
                     var setConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, this.context.Configuration.ConfigType);
-
                     if (setConfig.ShouldBundleFiles)
                     {
                         // for each file set (that isn't empty of inputs)
@@ -100,20 +84,12 @@ namespace WebGrease.Activities
                         assembler.OutputFile = outputfile;
                         assembler.Inputs.Clear();
                         assembler.PreprocessingConfig = fileSet.Preprocessing;
-
-                        foreach (var inputSpec in fileSet.InputSpecs)
-                        {
-                            assembler.Inputs.Add(inputSpec);
-                        }
-
+                        assembler.Inputs.AddRange(fileSet.InputSpecs);
                         assembler.Execute();
                     }
                 }
 
-                this.context.Log.Information("End JS bundle pipeline.");
             }
-
-            return true;
         }
     }
 }

@@ -37,7 +37,7 @@ namespace WebGrease.Build
             {
                 // get a list of the files in the configuration folder
                 var fullPathToConfigFiles = Path.GetFullPath(this.ConfigurationPath);
-                var totalMeasure = new List<TimeMeasureResult>();
+                this.totalMeasure = new List<TimeMeasureResult>();
                 var first = true;
                 foreach (var configFile in Directory.GetFiles(fullPathToConfigFiles).Select(f => new FileInfo(f)))
                 {
@@ -52,7 +52,13 @@ namespace WebGrease.Build
                                     this.ApplicationRootPath,
                                     this.PreprocessingPluginPath)
                                     {
-                                        Measure = this.Measure
+                                        
+                                        Measure = this.Measure,
+                                        CacheEnabled = this.CacheEnabled,
+                                        CacheRootPath = this.CacheRootPath,
+                                        CacheUniqueKey = this.CacheUniqueKey,
+                                        CacheTimeout = this.CacheTimeout,
+                                        Incremental = this.Incremental
                                     };
 
                     var context = new WebGreaseContext(
@@ -68,7 +74,6 @@ namespace WebGrease.Build
                         case ("BUNDLE"):
                             this.LogInformation("Activity: Bundle");
                             var bundleActivity = new BundleActivity(context);
-
                             // execute the bundle pipeline
                             result = bundleActivity.Execute() && result;
                             break;
@@ -105,9 +110,11 @@ namespace WebGrease.Build
                     var totalMeasureFile = new DirectoryInfo(fullPathToConfigFiles).Name + ".measure";
                     var totalMeasurePath = Path.Combine(this.RootOutputPath, totalMeasureFile);
                     File.WriteAllText(
-                        totalMeasurePath + ".txt", 
-                        totalMeasure.GetTextTable(fullPathToConfigFiles) + "\r\n\r\n" + totalMeasure.Group(tm => tm.IdParts.FirstOrDefault()).GetTextTable(fullPathToConfigFiles));
-                    File.WriteAllText(totalMeasurePath + ".csv", totalMeasure.GetCsv());
+                        totalMeasurePath + ".txt",
+                        this.totalMeasure.GetTextTable(fullPathToConfigFiles) 
+                            + "\r\n\r\n" 
+                            + this.totalMeasure.Group(tm => tm.IdParts.FirstOrDefault()).GetTextTable(fullPathToConfigFiles));
+                    File.WriteAllText(totalMeasurePath + ".csv", this.totalMeasure.GetCsv());
                 }
             }
             catch (Exception exception)
@@ -119,79 +126,76 @@ namespace WebGrease.Build
             return result;
         }
 
+        internal List<TimeMeasureResult> totalMeasure;
+
         /// <summary>
         /// Gets or sets the folder for the configuration assemblies, this is the folder where MEF assemblies will be loaded from.
         /// By default the task will try and load them from the folder where the assembly of the build task resides.
         /// </summary>
         public string PreprocessingPluginPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets the type of config to use with for each action of the runtime.
-        /// </summary>
+        /// <summary>Gets or sets the type of config to use with for each action of the runtime.</summary>
         public string Activity { get; set; }
 
-        /// <summary>
-        /// Gets or sets the type of config to use with for each action of the runtime.
-        /// </summary>
+        /// <summary>Gets or sets the type of config to use with for each action of the runtime.</summary>
         public string ConfigType { get; set; }
 
-        /// <summary>
-        /// Gets or sets the path to the configuration files to use.
-        /// </summary>
+        /// <summary>Gets or sets the path to the configuration files to use.</summary>
         public string ConfigurationPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets the root output folder
-        /// </summary>
+        /// <summary>Gets or sets the root output folder</summary>
         public string RootOutputPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets the root intput path, applied to relative paths in the file.
-        /// </summary>
+        /// <summary>Gets or sets the root intput path, applied to relative paths in the file.</summary>
         public string RootInputPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets the path where the content in the RootInputPath is located in the project (For jumping to error's in visual studio from the error window).
-        /// </summary>
+        /// <summary>Gets or sets the path where the content in the RootInputPath is located in the project (For jumping to error's in visual studio from the error window).</summary>
         public string OriginalProjectInputPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets the root path of the application.
-        /// </summary>
+        /// <summary>Gets or sets the root path of the application.</summary>
         public string ApplicationRootPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets the folder path used for writing log files.
-        /// </summary>
+        /// <summary>Gets or sets the folder path used for writing log files.</summary>
         public string LogFolderPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets the folder path used as temp folder.
-        /// </summary>
+        /// <summary>Gets or sets the folder path used as temp folder.</summary>
         public string ToolsTempPath { get; set; }
 
-        /// <summary>
-        /// Gets or sets if warnings should be logged as errors.
-        /// </summary>
+        /// <summary>Gets or sets if warnings should be logged as errors.</summary>
         public bool WarningsAsErrors { get; set; }
 
-        /// <summary>
-        /// Gets or sets if it should measure and write measure files in the output folder.
-        /// </summary>
+        /// <summary>Gets or sets if it should measure and write measure files in the output folder.</summary>
         public bool Measure { get; set; }
 
+        /// <summary>Gets or sets the value that determines to use cache.</summary>
+        public bool CacheEnabled { get; set; }
+
+        /// <summary>Gets or sets the value that determines to use cache.</summary>
+        public bool Incremental { get; set; }
+
         /// <summary>
-        /// Method for logging information messages to the build output.
+        /// Gets or sets the root path used for caching, this defaults to the ToolsTempPath.
+        /// Use the system temp folder (%temp%) if you want to enable this on the build server.
         /// </summary>
+        public string CacheRootPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the unique key for the unique key, is required when enabling cache.
+        /// You should use the project guid and debug/release mode to make distinction between cache for different projects.
+        /// </summary>
+        public string CacheUniqueKey { get; set; }
+
+        /// <summary>gets or sets the value that determines how long to keep cache items that have not been touched. (both read and right will touch a file)</summary>
+        public TimeSpan CacheTimeout { get; set; }
+
+        /// <summary>Method for logging information messages to the build output.</summary>
         /// <param name="message">message to log</param>
         private void LogInformation(string message)
         {
             this.Log.LogMessageFromText(message, Microsoft.Build.Framework.MessageImportance.Normal);
         }
 
-        /// <summary>
-        /// Logs an extended error
-        /// </summary>
+        /// <summary>Logs an extended error</summary>
         /// <param name="subcategory">The sub category</param>
         /// <param name="errorCode">The error code</param>
         /// <param name="helpKeyword">The help keyword</param>
@@ -206,9 +210,7 @@ namespace WebGrease.Build
             this.Log.LogError(subcategory, errorCode, helpKeyword, this.ChangeToOriginalProjectLocation(file), lineNumber ?? 0, columnNumber ?? 0, endLineNumber ?? lineNumber ?? 0, endColumnNumber ?? columnNumber ?? 0, message);
         }
 
-        /// <summary>
-        /// Logs an extended error
-        /// </summary>
+        /// <summary>Logs an extended error</summary>
         /// <param name="subcategory">The sub category</param>
         /// <param name="errorCode">The error code</param>
         /// <param name="helpKeyword">The help keyword</param>

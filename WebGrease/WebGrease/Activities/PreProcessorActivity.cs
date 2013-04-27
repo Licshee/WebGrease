@@ -11,6 +11,7 @@ namespace WebGrease.Activities
     using System.Text;
 
     using WebGrease.Configuration;
+    using WebGrease.Extensions;
 
     /// <summary>The pre processor activity.</summary>
     internal sealed class PreprocessorActivity
@@ -25,7 +26,7 @@ namespace WebGrease.Activities
         internal PreprocessorActivity(IWebGreaseContext context)
         {
             this.context = context;
-            this.Inputs = new List<string>();
+            this.Inputs = new List<InputSpec>();
         }
 
         #endregion
@@ -38,7 +39,7 @@ namespace WebGrease.Activities
         internal string DefaultExtension { get; set; }
 
         /// <summary>Gets the list of inputs which need to be assembled.</summary>
-        internal IList<string> Inputs { get; private set; }
+        internal List<InputSpec> Inputs { get; set; }
 
         /// <summary>
         /// The folder to output the results to
@@ -64,7 +65,7 @@ namespace WebGrease.Activities
         internal IEnumerable<string> Execute()
         {
             var preprocessedFiles = new List<string>();
-            foreach (var file in this.Inputs)
+            foreach (var file in this.Inputs.GetFiles(context.Configuration.SourceDirectory))
             {
                 var fi = new FileInfo(file);
                 if (!fi.Exists)

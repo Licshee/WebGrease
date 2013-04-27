@@ -8,6 +8,9 @@
     using System.Xml;
     using System.Xml.Linq;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+    using WebGrease;
+    using WebGrease.Configuration;
     using WebGrease.ImageAssemble;
 
     /// <summary>
@@ -32,7 +35,7 @@
         [TestMethod]
         public void PackingTypeTest()
         {
-            ImageAssembleBase target = new NonphotoIndexedAssemble();
+            ImageAssembleBase target = new NonphotoIndexedAssemble(new WebGreaseContext(new WebGreaseConfiguration()));
             const SpritePackingType expected = SpritePackingType.Vertical;
             SpritePackingType actual = target.PackingType;
             Assert.AreEqual(expected, actual);
@@ -44,7 +47,7 @@
         [TestMethod]
         public void AssembleFileNameTest()
         {
-            ImageAssembleBase target = new NonphotoIndexedAssemble();
+            ImageAssembleBase target = new NonphotoIndexedAssemble(new WebGreaseContext(new WebGreaseConfiguration()));
             const string expected = "Combine.png";
             target.AssembleFileName = expected;
             Assert.AreEqual(expected, target.AssembleFileName);
@@ -57,7 +60,7 @@
         [TestMethod]
         public void PackAndDrawHorizontalImageTest()
         {
-            var target = new NonphotoIndexedAssemble_Accessor { };
+            var target = new NonphotoIndexedAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration()));
             var log = new ImageMap_Accessor("ReplaceLog.xml");
             log.AppendPadding("0");
             target.ImageXmlMap = log;
@@ -95,7 +98,7 @@
         {
             Bitmap actual = null;
             var log = new ImageMap_Accessor("ReplaceLog.xml");
-            var target = new NonphotoIndexedAssemble_Accessor { AssembleFileName = "combine.png", ImageXmlMap = log };
+            var target = new NonphotoIndexedAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration())) { AssembleFileName = "combine.png", ImageXmlMap = log };
             Dictionary<InputImage, Bitmap> data = null;
 
             try
@@ -136,7 +139,7 @@
             try
             {
                 var log = new ImageMap_Accessor("ReplaceLog.xml");
-                var photoAccessor = new PhotoAssemble_Accessor { ImageXmlMap = log, AssembleFileName = "Combine.jpg" };
+                var photoAccessor = new PhotoAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration())) { ImageXmlMap = log, AssembleFileName = "Combine.jpg" };
                 var jpegData = GenerateData(WebGrease.ImageAssemble.ImageType.Photo);
                 originalImage = photoAccessor.PackVertical(jpegData, true, null);
                 photoAccessor.SaveImage(originalImage);
@@ -159,7 +162,7 @@
         public void OptimizeAndSaveTest_NonphotoNonindexed()
         {
             Bitmap originalImage = null;
-            var nonphotoNonindexedAccessor = new NonphotoNonindexedAssemble_Accessor();
+            var nonphotoNonindexedAccessor = new NonphotoNonindexedAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration()));
             try
             {
                 var log = new ImageMap_Accessor("ReplaceLog.xml");
@@ -188,7 +191,7 @@
         public void OptimizeAndSaveTest_NonphotoIndexed()
         {
             Bitmap originalImage = null;
-            var nonphotoIndexedAccessor = new NonphotoIndexedAssemble_Accessor();
+            var nonphotoIndexedAccessor = new NonphotoIndexedAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration()));
             try
             {
                 var log = new ImageMap_Accessor("ReplaceLog.xml");
@@ -215,7 +218,7 @@
         [TestMethod]
         public void AssembleTest_NonphotoNonindexed()
         {
-            var target = new NonphotoNonindexedAssemble_Accessor { PackingType = SpritePackingType_Accessor.Horizontal, AssembleFileName = "Combine.png", PaddingBetweenImages = 5 };
+            var target = new NonphotoNonindexedAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration())) { PackingType = SpritePackingType_Accessor.Horizontal, AssembleFileName = "Combine.png", PaddingBetweenImages = 5 };
             try
             {
                 var log = new ImageMap_Accessor("ReplaceLog.xml");
@@ -241,7 +244,7 @@
         [TestMethod]
         public void AssembleTest_NonphotoIndexed()
         {
-            var target = new NonphotoIndexedAssemble_Accessor { PackingType = SpritePackingType_Accessor.Horizontal, AssembleFileName = "Combine.png", PaddingBetweenImages = 5 };
+            var target = new NonphotoIndexedAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration())) { PackingType = SpritePackingType_Accessor.Horizontal, AssembleFileName = "Combine.png", PaddingBetweenImages = 5 };
             try
             {
                 var log = new ImageMap_Accessor("ReplaceLog.xml");
@@ -267,7 +270,7 @@
         [TestMethod]
         public void AssembleTest_Photo()
         {
-            var target = new PhotoAssemble_Accessor { PackingType = SpritePackingType_Accessor.Horizontal, AssembleFileName = "Combine.jpg", PaddingBetweenImages = 5 };
+            var target = new PhotoAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration())) { PackingType = SpritePackingType_Accessor.Horizontal, AssembleFileName = "Combine.jpg", PaddingBetweenImages = 5 };
             try
             {
                 var log = new ImageMap_Accessor("ReplaceLog.xml");

@@ -15,7 +15,7 @@ namespace WebGrease.Configuration
     using System.Xml.Linq;
 
     /// <summary>A specification for a file or files.</summary>
-    internal class InputSpec
+    public class InputSpec
     {
         /// <summary>Initializes a new instance of the <see cref="InputSpec"/> class.</summary>
         internal InputSpec()
@@ -74,25 +74,25 @@ namespace WebGrease.Configuration
         /// <summary>
         /// Path for a file or directory.
         /// </summary>
-        internal string Path { get; set; }
+        public string Path { get; set; }
 
         /// <summary>
         /// Optional, can be used if the Path is a directory.
         /// If present, wildcards like http://msdn.microsoft.com/en-us/library/dd383462.aspx can be used.
         /// If not present and Path is a directory, all files (*.js or *.css) will be matched.
         /// </summary>
-        internal string SearchPattern { get; set; }
+        public string SearchPattern { get; set; }
 
         /// <summary>
         /// Optional, can be used if the Path is a directory.
         /// If present, must be one of <see cref="System.IO.SearchOption"/>.
         /// If not present and Path is a directory, AllDirectories will be used.
         /// </summary>
-        internal SearchOption SearchOption { get; set; }
+        public SearchOption SearchOption { get; set; }
 
         /// <summary>
         /// Gets or sets a flag inidcating whether it's not an error if the input file does not exist
         /// </summary>
-        internal bool IsOptional { get; set; }
+        public bool IsOptional { get; set; }
     }
 }

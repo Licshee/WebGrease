@@ -8,6 +8,9 @@
     using System.Linq;
     using System.Xml.Linq;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+    using WebGrease;
+    using WebGrease.Configuration;
     using WebGrease.ImageAssemble;
 
     /// <summary>This is a test class for ImageAssembleGeneratorTest and is intended
@@ -25,7 +28,7 @@
         [TestMethod]
         public void RegisterImageAssemblersTest()
         {
-            foreach (var entry in ImageAssembleGenerator.RegisterAvailableAssemblers())
+            foreach (var entry in ImageAssembleGenerator.RegisterAvailableAssemblers(new WebGreaseContext(new WebGreaseConfiguration())))
             {
                 switch (entry.DefaultExtension)
                 {
@@ -347,7 +350,7 @@
                 var packingType = SpritePackingType_Accessor.Vertical;
                 const string mapFileName = "ReplaceLog.xml";
                 var inputImageList = ArgumentParser_Accessor.ConvertToInputImageList(imagePaths.ToArray());
-                ImageAssembleGenerator.AssembleImages(inputImageList.AsReadOnly(), SpritePackingType.Vertical, string.Empty, mapFileName, string.Empty, false);
+                ImageAssembleGenerator.AssembleImages(inputImageList.AsReadOnly(), SpritePackingType.Vertical, string.Empty, mapFileName, string.Empty, false, new WebGreaseContext(new WebGreaseConfiguration()));
                 Assert.IsTrue(ValidateImageGenerationFromLog(mapFileName));
                 var separatedList = new Dictionary<InputImage, Bitmap>();
                 foreach(var inputImage in inputImageList)

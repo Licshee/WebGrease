@@ -25,6 +25,11 @@ namespace WebGrease.ImageAssemble
 
         #endregion
 
+        public PhotoAssemble(IWebGreaseContext context)
+            : base(context)
+        {
+        }
+
         /// <summary>
         /// Gets image type
         /// </summary>

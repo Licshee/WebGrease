@@ -16,6 +16,11 @@ namespace WebGrease.ImageAssemble
     /// <summary>This class assembles JPEG images</summary>
     internal class NotSupportedAssemble : ImageAssembleBase
     {
+        public NotSupportedAssemble(IWebGreaseContext context)
+            : base(context)
+        {
+        }
+
         /// <summary>
         /// Gets image type
         /// </summary>

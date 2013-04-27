@@ -19,18 +19,11 @@ namespace WebGrease.Activities
     using Css;
     using Extensions;
 
+    using WebGrease.Css.Extensions;
+
     /// <summary>The main activity.</summary>
     internal sealed class EverythingActivity
     {
-        /// <summary>
-        /// private enumeration for the type of files being worked on
-        /// </summary>
-        private enum FileType
-        {
-            JavaScript,
-            Stylesheet
-        }
-
         /// <summary>The images destination directory name.</summary>
         private const string ImagesDestinationDirectoryName = "i";
 
@@ -142,207 +135,325 @@ namespace WebGrease.Activities
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "RTUIT: Next iteration move css and js to seperate methods, for keep it to not change too much.")]
         internal bool Execute()
         {
-            this.context.Measure.Start("EverythingActivity", "Css");
-            var jsExpandedResourcesPath = Path.Combine(this.localesDestinationDirectory, Strings.JS);
+            return this.ExecuteCss() && this.ExecuteJS();
+        }
+
+        private bool ExecuteCss()
+        {
+            var hashInputPath = Path.Combine(this.toolsTempDirectory, PreHashDirectoryName);
+            var cssLogPath = Path.Combine(context.Configuration.LogsDirectory, Strings.CssLogFile);
+            var cssLocalizedOutputPath = Path.Combine(this.toolsTempDirectory, Strings.CssLocalizedOutput);
             var cssThemesOutputPath = Path.Combine(this.themesDestinationDirectory, Strings.Css);
             var cssLocalesOutputPath = Path.Combine(this.localesDestinationDirectory, Strings.Css);
-            var localizedCssOutputPath = Path.Combine(this.toolsTempDirectory, Strings.CssLocalizedOutput);
-            var jsLocalizedOutputPath = Path.Combine(this.toolsTempDirectory, Strings.JsLocalizedOutput);
-            var jsLogPath = Path.Combine(this.context.Configuration.LogsDirectory, Strings.JsLogFile);
-            var cssLogPath = Path.Combine(this.context.Configuration.LogsDirectory, Strings.CssLogFile);
+            var cssHashOutputPath = Path.Combine(context.Configuration.DestinationDirectory, CssDestinationDirectoryName);
 
-            // where minimized js and css files go to be hashed.
+            if (!this.context.Configuration.CssFileSets.Any())
+            {
+                return true;
+            }
+
+            var cssCacheSection = context.Cache.BeginSection(
+                TimeMeasureNames.EverythingActivity + "." + TimeMeasureNames.Css,
+                new
+                {
+                    context.Configuration.CssFileSets,
+                    context.Configuration.ImageExtensions,
+                    this.context.Configuration.SourceDirectory,
+                    this.context.Configuration.DestinationDirectory,
+                    this.context.Configuration.ConfigType
+                });
+
+            try
+            {
+                if (this.context.Configuration.Incremental && !cssCacheSection.SourceDependenciesHaveChanged())
+                {
+                    return true;
+                }
+
+                context.Measure.Start(TimeMeasureNames.EverythingActivity, TimeMeasureNames.Css);
+                try
+                {
+                    bool encounteredError = false;
+                    if (!this.SkipHashImages)
+                    {
+                        // hash the images
+                        context.Log.Information("Renaming (hashing) image files");
+                        const string RelativeImgPath = @"../..";
+
+                        this.HashImages(
+                            this.imagesTempWorkDirectory,
+                            RelativeImgPath,
+                            this.toolsTempDirectory,
+                            context.Configuration.ImageExtensions);
+                    }
+
+                    // CSS processing pipeline per file set in the config
+                    context.Log.Information("Begin CSS file pipeline.");
+
+                    foreach (var cssFileSet in context.Configuration.CssFileSets)
+                    {
+                        var cssFileSetCacheSection = context.Cache.BeginSection(
+                            TimeMeasureNames.CssFileSet,
+                            new
+                            {
+                                cssFileSet,
+                                this.context.Configuration.ConfigType
+                            });
+
+                        try
+                        {
+                            if (this.context.Configuration.Incremental && !cssFileSetCacheSection.SourceDependenciesHaveChanged())
+                            {
+                                continue;
+                            }
+
+
+                            context.Measure.Start(TimeMeasureNames.CssFileSet);
+
+                            var outputFile = Path.Combine(this.staticAssemblerDirectory, cssFileSet.Output);
+
+                            try
+                            {
+                                var localizedInputFiles = this.Bundle(cssFileSet, outputFile, FileType.Stylesheet, context.Configuration.ConfigType);
+                                if (localizedInputFiles == null)
+                                {
+                                    encounteredError = true;
+                                    continue;
+                                }
+
+                                // localization
+                                context.Log.Information("Resolving tokens and performing localization.");
+
+                                // Resolve resources
+                                ResolveLocaleResources(cssFileSet, context, cssLocalesOutputPath, FileType.Stylesheet);
+                                ResolveThemeResources(cssFileSet, context, cssThemesOutputPath, FileType.Stylesheet);
+
+                                // Localize the css
+                                if (!this.LocalizeCss(
+                                    localizedInputFiles,
+                                    cssFileSet.Locales,
+                                    cssFileSet.Themes,
+                                    cssLocalizedOutputPath,
+                                    cssThemesOutputPath,
+                                    cssLocalesOutputPath,
+                                    this.imagesLogFile))
+                                {
+                                    // localization failed for this batch
+                                    context.Log.Error(null, "There were errors encountered while resolving tokens.");
+                                    encounteredError = true;
+                                    continue; // skip to next set.
+                                }
+
+                                // if bundling occured, there should be only 1 file to process, otherwise find all the css files.
+                                string minifySearchMask = localizedInputFiles.Count() == 1
+                                                              ? "*" + Path.GetFileName(cssFileSet.Output)
+                                                              : "*." + Strings.Css;
+
+                                // minify files
+                                context.Log.Information("Minimizing css files, and spriting background images.");
+
+                                if (!this.MinifyCss(
+                                    cssLocalizedOutputPath,
+                                    hashInputPath,
+                                    minifySearchMask,
+                                    WebGreaseConfiguration.GetNamedConfig(cssFileSet.Minification, context.Configuration.ConfigType),
+                                    WebGreaseConfiguration.GetNamedConfig(cssFileSet.ImageSpriting, context.Configuration.ConfigType)))
+                                {
+                                    // minification failed.
+                                    context.Log.Error(null, "There were errors encountered while minimizing the css files.");
+                                    encounteredError = true;
+                                }
+                            }
+                            finally
+                            {
+                                context.Measure.End(TimeMeasureNames.CssFileSet);
+                            }
+                        }
+                        finally
+                        {
+                            cssFileSetCacheSection.EndSection();
+                        }
+                    }
+
+                    // hash all the css files.
+                    context.Log.Information("Renaming css files.");
+                    if (!this.HashFiles(hashInputPath, Strings.CssFilter, cssHashOutputPath, cssLogPath))
+                    {
+                        context.Log.Error(null, "There was a problem encountered while renaming the css files.");
+                        encounteredError = true;
+                    }
+
+                    // move images from temp folder to final destination
+                    if (!encounteredError && Directory.Exists(this.imagesTempWorkDirectory))
+                    {
+                        CopyImagesToFinalDestination(this.imagesTempWorkDirectory, this.imagesDestinationDirectory, context);
+                    }
+
+                    return !encounteredError;
+                }
+                finally
+                {
+                    context.Measure.End(TimeMeasureNames.EverythingActivity, TimeMeasureNames.Css);
+                }
+            }
+            finally
+            {
+                cssCacheSection.EndSection();
+            }
+        }
+
+        private bool ExecuteJS()
+        {
             var hashInputPath = Path.Combine(this.toolsTempDirectory, PreHashDirectoryName);
-
-            // final destination of 
+            var jsLogPath = Path.Combine(this.context.Configuration.LogsDirectory, Strings.JsLogFile);
+            var jsLocalizedOutputPath = Path.Combine(this.toolsTempDirectory, Strings.JsLocalizedOutput);
+            var jsLocalesOutputPath = Path.Combine(this.localesDestinationDirectory, Strings.JS);
             var jsHashOutputPath = Path.Combine(this.context.Configuration.DestinationDirectory, JsDestinationDirectoryName);
-            var cssHashOutputPath = Path.Combine(this.context.Configuration.DestinationDirectory, CssDestinationDirectoryName);
 
-            bool encounteredError = false;
-
-            if (this.context.Configuration.CssFileSets.Any())
+            if (!this.context.Configuration.JSFileSets.Any())
             {
-                if (!this.SkipHashImages)
-                {
-                    // hash the images
-                    this.context.Log.Information("Renaming (hashing) image files");
-                    const string RelativeImgPath = @"../..";
+                return true;
+            }
 
-                    this.HashImages(this.imagesTempWorkDirectory, RelativeImgPath, this.toolsTempDirectory, this.context.Configuration.ImageExtensions);
+            var jsCacheSection = context.Cache.BeginSection(
+                TimeMeasureNames.JsFileSet,
+                new
+                {
+                    this.context.Configuration.JSFileSets,
+                    this.context.Configuration.ConfigType,
+                    this.context.Configuration.SourceDirectory,
+                    this.context.Configuration.DestinationDirectory,
+                });
+
+            try
+            {
+                if (this.context.Configuration.Incremental && !jsCacheSection.SourceDependenciesHaveChanged())
+                {
+                    return true;
                 }
 
-                // CSS processing pipeline per file set in the config
-                this.context.Log.Information("Begin CSS file pipeline.");
-
-                foreach (var cssFileSet in this.context.Configuration.CssFileSets)
+                this.context.Measure.Start(TimeMeasureNames.EverythingActivity, TimeMeasureNames.Js);
+                try
                 {
-                    var outputFile = Path.Combine(this.staticAssemblerDirectory, cssFileSet.Output);
-                    this.context.Measure.Start(TimeMeasureNames.CssFileSet);
-
-                    try
+                    var encounteredError = false;
+                    // process each js file set.
+                    foreach (var jsFileSet in this.context.Configuration.JSFileSets)
                     {
-                        // bundling
-                        var bundleConfig = WebGreaseConfiguration.GetNamedConfig(cssFileSet.Bundling, this.context.Configuration.ConfigType);
-
-                        IEnumerable<string> localizeInputFiles;
-                        if (bundleConfig.ShouldBundleFiles)
-                        {
-                            this.context.Log.Information("Bundling css files.");
-                            if (!this.BundleFiles(cssFileSet.InputSpecs, outputFile, cssFileSet.Preprocessing, FileType.Stylesheet))
+                        var cacheSection = context.Cache.BeginSection(
+                            TimeMeasureNames.JsFileSet,
+                            new
                             {
-                                // bundling failed
-                                this.context.Log.Error(null, "There were errors encountered while bundling files.");
-                                encounteredError = true;
+                                jsFileSet,
+                                this.context.Configuration.ConfigType
+                            });
+
+                        try
+                        {
+                            if (this.context.Configuration.Incremental && !cacheSection.SourceDependenciesHaveChanged())
+                            {
                                 continue;
                             }
 
-                            // input for the next step is the output file from bundling
-                            localizeInputFiles = new[] { outputFile };
-                        }
-                        else
-                        {
-                            // bundling was skipped so the input is the bare input files
-                            var preProcesInputFiles = cssFileSet.InputSpecs.SelectMany(inputSpec => GetFiles(inputSpec.Path, inputSpec.SearchPattern, inputSpec.SearchOption));
+                            this.context.Measure.Start(TimeMeasureNames.JsFileSet);
 
-                            // bundling calls the preprocessor, so we need to do it seperately if there was no bundling.
-                            localizeInputFiles = this.PreprocessFiles(this.preprocessingTempDirectory, preProcesInputFiles, "css", cssFileSet.Preprocessing);
-                        }
-
-                        // localization
-                        this.context.Log.Information("Resolving tokens and performing localization.");
-
-                        // Resolve resources and localize the files.
-                        ResolveCSSResources(cssFileSet, this.context, cssThemesOutputPath, cssLocalesOutputPath);
-                        if (!this.LocalizeCss(localizeInputFiles, cssFileSet.Locales, cssFileSet.Themes, localizedCssOutputPath, cssThemesOutputPath, cssLocalesOutputPath, this.imagesLogFile))
-                        {
-                            // localization failed for this batch
-                            this.context.Log.Error(null, "There were errors encountered while resolving tokens.");
-                            encounteredError = true;
-                            continue; // skip to next set.
-                        }
-
-                        // if bundling occured, there should be only 1 file to process, otherwise find all the css files.
-                        string minifySearchMask = bundleConfig.ShouldBundleFiles ? "*" + Path.GetFileName(cssFileSet.Output) : "*." + Strings.Css;
-
-                        // minify files
-                        this.context.Log.Information("Minimizing css files, and spriting background images.");
-
-                        if (!this.MinifyCss(
-                                localizedCssOutputPath,
-                                hashInputPath,
-                                minifySearchMask,
-                                WebGreaseConfiguration.GetNamedConfig(cssFileSet.Minification, this.context.Configuration.ConfigType),
-                                WebGreaseConfiguration.GetNamedConfig(cssFileSet.ImageSpriting, this.context.Configuration.ConfigType)))
-                        {
-                            // minification failed.
-                            this.context.Log.Error(null, "There were errors encountered while minimizing the css files.");
-                            encounteredError = true;
-                        }
-                    }
-                    finally
-                    {
-                        this.context.Measure.End(TimeMeasureNames.CssFileSet);
-                    }
-                }
-
-                // hash all the css files.
-                this.context.Log.Information("Renaming css files.");
-                if (!this.HashFiles(hashInputPath, Strings.CssFilter, cssHashOutputPath, cssLogPath))
-                {
-                    this.context.Log.Error(null, "There was a problem encountered while renaming the css files.");
-                    encounteredError = true;
-                }
-
-                // move images from temp folder to final destination
-                if (!encounteredError && Directory.Exists(this.imagesTempWorkDirectory))
-                {
-                    CopyImagesToFinalDestination(this.imagesTempWorkDirectory, this.imagesDestinationDirectory, this.context);
-                }
-            }
-
-            this.context.Measure.End("EverythingActivity", "Css");
-
-            this.context.Measure.Start("EverythingActivity", "Js");
-
-            if (this.context.Configuration.JSFileSets.Any())
-            {
-                // process each js file set.
-                foreach (var jsFileSet in this.context.Configuration.JSFileSets)
-                {
-                    this.context.Measure.Start(TimeMeasureNames.JsFileSet);
-                    try
-                    {
-                        // bundling
-                        var bundleConfig = WebGreaseConfiguration.GetNamedConfig(jsFileSet.Bundling, this.context.Configuration.ConfigType);
-
-                        IEnumerable<string> localizeInputFiles;
-                        if (bundleConfig.ShouldBundleFiles)
-                        {
-                            this.context.Log.Information("Bundling js files.");
-                            var outputFile = Path.Combine(this.staticAssemblerDirectory, jsFileSet.Output);
-
-                            // bundle
-                            if (!this.BundleFiles(jsFileSet.InputSpecs, outputFile, jsFileSet.Preprocessing, FileType.JavaScript))
+                            try
                             {
-                                // bundling failed
-                                this.context.Log.Error(null, "There were errors encountered while bundling files.");
-                                encounteredError = true;
-                                continue;
+                                var outputFile = Path.Combine(this.staticAssemblerDirectory, jsFileSet.Output);
+
+                                // bundling
+                                var localizedInputFiles = this.Bundle(jsFileSet, outputFile, FileType.JavaScript, this.context.Configuration.ConfigType);
+
+                                if (localizedInputFiles == null)
+                                {
+                                    encounteredError = true;
+                                    continue;
+                                }
+
+                                // resolve the resources
+                                ResolveLocaleResources(jsFileSet, this.context, jsLocalesOutputPath, FileType.JavaScript);
+
+                                // localize
+                                this.context.Log.Information("Resolving tokens and performing localization.");
+                                if (!this.LocalizeJs(localizedInputFiles, jsFileSet.Locales, jsLocalizedOutputPath, jsLocalesOutputPath))
+                                {
+                                    this.context.Log.Error(null, "There were errors encountered while resolving tokens.");
+                                    encounteredError = true;
+                                    continue;
+                                }
+
+                                this.context.Log.Information("Minimizing javascript files");
+                                string minifySearchMask = localizedInputFiles.Count() > 1
+                                                              ? "*" + Path.GetFileName(jsFileSet.Output)
+                                                              : Strings.JsFilter;
+                                if (!this.MinifyJs(
+                                        jsLocalizedOutputPath,
+                                        hashInputPath,
+                                        minifySearchMask,
+                                        WebGreaseConfiguration.GetNamedConfig(jsFileSet.Minification, this.context.Configuration.ConfigType),
+                                        WebGreaseConfiguration.GetNamedConfig(jsFileSet.Validation, this.context.Configuration.ConfigType)))
+                                {
+                                    this.context.Log.Error(null, "There were errors encountered while minimizing javascript files.");
+                                    encounteredError = true;
+                                }
                             }
-
-                            localizeInputFiles = new[] { outputFile };
+                            finally
+                            {
+                                this.context.Measure.End(TimeMeasureNames.JsFileSet);
+                            }
                         }
-                        else
+                        finally
                         {
-                            // bundling was skipped so the input is the bare input files
-                            var preProcesInputFiles = jsFileSet.InputSpecs.SelectMany(inputSpec => GetFiles(inputSpec.Path, inputSpec.SearchPattern, inputSpec.SearchOption));
-
-                            // bundling has the proprocessor in it, so we need to do it seperately.
-                            localizeInputFiles = this.PreprocessFiles(this.preprocessingTempDirectory, preProcesInputFiles, "js", jsFileSet.Preprocessing);
-                        }
-
-                        // resolve the resources
-                        ResolveJsResources(jsFileSet, this.context, jsExpandedResourcesPath);
-
-                        // localize
-                        this.context.Log.Information("Resolving tokens and performing localization.");
-                        if (!this.LocalizeJs(localizeInputFiles, jsFileSet.Locales, jsLocalizedOutputPath, jsExpandedResourcesPath))
-                        {
-                            this.context.Log.Error(null, "There were errors encountered while resolving tokens.");
-                            encounteredError = true;
-                            continue;
-                        }
-
-                        this.context.Log.Information("Minimizing javascript files");
-                        string minifySearchMask = bundleConfig.ShouldBundleFiles ? "*" + Path.GetFileName(jsFileSet.Output) : Strings.JsFilter;
-                        if (!this.MinifyJs(
-                            jsLocalizedOutputPath,
-                            hashInputPath,
-                            minifySearchMask,
-                            WebGreaseConfiguration.GetNamedConfig(jsFileSet.Minification, this.context.Configuration.ConfigType),
-                            WebGreaseConfiguration.GetNamedConfig(jsFileSet.Validation, this.context.Configuration.ConfigType)))
-                        {
-                            this.context.Log.Error(null, "There were errors encountered while minimizing javascript files.");
-                            encounteredError = true;
+                            cacheSection.EndSection();
                         }
                     }
-                    finally
+
+                    // hash all the js files
+                    this.context.Log.Information("Renaming javascript files.");
+                    if (!this.HashFiles(hashInputPath, Strings.JsFilter, jsHashOutputPath, jsLogPath))
                     {
-                        this.context.Measure.End(TimeMeasureNames.JsFileSet);
+                        this.context.Log.Error(null, "There was an error renaming javascript files.");
+                        encounteredError = true;
                     }
-                }
 
-                // hash all the js files
-                this.context.Log.Information("Renaming javascript files.");
-                if (!this.HashFiles(hashInputPath, Strings.JsFilter, jsHashOutputPath, jsLogPath))
+                    return !encounteredError;
+                }
+                finally
                 {
-                    this.context.Log.Error(null, "There was an error renaming javascript files.");
-                    encounteredError = true;
+                    this.context.Measure.End(TimeMeasureNames.EverythingActivity, TimeMeasureNames.Js);
                 }
             }
+            finally
+            {
+                jsCacheSection.EndSection();
+            }
+        }
 
-            this.context.Measure.End("EverythingActivity", "Js");
-            return !encounteredError;
+        private IEnumerable<string> Bundle(IFileSet fileSet, string outputFile, FileType fileType, string configType)
+        {
+            var bundleConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, configType);
+
+            if (bundleConfig.ShouldBundleFiles)
+            {
+                this.context.Log.Information("Bundling files.");
+                if (!this.BundleFiles(fileSet.InputSpecs, outputFile, fileSet.Preprocessing, fileType, true))
+                {
+                    // bundling failed
+                    this.context.Log.Error(null, "There were errors encountered while bundling files.");
+                    return null;
+                }
+
+                // input for the next step is the output file from bundling
+                return new[] { outputFile };
+            }
+
+            if (fileSet.Preprocessing.Enabled)
+            {
+                // bundling calls the preprocessor, so we need to do it seperately if there was no bundling.
+                return this.PreprocessFiles(this.preprocessingTempDirectory, fileSet.InputSpecs, fileType == FileType.JavaScript ? "js" : "css", fileSet.Preprocessing);
+            }
+
+            fileSet.InputSpecs.ForEach(context.Cache.CurrentCacheSection.AddSourceDependency);
+            return fileSet.InputSpecs.GetFiles(context.Configuration.SourceDirectory);
         }
 
         /// <summary>
@@ -353,26 +464,17 @@ namespace WebGrease.Activities
         /// <param name="defaultTargetExtensions">Default target extensions</param>
         /// <param name="preprocessingConfig">The pre processing config </param>
         /// <returns>The preprocessed file</returns>
-        private IEnumerable<string> PreprocessFiles(string targetFolder, IEnumerable<string> inputFiles, string defaultTargetExtensions, PreprocessingConfig preprocessingConfig)
+        private IEnumerable<string> PreprocessFiles(string targetFolder, IEnumerable<InputSpec> inputFiles, string defaultTargetExtensions, PreprocessingConfig preprocessingConfig)
         {
-            if (preprocessingConfig.Enabled)
-            {
-                var preprocessorActivity = new PreprocessorActivity(this.context)
-                    {
-                        DefaultExtension = defaultTargetExtensions,
-                        OutputFolder = targetFolder,
-                        PreprocessingConfig = preprocessingConfig,
-                    };
-
-                foreach (var inputFile in inputFiles)
+            var preprocessorActivity = new PreprocessorActivity(this.context)
                 {
-                    preprocessorActivity.Inputs.Add(inputFile);
-                }
+                    DefaultExtension = defaultTargetExtensions,
+                    OutputFolder = targetFolder,
+                    PreprocessingConfig = preprocessingConfig,
+                };
 
-                return preprocessorActivity.Execute();
-            }
-
-            return inputFiles;
+            preprocessorActivity.Inputs.AddRange(inputFiles);
+            return preprocessorActivity.Execute();
         }
 
         /// <summary>
@@ -413,26 +515,26 @@ namespace WebGrease.Activities
         /// <param name="outputPath">The output path </param>
         /// <param name="searchFilter">filter to qualify files</param>
         /// <param name="cssConfig">configuration settings</param>
-        /// <param name="spriteConfig">The sprite configuration </param>
+        /// <param name="spritingConfig">The sprite configuration </param>
         /// <returns>True is successfull false if not.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private bool MinifyCss(string rootInputPath, string outputPath, string searchFilter, CssMinificationConfig cssConfig, CssSpritingConfig spriteConfig)
+        private bool MinifyCss(string rootInputPath, string outputPath, string searchFilter, CssMinificationConfig cssConfig, CssSpritingConfig spritingConfig)
         {
             var successful = true;
-            var minifier = new MinifyCssActivity(this.context) 
+            var minifier = new MinifyCssActivity(this.context)
             {
-                ShouldAssembleBackgroundImages = spriteConfig.ShouldAutoSprite,
+                ShouldAssembleBackgroundImages = spritingConfig.ShouldAutoSprite,
                 ShouldMinify = cssConfig.ShouldMinify,
                 ShouldOptimize = cssConfig.ShouldMinify,
                 ShouldValidateForLowerCase = cssConfig.ShouldValidateLowerCase,
                 ShouldExcludeProperties = cssConfig.ShouldExcludeProperties,
                 BannedSelectors = new HashSet<string>(cssConfig.RemoveSelectors.ToArray()),
                 HackSelectors = new HashSet<string>(cssConfig.ForbiddenSelectors.ToArray()),
-                ImageAssembleReferencesToIgnore = new HashSet<string>(spriteConfig.ImagesToIgnore.ToArray()),
+                ImageAssembleReferencesToIgnore = new HashSet<string>(spritingConfig.ImagesToIgnore.ToArray()),
                 HashedImagesLogFile = this.imagesLogFile,
-                OutputUnit = spriteConfig.OutputUnit,
-                OutputUnitFactor = spriteConfig.OutputUnitFactor,
-                IgnoreImagesWithNonDefaultBackgroundSize = spriteConfig.IgnoreImagesWithNonDefaultBackgroundSize
+                OutputUnit = spritingConfig.OutputUnit,
+                OutputUnitFactor = spritingConfig.OutputUnitFactor,
+                IgnoreImagesWithNonDefaultBackgroundSize = spritingConfig.IgnoreImagesWithNonDefaultBackgroundSize
             };
 
             this.context.Log.Information(string.Format(CultureInfo.InvariantCulture, "MinifyCSS Called --> rootInputPath:{0}, searchFilter:{1}, configName:{2}, excludeSelectors:{3},  hackSelectors:{4}, shouldMinify:{5}, shouldValidateLowerCase: {6}, shouldExcludeProperties:{7}", rootInputPath, searchFilter, cssConfig.Name, string.Join(",", minifier.BannedSelectors), string.Join(",", minifier.HackSelectors), minifier.ShouldMinify, minifier.ShouldValidateForLowerCase, minifier.ShouldExcludeProperties));
@@ -452,6 +554,7 @@ namespace WebGrease.Activities
                 minifier.ImageAssembleUpdateDestinationFile = updateFilePath;
                 minifier.ImagesOutputDirectory = this.imagesTempWorkDirectory;
                 minifier.DestinationFile = outputFile;
+                minifier.OutputPath = outputPath;
 
                 try
                 {
@@ -491,7 +594,7 @@ namespace WebGrease.Activities
         private bool HashFiles(string inputPath, string filter, string outputPath, string logFileName)
         {
             var success = true;
-            var hasher = new FileHasherActivity(this.context) 
+            var hasher = new FileHasherActivity(this.context)
             {
                 CreateExtraDirectoryLevelFromHashes = true,
                 DestinationDirectory = outputPath,
@@ -668,9 +771,10 @@ namespace WebGrease.Activities
         /// <param name="outputFile">name of the output file</param>
         /// <param name="preprocessing">The preprocessing.</param>
         /// <param name="fileType">JavaScript of Stylesheets</param>
+        /// <param name="isOriginalSource">Whetere the input is the original source</param>
         /// <returns>a value indicating whether the operation was successful</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private bool BundleFiles(IEnumerable<InputSpec> inputSpecs, string outputFile, PreprocessingConfig preprocessing, FileType fileType)
+        private bool BundleFiles(IEnumerable<InputSpec> inputSpecs, string outputFile, PreprocessingConfig preprocessing, FileType fileType, bool isOriginalSource)
         {
             // now we have the input prepared, so use Assembler activity to create the one file to use as input (if we were't assembling, we'd need to grab all) 
             // we are bundling either JS or CSS files -- for JS files we want to append semicolons between them and use single-line comments; for CSS file we don't.
@@ -678,6 +782,7 @@ namespace WebGrease.Activities
                 {
                     PreprocessingConfig = preprocessing,
                     AddSemicolons = fileType == FileType.JavaScript,
+                    InputIsOriginalSource = isOriginalSource
                 };
 
             foreach (var inputSpec in inputSpecs)
@@ -705,17 +810,17 @@ namespace WebGrease.Activities
         /// <param name="cssFileSet">The file set to be processed</param>
         /// <param name="context">Config object with locations of needed directories.</param>
         /// <param name="cssThemesOutputPath">path for output of css theme resources</param>
-        /// <param name="cssLocalesOutputPath">path for output of css locale resources</param>
-        private static void ResolveCSSResources(CssFileSet cssFileSet, IWebGreaseContext context, string cssThemesOutputPath, string cssLocalesOutputPath)
+        /// <param name="fileType">The file type</param>
+        private static void ResolveThemeResources(CssFileSet cssFileSet, IWebGreaseContext context, string cssThemesOutputPath, FileType fileType)
         {
-            var themeResourceActivity = new ResourcesResolutionActivity(context) 
+            var themeResourceActivity = new ResourcesResolutionActivity(context)
             {
                 DestinationDirectory = cssThemesOutputPath,
                 SourceDirectory = context.Configuration.SourceDirectory,
                 ApplicationDirectoryName = context.Configuration.TokensDirectory,
                 SiteDirectoryName = context.Configuration.OverrideTokensDirectory,
                 ResourceTypeFilter = ResourceType.Themes,
-                MeasureName = TimeMeasureNames.Css
+                FileType = fileType
             };
 
             foreach (var theme in cssFileSet.Themes)
@@ -724,47 +829,31 @@ namespace WebGrease.Activities
             }
 
             themeResourceActivity.Execute();
+        }
 
-            var localeResourceActivity = new ResourcesResolutionActivity(context) 
+        /// <summary>Expands the resource tokens for locales and themes</summary>
+        /// <param name="fileSet">The js File Set.</param>
+        /// <param name="context">The context.</param>
+        /// <param name="targetPath">path for output of js resources</param>
+        /// <param name="fileType">The file type</param>
+        private static void ResolveLocaleResources(IFileSet fileSet, IWebGreaseContext context, string targetPath, FileType fileType)
+        {
+            var localeResourceActivity = new ResourcesResolutionActivity(context)
             {
-                DestinationDirectory = cssLocalesOutputPath,
+                DestinationDirectory = targetPath,
                 SourceDirectory = context.Configuration.SourceDirectory,
                 ApplicationDirectoryName = context.Configuration.TokensDirectory,
                 SiteDirectoryName = context.Configuration.OverrideTokensDirectory,
                 ResourceTypeFilter = ResourceType.Locales,
-                MeasureName = TimeMeasureNames.Css
+                FileType = fileType
             };
 
-            foreach (var locale in cssFileSet.Locales)
+            foreach (var locale in fileSet.Locales)
             {
                 localeResourceActivity.ResourceKeys.Add(locale);
             }
 
             localeResourceActivity.Execute();
-        }
-
-        /// <summary>Expands the resource tokens for locales and themes</summary>
-        /// <param name="jsFileSet">The js File Set.</param>
-        /// <param name="context">The context.</param>
-        /// <param name="jsExpandedResourcesPath">path for output of js resources</param>
-        private static void ResolveJsResources(JSFileSet jsFileSet, IWebGreaseContext context, string jsExpandedResourcesPath)
-        {
-            var jsLocaleResourceActivity = new ResourcesResolutionActivity(context)
-            {
-                DestinationDirectory = jsExpandedResourcesPath,
-                SourceDirectory = context.Configuration.SourceDirectory,
-                ApplicationDirectoryName = context.Configuration.TokensDirectory,
-                SiteDirectoryName = context.Configuration.OverrideTokensDirectory,
-                ResourceTypeFilter = ResourceType.Locales,
-                MeasureName = TimeMeasureNames.Js
-            };
-
-            foreach (var locale in jsFileSet.Locales)
-            {
-                jsLocaleResourceActivity.ResourceKeys.Add(locale);
-            }
-
-            jsLocaleResourceActivity.Execute();
         }
 
         /// <summary>Hashes the images.</summary>
@@ -823,20 +912,6 @@ namespace WebGrease.Activities
             }
 
             this.context.Log.Error(ex, message);
-        }
-
-        /// <summary>
-        /// Gets the collection of files that match the path and filter.
-        /// </summary>
-        /// <param name="inputPath">Input path to search. Can be a filename, which will be the only member of the returned set.</param>
-        /// <param name="searchPattern">Pattern to match for results.</param>
-        /// <param name="searchOption">Directory processing option</param>
-        /// <returns>A collection of matching files.</returns>
-        private static IEnumerable<string> GetFiles(string inputPath, string searchPattern, SearchOption searchOption)
-        {
-            return !Path.GetExtension(inputPath).IsNullOrWhitespace() 
-                ? new[] { inputPath } 
-                : Directory.EnumerateFiles(inputPath, searchPattern, searchOption);
         }
     }
 }

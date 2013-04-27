@@ -46,6 +46,13 @@ namespace WebGrease.ImageAssemble
     /// </summary>
     internal abstract class ImageAssembleBase
     {
+        private readonly IWebGreaseContext context;
+
+        public ImageAssembleBase(IWebGreaseContext context)
+        {
+            this.context = context;
+        }
+
         #region Properties
 
         /// <summary>
@@ -278,8 +285,8 @@ namespace WebGrease.ImageAssemble
         protected virtual void HashImage()
         {
             var fileInfo = new FileInfo(this.AssembleFileName);
-        
-            var newName = HashUtility.GetHashStringForFile(fileInfo.FullName) + fileInfo.Extension;
+
+            var newName = this.context.GetFileHash(fileInfo.FullName) + fileInfo.Extension;
         
             var destinationDirectory = fileInfo.DirectoryName;
 

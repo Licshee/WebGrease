@@ -20,6 +20,11 @@ namespace WebGrease.ImageAssemble
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704", Justification = "By Design")]
     internal class NonphotoNonindexedAssemble : ImageAssembleBase
     {
+        public NonphotoNonindexedAssemble(IWebGreaseContext context)
+            : base(context)
+        {
+        }
+
         /// <summary>
         /// Gets image type
         /// </summary>

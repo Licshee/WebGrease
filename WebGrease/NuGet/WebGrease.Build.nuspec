@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>WebGrease.Build</id>
-    <version>1.2.1</version>
+    <version>1.4.0</version>
     <owners>Microsoft</owners>
     <authors>webgrease@microsoft.com</authors>
     <description>Visual Studio MSBuild task library, for enabling execution of WebGrease at build time.</description>
@@ -10,7 +10,7 @@
     <licenseUrl>http://www.microsoft.com/web/webpi/eula/msn_webgrease_eula.htm</licenseUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <dependencies>
-      <dependency id="WebGrease" version="1.2.1" />
+      <dependency id="WebGrease" version="1.4.0" />
     </dependencies>
   </metadata>
   <files>

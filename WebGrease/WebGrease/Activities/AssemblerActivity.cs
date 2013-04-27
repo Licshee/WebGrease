@@ -40,10 +40,13 @@ namespace WebGrease.Activities
         private static readonly Regex EndsWithSemicolon = new Regex(@";\s*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         
         /// <summary>Gets the list of inputs which need to be assembled.</summary>
-        internal IList<InputSpec> Inputs { get; private set; }
+        internal List<InputSpec> Inputs { get; private set; }
 
         /// <summary>Gets or sets the output file.</summary>
         internal string OutputFile { get; set; }
+
+        /// <summary>Determines whether the input is original source or already processed.</summary>
+        public bool InputIsOriginalSource { get; set; }
 
         /// <summary>Gets or sets the output file.</summary>
         internal PreprocessingConfig PreprocessingConfig { get; set; }
@@ -61,9 +64,12 @@ namespace WebGrease.Activities
 
             var assembleType = Path.GetExtension(this.OutputFile).Trim('.');
 
+            this.context.Measure.Start(TimeMeasureNames.AssemblerActivity, assembleType);
+            var cacheSection = this.context.Cache.BeginSection(TimeMeasureNames.AssemblerActivity, new { this.Inputs, PreprocessingConfig, AddSemicolons });
             try
             {
-                this.context.Measure.Start(TimeMeasureNames.AssemblerActivity, assembleType);
+                // Add source inputs
+                this.Inputs.ForEach(context.Cache.CurrentCacheSection.AddSourceDependency);
 
                 // Create if the directory does not exist.
                 var outputDirectory = Path.GetDirectoryName(this.OutputFile);
@@ -81,47 +87,14 @@ namespace WebGrease.Activities
                 using (var writer = new StreamWriter(this.OutputFile, false, Encoding.UTF8))
                 {
                     this.context.Log.Information("Start bundling output file: {0}".InvariantFormat(this.OutputFile));
-                    foreach (var input in this.Inputs.Where(_ => _ != null && !string.IsNullOrWhiteSpace(_.Path)))
+                    foreach (var file in this.Inputs.GetFiles(context.Configuration.SourceDirectory, this.context.Log))
                     {
-                        // File Input
-                        if (File.Exists(input.Path))
-                        {
-                            this.context.Log.Information("- {0}".InvariantFormat(input.Path));
-                            this.AppendFile(writer, input.Path, PreprocessingConfig);
-                            continue;
-                        }
-
-                        // Directory Input
-                        if (Directory.Exists(input.Path))
-                        {
-                            this.context.Log.Information(
-                                "Folder: {0}, Pattern: {1}, Options: {2}".InvariantFormat(
-                                    input.Path, input.SearchPattern, input.SearchOption));
-
-                            // Intentionally using Enum.Parse to throw an exception if bad string is passed for search option
-                            foreach (
-                                var file in
-                                    Directory.EnumerateFiles(
-                                        input.Path,
-                                        string.IsNullOrWhiteSpace(input.SearchPattern) ? "*.*" : input.SearchPattern,
-                                        input.SearchOption).OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
-                            {
-                                this.context.Log.Information("- {0}".InvariantFormat(file));
-                                this.AppendFile(writer, file, this.PreprocessingConfig);
-                            }
-
-                            continue;
-                        }
-
-                        if (!input.IsOptional)
-                        {
-                            throw new FileNotFoundException(
-                                "Could not find the file to assemble: " + input.Path, input.Path);
-                        }
-
-                        this.context.Log.Information("End bundling output file: {0}".InvariantFormat(this.OutputFile));
+                        this.AppendFile(writer, file, this.PreprocessingConfig);
                     }
+                    this.context.Log.Information("End bundling output file: {0}".InvariantFormat(this.OutputFile));
                 }
+
+                cacheSection.AddResultFile(this.OutputFile, "bundle");
             }
             catch (Exception exception)
             {
@@ -130,6 +103,7 @@ namespace WebGrease.Activities
             }
             finally
             {
+                cacheSection.EndSection();
                 this.context.Measure.End(TimeMeasureNames.AssemblerActivity, assembleType);
             }
         }

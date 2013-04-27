@@ -19,6 +19,7 @@ namespace WebGrease.Activities
     using System.Resources;
     using System.Text.RegularExpressions;
     using WebGrease;
+    using WebGrease.Configuration;
 
     /// <summary>Parses the resources from files and loads into the dictionary. 
     /// Implements the Factory method.</summary>
@@ -46,13 +47,14 @@ namespace WebGrease.Activities
         private readonly IEnumerable<string> ResourceKeys;
 
         /// <summary>Initializes a new instance of the <see cref="ResourcesResolver"/> class.</summary>
+        /// <param name="context">The webgrease context</param>
         /// <param name="inputContentDirectory">The base Resources Directory.</param>
         /// <param name="resourceType">The compress Filter Directory Name.</param>
         /// <param name="applicationDirectoryName">The modules Aggregation Directory Name.</param>
         /// <param name="siteName">The site name</param>
         /// <param name="resourceKeys">The resource keys for which the resources will be compressed.</param>
         /// <param name="outputDirectoryPath">Output folder to write the resource files on hard drive</param>
-        private ResourcesResolver(string inputContentDirectory, ResourceType resourceType, string applicationDirectoryName, string siteName, IEnumerable<string> resourceKeys, string outputDirectoryPath)
+        private ResourcesResolver(IWebGreaseContext context, string inputContentDirectory, ResourceType resourceType, string applicationDirectoryName, string siteName, IEnumerable<string> resourceKeys, string outputDirectoryPath)
         {
             // Directory Structure:
             // Content
@@ -101,6 +103,7 @@ namespace WebGrease.Activities
                         foreach (var filterDirectory in new DirectoryInfo(siteDirectory).EnumerateDirectories(resourceType.ToString(), SearchOption.AllDirectories))
                         {
                             this.ResourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = true, Directory = filterDirectory.FullName });
+                            context.Cache.CurrentCacheSection.AddSourceDependency(filterDirectory.FullName, "*.resx");
                         }
                     }
                 }
@@ -110,6 +113,7 @@ namespace WebGrease.Activities
                     foreach (var filterDirectory in contentChildDirectory.EnumerateDirectories(resourceType.ToString(), SearchOption.AllDirectories))
                     {
                         this.ResourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = false, Directory = filterDirectory.FullName });
+                        context.Cache.CurrentCacheSection.AddSourceDependency(filterDirectory.FullName, "*.resx");
                     }
                 }
             }
@@ -119,6 +123,7 @@ namespace WebGrease.Activities
         }
 
         /// <summary>Resource Manager factory.</summary>
+        /// <param name="context">The webgrease context</param>
         /// <param name="inputContentDirectory">The base Resources Directory.</param>
         /// <param name="resourceType">The resource type.</param>
         /// <param name="applicationDirectoryName">The modules Aggregation Directory Name.</param>
@@ -127,6 +132,7 @@ namespace WebGrease.Activities
         /// <param name="outputDirectoryPath">Output folder to write the resource files on hard drive.</param>
         /// <returns>A new instance of Resource Manager class.</returns>
         internal static ResourcesResolver Factory(
+            IWebGreaseContext context,
             string inputContentDirectory,
             ResourceType resourceType,
             string applicationDirectoryName,
@@ -134,7 +140,7 @@ namespace WebGrease.Activities
             IEnumerable<string> resourceKeys,
             string outputDirectoryPath)
         {
-            return new ResourcesResolver(inputContentDirectory, resourceType, applicationDirectoryName, siteName, resourceKeys, outputDirectoryPath);
+            return new ResourcesResolver(context, inputContentDirectory, resourceType, applicationDirectoryName, siteName, resourceKeys, outputDirectoryPath);
         }
 
         /// <summary>Gets the resources based on locale or theme key. 
@@ -147,6 +153,7 @@ namespace WebGrease.Activities
             // After the ResourceKeys loop if genericProcessed value is still false it means generic-generic file is 
             // not written in the output folder. We want to output generic-generic resource file in all the cases
             // to process locales in the non locales folders in case of EPPR projects.
+
             foreach (var resourceKey in this.ResourceKeys)
             {
                 var localeOrThemeName = resourceKey.Trim().ToLower(CultureInfo.InvariantCulture);

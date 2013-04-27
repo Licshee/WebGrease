@@ -214,7 +214,7 @@ namespace WebGrease.Activities
                 foreach (var sourceFileInfo in sourceDirInfo.EnumerateFiles(filter))
                 {
                     var logSourceEntry = sourceFileInfo.FullName;
-                    var hashedFileName = HashUtility.GetHashStringForFile(sourceFileInfo.FullName) + sourceFileInfo.Extension;
+                    var hashedFileName = this.context.GetFileHash(sourceFileInfo.FullName) + sourceFileInfo.Extension;
                     string destinationFilePath;
 
                     if (this.CreateExtraDirectoryLevelFromHashes)

@@ -34,10 +34,11 @@ namespace WebGrease.ImageAssemble
         /// <param name="mapFileName">Map xml file name</param>
         /// <param name="pngOptimizerToolCommand">PNG Optimizer tool command</param>
         /// <param name="dedup">Remove duplicate images</param>
-        internal static void AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string mapFileName, string pngOptimizerToolCommand, bool dedup)
+        /// <param name="context">The webgrease context</param>
+        internal static void AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string mapFileName, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context)
         {
             // deduping is optional.  CssPipelineTask already has deduping built into it, so it skips deduping in ImageAssembleTool.
-            var inputImagesDeduped = dedup ? DedupImages(inputImages) : inputImages;
+            var inputImagesDeduped = dedup ? DedupImages(inputImages, context) : inputImages;
             var separatedLists = SeparateByImageType(inputImagesDeduped);
 
             foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))
@@ -52,7 +53,7 @@ namespace WebGrease.ImageAssemble
 
             var padding = ArgumentParser.DefaultPadding;
             var xmlMap = new ImageMap(mapFileName);
-            var registeredAssemblers = RegisterAvailableAssemblers();
+            var registeredAssemblers = RegisterAvailableAssemblers(context);
             Dictionary<InputImage, Bitmap> separatedList = null;
             foreach (var registeredAssembler in registeredAssemblers)
             {
@@ -130,21 +131,22 @@ namespace WebGrease.ImageAssemble
         }
 
         /// <summary>Registers available Image Assemblers.</summary>
+        /// <param name="context">The global web grease context.</param>
         /// <returns>Dictionary of registered image assembler for file extension</returns>
-        internal static IEnumerable<ImageAssembleBase> RegisterAvailableAssemblers()
+        internal static IEnumerable<ImageAssembleBase> RegisterAvailableAssemblers(IWebGreaseContext context)
         {
             var registeredAssemblers = new List<ImageAssembleBase>();
 
-            var notSupportedAssemble = new NotSupportedAssemble();
+            var notSupportedAssemble = new NotSupportedAssemble(context);
             registeredAssemblers.Add(notSupportedAssemble);
 
-            var photoAssemble = new PhotoAssemble();
+            var photoAssemble = new PhotoAssemble(context);
             registeredAssemblers.Add(photoAssemble);
 
-            var nonphotoNonindexedAssemble = new NonphotoNonindexedAssemble();
+            var nonphotoNonindexedAssemble = new NonphotoNonindexedAssemble(context);
             registeredAssemblers.Add(nonphotoNonindexedAssemble);
 
-            var nonphotoIndexedAssemble = new NonphotoIndexedAssemble();
+            var nonphotoIndexedAssemble = new NonphotoIndexedAssemble(context);
             registeredAssemblers.Add(nonphotoIndexedAssemble);
 
             return registeredAssemblers;
@@ -320,14 +322,15 @@ namespace WebGrease.ImageAssemble
 
         /// <summary>Removes duplicate images</summary>
         /// <param name="inputImages">list of input images to dedup</param>
+        /// <param name="context">The webgrease context</param>
         /// <returns>deduped list of images</returns>
-        private static ReadOnlyCollection<InputImage> DedupImages(ReadOnlyCollection<InputImage> inputImages)
+        private static ReadOnlyCollection<InputImage> DedupImages(ReadOnlyCollection<InputImage> inputImages, IWebGreaseContext context)
         {
             var inputImagesDeduped = new List<InputImage>();
             var imageHashDictionary = new Dictionary<string, InputImage>();
             foreach (var inputImage in inputImages)
             {
-                var imageHashString = HashUtility.GetHashStringForFile(inputImage.ImagePath) + "." + inputImage.Position;
+                var imageHashString = context.GetFileHash(inputImage.ImagePath) + "." + inputImage.Position;
                 if (imageHashDictionary.ContainsKey(imageHashString))
                 {
                     var matchingImage = imageHashDictionary[imageHashString];

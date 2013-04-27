@@ -77,7 +77,6 @@
     <Compile Include="ArgumentParserTest.cs" />
     <Compile Include="ImageAssembleBaseTest.cs" />
     <Compile Include="ImageAssembleGeneratorTest.cs" />
-    <Compile Include="ImageAssemblerScenarioTests.cs" />
     <Compile Include="ImageMapTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

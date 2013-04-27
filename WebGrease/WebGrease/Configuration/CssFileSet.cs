@@ -17,7 +17,7 @@ namespace WebGrease.Configuration
     /// <summary>
     /// A set of Css files that are defined together.
     /// </summary>
-    internal sealed class CssFileSet
+    internal sealed class CssFileSet : IFileSet
     {
         /// <summary>
         /// This flag is used to determine whether we are using the local file-set
@@ -206,13 +206,13 @@ namespace WebGrease.Configuration
         internal IList<string> Themes { get; private set; }
 
         /// <summary>Gets the locales.</summary>
-        internal IList<string> Locales { get; private set; }
+        public IList<string> Locales { get; private set; }
 
         /// <summary>Gets the dictionary of configurations.</summary>
         internal IDictionary<string, CssMinificationConfig> Minification { get; private set; }
 
         /// <summary>Gets the preprocessing configuration.</summary>
-        internal PreprocessingConfig Preprocessing { get; private set; }
+        public PreprocessingConfig Preprocessing { get; private set; }
 
         /// <summary>
         /// Gets the dictionary of spriting configurations.
@@ -222,20 +222,20 @@ namespace WebGrease.Configuration
         /// <summary>
         /// Gets the dictionary of auto naming configs
         /// </summary>
-        internal IDictionary<string, AutoNameConfig> Autonaming { get; private set; }
+        public IDictionary<string, AutoNameConfig> Autonaming { get; private set; }
 
         /// <summary>
         /// Gets the dictionary of auto naming configs
         /// </summary>
-        internal IDictionary<string, BundlingConfig> Bundling { get; private set; }
+        public IDictionary<string, BundlingConfig> Bundling { get; private set; }
 
         /// <summary>Gets the name of the set.</summary>
-        internal string Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>Gets the output specified.</summary>
-        internal string Output { get; set; }
+        public string Output { get; set; }
 
         /// <summary>Gets the list of <see cref="InputSpec"/> items specified.</summary>
-        internal IList<InputSpec> InputSpecs { get; private set; }
+        public IList<InputSpec> InputSpecs { get; private set; }
     }
 }
