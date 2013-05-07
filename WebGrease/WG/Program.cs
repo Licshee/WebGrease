@@ -119,9 +119,7 @@ namespace WebGrease
 
                         var file = Path.GetFileNameWithoutExtension(spriter.DestinationFile);
                         var scanFilePath = Path.Combine(directoryName, Path.GetFileNameWithoutExtension(file) + ".scan." + Strings.Css);
-                        var updateFilePath = Path.Combine(directoryName, Path.GetFileNameWithoutExtension(file) + ".update." + Strings.Css);
                         spriter.ImageAssembleScanDestinationFile = scanFilePath;
-                        spriter.ImageAssembleUpdateDestinationFile = updateFilePath;
                         try
                         {
                             spriter.Execute();
@@ -599,7 +597,7 @@ namespace WebGrease
                     try
                     {
                         // use the config file as a base, and set overrides based on CLI input
-                        wgConfig = new WebGreaseConfiguration(configFileName, configType, inputPath, outputPath, logPath);
+                        wgConfig = new WebGreaseConfiguration(new FileInfo(configFileName), configType, inputPath, outputPath, logPath);
                     }
                     catch (Exception ex)
                     {

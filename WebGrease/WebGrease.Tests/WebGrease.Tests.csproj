@@ -91,7 +91,8 @@
     <Compile Include="AssemblerActivityTest.cs" />
     <Compile Include="CLITests.cs" />
     <Compile Include="IncludeEngineTest.cs" />
-    <Compile Include="PerformanceTests.cs" />
+    <Compile Include="CacheTests.cs" />
+    <Compile Include="TestCategories.cs" />
     <Compile Include="WebGreaseTaskTests.cs" />
     <Compile Include="MainActivityTest.cs" />
     <Compile Include="MinifyCssTests.cs" />
@@ -108,10 +109,30 @@
     <Compile Include="WebGreaseConfigurationTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\base.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\fill.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\full.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\vars.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\base.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\fill.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\full.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\vars.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
     <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\stylesheet2.css" />
     <None Include="packages.config" />
     <None Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Debug\Configuration\sample1.webgrease.config">
@@ -131,6 +152,42 @@
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\lazy2.jpg" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\media.gif" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\SpriteTest.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\test1.include.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\include\include1.css" />
+    <None Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\test1.import.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\imports\imports1.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\test1.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </None>
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Images\binglogo.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Images\nosprite4.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Images\nosprite3.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Images\GalleryArrow_Left.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Images\nosprite1.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Images\MSN_Logo_Green_Mobile.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Images\MSN_Logo_Blue_Mobile.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Images\nosprite2.png" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Js\include\include1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Js\test1a.include.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Js\test1b.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Js\test1a.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\test1.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Test1.xml">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\ChannelHomepage.xml">
       <SubType>Designer</SubType>
     </Content>
@@ -895,28 +952,108 @@
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\MetroSdk\js\landingPage.tmx.mobile.webkit.js" />
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\MetroSdk\js\landingPage.tmx.pc.ms.app.js" />
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\MetroSdk\js\landingPage.tmx.pc.ms.js" />
-    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\base.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\fill.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\full.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\stylesheet1.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\imports\test\base.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\base.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\fill.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\imports\full.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\input\stylesheet1.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\SassTest\Test1\imports\test\base.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
     <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\sample1.webgrease.config">
       <SubType>Designer</SubType>
     </None>
     <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\withDefaults.webgrease.config" />
     <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\stylesheet2.css" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\base.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\base.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
     <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\stylesheet2.css" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\vars.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\fill.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\full.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\stylesheet1.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\base.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\fill.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\full.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\stylesheet1.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\vars.scss" />
-    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test3\input\errorStylesheet.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\vars.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\fill.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\full.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\stylesheet1.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\base.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\fill.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\full.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\stylesheet1.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\vars.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test3\input\errorStylesheet.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
     <None Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test3\test3.webgrease.config">
       <SubType>Designer</SubType>
     </None>
@@ -955,7 +1092,12 @@
     <Content Include="TestDeployment\AjaxMin\Input\BasicTest.js" />
     <Content Include="TestDeployment\AjaxMin\Input\ErrorReachedTest.css" />
     <Content Include="TestDeployment\AjaxMin\Input\ErrorReachedTest.js" />
-    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\stylesheet1.scss" />
+    <Content Include="TestDeployment\WebGrease.Tests\AssemblerActivityTest\Input\Case4\stylesheet1.scss">
+      <Compile>False</Compile>
+      <Minify>False</Minify>
+      <CompileStyle>Nested</CompileStyle>
+      <DebugInfo>False</DebugInfo>
+    </Content>
     <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case1\test1.css" />
     <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case1\test1.js" />
     <Content Include="TestDeployment\WebGrease.Tests\CLITests\Input\Case2\images\bar.jpg" />
@@ -1074,6 +1216,14 @@
     <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\css\themes\generic-generic.resx" />
     <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\js\locales\en-us.resx" />
     <EmbeddedResource Include="TestDeployment\WebGrease.Tests\MainActivityTest\Input\Integration\Release\Content\F1\Resources\js\locales\generic-generic.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Resources\Css\Locales\en-ca.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Resources\Css\Locales\generic-generic.resx">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Resources\Css\Themes\theme1.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Resources\Css\Themes\theme2.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Resources\Js\Locales\en-ca.resx" />
+    <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Resources\Js\Locales\generic-generic.resx" />
     <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\MetroSdk\Resources\css\Locales\da-dk.resx" />
     <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\MetroSdk\Resources\css\Locales\de-at.resx" />
     <EmbeddedResource Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\MetroSdk\Resources\css\Locales\de-ch.resx" />

@@ -10,14 +10,27 @@ namespace WebGrease
     {
         #region Constants
 
+        public const string AddSourceDependency = "AddSourceDependency";
+
+        public const string AddResultContent = "AddResultContent";
+
         /// <summary>The assembler activity.</summary>
         public const string AssemblerActivity = "AssemblerActivity";
+
+        /// <summary>The assembly.</summary>
+        public const string Assembly = "Assembly";
 
         /// <summary>The bundle.</summary>
         public const string Bundle = "Bundle";
 
         /// <summary>The css.</summary>
         public const string Css = "Css";
+
+        public const string Cache = "Cache";
+
+        public const string ConfigurationFile = "ConfigurationFile";
+
+        public const string AddResultFile = "AddResultFile";
 
         /// <summary>The css file set.</summary>
         public const string CssFileSet = "CssFileSet";
@@ -36,6 +49,9 @@ namespace WebGrease
 
         /// <summary>The file hash.</summary>
         public const string FileHash = "FileHash";
+
+        /// <summary>The image hash.</summary>
+        public const string ImageHash = "ImageHash";
 
         /// <summary>The initialize.</summary>
         public const string Initialize = "Initialize";

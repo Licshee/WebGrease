@@ -15,7 +15,7 @@ namespace WebGrease.Activities
     using System.IO;
     using System.Linq;
     using System.Text;
-    using System.Xml;
+
     using Common;
 
     /// <summary>Css Localization ActivityMode class</summary>
@@ -23,11 +23,6 @@ namespace WebGrease.Activities
     {
         /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
-
-        /// <summary>
-        /// The image log document
-        /// </summary>
-        private RenamedFilesLogs renamedFilesLogs;
 
         /// <summary>Initializes a new instance of the <see cref="CssLocalizationActivity"/> class.</summary>
         /// <param name="context">The context.</param>
@@ -85,9 +80,6 @@ namespace WebGrease.Activities
             try
             {
                 this.context.Measure.Start(TimeMeasureNames.CssLocalizationActivity);
-
-                // Load the images log.
-                this.renamedFilesLogs = RenamedFilesLogs.LoadHashedImagesLogs(this.HashedImagesLogFile);
 
                 // Create the destination directory if does not exist.
                 Directory.CreateDirectory(this.DestinationDirectory);
@@ -147,9 +139,6 @@ namespace WebGrease.Activities
 
                 // Apply the locale resources
                 cssContent = ResourcesResolver.ExpandResourceKeys(cssContent, cssLocaleResources);
-
-                // Replace image refs in css
-                cssContent = CssImageReferencesExpander.UpdateForHashReferences(this.renamedFilesLogs, cssContent, this.context);
 
                 // Compute the output file name
                 var destinationFile = cssLocalizationInput.DestinationFile.EndsWith(Strings.Css, StringComparison.OrdinalIgnoreCase) ? cssLocalizationInput.DestinationFile : Path.Combine(this.DestinationDirectory, localeName, string.Format(CultureInfo.InvariantCulture, "{0}_{1}.{2}", themeName, cssLocalizationInput.DestinationFile, Strings.Css));

@@ -1,5 +1,5 @@
 ﻿// ----------------------------------------------------------------------------------------------------
-// <copyright file="WebGreaseMeasureExtensions.cs" company="Microsoft Corporation">
+// <copyright file="TimeMeasureExtensions.cs" company="Microsoft Corporation">
 //   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
 // ----------------------------------------------------------------------------------------------------
@@ -95,24 +95,6 @@ namespace WebGrease
                                  })
                 .OrderByDescending(r => r.Duration)
                 .ToArray();
-        }
-
-        /// <summary>Add resultsToAdd to results.</summary>
-        /// <param name="results">The results to add to</param>
-        /// <param name="resultsToAdd">The results to add</param>
-        public static void Add(this IList<TimeMeasureResult> results, IEnumerable<TimeMeasureResult> resultsToAdd)
-        {
-            foreach (var result in resultsToAdd)
-            {
-                var measureResult = results.FirstOrDefault(r => r.Name.Equals(result.Name, StringComparison.OrdinalIgnoreCase));
-                if (measureResult == null)
-                {
-                    results.Add(measureResult = new TimeMeasureResult { IdParts = result.IdParts });
-                }
-
-                measureResult.Duration += result.Duration;
-                measureResult.Count += result.Count;
-            }
         }
 
         /// <summary>Gets a csv row.</summary>

@@ -59,7 +59,6 @@ namespace WebGrease.Css.Extensions
         ///  ;</para>
         /// </summary>
         /// <param name="declarationAstNodes">The list of declarations</param>
-        /// <param name="cssPath">The css path from which the Ast node was prepared</param>
         /// <param name="parentAstNode">The parent of list of declarations</param>
         /// <param name="backgroundNode">The out "backgound" node</param>
         /// <param name="backgroundImageNode">The out "background-image" node</param>
@@ -73,21 +72,7 @@ namespace WebGrease.Css.Extensions
         /// <param name="outputUnitFactor">The output unit factor.</param>
         /// <param name="ignoreImagesWithNonDefaultBackgroundSize">Determines whether to ignore images that have a non-default background image set.</param>
         /// <returns>The declaration node which matches the criteria</returns>
-        internal static bool TryGetBackgroundDeclaration(
-            this IEnumerable<DeclarationNode> declarationAstNodes, 
-            string cssPath, 
-            AstNode parentAstNode, 
-            out Background backgroundNode, 
-            out BackgroundImage backgroundImageNode, 
-            out BackgroundPosition backgroundPositionNode,
-            out DeclarationNode backgroundSize,
-            out DeclarationNode webGreaseBackgroundDpi,
-            List<string> imageReferencesInInvalidDeclarations, 
-            HashSet<string> imageReferencesToIgnore,
-            ImageAssemblyAnalysisLog imageAssemblyAnalysisLog,
-            string outputUnit,
-            double outputUnitFactor,
-            bool ignoreImagesWithNonDefaultBackgroundSize = false)
+        internal static bool TryGetBackgroundDeclaration(this IEnumerable<DeclarationNode> declarationAstNodes, AstNode parentAstNode, out Background backgroundNode, out BackgroundImage backgroundImageNode, out BackgroundPosition backgroundPositionNode, out DeclarationNode backgroundSize, out DeclarationNode webGreaseBackgroundDpi, List<string> imageReferencesInInvalidDeclarations, HashSet<string> imageReferencesToIgnore, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, string outputUnit, double outputUnitFactor, bool ignoreImagesWithNonDefaultBackgroundSize = false)
         {
             // Initialize the nodes to null
             backgroundNode = null;
@@ -141,7 +126,7 @@ namespace WebGrease.Css.Extensions
                 //// The url should be present
                 ////
                 bool shouldIgnore;
-                if (!parsedBackground.BackgroundImage.VerifyBackgroundUrl(parentAstNode, cssPath, imageReferencesToIgnore, imageAssemblyAnalysisLog, out shouldIgnore) ||
+                if (!parsedBackground.BackgroundImage.VerifyBackgroundUrl(parentAstNode, imageReferencesToIgnore, imageAssemblyAnalysisLog, out shouldIgnore) ||
                     shouldIgnore)
                 {
                     return false;
@@ -202,7 +187,7 @@ namespace WebGrease.Css.Extensions
                 //// The url should be present
                 ////
                 bool shouldIgnore;
-                if (!parsedBackgroundImage.VerifyBackgroundUrl(parentAstNode, cssPath, imageReferencesToIgnore, imageAssemblyAnalysisLog, out shouldIgnore) ||
+                if (!parsedBackgroundImage.VerifyBackgroundUrl(parentAstNode, imageReferencesToIgnore, imageAssemblyAnalysisLog, out shouldIgnore) ||
                     shouldIgnore)
                 {
                     return false;

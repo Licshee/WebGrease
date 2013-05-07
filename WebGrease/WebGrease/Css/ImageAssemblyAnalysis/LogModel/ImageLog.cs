@@ -16,6 +16,8 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
     using System.Xml.Linq;
     using Extensions;
 
+    using WebGrease.Extensions;
+
     /// <summary>Represents the image log generated from image assembler tool</summary>
     internal class ImageLog
     {

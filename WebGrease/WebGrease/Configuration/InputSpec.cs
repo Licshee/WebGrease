@@ -18,7 +18,7 @@ namespace WebGrease.Configuration
     public class InputSpec
     {
         /// <summary>Initializes a new instance of the <see cref="InputSpec"/> class.</summary>
-        internal InputSpec()
+        public InputSpec()
         {
             // default expectation of existing code when parsing the property prior when it was a string.
             this.SearchOption = System.IO.SearchOption.AllDirectories;

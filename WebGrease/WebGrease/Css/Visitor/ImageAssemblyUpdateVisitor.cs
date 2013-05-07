@@ -24,6 +24,7 @@ namespace WebGrease.Css.Visitor
     using WebGrease.Css.ImageAssemblyAnalysis;
     using WebGrease.Css.ImageAssemblyAnalysis.LogModel;
     using WebGrease.Css.ImageAssemblyAnalysis.PropertyModel;
+    using WebGrease.Extensions;
 
     using ImageAssembleException = WebGrease.Css.ImageAssemblyAnalysis.ImageAssembleException;
 
@@ -55,12 +56,28 @@ namespace WebGrease.Css.Visitor
         /// </summary>
         private readonly double defaultDpi;
 
+        /// <summary>
+        /// The source directory to use for absoluting images.
+        /// </summary>
+        private string sourceDirectory;
+
+        /// <summary>
+        /// The source directory to determine relative from image to css.
+        /// </summary>
+        private string destinationDirectory;
+
+        private string prependToDestination;
+
         /// <summary>Initializes a new instance of the ImageAssemblyUpdateVisitor class</summary>
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
         /// <param name="logFiles">The log path which contains the image map after spriting</param>
+        /// <param name="dpi"></param>
         /// <param name="outputUnit">The output unit </param>
         /// <param name="outputUnitFactor">The output unit factor. </param>
-        public ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<string> logFiles, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1)
+        /// <param name="sourceDirectory">The source directory</param>
+        /// <param name="destinationDirectory">The destination directory</param>
+        /// <param name="prependToDestination">Prepend the the relative output path.</param>
+        public ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<string> logFiles, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1, string sourceDirectory = null, string destinationDirectory = null, string prependToDestination = null)
         {
             Contract.Requires(!string.IsNullOrWhiteSpace(cssPath));
             Contract.Requires(logFiles != null);
@@ -68,6 +85,9 @@ namespace WebGrease.Css.Visitor
             // Output unit and factor
             this.outputUnit = outputUnit;
             this.outputUnitFactor = outputUnitFactor;
+            this.sourceDirectory = sourceDirectory;
+            this.destinationDirectory = destinationDirectory;
+            this.prependToDestination = prependToDestination;
 
             // default dpi is 1
             defaultDpi = dpi;
@@ -95,6 +115,8 @@ namespace WebGrease.Css.Visitor
                 throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.InnerExceptionFile, string.Join(CssConstants.Comma.ToString(), logFiles)), exception);
             }
         }
+
+        public IWebGreaseContext Context { get; set; }
 
         /// <summary>The <see cref="StyleSheetNode"/> visit implementation</summary>
         /// <param name="styleSheet">The styleSheet AST node</param>
@@ -173,7 +195,7 @@ namespace WebGrease.Css.Visitor
                 DeclarationNode webGreaseBackgroundDpiNode;
 
                 // There is no background node found in set of declarations, return without any change
-                if (!declarationNodes.TryGetBackgroundDeclaration(null, parent, out backgroundNode, out backgroundImageNode, out backgroundPositionNode, out backgroundSizeNode, out webGreaseBackgroundDpiNode, null, null, null, this.outputUnit, this.outputUnitFactor))
+                if (!declarationNodes.TryGetBackgroundDeclaration(parent, out backgroundNode, out backgroundImageNode, out backgroundPositionNode, out backgroundSizeNode, out webGreaseBackgroundDpiNode, null, null, null, this.outputUnit, this.outputUnitFactor))
                 {
                     // No change, return the original collection
                     return declarationNodes;
@@ -478,7 +500,15 @@ namespace WebGrease.Css.Visitor
             // For optimization, should the relative paths be enforced?
 
             // Get the full path of parsed image file (convert from ../../ to absolute path)
-            parsedImagePath = parsedImagePath.MakeAbsoluteTo(_cssPath);
+
+            if (parsedImagePath.StartsWith("hash://", StringComparison.OrdinalIgnoreCase))
+            {
+                parsedImagePath = parsedImagePath.Substring(7);
+            }
+
+            parsedImagePath = !string.IsNullOrWhiteSpace(this.sourceDirectory)
+                ? Path.Combine(this.sourceDirectory, parsedImagePath.NormalizeUrl())
+                : parsedImagePath.MakeAbsoluteTo(_cssPath);
 
             var imagePosition = ImagePosition.Left;
             if (backgroundPosition != null)
@@ -487,12 +517,21 @@ namespace WebGrease.Css.Visitor
             }
 
             // Try to locate the input image in the list
-            assembledImage = _inputImages.Where(inputImage => inputImage.ImagePosition == imagePosition && inputImage.OriginalFilePath == parsedImagePath).FirstOrDefault();
+            assembledImage = this._inputImages.FirstOrDefault(inputImage => inputImage.ImagePosition == imagePosition && inputImage.OriginalFilePath.Equals(parsedImagePath, StringComparison.OrdinalIgnoreCase));
 
             if (assembledImage != null &&
                 assembledImage.OutputFilePath != null)
             {
-                assembledImage.RelativeOutputFilePath = assembledImage.OutputFilePath.MakeRelativeTo(_cssPath);
+                assembledImage.RelativeOutputFilePath = 
+                    !string.IsNullOrWhiteSpace(this.destinationDirectory)
+                        ? Path.Combine(this.prependToDestination, assembledImage.OutputFilePath.MakeRelativeToDirectory(this.destinationDirectory).Replace('\\','/'))
+                        : assembledImage.OutputFilePath.MakeRelativeTo(_cssPath);
+
+                if (!string.IsNullOrWhiteSpace(assembledImage.RelativeOutputFilePath))
+                {
+                    assembledImage.RelativeOutputFilePath = assembledImage.RelativeOutputFilePath.Replace('\\', '/');
+                }
+
                 return true;
             }
 

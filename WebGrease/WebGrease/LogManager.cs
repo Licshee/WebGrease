@@ -1,9 +1,9 @@
 // ----------------------------------------------------------------------------------------------------
-// <copyright file="WebGreaseLog.cs" company="Microsoft Corporation">
+// <copyright file="LogManager.cs" company="Microsoft Corporation">
 //   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
 // <summary>
-//   The web grease log.
+//   The log manager
 // </summary>
 // ----------------------------------------------------------------------------------------------------
 

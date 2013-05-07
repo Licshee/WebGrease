@@ -7,7 +7,10 @@ namespace WebGrease
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
+
+    using WebGrease.Extensions;
 
     /// <summary>The web grease measure.</summary>
     public class TimeMeasure : ITimeMeasure
@@ -21,34 +24,47 @@ namespace WebGrease
         #region Fields
 
         /// <summary>The measurement counts.</summary>
-        private readonly IDictionary<string, int> measurementCounts = new Dictionary<string, int>();
+        private readonly List<IDictionary<string, int>> measurementCounts = new List<IDictionary<string, int>> { new Dictionary<string, int>() };
 
         /// <summary>The measurements.</summary>
-        private readonly IDictionary<string, double> measurements = new Dictionary<string, double>();
+        private readonly List<IDictionary<string, double>> measurements = new List<IDictionary<string, double>> { new Dictionary<string, double>() };
 
         /// <summary>The timers.</summary>
         private readonly IList<TimeMeasureItem> timers = new List<TimeMeasureItem>();
 
         /// <summary>Gets the results.</summary>
-        public IEnumerable<TimeMeasureResult> Results
+        public TimeMeasureResult[] GetResults()
         {
-            get
-            {
-                return this.measurements
-                    .OrderByDescending(m => m.Value)
-                    .Select(m =>
+            return
+                this.measurements.Last().OrderByDescending(m => m.Value)
+                    .Select(
+                        m =>
                         new TimeMeasureResult
                             {
                                 IdParts = GetIdParts(m.Key),
                                 Duration = m.Value,
-                                Count = this.measurementCounts[m.Key]
-                            });
-            }
+                                Count = this.measurementCounts.Last()[m.Key]
+                            })
+                    .ToArray();
         }
 
         #endregion
 
         #region Public Methods and Operators
+
+        /// <summary>The start.</summary>
+        /// <param name="idParts">The id parts.</param>
+        public void Start(params string[] idParts)
+        {
+            var id = GetId(idParts);
+            if (this.timers.Any(t => t.Id.Equals(id)))
+            {
+                throw new BuildWorkflowException("An error occurred while measuring, probably a wrong start/end for key: " + id);
+            }
+
+            this.PauseLastTimer();
+            this.timers.Add(new TimeMeasureItem(id, DateTime.Now));
+        }
 
         /// <summary>The end.</summary>
         /// <param name="idParts">The id parts.</param>
@@ -65,24 +81,50 @@ namespace WebGrease
             this.ResumeLastTimer();
         }
 
-        /// <summary>The start.</summary>
-        /// <param name="idParts">The id parts.</param>
-        public void Start(params string[] idParts)
+
+        public void BeginSection()
         {
-            var id = GetId(idParts);
-            if (this.timers.Any(t => t.Id.Equals(id)))
+            measurementCounts.Add(new Dictionary<string, int>());
+            measurements.Add(new Dictionary<string, double>());
+        }
+
+        public void EndSection()
+        {
+            if (measurementCounts.Count() == 1)
             {
-                throw new BuildWorkflowException("An error occurred while measuring, probably a wrong start/end for key: " + id);    
+                throw new BuildWorkflowException("No measure sections available to end.");
             }
 
-            this.PauseLastTimer();
-            this.timers.Add(new TimeMeasureItem(id, DateTime.Now));
-            if (!this.measurementCounts.ContainsKey(id))
-            {
-                this.measurementCounts.Add(id, 0);
-            }
+            var sectionMeasurementCounts = measurementCounts.Last();
+            var sectionMeasurements = measurements.Last();
 
-            this.measurementCounts[id]++;
+            measurementCounts.RemoveAt(measurementCounts.Count() - 1);
+            measurements.RemoveAt(measurements.Count() - 1);
+
+            measurementCounts.Last().Add(sectionMeasurementCounts);
+            measurements.Last().Add(sectionMeasurements);
+        }
+
+        public void WriteResults(string filePathWithoutExtension, string title, DateTime utcStart)
+        {
+            var timeMeasureResults = GetResults();
+
+            File.WriteAllText(
+                filePathWithoutExtension + ".measure.txt",
+                GetMeasureTable(title, timeMeasureResults)
+                    + "\r\nTotal seconds: {0}".InvariantFormat((DateTime.UtcNow - utcStart).TotalSeconds));
+
+            File.WriteAllText(
+                filePathWithoutExtension + ".measure.csv",
+                timeMeasureResults.GetCsv());
+        }
+
+        private static string GetMeasureTable(string title, IEnumerable<TimeMeasureResult> measureTotal)
+        {
+            return "{0}\r\n\r\n{1}\r\n\r\nStarted at: {2:yy-MM-dd HH:mm:ss.fff}".InvariantFormat(
+                measureTotal.GetTextTable(title),
+                measureTotal.Group(tm => tm.IdParts.FirstOrDefault()).GetTextTable(title),
+                DateTime.Now);
         }
 
         #endregion
@@ -95,7 +137,7 @@ namespace WebGrease
         public static string GetId(IEnumerable<string> idParts)
         {
             return string.Join(
-                IdPartsDelimiter, 
+                IdPartsDelimiter,
                 idParts
                     .Where(n => !string.IsNullOrWhiteSpace(n))
                     .Select(s => s.UppercaseFirst()));
@@ -113,12 +155,18 @@ namespace WebGrease
         /// <param name="timer">The timer.</param>
         private void AddToResult(TimeMeasureItem timer)
         {
-            if (!this.measurements.ContainsKey(timer.Id))
+            var id = timer.Id;
+            if (!this.measurementCounts.Last().ContainsKey(id))
             {
-                this.measurements.Add(timer.Id, 0);
+                this.measurementCounts.Last().Add(id, 0);
             }
+            this.measurementCounts.Last()[id]++;
 
-            this.measurements[timer.Id] += (DateTime.Now - timer.Value).TotalMilliseconds;
+            if (!this.measurements.Last().ContainsKey(id))
+            {
+                this.measurements.Last().Add(id, 0);
+            }
+            this.measurements.Last()[id] += (DateTime.Now - timer.Value).TotalMilliseconds;
         }
 
         /// <summary>The pause last timer.</summary>

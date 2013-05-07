@@ -22,6 +22,8 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
     using Extensions;
     using LogModel;
 
+    using WebGrease.Extensions;
+
     /// <summary>Represents the Css "background-image" declaration
     /// Example:
     /// #selector
@@ -121,15 +123,13 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
 
         /// <summary>Verify that url has some value</summary>
         /// <param name="parent">The parent AST node</param>
-        /// <param name="cssPath">The css path from which AST node was prepared</param>
         /// <param name="imageReferencesToIgnore">The image reference to ignore</param>
         /// <param name="imageAssemblyAnalysisLog">The logging object</param>
         /// <param name="shouldIgnore">The result of scan if we should ignore the image reference</param>
         /// <returns>True if px units are used</returns>
-        internal bool VerifyBackgroundUrl(AstNode parent, string cssPath, HashSet<string> imageReferencesToIgnore, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, out bool shouldIgnore)
+        internal bool VerifyBackgroundUrl(AstNode parent, HashSet<string> imageReferencesToIgnore, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, out bool shouldIgnore)
         {
             shouldIgnore = false;
-
             if (string.IsNullOrWhiteSpace(this.Url))
             {
                 if (imageAssemblyAnalysisLog != null)
@@ -145,9 +145,15 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(cssPath) && imageReferencesToIgnore != null)
+            if (imageReferencesToIgnore != null)
             {
-                var fullImageUrl = this.Url.MakeAbsoluteTo(cssPath);
+                var url = this.Url;
+                if (url.StartsWith("hash://", StringComparison.OrdinalIgnoreCase))
+                {
+                    url = url.Substring(7);
+                }
+
+                var fullImageUrl = url.NormalizeUrl();
 
                 if (imageReferencesToIgnore.Contains(fullImageUrl))
                 {

@@ -1,44 +1,57 @@
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="CacheVaryByFile.cs" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+
 namespace WebGrease
 {
-    using System.Xml.Linq;
-
+    /// <summary>The cache vary by file.</summary>
     public class CacheVaryByFile
     {
-        public string OriginalAbsoluteFilePath { get; private set; }
+        #region Constructors and Destructors
 
-        public string OriginalRelativeFilePath { get; private set; }
+        /// <summary>Prevents a default instance of the <see cref="CacheVaryByFile"/> class from being created.</summary>
+        private CacheVaryByFile()
+        {
+        }
 
+        #endregion
+
+        #region Public Properties
+
+        /// <summary>Gets the hash.</summary>
         public string Hash { get; private set; }
 
-        private CacheVaryByFile() { }
+        /// <summary>Gets the original absolute file path.</summary>
+        public string OriginalAbsoluteFilePath { get; private set; }
 
+        #endregion
+
+        #region Public Methods and Operators
+
+        /// <summary>Creates a <see cref="CacheVaryByFile"/> from content.</summary>
+        /// <param name="context">The context.</param>
+        /// <param name="fileContent">The file content.</param>
+        /// <returns>The <see cref="CacheVaryByFile"/>.</returns>
+        public static CacheVaryByFile FromContent(IWebGreaseContext context, string fileContent)
+        {
+            return new CacheVaryByFile { Hash = context.GetContentHash(fileContent) };
+        }
+
+        /// <summary>Creates a <see cref="CacheVaryByFile"/> from a file.</summary>
+        /// <param name="context">The context.</param>
+        /// <param name="absoluteFilePath">The absolute file path.</param>
+        /// <returns>The <see cref="CacheVaryByFile"/>.</returns>
         public static CacheVaryByFile FromFile(IWebGreaseContext context, string absoluteFilePath)
         {
             return new CacheVaryByFile
                        {
-                           OriginalAbsoluteFilePath = absoluteFilePath,
-                           OriginalRelativeFilePath = context.MakeRelative(absoluteFilePath),
-                           Hash = context.GetFileHash(absoluteFilePath),
+                           OriginalAbsoluteFilePath = absoluteFilePath, 
+                           Hash = context.GetFileHash(absoluteFilePath), 
                        };
         }
 
-        public static CacheVaryByFile FromXml(XElement element)
-        {
-            return new CacheVaryByFile
-                       {
-                           OriginalAbsoluteFilePath = (string)element.Attribute("OriginalAbsoluteFilePath"),
-                           OriginalRelativeFilePath = (string)element.Attribute("OriginalRelativeFilePath"),
-                           Hash = (string)element.Attribute("Hash"),
-                       };
-        }
-
-        public XElement ToXml()
-        {
-            return new XElement(
-                "File",
-                new XAttribute("Hash", this.Hash),
-                new XAttribute("OriginalAbsoluteFilePath", this.OriginalAbsoluteFilePath),
-                new XAttribute("OriginalRelativeFilePath", this.OriginalRelativeFilePath));
-        }
+        #endregion
     }
 }

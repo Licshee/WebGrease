@@ -86,7 +86,7 @@ $margin: 16px;
         private static string ProcessSass(string content, string filename, LogExtendedError logExtendedError = null)
         {
             var sassPreprocessingEngine = new SassPreprocessingEngine();
-            sassPreprocessingEngine.Initialize(new WebGreaseContext(new WebGreaseConfiguration(), null, null, null, logExtendedError));
+            sassPreprocessingEngine.SetContext(new WebGreaseContext(new WebGreaseConfiguration(), null, null, null, logExtendedError));
             return sassPreprocessingEngine
                 .Process(
                     content, 

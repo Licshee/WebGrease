@@ -22,6 +22,7 @@ namespace WebGrease.Tests
 
     using WebGrease.Configuration;
     using WebGrease.Css;
+    using WebGrease.Extensions;
 
     /// <summary>This is a test class for MinifyCssActivityTest and is intended
     /// to contain all MinifyCssActivityTest Unit Tests</summary>
@@ -155,7 +156,6 @@ namespace WebGrease.Tests
             var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case6\SpriteTest.css");
             minifyCssActivity.ImageAssembleScanDestinationFile = Path.Combine(sourceDirectory, @"Output\Case6\SpriteTest_Scan.css");
-            minifyCssActivity.ImageAssembleUpdateDestinationFile = Path.Combine(sourceDirectory, @"Output\Case6\SpriteTest_Update.css");
             minifyCssActivity.ImagesOutputDirectory = Path.Combine(sourceDirectory, @"Output\Case6\Images\");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case6\SpriteTest.css");
             minifyCssActivity.ShouldAssembleBackgroundImages = true;
@@ -170,15 +170,11 @@ namespace WebGrease.Tests
             var outputFilePath = minifyCssActivity.DestinationFile;
 
             // mapping file (so we can look up the target name of the assembled image, as the generated image can be different based on gdi dll versions)
-            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".xml";
+            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".scan.xml";
             var testImage = "media.gif";
 
             Assert.IsTrue(File.Exists(outputFilePath));
             
-            // RTUIT: File generation commented in the minify code, since it does not seem to be used anywhere, save lots of performance
-            // outputFilePath = minifyCssActivity.ImageAssembleScanDestinationFile;
-            // Assert.IsTrue(File.Exists(outputFilePath));
-
             Assert.IsTrue(File.Exists(mapFilePath));
             // verify our test file is in the xml file and get the source folder and assembled file name.
             string relativePath;
@@ -201,8 +197,7 @@ namespace WebGrease.Tests
                 // diff the paths to get the relative path (as found in the final file)
                 relativePath = outputPath.MakeRelativeTo(inputPath);
             }
-            outputFilePath = minifyCssActivity.ImageAssembleUpdateDestinationFile;
-            Assert.IsTrue(File.Exists(outputFilePath));
+
             var text = File.ReadAllText(outputFilePath);
             Assert.IsTrue(text.Contains("background:0 0 url(" + relativePath + ") no-repeat;"));
         }
@@ -217,7 +212,7 @@ namespace WebGrease.Tests
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case7\SpriteTest.css");
             minifyCssActivity.ImageAssembleScanDestinationFile = Path.Combine(
                 sourceDirectory, @"Output\Case7\SpriteTest_Scan.css");
-            minifyCssActivity.ImageAssembleUpdateDestinationFile = Path.Combine(
+            Path.Combine(
                 sourceDirectory, @"Output\Case7\SpriteTest_Update.css");
             minifyCssActivity.ImagesOutputDirectory = Path.Combine(sourceDirectory, @"Output\Case6\Images\");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case7\SpriteTest.css");
@@ -232,13 +227,10 @@ namespace WebGrease.Tests
             var outputFilePath = minifyCssActivity.DestinationFile;
 
             // mapping file (so we can look up the target name of the assembled image, as the generated image can be different based on gdi dll versions)
-            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".xml";
+            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".scan.xml";
             var testImage = "media.gif";
 
             Assert.IsTrue(File.Exists(outputFilePath));
-            // RTUIT: File generation commented in the minify code, since it does not seem to be used anywhere, save lots of performance
-            // outputFilePath = minifyCssActivity.ImageAssembleScanDestinationFile;
-            // Assert.IsTrue(File.Exists(outputFilePath));
 
             Assert.IsTrue(File.Exists(mapFilePath));
             // verify our test file is in the xml file and get the source folder and assembled file name.
@@ -251,30 +243,12 @@ namespace WebGrease.Tests
                     .Descendants().Where(e => e.Name == "input")
                     // now at the source file name
                     .Descendants().FirstOrDefault(i => i.Name == "originalfile" && i.Value.Contains(testImage));
-
-                // get the output 
-                var outputElement = inputElement.Parent.Parent;
-
-                // get the input path from the location of the css file and the output path where the destination file is.
-                var inputPath = Path.GetDirectoryName(inputElement.Value).ToLowerInvariant();
-                var outputPath = outputElement.Attribute("file").Value.ToLowerInvariant();
-
-                // diff the paths to get the relative path (as found in the final file)
-                relativePath = outputPath.MakeRelativeTo(inputPath);
             }
-
-
-            // In between result
-            outputFilePath = minifyCssActivity.ImageAssembleUpdateDestinationFile;
-            Assert.IsTrue(File.Exists(outputFilePath));
-            var text = File.ReadAllText(outputFilePath);
-            Assert.IsTrue(text.Contains("/*"));
-            Assert.IsTrue(text.Contains("*/"));
 
             // Minified result
             outputFilePath = minifyCssActivity.DestinationFile;
             Assert.IsTrue(File.Exists(outputFilePath));
-            text = File.ReadAllText(outputFilePath);
+            var text = File.ReadAllText(outputFilePath);
             Assert.IsTrue(!text.Contains("/*"));
             Assert.IsTrue(!text.Contains("*/"));
             Assert.IsTrue(!text.Contains(";;"));

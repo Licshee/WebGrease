@@ -11,63 +11,19 @@ namespace WebGrease.Configuration
 {
     using System;
     using System.Collections.Generic;
-    using System.Configuration;
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Linq;
+    using System.Text.RegularExpressions;
     using System.Xml.Linq;
     using Activities;
     using Extensions;
 
-    using WebGrease.Preprocessing;
-
     /// <summary>The web grease configuration root.</summary>
     public class WebGreaseConfiguration
     {
-        /// <summary>
-        /// The configuration type
-        /// </summary>
-        public string ConfigType { get; private set; }
-
-        /// <summary>
-        /// The source directory for all paths in configuration.
-        /// </summary>
-        public string SourceDirectory { get; set; }
-
-        /// <summary>
-        /// The destination directory where the static files should be generated.
-        /// </summary>
-        public string DestinationDirectory { get; set; }
-
-        /// <summary>
-        /// The directory within which the <see cref="ResourcesResolutionActivity"/> can find resource tokens.
-        /// </summary>
-        public string TokensDirectory { get; set; }
-
-        /// <summary>
-        /// The directory within which the <see cref="ResourcesResolutionActivity"/> can find resource tokens meant to override any other tokens with.
-        /// </summary>
-        public string OverrideTokensDirectory { get; set; }
-
-        /// <summary>
-        /// Gets or sets the root application directory.
-        /// </summary>
-        public string ApplicationRootDirectory { get; set; }
-
-        /// <summary>
-        /// The logs directory.
-        /// </summary>
-        public string LogsDirectory { get; set; }
-
-        /// <summary>
-        /// The tools temp directory.
-        /// </summary>
-        public string ToolsTempDirectory { get; set; }
-
-        /// <summary>
-        /// The path to the pre processing plugin assemblies
-        /// </summary>
-        public string PreprocessingPluginPath { get; private set; }
+        /// <summary>The environment variables match pattern.</summary>
+        private static readonly Regex EnvironmentVariablesMatchPattern = new Regex("%(?<name>[a-zA-Z]*?)%", RegexOptions.Compiled);
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
         internal WebGreaseConfiguration()
@@ -86,8 +42,22 @@ namespace WebGrease.Configuration
         internal WebGreaseConfiguration(string configType, string preprocessingPluginPath = null)
             : this()
         {
-            ConfigType = configType;
-            PreprocessingPluginPath = preprocessingPluginPath;
+            this.ConfigType = configType;
+            this.PreprocessingPluginPath = preprocessingPluginPath;
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="configurationFile">The configuration file.</param>
+        internal WebGreaseConfiguration(WebGreaseConfiguration configuration, FileInfo configurationFile)
+            : this(configurationFile, configuration.ConfigType, configuration.SourceDirectory, configuration.DestinationDirectory, configuration.LogsDirectory, configuration.ToolsTempDirectory, configuration.ApplicationRootDirectory, configuration.PreprocessingPluginPath)
+        {
+            this.CacheEnabled = configuration.CacheEnabled;
+            this.CacheRootPath = configuration.CacheRootPath;
+            this.CacheTimeout = configuration.CacheTimeout;
+            this.CacheUniqueKey = configuration.CacheUniqueKey;
+            this.CacheOutputDependencies = configuration.CacheOutputDependencies;
+            this.Measure = configuration.Measure;
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
@@ -100,10 +70,31 @@ namespace WebGrease.Configuration
         /// <param name="toolsTempDirectory">The tools Temp Directory.</param>
         /// <param name="appRootDirectory">root directory of the application. Used for generating relative urls from the root. If not provided, the current directory is used.</param>
         /// <param name="preprocessingPluginPath">The path to the pre processing plugin assemblies.</param>
-        internal WebGreaseConfiguration(string configurationFile, string configType, string sourceDirectory, string destinationDirectory, string logsDirectory, string toolsTempDirectory = null, string appRootDirectory = null, string preprocessingPluginPath = null)
+        internal WebGreaseConfiguration(FileInfo configurationFile, string configType, string sourceDirectory, string destinationDirectory, string logsDirectory, string toolsTempDirectory = null, string appRootDirectory = null, string preprocessingPluginPath = null)
+            : this(configType, sourceDirectory, destinationDirectory, logsDirectory, toolsTempDirectory, appRootDirectory, preprocessingPluginPath)
+        {
+            Contract.Requires(configurationFile != null);
+            Contract.Requires(configurationFile.Exists);
+
+            if (configurationFile == null)
+            {
+                throw new ArgumentNullException("configType");
+            }
+
+            this.Parse(configurationFile.FullName);
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
+        /// <param name="configType">The config type.</param>
+        /// <param name="sourceDirectory">The source directory.</param>
+        /// <param name="destinationDirectory">The destination directory.</param>
+        /// <param name="logsDirectory">The logs directory.</param>
+        /// <param name="toolsTempDirectory">The tools temp directory.</param>
+        /// <param name="appRootDirectory">The app root directory.</param>
+        /// <param name="preprocessingPluginPath">The preprocessing plugin path.</param>
+        internal WebGreaseConfiguration(string configType, string sourceDirectory, string destinationDirectory, string logsDirectory, string toolsTempDirectory, string appRootDirectory = null, string preprocessingPluginPath = null)
             : this(configType, preprocessingPluginPath)
         {
-            Contract.Requires(File.Exists(configurationFile));
             Contract.Requires(!string.IsNullOrWhiteSpace(destinationDirectory));
             Contract.Requires(!string.IsNullOrWhiteSpace(logsDirectory));
 
@@ -111,16 +102,56 @@ namespace WebGrease.Configuration
             this.DestinationDirectory = destinationDirectory;
             this.LogsDirectory = logsDirectory;
             this.ToolsTempDirectory = toolsTempDirectory;
-            this.ApplicationRootDirectory = appRootDirectory ?? System.Environment.CurrentDirectory;
+            this.ApplicationRootDirectory = appRootDirectory ?? Environment.CurrentDirectory;
 
             Directory.CreateDirectory(destinationDirectory);
             Directory.CreateDirectory(logsDirectory);
-            
-            if (configurationFile != null)
-            {
-                this.Parse(configurationFile);
-            }
         }
+
+        /// <summary>
+        /// The configuration type
+        /// </summary>
+        internal string ConfigType { get; private set; }
+
+        /// <summary>
+        /// The source directory for all paths in configuration.
+        /// </summary>
+        internal string SourceDirectory { get; set; }
+
+        /// <summary>
+        /// The destination directory where the static files should be generated.
+        /// </summary>
+        internal string DestinationDirectory { get; set; }
+
+        /// <summary>
+        /// The directory within which the <see cref="ResourcesResolutionActivity"/> can find resource tokens.
+        /// </summary>
+        internal string TokensDirectory { get; set; }
+
+        /// <summary>
+        /// The directory within which the <see cref="ResourcesResolutionActivity"/> can find resource tokens meant to override any other tokens with.
+        /// </summary>
+        internal string OverrideTokensDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets the root application directory.
+        /// </summary>
+        internal string ApplicationRootDirectory { get; set; }
+
+        /// <summary>
+        /// The logs directory.
+        /// </summary>
+        internal string LogsDirectory { get; set; }
+
+        /// <summary>
+        /// The tools temp directory.
+        /// </summary>
+        internal string ToolsTempDirectory { get; set; }
+
+        /// <summary>
+        /// The path to the pre processing plugin assemblies
+        /// </summary>
+        internal string PreprocessingPluginPath { get; private set; }
 
         /// <summary>Gets or sets the default list of locales</summary>
         internal IList<string> DefaultLocales { get; set; }
@@ -176,18 +207,11 @@ namespace WebGrease.Configuration
         /// gets or sets the value that determines how long to keep cache items that have not been touched. (both read and right will touch a file)
         /// </summary>
         public TimeSpan CacheTimeout { get; set; }
-        
-        /// <summary>Determines if we are doing an incrmental, only works when caching is enabled (CacheEnabled=true).</summary>
-        public bool Incremental { get; set; }
 
-        /// <summary>Validates the current configuration, throws exceptions if it finds invalid configuration settings and combinations.</summary>
-        public void Validate()
-        {
-            if (this.Incremental && !this.CacheEnabled)
-            {
-                throw new ConfigurationErrorsException("Incremental only works when caching is also enabled (CacheEnabled=True)");
-            }
-        }
+        /// <summary>
+        /// gets or sets the value that determines if the cache outputs a dgml dependency graph.
+        /// </summary>
+        public bool CacheOutputDependencies { get; set; }
 
         /// <summary>Parses the configurations segments.</summary>
         /// <param name="configurationFile">The configuration file.</param>
@@ -392,6 +416,44 @@ namespace WebGrease.Configuration
             }
 
             this.DefaultSpriting[miniConfig.Name] = miniConfig;
+        }
+
+        public void Validate()
+        {
+            this.ApplicationRootDirectory = EnsureDirectory(this.ApplicationRootDirectory, false);
+            this.DestinationDirectory = EnsureDirectory(this.DestinationDirectory, false);
+            this.SourceDirectory = EnsureDirectory(this.SourceDirectory, false);
+            this.PreprocessingPluginPath = EnsureDirectory(this.PreprocessingPluginPath, false);
+
+            this.LogsDirectory = EnsureDirectory(this.LogsDirectory, true);
+            this.CacheRootPath = EnsureDirectory(this.CacheRootPath, true);
+            this.ToolsTempDirectory = EnsureDirectory(this.ToolsTempDirectory, true);
+        }
+
+        private static string EnsureDirectory(string directory, bool allowCreate)
+        {
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                directory = EnvironmentVariablesMatchPattern.Replace(
+                    directory,
+                    match => Environment.GetEnvironmentVariable(match.Groups["name"].Value));
+                var di = new DirectoryInfo(directory);
+                if (!di.Exists)
+                {
+                    if (allowCreate)
+                    {
+                        di.Create();
+                    }
+                    else
+                    {
+                        throw new DirectoryNotFoundException(directory);
+                    }
+                }
+
+                return di.FullName;
+            }
+
+            return null;
         }
     }
 }

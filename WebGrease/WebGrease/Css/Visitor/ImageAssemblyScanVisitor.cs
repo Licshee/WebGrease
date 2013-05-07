@@ -22,6 +22,9 @@ namespace WebGrease.Css.Visitor
     using ImageAssemblyAnalysis;
     using ImageAssemblyAnalysis.LogModel;
     using ImageAssemblyAnalysis.PropertyModel;
+
+    using WebGrease.Extensions;
+
     using ImageAssembleException = ImageAssemblyAnalysis.ImageAssembleException;
 
     /// <summary>Provides the implementation for ImageAssembly log visitor</summary>
@@ -70,10 +73,17 @@ namespace WebGrease.Css.Visitor
         private readonly HashSet<string> _imageReferencesToIgnore = new HashSet<string>();
 
         /// <summary>
+        /// The root output folder for the images.
+        /// </summary>
+        private readonly IEnumerable<ResultFile> _availableImageSources;
+
+        /// <summary>
         /// The list of image references populated from AST for background images
         /// declarations which does not meet the criteria of image assembly
         /// </summary>
         private readonly HashSet<string> _imagesCriteriaFailedReferences = new HashSet<string>();
+
+        internal IWebGreaseContext Context { get; set; }
 
         /// <summary>Initializes a new instance of the ImageAssemblyScanVisitor class</summary>
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
@@ -82,9 +92,13 @@ namespace WebGrease.Css.Visitor
         /// <param name="ignoreImagesWithNonDefaultBackgroundSize">The value used to determine if the visitor should ignore images that have a non-default background-size value set. </param>
         /// <param name="outputUnit">The output unit.</param>
         /// <param name="outputUnitFactor">The output unit factor.</param>
-        public ImageAssemblyScanVisitor(string cssPath, IEnumerable<string> imageReferencesToIgnore, IEnumerable<ImageAssemblyScanInput> additionalImageAssemblyBuckets, bool ignoreImagesWithNonDefaultBackgroundSize = false, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d)
+        /// <param name="availableImageSources"></param>
+        public ImageAssemblyScanVisitor(string cssPath, IEnumerable<string> imageReferencesToIgnore, IEnumerable<ImageAssemblyScanInput> additionalImageAssemblyBuckets, bool ignoreImagesWithNonDefaultBackgroundSize = false, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d, IEnumerable<ResultFile> availableImageSources = null)
         {
             Contract.Requires(!string.IsNullOrWhiteSpace(cssPath));
+
+            // Set the image output root.
+            this._availableImageSources = availableImageSources;
 
             // Add the scan outputs
             _imageAssemblyScanOutputs.Add(_defaultImageAssemblyScanOutput);
@@ -100,14 +114,7 @@ namespace WebGrease.Css.Visitor
             if (imageReferencesToIgnore != null)
             {
                 // Normalize the image references paths to ignore
-                imageReferencesToIgnore.ForEach(imageReferenceToIgnore =>
-                                                    {
-                                                        var path = imageReferenceToIgnore.MakeAbsoluteTo(_cssPath);
-                                                        if (!string.IsNullOrWhiteSpace(path))
-                                                        {
-                                                            _imageReferencesToIgnore.Add(path);
-                                                        }
-                                                    });
+                imageReferencesToIgnore.ForEach(imageReferenceToIgnore => this._imageReferencesToIgnore.Add(imageReferenceToIgnore.NormalizeUrl()));
             }
 
             if (additionalImageAssemblyBuckets == null)
@@ -236,8 +243,7 @@ namespace WebGrease.Css.Visitor
 
                 var imagesCriteriaFailedUrls = new List<string>();
 
-                if (!declarations.TryGetBackgroundDeclaration(
-                    _cssPath, // For image path/logging etc
+                if (!declarations.TryGetBackgroundDeclaration(// For image path/logging etc
                     parent, // For printing the Pretty Print Node for logging
                     out backgroundNode, 
                     out backgroundImageNode, 
@@ -303,16 +309,38 @@ namespace WebGrease.Css.Visitor
         /// <param name="backgroundPosition">THe background position</param>
         private void AddImageReference(string url, BackgroundPosition backgroundPosition)
         {
-            // Add the background image path in the list
-            url = url.MakeAbsoluteTo(_cssPath);
+            if (url.StartsWith("hash://", StringComparison.OrdinalIgnoreCase))
+            {
+                url = url.Substring(7);
+            }
+
+            if (this._availableImageSources != null)
+            {
+                url = url.NormalizeUrl();
+                var sourceFile = this._availableImageSources
+                    .Where(rf => rf.Path.Equals(url, StringComparison.OrdinalIgnoreCase))
+                    .Select(rf => rf.OriginalPath)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(sourceFile))
+                {
+                    throw new FileNotFoundException("Could not find the image file:"+url);
+                }
+
+                url = sourceFile;
+            }
+            else
+            {
+                url = url.MakeAbsoluteTo(this._cssPath);
+            }
 
             // No need to report the url if it is present in ignore list
-            if (_imageReferencesToIgnore.Contains(url))
+            if (this._imageReferencesToIgnore.Contains(url))
             {
                 return;
             }
 
-            if (_imagesCriteriaFailedReferences.Contains(url))
+            if (this._imagesCriteriaFailedReferences.Any(ir => ir.Equals(url, StringComparison.OrdinalIgnoreCase)))
             {
                 // Throw an exception if image has failed the criteria in past and now
                 // now passes the criteria
@@ -325,16 +353,16 @@ namespace WebGrease.Css.Visitor
             ////
             //// Try adding the image in the non default scan output
             ////
-            for (var count = 1; count < _imageAssemblyScanOutputs.Count; count++)
+            for (var count = 1; count < this._imageAssemblyScanOutputs.Count; count++)
             {
-                var imageAssemblyScanOutput = _imageAssemblyScanOutputs[count];
+                var imageAssemblyScanOutput = this._imageAssemblyScanOutputs[count];
                 if (!imageAssemblyScanOutput.ImageAssemblyScanInput.ImagesInBucket.Contains(url))
                 {
                     continue;
                 }
 
                 // Make sure that image don't exist already in list
-                if (imageAssemblyScanOutput.ImageReferencesToAssemble.Where(inputImage => inputImage.ImagePath == url && inputImage.Position == imagePosition).Count() > 0)
+                if (imageAssemblyScanOutput.ImageReferencesToAssemble.Any(inputImage => inputImage.ImagePath == url && inputImage.Position == imagePosition))
                 {
                     continue;
                 }
@@ -351,12 +379,12 @@ namespace WebGrease.Css.Visitor
             ////
             //// Add the image in the default scan output
             ////
-            if (_defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Where(inputImage => inputImage.ImagePath == url && inputImage.Position == imagePosition).Any())
+            if (this._defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Any(inputImage => inputImage.ImagePath == url && inputImage.Position == imagePosition))
             {
                 return;
             }
 
-            _defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Add(new InputImage { ImagePath = url, Position = imagePosition });
+            this._defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Add(new InputImage { ImagePath = url, Position = imagePosition });
         }
     }
 }

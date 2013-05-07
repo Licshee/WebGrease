@@ -11,7 +11,6 @@
 namespace WebGrease.Build
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
 
@@ -20,113 +19,154 @@ namespace WebGrease.Build
     using Microsoft.Build.Utilities;
 
     using WebGrease.Configuration;
+    using WebGrease.Extensions;
 
     /// <summary>
     /// Build time task for executing web grease runtime.
     /// </summary>
     public class WebGreaseTask : Task
     {
+        public WebGreaseTask()
+        {
+            this.FileType = FileTypes.All;
+        }
+
         /// <summary>
         /// Executes the webgrease runtime.
         /// </summary>
         /// <returns>Returns a value indicating whether the run was successful or not.</returns>
         public override bool Execute()
         {
-            bool result = true;
-            try
+            var start = DateTime.UtcNow;
+            var result = true;
+
+            var sessionContext = this.CreateSessionContext();
+            if (this.CleanCache)
             {
-                // get a list of the files in the configuration folder
-                var fullPathToConfigFiles = Path.GetFullPath(this.ConfigurationPath);
-                this.totalMeasure = new List<TimeMeasureResult>();
-                var first = true;
-                foreach (var configFile in Directory.GetFiles(fullPathToConfigFiles).Select(f => new FileInfo(f)))
+                sessionContext.CleanCache();
+            }
+
+            if (this.CleanToolsTemp)
+            {
+                sessionContext.CleanToolsTemp();
+            }
+
+            if (this.CleanDestination)
+            {
+                sessionContext.CleanDestination();
+            }
+
+            var fullPathToConfigFiles = Path.GetFullPath(this.ConfigurationPath);
+            var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = SearchOption.TopDirectoryOnly }.GetFiles();
+
+            var sessionReportFile = Path.Combine(this.RootOutputPath, new DirectoryInfo(fullPathToConfigFiles).Name);
+            sessionContext.Measure.Start(TimeMeasureNames.Unidentified);
+            var buildTaskCacheSection = sessionContext.Cache.BeginSection("buildtask", inputFiles.ToDictionary(f=>f, sessionContext.GetFileHash));
+            if (!buildTaskCacheSection.CanBeSkipped())
+            {
+                try
                 {
-                    this.LogInformation("Processing " + configFile);
-                    var config = new WebGreaseConfiguration(
-                                    configFile.FullName,
-                                    this.ConfigType,
-                                    this.RootInputPath,
-                                    this.RootOutputPath,
-                                    this.LogFolderPath,
-                                    this.ToolsTempPath,
-                                    this.ApplicationRootPath,
-                                    this.PreprocessingPluginPath)
-                                    {
-                                        
-                                        Measure = this.Measure,
-                                        CacheEnabled = this.CacheEnabled,
-                                        CacheRootPath = this.CacheRootPath,
-                                        CacheUniqueKey = this.CacheUniqueKey,
-                                        CacheTimeout = this.CacheTimeout,
-                                        Incremental = this.Incremental
-                                    };
-
-                    var context = new WebGreaseContext(
-                        config,
-                        this.LogInformation,
-                        this.WarningsAsErrors ? this.LogExtendedError : (LogExtendedError)this.LogExtendedWarning, 
-                        this.LogError,
-                        this.LogExtendedError);
-
-                    context.Measure.Start(TimeMeasureNames.Unidentified);
-                    switch ((this.Activity ?? string.Empty).ToUpperInvariant())
+                    // get a list of the files in the configuration folder
+                    foreach (var configFile in inputFiles.Select(f => new FileInfo(f)))
                     {
-                        case ("BUNDLE"):
-                            this.LogInformation("Activity: Bundle");
-                            var bundleActivity = new BundleActivity(context);
-                            // execute the bundle pipeline
-                            result = bundleActivity.Execute() && result;
-                            break;
-                        case ("EVERYTHING"):
-                        default:
-                            this.LogInformation("Activity: Everything");
-                            var everythingActivity = new EverythingActivity(context);
-                            
-                            // Only hash images for the first go around, is the same every time.
-                            everythingActivity.SkipHashImages = !first;
+                        var configFileStart = DateTime.UtcNow;
 
-                            // execute the full pipeline
-                            result = everythingActivity.Execute() && result;
-                            break;
+                        var fileContext = new WebGreaseContext(sessionContext, configFile);
+
+                        var configReportFile = Path.Combine(this.RootOutputPath, configFile.Name);
+                        fileContext.Measure.Start(TimeMeasureNames.ConfigurationFile);
+                        fileContext.Measure.BeginSection();
+                        var configFileCacheSection = sessionContext.Cache.BeginSection("buildtask.file", configFile);
+                        try
+                        {
+                            if (!configFileCacheSection.CanBeSkipped())
+                            {
+                                this.LogInformation("Processing " + configFile);
+
+                                switch ((this.Activity ?? string.Empty).ToUpperInvariant())
+                                {
+                                    case ("BUNDLE"):
+                                        this.LogInformation("Activity: Bundle");
+                                        var bundleActivity = new BundleActivity(fileContext);
+                                        // execute the bundle pipeline
+                                        result = bundleActivity.Execute(this.FileType) && result;
+                                        break;
+                                    case ("EVERYTHING"):
+                                    default:
+                                        this.LogInformation("Activity: Everything");
+                                        var everythingActivity = new EverythingActivity(fileContext);
+                                        // execute the full pipeline
+                                        result = everythingActivity.Execute(this.FileType) && result;
+                                        break;
+                                }
+                                configFileCacheSection.Store(configReportFile);
+                            }
+                        }
+                        finally
+                        {
+                            configFileCacheSection.EndSection();
+                            fileContext.Measure.WriteResults(configReportFile, configFile.FullName, configFileStart);
+                            fileContext.Measure.EndSection();
+                            fileContext.Measure.End(TimeMeasureNames.ConfigurationFile);
+                        }
+
                     }
 
-                    context.Measure.End(TimeMeasureNames.Unidentified);
-
-                    if (context.Configuration.Measure)
-                    {
-                        var measureFile = configFile.Name + ".measure";
-                        var measurePath = Path.Combine(this.RootOutputPath, measureFile);
-                        File.WriteAllText(measurePath + ".txt", context.Measure.Results.GetTextTable(configFile.FullName));
-                        File.WriteAllText(measurePath + ".csv", context.Measure.Results.GetCsv());
-
-                        totalMeasure.Add(context.Measure.Results);
-                    }
-
-                    first = false;
+                    buildTaskCacheSection.Store(sessionReportFile);
                 }
-
-                if (this.Measure)
+                catch (Exception exception)
                 {
-                    var totalMeasureFile = new DirectoryInfo(fullPathToConfigFiles).Name + ".measure";
-                    var totalMeasurePath = Path.Combine(this.RootOutputPath, totalMeasureFile);
-                    File.WriteAllText(
-                        totalMeasurePath + ".txt",
-                        this.totalMeasure.GetTextTable(fullPathToConfigFiles) 
-                            + "\r\n\r\n" 
-                            + this.totalMeasure.Group(tm => tm.IdParts.FirstOrDefault()).GetTextTable(fullPathToConfigFiles));
-                    File.WriteAllText(totalMeasurePath + ".csv", this.totalMeasure.GetCsv());
+                    this.LogError(exception, null, null);
+                    result = false;
+                }
+                finally
+                {
+                    buildTaskCacheSection.EndSection();
+                    sessionContext.Measure.End(TimeMeasureNames.Unidentified);
                 }
             }
-            catch (Exception exception)
+
+            if (result)
             {
-                this.LogError(exception, null, null);
-                result = false;
+                sessionContext.Cache.CleanUp();
+                sessionContext.Measure.WriteResults(sessionReportFile, fullPathToConfigFiles, start);
+                this.MeasureResults = sessionContext.Measure.GetResults();
             }
 
             return result;
         }
 
-        internal List<TimeMeasureResult> totalMeasure;
+        internal TimeMeasureResult[] MeasureResults { get; set; }
+
+        private IWebGreaseContext CreateSessionContext()
+        {
+            return new WebGreaseContext(
+                       this.GetSessionConfiguration(),
+                       this.LogInformation,
+                       this.WarningsAsErrors ? this.LogExtendedError : (LogExtendedError)this.LogExtendedWarning,
+                       this.LogError,
+                       this.LogExtendedError);
+        }
+
+        private WebGreaseConfiguration GetSessionConfiguration()
+        {
+            return new WebGreaseConfiguration(
+                this.ConfigType,
+                this.RootInputPath,
+                this.RootOutputPath,
+                this.LogFolderPath,
+                this.ToolsTempPath,
+                this.ApplicationRootPath,
+                this.PreprocessingPluginPath)
+                       {
+                           Measure = this.Measure,
+                           CacheEnabled = this.CacheEnabled,
+                           CacheRootPath = this.CacheRootPath,
+                           CacheUniqueKey = this.CacheUniqueKey,
+                           CacheTimeout = !string.IsNullOrWhiteSpace(this.CacheTimeout) ? TimeSpan.Parse(this.CacheTimeout) : TimeSpan.Zero,
+                           CacheOutputDependencies = this.CacheOutputDependencies
+                       };
+        }
 
         /// <summary>
         /// Gets or sets the folder for the configuration assemblies, this is the folder where MEF assemblies will be loaded from.
@@ -145,6 +185,9 @@ namespace WebGrease.Build
 
         /// <summary>Gets or sets the root output folder</summary>
         public string RootOutputPath { get; set; }
+
+        // If set to stylesheet or javascript will exeucte only for the set file type.
+        public FileTypes FileType { get; set; }
 
         /// <summary>Gets or sets the root intput path, applied to relative paths in the file.</summary>
         public string RootInputPath { get; set; }
@@ -167,11 +210,17 @@ namespace WebGrease.Build
         /// <summary>Gets or sets if it should measure and write measure files in the output folder.</summary>
         public bool Measure { get; set; }
 
+        public bool CleanToolsTemp { get; set; }
+
+        public bool CleanDestination { get; set; }
+        
+        public bool CleanCache { get; set; }
+
         /// <summary>Gets or sets the value that determines to use cache.</summary>
         public bool CacheEnabled { get; set; }
 
-        /// <summary>Gets or sets the value that determines to use cache.</summary>
-        public bool Incremental { get; set; }
+        /// <summary>Gets or sets the value that determines if it outputs .dgml cache dependency files.</summary>
+        public bool CacheOutputDependencies { get; set; }
 
         /// <summary>
         /// Gets or sets the root path used for caching, this defaults to the ToolsTempPath.
@@ -186,7 +235,7 @@ namespace WebGrease.Build
         public string CacheUniqueKey { get; set; }
 
         /// <summary>gets or sets the value that determines how long to keep cache items that have not been touched. (both read and right will touch a file)</summary>
-        public TimeSpan CacheTimeout { get; set; }
+        public string CacheTimeout { get; set; }
 
         /// <summary>Method for logging information messages to the build output.</summary>
         /// <param name="message">message to log</param>
@@ -244,14 +293,14 @@ namespace WebGrease.Build
 
             // We try and rewrite the filepath with the original path
             var fi = new FileInfo(file);
-            
+
             // Using directoryinfo to get rid of any double slashes and get a full absolute path.
             var rootInputPath = new DirectoryInfo(this.RootInputPath);
             var originalprojectInputPath = new DirectoryInfo(this.OriginalProjectInputPath);
-            
+
             // Remove the inputroot path from the file
             var relativeFile = fi.FullName.Replace(rootInputPath.FullName, string.Empty).TrimStart(Path.DirectorySeparatorChar);
-            
+
             // prepend the original path.
             var projectFilePath = Path.Combine(originalprojectInputPath.FullName, relativeFile);
 

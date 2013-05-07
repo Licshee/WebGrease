@@ -30,7 +30,7 @@ namespace WebGrease.Tests
         {
             var configurationFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\sample1.webgrease.config");
             var configDirectory = Path.GetDirectoryName(configurationFile);
-            var webGreaseConfigurationRoot = new WebGreaseConfiguration(configurationFile, null, configDirectory, configDirectory, configDirectory);
+            var webGreaseConfigurationRoot = new WebGreaseConfiguration(new FileInfo(configurationFile), null, configDirectory, configDirectory, configDirectory);
             Assert.IsNotNull(webGreaseConfigurationRoot);
 
             var imageDirectories = webGreaseConfigurationRoot.ImageDirectories;
@@ -183,7 +183,7 @@ namespace WebGrease.Tests
             // parse the configuration file
             var configurationFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\withDefaults.webgrease.config");
             var configDirectory = Path.GetDirectoryName(configurationFile);
-            var webGreaseConfigurationRoot = new WebGreaseConfiguration(configurationFile, null, configDirectory, configDirectory, configDirectory);
+            var webGreaseConfigurationRoot = new WebGreaseConfiguration(new FileInfo(configurationFile), null, configDirectory, configDirectory, configDirectory);
             Assert.IsNotNull(webGreaseConfigurationRoot);
 
             // there should be two CSS file sets and two JS file sets

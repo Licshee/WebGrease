@@ -26,7 +26,7 @@
     <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;SILVERLIGHT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisRuleSet>..\AllRulesAndTreatWarningsAsErrors.ruleset</CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
@@ -169,13 +169,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Cache\CacheKeys.cs" />
     <Compile Include="Activities\CssLocalizationActivity.cs" />
     <Compile Include="Activities\CssLocalizationInput.cs" />
     <Compile Include="Activities\ErrorCode.cs" />
     <Compile Include="Activities\FileType.cs" />
     <Compile Include="Activities\JSLocalizationActivity.cs" />
     <Compile Include="Activities\JSLocalizationInput.cs" />
-    <Compile Include="Activities\CssImageReferencesExpander.cs" />
     <Compile Include="Activities\EverythingActivity.cs" />
     <Compile Include="Activities\LogDelegates.cs" />
     <Compile Include="Activities\MinifyJSActivity.cs" />
@@ -312,6 +312,7 @@
     <Compile Include="Ajax\Utilities\ResourceStrings.cs" />
     <Compile Include="Ajax\Utilities\SwitchParser.cs" />
     <Compile Include="BuildWorkflowException.cs" />
+    <Compile Include="Cache\CacheDependencyGraph.cs" />
     <Compile Include="Cache\CacheManager.cs" />
     <Compile Include="Cache\CacheResult.cs" />
     <Compile Include="Cache\CacheSection.cs" />
@@ -336,8 +337,14 @@
     <Compile Include="Configuration\JSValidationConfig.cs" />
     <Compile Include="Configuration\PreprocessingConfig.cs" />
     <Compile Include="Configuration\WebGreaseConfiguration.cs" />
+    <Compile Include="Extensions\DictionaryExtensions.cs" />
+    <Compile Include="Extensions\InputSpecExtensions.cs" />
+    <Compile Include="Extensions\JsonExtensions.cs" />
+    <Compile Include="Extensions\StringPathExtensions.cs" />
     <Compile Include="IWebGreaseContext.cs" />
     <Compile Include="LogManager.cs" />
+    <Compile Include="ResultFile.cs" />
+    <Compile Include="ResultContentType.cs" />
     <Compile Include="TimeMeasure\ITimeMeasure.cs" />
     <Compile Include="TimeMeasure\NullTimeMeasure.cs" />
     <Compile Include="TimeMeasure\TimeMeasure.cs" />
@@ -411,7 +418,6 @@
     <Compile Include="Css\ImageAssemblyAnalysis\PropertyModel\BackgroundRepeat.cs" />
     <Compile Include="CssMinifier.cs" />
     <Compile Include="Css\PrinterFormatter.cs" />
-    <Compile Include="Css\StringPathExtensions.cs" />
     <Compile Include="Css\UnicodeDecoder.cs" />
     <Compile Include="Css\Visitor\ColorOptimizationVisitor.cs" />
     <Compile Include="Css\Visitor\ExcludePropertyVisitor.cs" />

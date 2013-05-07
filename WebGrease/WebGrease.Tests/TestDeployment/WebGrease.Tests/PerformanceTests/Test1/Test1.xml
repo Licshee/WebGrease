@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebGrease>
+  <Settings>
+    <Preprocessing Engines="sass;include" />
+    <ImageDirectories>Images</ImageDirectories>
+    <ImageExtensions>*.png;*.jpg;*.jpeg;*.gif;*.ico;*.svg</ImageExtensions>
+    <TokensDirectory>Shared</TokensDirectory>
+    <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
+    <!-- these settings apply to each file set defined in this config -->
+    <Locales>generic-generic;en-ca</Locales>
+    <Themes>Theme1;Theme2</Themes>
+    <CssMinification config="Release">
+      <Minify>True</Minify>
+      <ValidateLowerCase>True</ValidateLowerCase>
+    </CssMinification>
+    <Spriting config="Release">
+      <ImagesToIgnore>/images/nosprite3.png,/images/nosprite4.png</ImagesToIgnore>
+    </Spriting>
+  </Settings>
+  <CssFileSet output="Test1.css">
+    <Inputs>
+      <Input>css\test1.css</Input>
+      <Input optional="true">css\test1.scss</Input>
+    </Inputs>
+  </CssFileSet>
+  <JsFileSet output="Test1.js">
+    <Inputs>
+      <Input>js\test1a.js</Input>
+      <Input>js\test1b.js</Input>
+    </Inputs>
+  </JsFileSet>
+</WebGrease>

@@ -67,7 +67,7 @@ namespace WebGrease.Activities
         internal IList<string> ResourceKeys { get; private set; }
 
         /// <summary>Gets or sets the measure name.</summary>
-        internal FileType FileType { get; set; }
+        internal FileTypes FileType { get; set; }
 
         /// <summary>When overridden in a derived class, executes the task.</summary>
         internal void Execute()

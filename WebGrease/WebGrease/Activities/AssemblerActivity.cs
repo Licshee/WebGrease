@@ -87,7 +87,7 @@ namespace WebGrease.Activities
                 using (var writer = new StreamWriter(this.OutputFile, false, Encoding.UTF8))
                 {
                     this.context.Log.Information("Start bundling output file: {0}".InvariantFormat(this.OutputFile));
-                    foreach (var file in this.Inputs.GetFiles(context.Configuration.SourceDirectory, this.context.Log))
+                    foreach (var file in this.Inputs.GetFiles(context.Configuration.SourceDirectory, this.context.Log, true))
                     {
                         this.AppendFile(writer, file, this.PreprocessingConfig);
                     }
@@ -95,6 +95,7 @@ namespace WebGrease.Activities
                 }
 
                 cacheSection.AddResultFile(this.OutputFile, "bundle");
+                cacheSection.Store();
             }
             catch (Exception exception)
             {

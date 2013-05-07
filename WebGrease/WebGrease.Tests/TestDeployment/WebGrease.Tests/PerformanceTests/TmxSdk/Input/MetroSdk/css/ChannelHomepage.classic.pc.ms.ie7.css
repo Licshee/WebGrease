@@ -35,7 +35,7 @@ table {
 #aside .ad {
   margin-bottom: 2.5em; }
 .ad a.adchoicesjs {
-  background: transparent url('hash(/images/adchoices/adchoices_%adChoicesLanguage%_1x.png)') no-repeat 0 0;
+  background: transparent url('hash(/images/adchoices/adchoices_%adChoicesLanguage%_1x.png)') no-repeat 100px 100px;
   display: inline-block;
   float: left;
   height: 2em;

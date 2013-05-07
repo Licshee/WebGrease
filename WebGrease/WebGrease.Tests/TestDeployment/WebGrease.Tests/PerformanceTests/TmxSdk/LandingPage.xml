@@ -6,8 +6,8 @@
     <TokensDirectory>Shared</TokensDirectory>
     <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
     <!-- these settings apply to each file set defined in this config -->
-    <Locales>ja-jp</Locales>
-    <Themes>Resolution1x;Resolution14x;Resolution15x;Resolution18x;Resolution2x;Resolution225x;Resolution24x</Themes>
+    <Locales>generic-generic;ja-jp</Locales>
+    <Themes>Resolution1x;Resolution2x</Themes>
     <CssMinification config="Debug">
       <Minify>False</Minify>
       <ValidateLowerCase>True</ValidateLowerCase>

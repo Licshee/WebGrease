@@ -6,8 +6,6 @@
 
 namespace WebGrease.Preprocessing
 {
-    using System;
-
     using WebGrease.Configuration;
 
     /// <summary>
@@ -18,7 +16,7 @@ namespace WebGrease.Preprocessing
     {
         #region Public Properties
 
-        /// <summary>The name of this preprocessor (Name has to be set in a configuration for the preprocessor to be used)</summary>
+        /// <summary>Gets the name of this pre-processor (Name has to be set in a configuration for the pre-processor to be used)</summary>
         string Name { get; }
 
         #endregion
@@ -38,14 +36,14 @@ namespace WebGrease.Preprocessing
         /// </summary>
         /// <param name="fileContent">Content of the file to parse.</param>
         /// <param name="fullFileName">The full filename</param>
-        /// <param name="preprocessConfig">The configuration.</param>
+        /// <param name="preprocessingConfig">The configuration.</param>
         /// <returns>The processed content.</returns>
-        string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig);
+        string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessingConfig);
 
         #endregion
 
         /// <summary>The initialize.</summary>
         /// <param name="webGreaseContext">The context.</param>
-        void Initialize(IWebGreaseContext webGreaseContext);
+        void SetContext(IWebGreaseContext webGreaseContext);
     }
 }

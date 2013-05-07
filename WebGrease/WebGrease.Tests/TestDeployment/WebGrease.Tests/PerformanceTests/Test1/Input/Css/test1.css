@@ -1,0 +1,36 @@
+﻿wgInclude("test1.include.css");
+wgInclude("include");
+.test1{color:red}
+
+.sprite2{
+    background: transparent url(hash(/images/galleryarrow_left.png)) no-repeat 0 0;
+}
+.sprite3{
+    background: transparent url('hash(/images/binglogo.png)') no-repeat 0 0;
+}
+.sprite{
+    background: transparent url("hash(/images/msn_logo_mobile.png)") no-repeat 0 0;
+}
+.tokentest {
+    background-image: url('locale:%locale%'),url('theme:%theme%');
+}
+/* Ignored because of repeat */
+.nosprite1{
+    background: transparent url(hash(/images/nosprite1.png)) repeat-x 0 0;
+}
+.nosprite2{
+    background: transparent url('/images/nosprite2.png') repeat-x 0 0;
+}
+/* Ignored in config */
+.nosprite3{
+    background: transparent url('hash(/images/nosprite3.png)') no-repeat 0 0;
+}
+/* Ignored in config */
+.nosprite4{
+    background: transparent url(/images/nosprite4.png) no-repeat 0 0;
+}
+/*  Uncomment following when we start supporting -wg-spriting.
+.nosprite3{
+    -wg-spriting: none;
+    background: transparent url('hash(/images/nosprite1.png)') no-repeat 0 0;
+}*/

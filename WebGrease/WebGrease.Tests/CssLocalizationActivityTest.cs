@@ -90,11 +90,6 @@ namespace WebGrease.Tests
             Assert.IsTrue(text.Contains("両極端？山田優vs綾瀬はるかのジャージ対決の意味 男女の理想のプロポーズはどんなセリフか"));
             Assert.IsTrue(text.Contains("1CSSValue"));
             Assert.IsTrue(text.Contains("2CSSValue"));
-            Assert.IsTrue(text.Contains("../../i/63/b7dbf541b6f0cfee07ff4578d3e17c.gif"));
-            Assert.IsTrue(text.Contains("../../i/63/b7dbf541b6f0cfee07ff457wses17c.gif"));
-            Assert.IsTrue(text.Contains("../../i/63/17dbf541b6f0cfee07ff457wses17c.gif"));
-            Assert.IsTrue(text.Contains("../../i/63/12dbf541b6f0cfee07ff457wses17c.gif"));
-            Assert.IsTrue(text.Contains("../../i/63/13dbf541b6f0cfee07ff457wses17c.gif"));
         }
     }
 }

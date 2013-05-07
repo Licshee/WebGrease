@@ -16,12 +16,12 @@
 
 namespace WebGrease.Preprocessing.Include
 {
-    using System.Collections.Generic;
     using System.ComponentModel.Composition;
     using System.IO;
     using System.Text.RegularExpressions;
 
     using WebGrease.Configuration;
+    using WebGrease.Extensions;
 
     /// <summary>
     /// This preprocessing engine, if enabled through config (<Settings><Preprocessing Engine="include"/></Settings>)
@@ -70,7 +70,7 @@ namespace WebGrease.Preprocessing.Include
 
         /// <summary>The initialize.</summary>
         /// <param name="webGreaseContext">The context.</param>
-        public void Initialize(IWebGreaseContext webGreaseContext)
+        public void SetContext(IWebGreaseContext webGreaseContext)
         {
             this.context = webGreaseContext;
         }
@@ -81,53 +81,49 @@ namespace WebGrease.Preprocessing.Include
         /// </summary>
         /// <param name="fileContent">The content of the file.</param>
         /// <param name="fullFileName">The full filename.</param>
-        /// <param name="preprocessConfig">The pre processing configuration</param>
+        /// <param name="preprocessingConfig">The pre processing configuration</param>
         /// <returns>The processed contents or null of an error occurred.</returns>
-        public string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig)
+        public string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessingConfig)
         {
             this.context.Measure.Start(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process, "WgInclude");
+            var wgincludeCacheImportsSection = this.context.Cache.BeginSection("wginclude", new FileInfo(fullFileName), preprocessingConfig);
             try
             {
                 var fi = new FileInfo(fullFileName);
                 var workingFolder = fi.DirectoryName;
                 if (!string.IsNullOrWhiteSpace(fileContent))
                 {
-                    fileContent = IncludeRegex.Replace(fileContent, match => ReplaceInputs(match, workingFolder));
+                    fileContent = IncludeRegex.Replace(fileContent, match => ReplaceInputs(match, workingFolder, wgincludeCacheImportsSection));
                 }
 
+                wgincludeCacheImportsSection.Store();
                 return fileContent;
             }
             finally
             {
+                wgincludeCacheImportsSection.EndSection();
                 this.context.Measure.End(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process, "WgInclude");
             }
         }
 
-        /// <summary>
-        /// The method called from the regex replace to replavce the matched wgInclude() statements.
-        /// </summary>
+        /// <summary>The method called from the regex replace to replace the matched wgInclude() statements.</summary>
         /// <param name="match">The regex match</param>
         /// <param name="workingFolder">The working folder from which to determine relative path's in the include.</param>
+        /// <param name="cacheSection">The cache Section.</param>
         /// <returns>The contents of the file to replace, with a /* WGINCLUDE [fullFilePath] */ header on top.</returns>
-        private static string ReplaceInputs(Match match, string workingFolder)
+        private static string ReplaceInputs(Match match, string workingFolder, ICacheSection cacheSection)
         {
             var fileOrPath = Path.Combine(workingFolder, match.Groups["fileOrPath"].Value.Trim());
-            var filesToInclude = new List<string>();
+            var inputSpec = new InputSpec { IsOptional = true, Path = fileOrPath };
             if (Directory.Exists(fileOrPath))
             {
-                var searchPattern = match.Groups["searchPattern"].Value.Trim();
-                filesToInclude.AddRange(
-                    !string.IsNullOrWhiteSpace(searchPattern)
-                        ? Directory.GetFiles(fileOrPath, searchPattern)
-                        : Directory.GetFiles(fileOrPath));
-            }
-            else if (File.Exists(fileOrPath))
-            {
-                filesToInclude.Add(fileOrPath);
+                inputSpec.SearchPattern = match.Groups["searchPattern"].Value.Trim();
             }
 
+            cacheSection.AddSourceDependency(inputSpec);
+
             var result = string.Empty;
-            foreach (var file in filesToInclude)
+            foreach (var file in inputSpec.GetFiles())
             {
                 result += "/* WGINCLUDE: {0} */\r\n".InvariantFormat(file);
                 result += File.ReadAllText(file) + "\r\n";

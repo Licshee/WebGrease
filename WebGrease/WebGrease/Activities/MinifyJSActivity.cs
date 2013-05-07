@@ -11,15 +11,16 @@ namespace WebGrease.Activities
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Text;
     using Common;
     using Microsoft.Ajax.Utilities;
 
+    using WebGrease.Css.Extensions;
+
     /// <summary>This task will call the minifier with settings from the args, and output the files to the specified directory</summary>
     internal sealed class MinifyJSActivity
     {
-        private const string MinifyJsResultCacheKey = "MinifyJsResultCacheKey";
-
         /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
 
@@ -35,6 +36,9 @@ namespace WebGrease.Activities
 
         /// <summary>Gets or sets DestinationFile.</summary>
         internal string DestinationFile { get; set; }
+
+        /// <summary>Gets or sets the output path.</summary>
+        internal string OutputPath { get; set; }
 
         /// <summary>
         /// Gets or sets the args to use beyond the default settings
@@ -60,6 +64,8 @@ namespace WebGrease.Activities
         /// <value>True if the files should be minified.</value>
         internal bool ShouldMinify { get; set; }
 
+        internal FileHasherActivity FileHasher { get; set; }
+
         /// <summary>When overridden in a derived class, executes the task.</summary>
         internal void Execute()
         {
@@ -78,72 +84,50 @@ namespace WebGrease.Activities
             // Initialize the minifier
             var cacheSection = this.context.Cache.BeginSection(
                 "minifyjs",
-                this.SourceFile,
+                new FileInfo(this.SourceFile),
                 new
                     {
                         this.ShouldAnalyze,
                         this.ShouldMinify,
                         this.AnalyzeArgs,
-                    }); 
-            
+                    });
+
             try
             {
-                if (cacheSection.IsValid())
+                if (this.TryRestoreFromCache(cacheSection))
                 {
-                    cacheSection.RestoreFile(MinifyJsResultCacheKey, this.DestinationFile);
                     return;
                 }
 
-                var minifier = new Minifier { FileName = this.SourceFile };
-                var minifierSettings = this.GetMinifierSettings(minifier);
-                var output = minifier.MinifyJavaScript(File.ReadAllText(this.SourceFile), minifierSettings.JSSettings);
-
-                // throw if this file has errors, but show all that are found
-                if (minifier.ErrorList != null && minifier.ErrorList.Count > 0)
+                this.context.Measure.Start(TimeMeasureNames.MinifyJsActivity, TimeMeasureNames.Process);
+                try
                 {
-                    string exceptionMessage;
-                    if (this.context.Log.HasExtendedErrorHandler)
-                    {
-                        // log each message individually so we can click through into the source
-                        foreach (var errorMessage in minifier.ErrorList)
-                        {
-                            var errorHandler = (errorMessage.IsError ? this.context.Log.ExtendedError : this.context.Log.Warning);
-                            errorHandler(
-                                errorMessage.Subcategory,
-                                errorMessage.ErrorCode,
-                                errorMessage.HelpKeyword,
-                                errorMessage.File,
-                                errorMessage.StartLine,
-                                errorMessage.StartColumn,
-                                errorMessage.EndLine,
-                                errorMessage.EndColumn,
-                                errorMessage.Message);
-                        }
+                    var minifier = new Minifier { FileName = this.SourceFile };
+                    var minifierSettings = this.GetMinifierSettings(minifier);
+                    var output = minifier.MinifyJavaScript(File.ReadAllText(this.SourceFile), minifierSettings.JSSettings);
 
-                        exceptionMessage = "Error minifying the JS";
+                    this.HandleMinifierErrors(minifier);
+
+                    var outputEncoding = CreateOutputEncoding(minifierSettings.EncodingOutputName);
+                    if (this.FileHasher != null)
+                    {
+                        // Write the result to the hard drive with hashing.
+                        var result = this.FileHasher.Hash(ResultFile.FromContent(output, FileTypes.JavaScript, this.DestinationFile, this.OutputPath, outputEncoding));
+                        cacheSection.AddEndResultFile(result, CacheKeys.MinifyJsResultCacheKey);
                     }
                     else
                     {
-                        // no logging method passed to us -- combine it all into one big ugly string
-                        // and throw it in the exception.
-                        var errorMessageForException = new StringBuilder();
-                        foreach (var errorMessage in minifier.ErrorList)
-                        {
-                            errorMessageForException.AppendLine(errorMessage.ToString());
-                        }
-
-                        exceptionMessage = errorMessageForException.ToString();
+                        // Write to disk
+                        FileHelper.WriteFile(this.DestinationFile, output, outputEncoding);
+                        cacheSection.AddResultFile(this.DestinationFile, CacheKeys.MinifyJsResultCacheKey);
                     }
-
-                    throw new BuildWorkflowException(
-                        exceptionMessage, "MinifyJSActivity", ErrorCode.Default, null, this.SourceFile, 0, 0, 0, 0, null);
+                }
+                finally
+                {
+                    this.context.Measure.End(TimeMeasureNames.MinifyJsActivity, TimeMeasureNames.Process);
                 }
 
-                // Write to disk
-                FileHelper.WriteFile(
-                    this.DestinationFile, output, CreateOutputEncoding(minifierSettings.EncodingOutputName));
-
-                cacheSection.AddResultFile(this.DestinationFile, MinifyJsResultCacheKey);
+                cacheSection.Store();
             }
             catch (Exception exception)
             {
@@ -152,9 +136,71 @@ namespace WebGrease.Activities
             }
             finally
             {
-                this.context.Measure.End(TimeMeasureNames.MinifyJsActivity);
                 cacheSection.EndSection();
+                this.context.Measure.End(TimeMeasureNames.MinifyJsActivity);
             }
+        }
+
+        private void HandleMinifierErrors(Minifier minifier)
+        {
+            // throw if this file has errors, but show all that are found
+            if (minifier.ErrorList != null && minifier.ErrorList.Count > 0)
+            {
+                string exceptionMessage;
+                if (this.context.Log.HasExtendedErrorHandler)
+                {
+                    // log each message individually so we can click through into the source
+                    foreach (var errorMessage in minifier.ErrorList)
+                    {
+                        var errorHandler = (errorMessage.IsError ? this.context.Log.ExtendedError : this.context.Log.Warning);
+                        errorHandler(
+                            errorMessage.Subcategory,
+                            errorMessage.ErrorCode,
+                            errorMessage.HelpKeyword,
+                            errorMessage.File,
+                            errorMessage.StartLine,
+                            errorMessage.StartColumn,
+                            errorMessage.EndLine,
+                            errorMessage.EndColumn,
+                            errorMessage.Message);
+                    }
+
+                    exceptionMessage = "Error minifying the JS";
+                }
+                else
+                {
+                    // no logging method passed to us -- combine it all into one big ugly string
+                    // and throw it in the exception.
+                    var errorMessageForException = new StringBuilder();
+                    foreach (var errorMessage in minifier.ErrorList)
+                    {
+                        errorMessageForException.AppendLine(errorMessage.ToString());
+                    }
+
+                    exceptionMessage = errorMessageForException.ToString();
+                }
+
+                throw new BuildWorkflowException(
+                    exceptionMessage, "MinifyJSActivity", ErrorCode.Default, null, this.SourceFile, 0, 0, 0, 0, null);
+            }
+        }
+
+        private bool TryRestoreFromCache(ICacheSection cacheSection)
+        {
+            if (cacheSection.CanBeRestoredFromCache())
+            {
+                if (this.FileHasher != null)
+                {
+                    var resultFile = cacheSection.RestoreFiles(CacheKeys.MinifyJsResultCacheKey, this.context.Configuration.DestinationDirectory).First();
+                    this.FileHasher.AppendToWorkLog(resultFile, this.DestinationFile);
+                }
+                else
+                {
+                    cacheSection.RestoreFile(CacheKeys.MinifyJsResultCacheKey, this.DestinationFile);
+                }
+                return true;
+            }
+            return false;
         }
 
         /// <summary>

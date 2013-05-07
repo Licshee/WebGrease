@@ -14,7 +14,7 @@
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\</OutputPath>
     <VersionMajor Condition="$(VersionMajor) == ''">1</VersionMajor>
     <VersionMinor Condition="$(VersionMinor) == ''">0</VersionMinor>
     <VersionPatch Condition="$(VersionPatch) == ''">0</VersionPatch>
@@ -27,7 +27,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -36,13 +36,16 @@
     <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
+  </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <None Include="buildpackagescripts\install.ps1" />
@@ -107,11 +110,11 @@
     <CallTarget Targets="CreatePackage" />
   </Target>
   <!-- Pre release versioning-->
-  <Target Name="CreatePackage">
+  <Target Name="CreatePackage" Condition="'$(ConfigurationName)' != 'Debug'">
     <Message Text="Building Package" Importance="high" />
     <!-- Build Machine-->
     <PropertyGroup Condition="$(SemanticVersionText)==''">
-      <SemanticVersionText>1.4.0</SemanticVersionText>
+      <SemanticVersionText>1.4.2</SemanticVersionText>
     </PropertyGroup>
     <PropertyGroup Condition="$(VersionPreRelease)==''">
       <VersionTxt>$(SemanticVersionText)</VersionTxt>
@@ -144,10 +147,18 @@
     <Exec Command="$(NuGetExe) pack $(IncludeNuspec) -OutputDirectory $(OutDir) -Properties OutDirPath=$(OutDir);InDirPath=$(IncludeInputPath) -Version $(VersionTxt) -Verbose -NoPackageAnalysis" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>rd /s /q "$(TargetDir)Merged"
-md "$(TargetDir)Merged"
+    <PostBuildEvent>if $(ConfigurationName) NEQ Debug ( 
+   rd /s /q "$(TargetDir)Merged"
+   md "$(TargetDir)Merged"
+   
 
 $(ProjectDir)\..\ref\build\ilmerge\ilmerge.exe /out:"$(TargetDir)Merged\WG.EXE"  /targetplatform:v4,"%25ProgramFiles%25\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0" /log /t:exe "$(TargetDir)WG.EXE" "$(TargetDir)Antlr3.Runtime.dll" "$(TargetDir)WebGrease.dll"
-</PostBuildEvent>
+
+)
+$(SolutionDir)TmsSdkAfterBuildTask.bat "$(SolutionDir)" "$(TargetDir)" "$(SolutionDir)..\..\..\Workspace2\MSNMetro\Main\MetroSDK\" 1.4.0</PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
 </Project>

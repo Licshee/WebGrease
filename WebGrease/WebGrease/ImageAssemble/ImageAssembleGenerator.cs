@@ -1,11 +1,11 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ImageAssembleGenerator.cs" company="Microsoft">
-//   Copyright Microsoft Corporation, all rights reserved
+﻿// ----------------------------------------------------------------------------------------------------
+// <copyright file="ImageAssembleGenerator.cs" company="Microsoft Corporation">
+//   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
 // <summary>
 //   Factory class that invokes appropriate Assemble type to assemble images.
 // </summary>
-// --------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------------
 
 namespace WebGrease.ImageAssemble
 {
@@ -18,10 +18,11 @@ namespace WebGrease.ImageAssemble
     using System.Globalization;
     using System.IO;
     using System.Linq;
-    using System.Security.Cryptography;
     using System.Text;
-    using Common;
+
     using Css.ImageAssemblyAnalysis;
+
+    using WebGrease.Css.Extensions;
 
     /// <summary>Factory class that invokes appropriate Assemble type to assemble images.</summary>
     internal static class ImageAssembleGenerator
@@ -82,6 +83,8 @@ namespace WebGrease.ImageAssemble
 
                     // Assemble images of this type
                     separatedList = separatedLists[registeredAssembler.Type];
+
+                    separatedList.ForEach(i => context.Cache.CurrentCacheSection.AddSourceDependency(i.Key.ImagePath));
                     registeredAssembler.Assemble(separatedList);
                 }
                 finally
