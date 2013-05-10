@@ -14,6 +14,7 @@ namespace Microsoft.WebGrease.Tests
     using global::WebGrease.Configuration;
     using global::WebGrease.Preprocessing.Include;
     using global::WebGrease.Tests;
+    using global::WebGrease.Extensions;
 
     [TestClass]
     public class IncludeEngineTest
@@ -21,12 +22,13 @@ namespace Microsoft.WebGrease.Tests
         #region Public Methods and Operators
 
         [TestMethod]
+        [TestCategory(TestCategories.WgInclude)]
         public void TestWgInclude1()
         {
             var includeFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\IncludeTest\Test1\test1.js");
             var ie = new IncludePreprocessingEngine();
-            ie.SetContext(new WebGreaseContext(new WebGreaseConfiguration()));
-            var result = ie.Process(File.ReadAllText(includeFile), includeFile, new PreprocessingConfig());
+            ie.SetContext(new WebGreaseContext(new WebGreaseConfiguration() { DestinationDirectory = TestDeploymentPaths.TestDirectory }));
+            var result = ie.Process(ContentItem.FromFile(includeFile, includeFile.MakeRelativeToDirectory(TestDeploymentPaths.TestDirectory)), new PreprocessingConfig()).Content;
 
             Assert.IsTrue(result.Contains("included1();"));
             Assert.IsTrue(result.Contains("included2();"));

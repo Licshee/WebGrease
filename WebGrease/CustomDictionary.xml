@@ -13,14 +13,24 @@
       <Word>js</Word>
       <Word>Pos</Word>
       <Word>Rgb</Word>
+      <Word>AssemblerActivity</Word>
+      <Word>CssLocalizationActivity</Word>
+      <Word>JsLocalizationActivity</Word>
+      <Word>MinifyCssActivity</Word>
+      <Word>MinifyJsActivity</Word>
+      <Word>ResourcesResolutionActivity</Word>
     </Recognized>
     <DiscreteExceptions>
       <Term>plugIn</Term>
+      <Term>AssemblerActivity</Term>
+      <Term>addEnd</Term>
     </DiscreteExceptions>
   </Words>
   <Acronyms>
     <CasingExceptions>
       <!--<Acronym></Acronym>-->
+      <Acronym>CSS</Acronym>
+      <Acronym>JS</Acronym>
       <Acronym>JSON</Acronym>
     </CasingExceptions>
   </Acronyms>

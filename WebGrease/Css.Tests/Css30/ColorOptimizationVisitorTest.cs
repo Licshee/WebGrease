@@ -13,6 +13,8 @@ namespace Css.Tests.Css30
     using System.Collections.Generic;
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease.Css;
     using WebGrease.Css.Ast;
@@ -44,6 +46,7 @@ namespace Css.Tests.Css30
         public TestContext TestContext { get; set; }
 
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void HexCollapse()
         {
             const string FileName = @"HexCollapse.css";
@@ -58,6 +61,7 @@ namespace Css.Tests.Css30
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void RgbCollapse()
         {
             const string FileName = @"RgbCollapse.css";

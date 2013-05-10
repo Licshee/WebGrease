@@ -44,12 +44,12 @@ namespace WebGrease.Css.Visitor
         /// <summary>
         /// The css path
         /// </summary>
-        private readonly string _cssPath;
+        private readonly string cssPath;
 
         /// <summary>
         /// The input images computed from log file
         /// </summary>
-        private readonly List<AssembledImage> _inputImages;
+        private readonly List<AssembledImage> inputImages;
 
         /// <summary>
         /// The default DPI to use for the entire stylesheet
@@ -57,66 +57,63 @@ namespace WebGrease.Css.Visitor
         private readonly double defaultDpi;
 
         /// <summary>
-        /// The source directory to use for absoluting images.
-        /// </summary>
-        private string sourceDirectory;
-
-        /// <summary>
         /// The source directory to determine relative from image to css.
         /// </summary>
-        private string destinationDirectory;
+        private readonly string destinationDirectory;
 
-        private string prependToDestination;
+        /// <summary>The prepend to destination.</summary>
+        private readonly string prependToDestination;
+
+        /// <summary>The available source images.</summary>
+        private readonly IDictionary<string, string> availableSourceImages;
 
         /// <summary>Initializes a new instance of the ImageAssemblyUpdateVisitor class</summary>
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
         /// <param name="logFiles">The log path which contains the image map after spriting</param>
-        /// <param name="dpi"></param>
+        /// <param name="dpi">The dpi.</param>
         /// <param name="outputUnit">The output unit </param>
         /// <param name="outputUnitFactor">The output unit factor. </param>
-        /// <param name="sourceDirectory">The source directory</param>
         /// <param name="destinationDirectory">The destination directory</param>
         /// <param name="prependToDestination">Prepend the the relative output path.</param>
-        public ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<string> logFiles, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1, string sourceDirectory = null, string destinationDirectory = null, string prependToDestination = null)
+        /// <param name="availableSourceImages">The available Source Images.</param>
+        public ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<string> logFiles, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1, string destinationDirectory = null, string prependToDestination = null, IDictionary<string, string> availableSourceImages = null)
         {
-            Contract.Requires(!string.IsNullOrWhiteSpace(cssPath));
             Contract.Requires(logFiles != null);
 
             // Output unit and factor
             this.outputUnit = outputUnit;
             this.outputUnitFactor = outputUnitFactor;
-            this.sourceDirectory = sourceDirectory;
             this.destinationDirectory = destinationDirectory;
             this.prependToDestination = prependToDestination;
 
+            this.availableSourceImages = availableSourceImages;
+
             // default dpi is 1
-            defaultDpi = dpi;
+            this.defaultDpi = dpi;
 
             // Normalize css path
-            _cssPath = cssPath.GetFullPathWithLowercase();
+            this.cssPath = cssPath.GetFullPathWithLowercase();
 
             try
             {
                 // Validate the log path and load the input dictionary after validation
                 // Key = input/original image full path in lower case
                 // Value = object which has properties such as, assembled image path, x, y coordinates etc.
-                _inputImages = new List<AssembledImage>();
+                this.inputImages = new List<AssembledImage>();
                 foreach (var logFile in logFiles)
                 {
                     if (File.Exists(logFile))
                     {
                         // Lazy load file is optional
-                        _inputImages.AddRange(new ImageLog(logFile).InputImages);
+                        this.inputImages.AddRange(new ImageLog(logFile).InputImages);
                     }
                 }
             }
             catch (Exception exception)
             {
-                throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.InnerExceptionFile, string.Join(CssConstants.Comma.ToString(), logFiles)), exception);
+                throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.InnerExceptionFile, string.Join(CssConstants.Comma.ToString(CultureInfo.InvariantCulture), logFiles)), exception);
             }
         }
-
-        public IWebGreaseContext Context { get; set; }
 
         /// <summary>The <see cref="StyleSheetNode"/> visit implementation</summary>
         /// <param name="styleSheet">The styleSheet AST node</param>
@@ -166,159 +163,10 @@ namespace WebGrease.Css.Visitor
             declarationNodes[declarationNodes.IndexOf(originalDeclarationNode)] = updatedDeclarationNode;
         }
 
-        /// <summary>Updates the list of declarations with the updated value from
-        /// image assembly log.
-        /// Example Css with shorthand declaration:
-        /// #selector
-        /// {
-        ///   background: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif) no-repeat -10px -200px;
-        /// }
-        /// Example Css with long declarations:
-        /// #selector
-        /// {
-        ///   background-repeat: no-repeat;
-        ///   background-position: -10px  -200px;
-        ///   background-image: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif);
-        /// }</summary>
-        /// <param name="declarationNodes">The list of declarations</param>
-        /// <param name="parent">The parent AST node</param>
-        /// <returns>The list of updated declarations</returns>
-        private ReadOnlyCollection<DeclarationNode> UpdateDeclarations(ReadOnlyCollection<DeclarationNode> declarationNodes, AstNode parent)
-        {
-            try
-            {
-                // Populate the nodes from AST extension
-                Background backgroundNode;
-                BackgroundImage backgroundImageNode;
-                BackgroundPosition backgroundPositionNode;
-                DeclarationNode backgroundSizeNode;
-                DeclarationNode webGreaseBackgroundDpiNode;
-
-                // There is no background node found in set of declarations, return without any change
-                if (!declarationNodes.TryGetBackgroundDeclaration(parent, out backgroundNode, out backgroundImageNode, out backgroundPositionNode, out backgroundSizeNode, out webGreaseBackgroundDpiNode, null, null, null, this.outputUnit, this.outputUnitFactor))
-                {
-                    // No change, return the original collection
-                    return declarationNodes;
-                }
-
-                // if we have a background DPI node, then use it to calculate the DPI we should be using,
-                // otherwise use the default DPI given to the visitor in constructor (default is 1.0).
-                var webGreaseBackgroundDpi =
-                    webGreaseBackgroundDpiNode != null
-                    ? double.Parse(webGreaseBackgroundDpiNode.ExprNode.TermNode.NumberBasedValue, NumberStyles.Any, CultureInfo.InvariantCulture)
-                    : defaultDpi;
-
-                // At this point, there should be atleast one "background" or "background-image" node found.
-                // In addition, there can be an optional "background-position" node
-                // Initialize a cloned set of declarations (The original AST collection is immutable by design)
-                var updatedDeclarations = new List<DeclarationNode>(declarationNodes);
-                var ix = updatedDeclarations.IndexOf(webGreaseBackgroundDpiNode);
-                if (ix > -1)
-                {
-                    // we had a -wg-background-dpi declaration node - comment it out now and move it to the top
-                    updatedDeclarations.RemoveAt(ix);
-                    updatedDeclarations.Insert(0, CreateDpiComment(webGreaseBackgroundDpi));
-                }
-                else if (webGreaseBackgroundDpi != 1.0)
-                {
-                    // not a normal-DPI (1x) -- output a comment at the top stating what our DPI really is
-                    updatedDeclarations.Insert(0, CreateDpiComment(webGreaseBackgroundDpi));
-                }
-
-                // Empty object to be discovered from log
-                AssembledImage assembledImage;
-
-                if (backgroundNode != null)
-                {
-                    // Short hand declaration found:
-                    // #selector
-                    // {
-                    // background: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif) no-repeat -10px -200px;
-                    // }
-                    // Query the log file and see if there is an assembled node for 
-                    // the background image
-                    if (!this.TryGetAssembledImage(backgroundNode.Url, backgroundNode.BackgroundPosition, out assembledImage))
-                    {
-                        return declarationNodes;
-                    }
-
-                    // add some comments that we can use to help debugging
-                    updatedDeclarations.Insert(0, CreateDebugOriginalPositionComment(backgroundNode.BackgroundPosition.X, backgroundNode.BackgroundPosition.XSource, backgroundNode.BackgroundPosition.Y, backgroundNode.BackgroundPosition.YSource));
-                    updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
-
-                    // Update the declaration node with new values in AST
-                    var updatedDeclaration = backgroundNode.UpdateBackgroundNode(assembledImage.RelativeOutputFilePath, assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi);
-
-                    // Update the declaration list
-                    UpdateDeclarations(updatedDeclarations, backgroundNode.DeclarationAstNode, updatedDeclaration);
-
-                    this.SetBackgroundSize(updatedDeclarations, backgroundSizeNode, webGreaseBackgroundDpi, assembledImage);
-                }
-                else if (backgroundImageNode != null)
-                {
-                    // Long declaration found for background-image:
-                    // #selector
-                    // {
-                    // background-image: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif);
-                    // }
-                    // Query the log file and see if there is an assembled node for 
-                    // the background image
-                    if (!this.TryGetAssembledImage(backgroundImageNode.Url, backgroundPositionNode, out assembledImage))
-                    {
-                        // Return without update with a group of declarations
-                        return declarationNodes;
-                    }
-
-                    // Update the declaration node with new values in AST
-                    var updatedDeclaration = backgroundImageNode.UpdateBackgroundImageNode(assembledImage.RelativeOutputFilePath);
-
-                    // Update the list of declarations
-                    UpdateDeclarations(updatedDeclarations, backgroundImageNode.DeclarationNode, updatedDeclaration);
-
-                    if (backgroundPositionNode != null)
-                    {
-                        // Long declaration found for background-position:
-                        // #selector
-                        // {
-                        // background-position: -10px  -200px;
-                        // }
-                        // Update the declaration node with new values in AST
-                        
-                        // add some comments that can help with debugging
-                        updatedDeclarations.Insert(0, CreateDebugOriginalPositionComment(backgroundPositionNode.X, backgroundPositionNode.XSource, backgroundPositionNode.Y, backgroundPositionNode.YSource));
-                        updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
-
-                        updatedDeclaration = backgroundPositionNode.UpdateBackgroundPositionNode(assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi);
-
-                        // Update the list of declarations
-                        UpdateDeclarations(updatedDeclarations, backgroundPositionNode.DeclarationNode, updatedDeclaration);
-                    }
-                    else
-                    {
-                        // If there is no declaration found for "background-position",
-                        // Create a new declaration node in AST for "background-position" declaration
-                        var newDeclaration = BackgroundPosition.CreateNewDeclaration(assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi, this.outputUnit, this.outputUnitFactor);
-
-                        // add a comment to help with debugging
-                        updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
-
-                        if (newDeclaration != null)
-                        {
-                            updatedDeclarations.Add(newDeclaration);
-                        }
-                    }
-
-                    this.SetBackgroundSize(updatedDeclarations, backgroundSizeNode, webGreaseBackgroundDpi, assembledImage);
-                }
-
-                return updatedDeclarations.AsReadOnly();
-            }
-            catch (Exception exception)
-            {
-                throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.InnerExceptionSelector, parent.PrettyPrint()), exception);
-            }
-        }
-
+        /// <summary>Gets the position string.</summary>
+        /// <param name="value">The value.</param>
+        /// <param name="source">The source.</param>
+        /// <returns>The <see cref="string"/>.</returns>
         private static string GetPositionString(float? value, Source? source)
         {
             if (source != null)
@@ -401,7 +249,7 @@ namespace WebGrease.Css.Visitor
         /// <summary>
         /// Create a declaration comment that indicates the DPI being used for the sprite calculations
         /// </summary>
-        /// <param name="dpi">dpi</param>
+        /// <param name="dpi">The dpi</param>
         /// <returns>new declaration node</returns>
         private static DeclarationNode CreateDpiComment(double dpi)
         {
@@ -417,6 +265,159 @@ namespace WebGrease.Css.Visitor
         private static DeclarationNode CreateDebugDeclarationComment(string propertyName, string propertyValue)
         {
             return new DeclarationNode("/* " + propertyName, new ExprNode(new TermNode(string.Empty, null, propertyValue + "; */", null, null), null), string.Empty);
+        }
+
+        /// <summary>Updates the list of declarations with the updated value from
+        /// image assembly log.
+        /// Example Css with shorthand declaration:
+        /// #selector
+        /// {
+        ///   background: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif) no-repeat -10px -200px;
+        /// }
+        /// Example Css with long declarations:
+        /// #selector
+        /// {
+        ///   background-repeat: no-repeat;
+        ///   background-position: -10px  -200px;
+        ///   background-image: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif);
+        /// }</summary>
+        /// <param name="declarationNodes">The list of declarations</param>
+        /// <param name="parent">The parent AST node</param>
+        /// <returns>The list of updated declarations</returns>
+        private ReadOnlyCollection<DeclarationNode> UpdateDeclarations(ReadOnlyCollection<DeclarationNode> declarationNodes, AstNode parent)
+        {
+            try
+            {
+                // Populate the nodes from AST extension
+                Background backgroundNode;
+                BackgroundImage backgroundImageNode;
+                BackgroundPosition backgroundPositionNode;
+                DeclarationNode backgroundSizeNode;
+                DeclarationNode webGreaseBackgroundDpiNode;
+
+                // There is no background node found in set of declarations, return without any change
+                if (!declarationNodes.TryGetBackgroundDeclaration(parent, out backgroundNode, out backgroundImageNode, out backgroundPositionNode, out backgroundSizeNode, out webGreaseBackgroundDpiNode, null, null, null, this.outputUnit, this.outputUnitFactor))
+                {
+                    // No change, return the original collection
+                    return declarationNodes;
+                }
+
+                // if we have a background DPI node, then use it to calculate the DPI we should be using,
+                // otherwise use the default DPI given to the visitor in constructor (default is 1.0).
+                var webGreaseBackgroundDpi =
+                    webGreaseBackgroundDpiNode != null
+                    ? double.Parse(webGreaseBackgroundDpiNode.ExprNode.TermNode.NumberBasedValue, NumberStyles.Any, CultureInfo.InvariantCulture)
+                    : this.defaultDpi;
+
+                // At this point, there should be atleast one "background" or "background-image" node found.
+                // In addition, there can be an optional "background-position" node
+                // Initialize a cloned set of declarations (The original AST collection is immutable by design)
+                var updatedDeclarations = new List<DeclarationNode>(declarationNodes);
+                var ix = updatedDeclarations.IndexOf(webGreaseBackgroundDpiNode);
+                if (ix > -1)
+                {
+                    // we had a -wg-background-dpi declaration node - comment it out now and move it to the top
+                    updatedDeclarations.RemoveAt(ix);
+                    updatedDeclarations.Insert(0, CreateDpiComment(webGreaseBackgroundDpi));
+                }
+                else if (webGreaseBackgroundDpi != 1.0)
+                {
+                    // not a normal-DPI (1x) -- output a comment at the top stating what our DPI really is
+                    updatedDeclarations.Insert(0, CreateDpiComment(webGreaseBackgroundDpi));
+                }
+
+                // Empty object to be discovered from log
+                AssembledImage assembledImage;
+
+                if (backgroundNode != null)
+                {
+                    // Short hand declaration found:
+                    // #selector
+                    // {
+                    // background: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif) no-repeat -10px -200px;
+                    // }
+                    // Query the log file and see if there is an assembled node for 
+                    // the background image
+                    if (!this.TryGetAssembledImage(backgroundNode.Url, backgroundNode.BackgroundPosition, out assembledImage))
+                    {
+                        return declarationNodes;
+                    }
+
+                    // add some comments that we can use to help debugging
+                    updatedDeclarations.Insert(0, CreateDebugOriginalPositionComment(backgroundNode.BackgroundPosition.X, backgroundNode.BackgroundPosition.XSource, backgroundNode.BackgroundPosition.Y, backgroundNode.BackgroundPosition.YSource));
+                    updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
+
+                    // Update the declaration node with new values in AST
+                    var updatedDeclaration = backgroundNode.UpdateBackgroundNode(assembledImage.RelativeOutputFilePath, assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi);
+
+                    // Update the declaration list
+                    UpdateDeclarations(updatedDeclarations, backgroundNode.DeclarationAstNode, updatedDeclaration);
+
+                    this.SetBackgroundSize(updatedDeclarations, backgroundSizeNode, webGreaseBackgroundDpi, assembledImage);
+                }
+                else if (backgroundImageNode != null)
+                {
+                    // Long declaration found for background-image:
+                    // #selector
+                    // {
+                    // background-image: url(../../i/02/3118D8F3781159C8341246BBF2B4CA.gif);
+                    // }
+                    // Query the log file and see if there is an assembled node for 
+                    // the background image
+                    if (!this.TryGetAssembledImage(backgroundImageNode.Url, backgroundPositionNode, out assembledImage))
+                    {
+                        // Return without update with a group of declarations
+                        return declarationNodes;
+                    }
+
+                    // Update the declaration node with new values in AST
+                    var updatedDeclaration = backgroundImageNode.UpdateBackgroundImageNode(assembledImage.RelativeOutputFilePath);
+
+                    // Update the list of declarations
+                    UpdateDeclarations(updatedDeclarations, backgroundImageNode.DeclarationNode, updatedDeclaration);
+
+                    if (backgroundPositionNode != null)
+                    {
+                        // Long declaration found for background-position:
+                        // #selector
+                        // {
+                        // background-position: -10px  -200px;
+                        // }
+                        // Update the declaration node with new values in AST
+
+                        // add some comments that can help with debugging
+                        updatedDeclarations.Insert(0, CreateDebugOriginalPositionComment(backgroundPositionNode.X, backgroundPositionNode.XSource, backgroundPositionNode.Y, backgroundPositionNode.YSource));
+                        updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
+
+                        updatedDeclaration = backgroundPositionNode.UpdateBackgroundPositionNode(assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi);
+
+                        // Update the list of declarations
+                        UpdateDeclarations(updatedDeclarations, backgroundPositionNode.DeclarationNode, updatedDeclaration);
+                    }
+                    else
+                    {
+                        // If there is no declaration found for "background-position",
+                        // Create a new declaration node in AST for "background-position" declaration
+                        var newDeclaration = BackgroundPosition.CreateNewDeclaration(assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi, this.outputUnit, this.outputUnitFactor);
+
+                        // add a comment to help with debugging
+                        updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
+
+                        if (newDeclaration != null)
+                        {
+                            updatedDeclarations.Add(newDeclaration);
+                        }
+                    }
+
+                    this.SetBackgroundSize(updatedDeclarations, backgroundSizeNode, webGreaseBackgroundDpi, assembledImage);
+                }
+
+                return updatedDeclarations.AsReadOnly();
+            }
+            catch (Exception exception)
+            {
+                throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.InnerExceptionSelector, parent.PrettyPrint()), exception);
+            }
         }
 
         /// <summary>
@@ -469,15 +470,18 @@ namespace WebGrease.Css.Visitor
                     new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, heightTermNode)
                 };
 
-            var newBackgroundSizeNode = new DeclarationNode(
-                ImageAssembleConstants.BackgroundSize,
-                new ExprNode(widthTermNode,
-                    termWithOperatorNodes.ToSafeReadOnlyCollection()),
-                    null);
+            var newBackgroundSizeNode =
+                new DeclarationNode(
+                    ImageAssembleConstants.BackgroundSize,
+                    new ExprNode(
+                        widthTermNode,
+                        termWithOperatorNodes.ToSafeReadOnlyCollection()),
+                        null);
 
-            return new[] { 
+            return new[] 
+            { 
                 // add a comment to help with sprite debugging
-                CreateDebugDeclarationComment("-wg-background-size-params", " (sprite size: " + assembledImage.SpriteWidth + "px " + assembledImage.SpriteHeight + "px) (output unit factor: " + outputUnitFactor + ") (dpi: " + dpiFactor + ") (imageposition:" + assembledImage.ImagePosition + ")"),
+                CreateDebugDeclarationComment("-wg-background-size-params", " (sprite size: " + assembledImage.SpriteWidth + "px " + assembledImage.SpriteHeight + "px) (output unit factor: " + this.outputUnitFactor + ") (dpi: " + dpiFactor + ") (imageposition:" + assembledImage.ImagePosition + ")"),
                 newBackgroundSizeNode
             };
         }
@@ -489,9 +493,14 @@ namespace WebGrease.Css.Visitor
         /// <returns>The assembled image object</returns>
         private bool TryGetAssembledImage(string parsedImagePath, BackgroundPosition backgroundPosition, out AssembledImage assembledImage)
         {
+            if (this.availableSourceImages == null && string.IsNullOrWhiteSpace(this.cssPath))
+            {
+                throw new BuildWorkflowException("Need either images or css path to be able to set a valid image file.");
+            }
+
             assembledImage = null;
 
-            if (_inputImages == null)
+            if (this.inputImages == null)
             {
                 return false;
             }
@@ -500,15 +509,19 @@ namespace WebGrease.Css.Visitor
             // For optimization, should the relative paths be enforced?
 
             // Get the full path of parsed image file (convert from ../../ to absolute path)
-
             if (parsedImagePath.StartsWith("hash://", StringComparison.OrdinalIgnoreCase))
             {
                 parsedImagePath = parsedImagePath.Substring(7);
             }
 
-            parsedImagePath = !string.IsNullOrWhiteSpace(this.sourceDirectory)
-                ? Path.Combine(this.sourceDirectory, parsedImagePath.NormalizeUrl())
-                : parsedImagePath.MakeAbsoluteTo(_cssPath);
+            if (this.availableSourceImages != null)
+            {
+                parsedImagePath = this.availableSourceImages[parsedImagePath.NormalizeUrl()];
+            }
+            else
+            {
+                parsedImagePath = parsedImagePath.MakeAbsoluteTo(this.cssPath);
+            }
 
             var imagePosition = ImagePosition.Left;
             if (backgroundPosition != null)
@@ -517,15 +530,15 @@ namespace WebGrease.Css.Visitor
             }
 
             // Try to locate the input image in the list
-            assembledImage = this._inputImages.FirstOrDefault(inputImage => inputImage.ImagePosition == imagePosition && inputImage.OriginalFilePath.Equals(parsedImagePath, StringComparison.OrdinalIgnoreCase));
+            assembledImage = this.inputImages.FirstOrDefault(inputImage => inputImage.ImagePosition == imagePosition && inputImage.OriginalFilePath.Equals(parsedImagePath, StringComparison.OrdinalIgnoreCase));
 
             if (assembledImage != null &&
                 assembledImage.OutputFilePath != null)
             {
-                assembledImage.RelativeOutputFilePath = 
+                assembledImage.RelativeOutputFilePath =
                     !string.IsNullOrWhiteSpace(this.destinationDirectory)
-                        ? Path.Combine(this.prependToDestination, assembledImage.OutputFilePath.MakeRelativeToDirectory(this.destinationDirectory).Replace('\\','/'))
-                        : assembledImage.OutputFilePath.MakeRelativeTo(_cssPath);
+                        ? Path.Combine(this.prependToDestination, assembledImage.OutputFilePath.MakeRelativeToDirectory(this.destinationDirectory).Replace('\\', '/'))
+                        : assembledImage.OutputFilePath.MakeRelativeTo(this.cssPath);
 
                 if (!string.IsNullOrWhiteSpace(assembledImage.RelativeOutputFilePath))
                 {

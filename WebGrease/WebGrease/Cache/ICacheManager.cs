@@ -28,10 +28,10 @@ namespace WebGrease
 
         /// <summary>Begins a new cache section.</summary>
         /// <param name="category">The category.</param>
-        /// <param name="filePath">The file path.</param>
+        /// <param name="contentItem">The result file.</param>
         /// <param name="settings">The settings.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        ICacheSection BeginSection(string category, FileInfo filePath, object settings = null);
+        ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null);
 
         /// <summary>Cleans up all the cache files that we don't need anymore.</summary>
         void CleanUp();
@@ -57,17 +57,11 @@ namespace WebGrease
         /// <param name="newContext">The current context.</param>
         void SetContext(IWebGreaseContext newContext);
 
-        /// <summary>Stores the content in cache.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="content">The content.</param>
-        /// <returns>The stored cache file path.</returns>
-        string StoreContentInCache(string category, string content);
-
-        /// <summary>Stores the file in cache.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="absolutePath">The absolute path.</param>
-        /// <returns>The stored cache file path.</returns>
-        string StoreFileInCache(string category, string absolutePath);
+        /// <summary>Stores the content file in cache.</summary>
+        /// <param name="cacheCategory">The cache category.</param>
+        /// <param name="contentItem">The content file.</param>
+        /// <returns>The cache file path.</returns>
+        string StoreInCache(string cacheCategory, ContentItem contentItem);
 
         #endregion
     }

@@ -15,6 +15,8 @@ namespace Css.Tests.Css21
     using System.IO;
     using Microsoft.Ajax.Utilities.Css;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease.Css;
     using WebGrease.Css.Ast;
@@ -32,6 +34,7 @@ namespace Css.Tests.Css21
         /// A test for site parsing
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.AjaxMin)]
         public void MinifyComparisionTest()
         {
             var directoryName = Path.Combine(TestDeploymentPaths.TestDirectory, @"css.tests\css21");

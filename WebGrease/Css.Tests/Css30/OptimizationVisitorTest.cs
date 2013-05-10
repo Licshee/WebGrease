@@ -13,6 +13,8 @@ namespace Css.Tests.Css30
     using System.Collections.Generic;
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease.Css;
     using WebGrease.Css.Visitor;
@@ -45,6 +47,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for ruleset optimization.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void OptimizeRulesetTest()
         {
             const string FileName = @"ruleset.css";
@@ -56,6 +59,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for border optimization.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void OptimizeBorder()
         {
             const string FileName = @"border.css";

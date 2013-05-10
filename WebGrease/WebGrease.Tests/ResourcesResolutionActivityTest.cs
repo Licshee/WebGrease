@@ -14,6 +14,7 @@ namespace WebGrease.Tests
     using System.IO;
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using WebGrease.Configuration;
 
@@ -32,6 +33,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for resources resolution.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.ResourcesResolutionActivity)]
         public void ResourceResolutionTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\ResourcesResolutionActivityTest\Input\Content");

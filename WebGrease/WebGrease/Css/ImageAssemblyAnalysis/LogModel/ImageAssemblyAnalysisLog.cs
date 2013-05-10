@@ -92,7 +92,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
                 return;
             }
 
-            FileHelper.WriteFile(path, this.ToString(), null);
+            FileHelper.WriteFile(path, this.ToString());
         }
 
         /// <summary>Override the tostring implementation.</summary>

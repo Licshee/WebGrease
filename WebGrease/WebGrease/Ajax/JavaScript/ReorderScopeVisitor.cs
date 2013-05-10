@@ -334,7 +334,7 @@ namespace Microsoft.Ajax.Utilities
         }
 
         // unnest any child blocks
-        private void UnnestBlocks(Block node)
+        private static void UnnestBlocks(Block node)
         {
             // walk the list of items backwards -- if we come
             // to any blocks, unnest the block recursively. 

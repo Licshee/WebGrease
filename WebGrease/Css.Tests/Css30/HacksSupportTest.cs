@@ -9,6 +9,8 @@ namespace Css.Tests.Css30
     using System;
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease.Css;
     using WebGrease.Css.Extensions;
@@ -34,6 +36,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for the basic collection of hacks</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void HacksFileTest()
         {
             const string FileName = @"hacks.css";

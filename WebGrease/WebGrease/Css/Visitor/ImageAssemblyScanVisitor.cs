@@ -75,7 +75,7 @@ namespace WebGrease.Css.Visitor
         /// <summary>
         /// The root output folder for the images.
         /// </summary>
-        private readonly IEnumerable<ResultFile> _availableImageSources;
+        private readonly IDictionary<string, string> _availableImageSources;
 
         /// <summary>
         /// The list of image references populated from AST for background images
@@ -93,18 +93,18 @@ namespace WebGrease.Css.Visitor
         /// <param name="outputUnit">The output unit.</param>
         /// <param name="outputUnitFactor">The output unit factor.</param>
         /// <param name="availableImageSources"></param>
-        public ImageAssemblyScanVisitor(string cssPath, IEnumerable<string> imageReferencesToIgnore, IEnumerable<ImageAssemblyScanInput> additionalImageAssemblyBuckets, bool ignoreImagesWithNonDefaultBackgroundSize = false, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d, IEnumerable<ResultFile> availableImageSources = null)
+        public ImageAssemblyScanVisitor(string cssPath, IEnumerable<string> imageReferencesToIgnore, IEnumerable<ImageAssemblyScanInput> additionalImageAssemblyBuckets, bool ignoreImagesWithNonDefaultBackgroundSize = false, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d, IDictionary<string, string> availableImageSources = null)
         {
-            Contract.Requires(!string.IsNullOrWhiteSpace(cssPath));
+            Contract.Requires(availableImageSources != null || !string.IsNullOrWhiteSpace(cssPath));
 
             // Set the image output root.
             this._availableImageSources = availableImageSources;
 
             // Add the scan outputs
-            _imageAssemblyScanOutputs.Add(_defaultImageAssemblyScanOutput);
+            this._imageAssemblyScanOutputs.Add(_defaultImageAssemblyScanOutput);
 
             // Normalize css path
-            _cssPath = cssPath.GetFullPathWithLowercase();
+            this._cssPath = cssPath.GetFullPathWithLowercase();
 
             // Determine if the visitor should ignore images that have a non-default background-size value set.
             this._ignoreImagesWithNonDefaultBackgroundSize = ignoreImagesWithNonDefaultBackgroundSize;
@@ -245,8 +245,8 @@ namespace WebGrease.Css.Visitor
 
                 if (!declarations.TryGetBackgroundDeclaration(// For image path/logging etc
                     parent, // For printing the Pretty Print Node for logging
-                    out backgroundNode, 
-                    out backgroundImageNode, 
+                    out backgroundNode,
+                    out backgroundImageNode,
                     out backgroundPositionNode,
                     out backgroundSize,
                     out webGreaseBackgroundDpiNode,
@@ -317,14 +317,13 @@ namespace WebGrease.Css.Visitor
             if (this._availableImageSources != null)
             {
                 url = url.NormalizeUrl();
-                var sourceFile = this._availableImageSources
-                    .Where(rf => rf.Path.Equals(url, StringComparison.OrdinalIgnoreCase))
-                    .Select(rf => rf.OriginalPath)
-                    .FirstOrDefault();
+                var sourceFile = this._availableImageSources.ContainsKey(url)
+                    ? this._availableImageSources[url]
+                    : null;
 
                 if (string.IsNullOrWhiteSpace(sourceFile))
                 {
-                    throw new FileNotFoundException("Could not find the image file:"+url);
+                    throw new FileNotFoundException("Could not find the image file:" + url);
                 }
 
                 url = sourceFile;

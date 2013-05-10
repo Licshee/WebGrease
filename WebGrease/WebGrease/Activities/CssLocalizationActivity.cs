@@ -14,7 +14,6 @@ namespace WebGrease.Activities
     using System.Globalization;
     using System.IO;
     using System.Linq;
-    using System.Text;
 
     using Common;
 
@@ -35,29 +34,81 @@ namespace WebGrease.Activities
         /// <summary>
         /// The destination directory.
         /// </summary>
-        internal string DestinationDirectory { get; set; }
+        internal string DestinationDirectory { private get; set; }
 
         /// <summary>
         /// Gets or sets the  Semicolon separated folder paths to the theme resources.
         /// The resource files will be searched in the folder paths.
         /// </summary>
-        internal string ThemesResourcesDirectory { get; set; }
+        internal string ThemesResourcesDirectory { private get; set; }
 
         /// <summary>
         /// Gets or sets the Semicolon separated paths to the locale resources.
         /// The resource files will be searched in the folder paths.
         /// </summary>
-        internal string LocalesResourcesDirectory { get; set; }
-
-        /// <summary>
-        /// Gets or sets the Log of the renamed images with before and after paths and names.
-        /// </summary>
-        internal string HashedImagesLogFile { get; set; }
+        internal string LocalesResourcesDirectory { private get; set; }
 
         /// <summary>
         /// Gets the Css Localization Inputs (Locales, Themes etc.)
         /// </summary>
         internal IList<CssLocalizationInput> CssLocalizationInputs { get; private set; }
+
+        /// <summary>Localize and theme the input file.</summary>
+        /// <param name="context">The context.</param>
+        /// <param name="inputItem">The input file.</param>
+        /// <param name="locales">The locales.</param>
+        /// <param name="localeResources">The locale resources.</param>
+        /// <param name="themes">The themes.</param>
+        /// <param name="themeResources">The theme resources.</param>
+        /// <param name="localizedAndThemedItemAction">The localized Item Action.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Resource keys should be lowercase")]
+        internal static bool LocalizeAndTheme(IWebGreaseContext context, ContentItem inputItem, IEnumerable<string> locales, IDictionary<string, IDictionary<string, string>> localeResources, IEnumerable<string> themes, IDictionary<string, IDictionary<string, string>> themeResources, Func<ContentItem, bool> localizedAndThemedItemAction)
+        {
+            var successfull = true;
+            context.Measure.Start(SectionIdParts.CssLocalizationActivity);
+            try
+            {
+                var css = inputItem.Content;
+                foreach (var locale in locales.Select(t => t.ToLowerInvariant()))
+                {
+                    var localizedCss = ResourcesResolver.ExpandResourceKeys(css, localeResources[locale]);
+
+                    if (!themes.Any())
+                    {
+                        var contentItem = ContentItem.FromContent(localizedCss, inputItem, locale);
+                        localizedAndThemedItemAction(contentItem);
+                    }
+                    else
+                    {
+                        foreach (var theme in themes.Select(t => t.ToLowerInvariant()))
+                        {
+                            var localizedAndthemedCss = ResourcesResolver.ExpandResourceKeys(localizedCss, themeResources[theme]);
+
+                            // Compute the output file name
+                            var contentItem = ContentItem.FromContent(localizedAndthemedCss, inputItem, locale, theme);
+                            successfull = localizedAndThemedItemAction(contentItem) && successfull;
+                        }
+                    }
+                }
+            }
+            catch (ResourceOverrideException resourceOverrideException)
+            {
+                // There was a resource override in folder path that does not
+                // allow resource overriding. For this case, we need to
+                // show a build error.
+                var errorMessage = string.Format(CultureInfo.CurrentUICulture, "CssLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
+                throw new WorkflowException(errorMessage, resourceOverrideException);
+            }
+            catch (Exception exception)
+            {
+                throw new WorkflowException("CssLocalizationActivity - Error happened while executing the expand css resources activity", exception);
+            }
+            finally
+            {
+                context.Measure.End(SectionIdParts.CssLocalizationActivity);
+            }
+            return successfull;
+        }
 
         /// <summary>When overridden in a derived class, executes the task.</summary>
         internal void Execute()
@@ -77,10 +128,9 @@ namespace WebGrease.Activities
                 throw new ArgumentException("CssLocalizationActivity - The css locales directory cannot be null or whitespace.");
             }
 
+            this.context.Measure.Start(SectionIdParts.CssLocalizationActivity);
             try
             {
-                this.context.Measure.Start(TimeMeasureNames.CssLocalizationActivity);
-
                 // Create the destination directory if does not exist.
                 Directory.CreateDirectory(this.DestinationDirectory);
 
@@ -108,7 +158,7 @@ namespace WebGrease.Activities
             }
             finally
             {
-                this.context.Measure.End(TimeMeasureNames.CssLocalizationActivity);
+                this.context.Measure.End(SectionIdParts.CssLocalizationActivity);
             }
         }
 
@@ -144,7 +194,7 @@ namespace WebGrease.Activities
                 var destinationFile = cssLocalizationInput.DestinationFile.EndsWith(Strings.Css, StringComparison.OrdinalIgnoreCase) ? cssLocalizationInput.DestinationFile : Path.Combine(this.DestinationDirectory, localeName, string.Format(CultureInfo.InvariantCulture, "{0}_{1}.{2}", themeName, cssLocalizationInput.DestinationFile, Strings.Css));
 
                 // Write the expanded file to disk
-                FileHelper.WriteFile(destinationFile, cssContent, Encoding.UTF8);
+                FileHelper.WriteFile(destinationFile, cssContent);
             }
         }
     }

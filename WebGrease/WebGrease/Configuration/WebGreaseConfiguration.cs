@@ -56,7 +56,6 @@ namespace WebGrease.Configuration
             this.CacheRootPath = configuration.CacheRootPath;
             this.CacheTimeout = configuration.CacheTimeout;
             this.CacheUniqueKey = configuration.CacheUniqueKey;
-            this.CacheOutputDependencies = configuration.CacheOutputDependencies;
             this.Measure = configuration.Measure;
         }
 
@@ -153,24 +152,6 @@ namespace WebGrease.Configuration
         /// </summary>
         internal string PreprocessingPluginPath { get; private set; }
 
-        /// <summary>Gets or sets the default list of locales</summary>
-        internal IList<string> DefaultLocales { get; set; }
-
-        /// <summary>Gets or sets the default list of themes</summary>
-        internal IList<string> DefaultThemes { get; set; }
-
-        /// <summary>Gets or sets the default JavaScript minification configuration</summary>
-        internal IDictionary<string, JsMinificationConfig> DefaultJSMinification { get; set; }
-
-        /// <summary>Gets or sets the default CSS minification configuration</summary>
-        internal IDictionary<string, CssMinificationConfig> DefaultCssMinification { get; set; }
-
-        /// <summary>Gets or sets the default spriting configuration</summary>
-        internal IDictionary<string, CssSpritingConfig> DefaultSpriting { get; set; }
-
-        /// <summary>Gets or sets the default preprocessing configuration.</summary>
-        internal PreprocessingConfig DefaultPreprocessing { get; set; }
-
         /// <summary>Gets or sets the image directories to be used.</summary>
         internal IList<string> ImageDirectories { get; set; }
 
@@ -189,30 +170,114 @@ namespace WebGrease.Configuration
         /// <summary>
         /// Gets or sets the value that determines to use cache.
         /// </summary>
-        public bool CacheEnabled { get; set; }
+        internal bool CacheEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets the root path used for caching, this defaults to the ToolsTempPath.
         /// Use the system temp folder (%temp%) if you want to enable this on the build server.
         /// </summary>
-        public string CacheRootPath { get; set; }
+        internal string CacheRootPath { get; set; }
 
         /// <summary>
         /// Gets or sets the unique key for the unique key, is required when enabling cache.
         /// You should use the project Guid to make a distinction between cache for different projects when using a shared cache folder.
         /// </summary>
-        public string CacheUniqueKey { get; set; }
+        internal string CacheUniqueKey { get; set; }
 
         /// <summary>
         /// gets or sets the value that determines how long to keep cache items that have not been touched. (both read and right will touch a file)
         /// </summary>
-        public TimeSpan CacheTimeout { get; set; }
+        internal TimeSpan CacheTimeout { get; set; }
+
+        /// <summary>Gets or sets the default list of locales</summary>
+        private IList<string> DefaultLocales { get; set; }
+
+        /// <summary>Gets or sets the default list of themes</summary>
+        private IList<string> DefaultThemes { get; set; }
+
+        /// <summary>Gets or sets the default JavaScript minification configuration</summary>
+        private IDictionary<string, JsMinificationConfig> DefaultJSMinification { get; set; }
+
+        /// <summary>Gets or sets the default CSS minification configuration</summary>
+        private IDictionary<string, CssMinificationConfig> DefaultCssMinification { get; set; }
+
+        /// <summary>Gets or sets the default spriting configuration</summary>
+        private IDictionary<string, CssSpritingConfig> DefaultSpriting { get; set; }
+
+        /// <summary>Gets or sets the default preprocessing configuration.</summary>
+        private PreprocessingConfig DefaultPreprocessing { get; set; }
 
         /// <summary>
-        /// gets or sets the value that determines if the cache outputs a dgml dependency graph.
+        /// Gets the named configuration from the dictionary, or the first config if no name is passed or returns a default config if not found.
         /// </summary>
-        public bool CacheOutputDependencies { get; set; }
+        /// <typeparam name="T">ConfigurationType to retrieve</typeparam>
+        /// <param name="configDictionary">Dictionary of config objects</param>
+        /// <param name="configName">Named configuration to find</param>
+        /// <returns>the configuration object.</returns>
+        internal static T GetNamedConfig<T>(IDictionary<string, T> configDictionary, string configName)
+            where T : new()
+        {
+            T config;
+            bool nullConfig = configName.IsNullOrWhitespace();
 
+            // if the config name is blank, return the first config
+            if (configDictionary.Keys.Any() && nullConfig)
+            {
+                config = configDictionary[configDictionary.Keys.First()];
+            }
+            else if (nullConfig || !configDictionary.TryGetValue(configName, out config))
+            {
+                // if the config is not found, use a default instance
+                config = new T();
+            }
+
+            return config;
+        }
+
+        /// <summary>Validates the configuration.</summary>
+        internal void Validate()
+        {
+            this.ApplicationRootDirectory = EnsureAndExpandDirectory(this.ApplicationRootDirectory, false);
+            this.DestinationDirectory = EnsureAndExpandDirectory(this.DestinationDirectory, false);
+            this.SourceDirectory = EnsureAndExpandDirectory(this.SourceDirectory, false);
+            this.PreprocessingPluginPath = EnsureAndExpandDirectory(this.PreprocessingPluginPath, false);
+
+            this.LogsDirectory = EnsureAndExpandDirectory(this.LogsDirectory, true);
+            this.CacheRootPath = EnsureAndExpandDirectory(this.CacheRootPath, true);
+            this.ToolsTempDirectory = EnsureAndExpandDirectory(this.ToolsTempDirectory, true);
+        }
+
+        /// <summary>Expands and ensures a directory exists and creates it if enabled.</summary>
+        /// <param name="directory">The directory.</param>
+        /// <param name="allowCreate">If it is allowed to create the directory.</param>
+        /// <returns>The expanded directory.</returns>
+        private static string EnsureAndExpandDirectory(string directory, bool allowCreate)
+        {
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                directory = EnvironmentVariablesMatchPattern.Replace(
+                    directory,
+                    match => Environment.GetEnvironmentVariable(match.Groups["name"].Value));
+
+                var di = new DirectoryInfo(directory);
+                if (!di.Exists)
+                {
+                    if (allowCreate)
+                    {
+                        di.Create();
+                    }
+                    else
+                    {
+                        throw new DirectoryNotFoundException(directory);
+                    }
+                }
+
+                return di.FullName;
+            }
+
+            return null;
+        }
+        
         /// <summary>Parses the configurations segments.</summary>
         /// <param name="configurationFile">The configuration file.</param>
         private void Parse(string configurationFile)
@@ -235,6 +300,8 @@ namespace WebGrease.Configuration
             }
         }
 
+        /// <summary>Parses the settings xml elements.</summary>
+        /// <param name="settingsElement">The settings xml element.</param>
         private void ParseSettings(IEnumerable<XElement> settingsElement)
         {
             foreach (var settingElement in settingsElement.Descendants())
@@ -254,6 +321,7 @@ namespace WebGrease.Configuration
                                 this.ImageDirectories.Add(Path.GetFullPath(Path.Combine(this.SourceDirectory, imageDirectory)));
                             }
                         }
+
                         break;
                     case "ImageExtensions":
                         if (!string.IsNullOrWhiteSpace(settingValue))
@@ -265,6 +333,7 @@ namespace WebGrease.Configuration
                                 this.ImageExtensions.Add(imageExtension);
                             }
                         }
+
                         break;
 
                     case "TokensDirectory":
@@ -306,31 +375,6 @@ namespace WebGrease.Configuration
                         break;
                 }
             }
-        }
-
-        /// <summary>
-        /// Gets the named configuration from the dictionary, or the first config if no name is passed or returns a default config if not found.
-        /// </summary>
-        /// <typeparam name="T">ConfigurationType to retrieve</typeparam>
-        /// <param name="configDictionary">Dictionary of config objects</param>
-        /// <param name="configName">Named configuration to find</param>
-        /// <returns>the configuration object.</returns>
-        internal static T GetNamedConfig<T>(IDictionary<string, T> configDictionary, string configName)
-            where T : new()
-        {
-            T config;
-            bool nullConfig = configName.IsNullOrWhitespace();
-            // if the config name is blank, return the first config
-            if (configDictionary.Keys.Any() && nullConfig)
-            {
-                config = configDictionary[configDictionary.Keys.First()];
-            }
-            else if (nullConfig || !configDictionary.TryGetValue(configName, out config))
-            {
-                // if the config is not found, use a default instance
-                config = new T();
-            }
-            return config;
         }
 
         /// <summary>
@@ -416,44 +460,6 @@ namespace WebGrease.Configuration
             }
 
             this.DefaultSpriting[miniConfig.Name] = miniConfig;
-        }
-
-        public void Validate()
-        {
-            this.ApplicationRootDirectory = EnsureDirectory(this.ApplicationRootDirectory, false);
-            this.DestinationDirectory = EnsureDirectory(this.DestinationDirectory, false);
-            this.SourceDirectory = EnsureDirectory(this.SourceDirectory, false);
-            this.PreprocessingPluginPath = EnsureDirectory(this.PreprocessingPluginPath, false);
-
-            this.LogsDirectory = EnsureDirectory(this.LogsDirectory, true);
-            this.CacheRootPath = EnsureDirectory(this.CacheRootPath, true);
-            this.ToolsTempDirectory = EnsureDirectory(this.ToolsTempDirectory, true);
-        }
-
-        private static string EnsureDirectory(string directory, bool allowCreate)
-        {
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                directory = EnvironmentVariablesMatchPattern.Replace(
-                    directory,
-                    match => Environment.GetEnvironmentVariable(match.Groups["name"].Value));
-                var di = new DirectoryInfo(directory);
-                if (!di.Exists)
-                {
-                    if (allowCreate)
-                    {
-                        di.Create();
-                    }
-                    else
-                    {
-                        throw new DirectoryNotFoundException(directory);
-                    }
-                }
-
-                return di.FullName;
-            }
-
-            return null;
         }
     }
 }

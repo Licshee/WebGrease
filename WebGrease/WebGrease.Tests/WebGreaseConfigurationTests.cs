@@ -13,6 +13,7 @@ namespace WebGrease.Tests
     using System.IO;
     using Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     /// <summary>The web grease configuration root test.</summary>
     [TestClass]
@@ -26,6 +27,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for WebGrease Configuration from an xml file</summary>
         [TestMethod]
+        [TestCategory(TestCategories.Configuration)]
         public void WebGreaseConfigurationTest()
         {
             var configurationFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\sample1.webgrease.config");
@@ -112,6 +114,7 @@ namespace WebGrease.Tests
         /// A test for setting up WebGrease configuration via CLI parameters
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void WebGreaseArgumentConfigTest1()
         {
             // setup args
@@ -131,6 +134,7 @@ namespace WebGrease.Tests
         /// A test for setting up WebGrease configuration via CLI parameters
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void WebGreaseArgumentConfigTest2()
         {
             // setup args
@@ -138,7 +142,6 @@ namespace WebGrease.Tests
 
             WebGreaseConfiguration config;
 
-            string type;
             var mode = Program.GenerateConfiguration(args, out config);
 
             // only 1 mode at a time is supported on the CLI
@@ -156,13 +159,13 @@ namespace WebGrease.Tests
         /// A test for setting up WebGrease configuration via CLI parameters
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void WebGreaseArgumentConfigTest3()
         {
             // setup args
             var args = new[] { "-a", @"-in:C:\temp", @"-out:C:\output", @"-images:C:\images" };
 
             WebGreaseConfiguration config;
-            string type;
             var mode = Program.GenerateConfiguration(args, out config);
 
             Assert.IsTrue(mode == ActivityMode.AutoName);
@@ -178,6 +181,7 @@ namespace WebGrease.Tests
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.Configuration)]
         public void WebGreaseConfigurationDefaults()
         {
             // parse the configuration file
@@ -211,7 +215,7 @@ namespace WebGrease.Tests
                 null);
         }
 
-        private void ValidateCssFileSet(CssFileSet fileSet, string[] locales, string[] themes, CssMinificationConfig retailConfig, CssMinificationConfig debugConfig)
+        private static void ValidateCssFileSet(CssFileSet fileSet, string[] locales, string[] themes, CssMinificationConfig retailConfig, CssMinificationConfig debugConfig)
         {
             // if the debug config is null, there should only be the retail config
             Assert.IsTrue(fileSet.Minification.Count == (debugConfig == null ? 1 : 2));
@@ -239,7 +243,7 @@ namespace WebGrease.Tests
             }
         }
 
-        private void ValidateCssMinificationConfig(CssMinificationConfig actual, CssMinificationConfig shouldBe)
+        private static void ValidateCssMinificationConfig(CssMinificationConfig actual, CssMinificationConfig shouldBe)
         {
             Assert.AreEqual(actual.Name, shouldBe.Name);
             Assert.AreEqual(actual.ShouldMinify, shouldBe.ShouldMinify);
@@ -247,7 +251,7 @@ namespace WebGrease.Tests
             ValidateListIsSame(actual.ForbiddenSelectors, shouldBe.ForbiddenSelectors);
         }
 
-        private void ValidateJsFileSet(JSFileSet fileSet, string[] locales, JsMinificationConfig retailConfig, JsMinificationConfig debugConfig)
+        private static void ValidateJsFileSet(JSFileSet fileSet, string[] locales, JsMinificationConfig retailConfig, JsMinificationConfig debugConfig)
         {
             // if the debug config is null, there should only be the retail config
             Assert.IsTrue(fileSet.Minification.Count == (debugConfig == null ? 1 : 2));
@@ -272,15 +276,7 @@ namespace WebGrease.Tests
             }
         }
 
-        private void ValidateJsMinificationConfig(JsMinificationConfig actual, JsMinificationConfig shouldBe)
-        {
-            Assert.AreEqual(actual.Name, shouldBe.Name);
-            Assert.AreEqual(actual.ShouldMinify, shouldBe.ShouldMinify);
-            Assert.AreEqual(actual.MinificationArugments, shouldBe.MinificationArugments);
-            Assert.AreEqual(actual.GlobalsToIgnore, shouldBe.GlobalsToIgnore);
-        }
-
-        private void ValidateListIsSame(IEnumerable<string> actual, IEnumerable<string> shouldBe)
+        private static void ValidateListIsSame(IEnumerable<string> actual, IEnumerable<string> shouldBe)
         {
             // get enumerators for the two lists and reset them
             var actualEnumerator = actual.GetEnumerator();

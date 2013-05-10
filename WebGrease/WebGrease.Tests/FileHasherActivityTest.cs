@@ -13,6 +13,7 @@ namespace WebGrease.Tests
     using System.IO;
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using WebGrease.Configuration;
 
@@ -29,6 +30,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for file hasher keeping source directories structure in tact.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.FileHasherActivity)]
         public void FileHasherActivityPreserveSourceDirectoryTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Input");
@@ -54,6 +56,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for file hasher keeping source directories structure not in tact.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.FileHasherActivity)]
         public void FileHasherActivityNoPreserveSourceDirectoryTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Input");
@@ -76,6 +79,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for file hasher respecting file filters.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.FileHasherActivity)]
         public void FileHasherActivityFilterTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\Input");

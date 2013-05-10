@@ -11,6 +11,8 @@ namespace Css.Tests.Css30
     using System.Diagnostics;
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease;
     using WebGrease.Css;
@@ -40,6 +42,7 @@ namespace Css.Tests.Css30
         /// Unit test for hack exceptions
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void HacksExceptions()
         {
             try
@@ -64,6 +67,7 @@ namespace Css.Tests.Css30
         /// Unit test for removing the list of selectors
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void RemoveSelectors()
         {
             _hacks.Add("foo");

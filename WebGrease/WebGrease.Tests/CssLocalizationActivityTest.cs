@@ -13,6 +13,7 @@ namespace WebGrease.Tests
     using System.IO;
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using WebGrease.Configuration;
 
@@ -31,6 +32,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css localization with no theme.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssLocalizationActivity)]
         public void CssLocalizationNoThemeTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\CssLocalizationActivityTest");
@@ -52,6 +54,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css localization with no locale.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssLocalizationActivity)]
         public void CssLocalizationNoLocaleTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\CssLocalizationActivityTest");
@@ -69,10 +72,11 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css localization.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssLocalizationActivity)]
         public void CssLocalizationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\CssLocalizationActivityTest");
-            var cssLocalizationActivity = new CssLocalizationActivity(new WebGreaseContext(new WebGreaseConfiguration())) { DestinationDirectory = Path.Combine(sourceDirectory, "Output"), LocalesResourcesDirectory = Path.Combine(sourceDirectory, @"Input\ToolsLogs\Resources\Locales"), ThemesResourcesDirectory = Path.Combine(sourceDirectory, @"Input\ToolsLogs\Resources\Locales"), HashedImagesLogFile = Path.Combine(sourceDirectory, @"input\imagesLog.xml") };
+            var cssLocalizationActivity = new CssLocalizationActivity(new WebGreaseContext(new WebGreaseConfiguration())) { DestinationDirectory = Path.Combine(sourceDirectory, "Output"), LocalesResourcesDirectory = Path.Combine(sourceDirectory, @"Input\ToolsLogs\Resources\Locales"), ThemesResourcesDirectory = Path.Combine(sourceDirectory, @"Input\ToolsLogs\Resources\Locales") };
             var cssLocalizationInput = new CssLocalizationInput { SourceFile = Path.Combine(sourceDirectory, @"input\input1.css"), DestinationFile = "input1" };
             cssLocalizationInput.Locales.Add("en-us");
             cssLocalizationInput.Locales.Add("fr-ca");

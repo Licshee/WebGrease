@@ -15,14 +15,14 @@ namespace WebGrease.Extensions
     using WebGrease.Css;
 
     /// <summary>StringPathExtensions Class - Provides the extension on string types which deal with paths</summary>
-    internal static class StringPathExtensions
+    public static class StringPathExtensions
     {
         #region Methods
 
         /// <summary>Ensures there is an "\" at the end of a directory string.</summary>
         /// <param name="directory">The directory.</param>
         /// <returns>The <see cref="string"/>.</returns>
-        internal static string EnsureEndSeperatorChar(this string directory)
+        public static string EnsureEndSeparator(this string directory)
         {
             return !directory.EndsWith(new string(Path.DirectorySeparatorChar, 1), StringComparison.OrdinalIgnoreCase)
                        ? directory + Path.DirectorySeparatorChar
@@ -79,9 +79,9 @@ namespace WebGrease.Extensions
                 throw new ArgumentNullException("pathToConvert");
             }
 
-            if (string.IsNullOrWhiteSpace(pathToConvertFrom))
+            if (pathToConvertFrom.IsNullOrWhitespace())
             {
-                throw new ArgumentNullException("pathToConvertFrom");
+                return null;
             }
 
             var inputDirectorySeparator = Path.DirectorySeparatorChar;
@@ -143,7 +143,7 @@ namespace WebGrease.Extensions
                 return absolutePath;
             }
 
-            relativeTo = relativeTo.EnsureEndSeperatorChar();
+            relativeTo = relativeTo.EnsureEndSeparator();
             return new Uri(relativeTo).MakeRelativeUri(new Uri(absolutePath)).ToString().Replace("/", @"\");
         }
 

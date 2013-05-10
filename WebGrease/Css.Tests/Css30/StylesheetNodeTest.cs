@@ -12,6 +12,8 @@ namespace Css.Tests.Css30
 {
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease.Css;
     using WebGrease.Css.Ast;
@@ -47,6 +49,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for important selectors</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void ImportantTest()
         {
             const string FileName = @"important.css";
@@ -61,6 +64,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for gradient</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void GradientTest()
         {
             const string FileName = @"gradient.css";
@@ -75,6 +79,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for data uri</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void DataUriTest()
         {
             const string FileName = @"datauri.css";
@@ -90,6 +95,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for background</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void BackgroundTest()
         {
             const string FileName = @"background.css";
@@ -105,6 +111,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for border</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void BorderTest()
         {
             const string FileName = @"border.css";
@@ -120,6 +127,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for colors</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void ColorsTest()
         {
             const string FileName = @"colors.css";
@@ -135,6 +143,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for font face</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void FontFaceTest()
         {
             const string FileName = @"fontface.css";
@@ -150,6 +159,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for @-wg-dpi</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void Dpi()
         {
             const string FileName = @"dpi.css";
@@ -165,6 +175,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for animations</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void AnimationsTest()
         {
             const string FileName = @"animations.css";
@@ -325,6 +336,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for charset string</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void CharSetStringTest()
         {
             var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, @"charset1.css")));
@@ -342,6 +354,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for imports</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void ImportTest()
         {
             const string FileName = @"import1.css";
@@ -403,6 +416,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for namespaces</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void NamespaceTest()
         {
             const string FileName = @"namespace.css";
@@ -451,6 +465,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for media</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void MediaTest()
         {
             const string FileName = @"media1.css";
@@ -623,6 +638,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for @media with nested @page rules</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void MediaWithPageTest()
         {
             const string FileName = @"media2.css";
@@ -650,6 +666,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for @document rules</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void DocumentTest()
         {
             const string FileName = @"document.css";
@@ -669,6 +686,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for page</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void PageTest()
         {
             const string FileName = @"page1.css";
@@ -729,6 +747,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for all selectors</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void SelectorAllTest()
         {
             const string FileName = "selectorall.css";
@@ -742,6 +761,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for simple selector</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void SelectorElementNameTest()
         {
             const string FileName = "selectorelementname.css";
@@ -1124,6 +1144,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for simple selector with hash</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void SelectorElementNameAndHashTest()
         {
             const string FileName = @"selectorelementnameandhash.css";
@@ -1347,6 +1368,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for simple selector with class</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void SelectorElementNameAndClassTest()
         {
             const string FileName = @"selectorelementnameandclass.css";
@@ -1414,6 +1436,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for simple selector with attribute</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void SelectorElementNameAndAttribTest()
         {
             const string FileName = @"selectorelementnameandattrib.css";
@@ -1834,6 +1857,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for simple selector with negation</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void SelectorElementNameAndNegationTest()
         {
             const string FileName = @"selectorelementnameandnegation.css";
@@ -2062,6 +2086,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for simple selector with pseudo</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void SelectorElementNameAndPseudoTest()
         {
             const string FileName = @"selectorelementnameandpseudo.css";
@@ -2516,6 +2541,7 @@ namespace Css.Tests.Css30
 
         /// <summary>Declaration with number term test.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void DeclarationWithNumberTermTest()
         {
             const string FileName = @"declarationwithnumberterm.css";
@@ -2783,6 +2809,7 @@ namespace Css.Tests.Css30
 
         /// <summary>Declaration with multiple number term test.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void DeclarationWithMultipleNumberTermTest()
         {
             const string FileName = @"declarationwithmultiplenumberterm.css";
@@ -2876,6 +2903,7 @@ namespace Css.Tests.Css30
 
         /// <summary>Declaration with string term test.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void DeclarationWithStringTermTest()
         {
             const string FileName = @"declarationwithstringterm.css";
@@ -2979,6 +3007,7 @@ namespace Css.Tests.Css30
 
         /// <summary>Declaration with hex term test.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void DeclarationWithHexTermTest()
         {
             const string FileName = @"declarationwithhexterm.css";
@@ -3023,6 +3052,7 @@ namespace Css.Tests.Css30
 
         /// <summary>Declaration with func term test.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void DeclarationWithFuncTermTest()
         {
             const string FileName = @"declarationwithfuncterm.css";
@@ -3134,6 +3164,7 @@ namespace Css.Tests.Css30
 
         /// <summary>The ruleset, media, page unordered test.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void RulesetMediaPageUnorderedTest()
         {
             const string FileName = @"rulesetmediapageunordered.css";
@@ -3157,6 +3188,7 @@ namespace Css.Tests.Css30
         /// <summary>Test for various new functions.</summary>
         /// <remarks>Note that these are not currently parsed as specific lexical functions, just as generic function nodes</remarks>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void FunctionsTest()
         {
             const string FileName = @"functions.css";

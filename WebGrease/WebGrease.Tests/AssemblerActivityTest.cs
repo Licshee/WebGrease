@@ -16,6 +16,7 @@ namespace WebGrease.Tests
     using Activities;
     using Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using WebGrease.Preprocessing;
 
@@ -34,6 +35,9 @@ namespace WebGrease.Tests
 
         /// <summary>A test for only files in inputs.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.AssemblerActivity)]
+        [TestCategory(TestCategories.Preprocessing)]
+        [TestCategory(TestCategories.Sass)]
         public void WithPreprocessorFiles()
         {
             var preprocessingConfig = new PreprocessingConfig(XElement.Parse("<Preprocessing><Engines>sass</Engines></Preprocessing>"));
@@ -61,6 +65,8 @@ namespace WebGrease.Tests
 
         /// <summary>A test for only files in inputs.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.AssemblerActivity)]
+        [TestCategory(TestCategories.JavaScript)]
         public void OnlyFiles()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\AssemblerActivityTest");
@@ -81,6 +87,8 @@ namespace WebGrease.Tests
 
         /// <summary>A test for only directories in inputs.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.AssemblerActivity)]
+        [TestCategory(TestCategories.JavaScript)]
         public void OnlyDirectories()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\AssemblerActivityTest");
@@ -102,6 +110,8 @@ namespace WebGrease.Tests
 
         /// <summary>A test for directories with wild cards in inputs.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.AssemblerActivity)]
+        [TestCategory(TestCategories.JavaScript)]
         public void DirectoriesWithWildCards()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\AssemblerActivityTest");

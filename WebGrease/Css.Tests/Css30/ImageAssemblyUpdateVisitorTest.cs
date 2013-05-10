@@ -14,6 +14,8 @@ namespace Css.Tests.Css30
     using System.IO;
     using System.Xml.Linq;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease.Css;
     using WebGrease.Css.Ast;
@@ -48,6 +50,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for long background selectors which should be sprited.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyUpdateVisitor)]
         public void ImageUpdateVisitorLongDeclarationsTest()
         {
             const string FileName = @"imageupdatevisitorlongdeclarations.css";
@@ -66,6 +70,7 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for short background selectors which should be sprited.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void ImageUpdateVisitorShorthandDeclarationsTest()
         {
             const string FileName = @"imageupdatevisitorshorthanddeclarations.css";
@@ -84,6 +89,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for short and first position background selectors which should be sprited.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyUpdateVisitor)]
         public void ImageUpdateVisitorShorthandDeclarationsFirstPositionTest()
         {
             const string FileName = @"imageupdatevisitorshorthanddeclarationsfirstposition.css";
@@ -102,6 +109,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for short and second position background selectors which should be sprited.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyUpdateVisitor)]
         public void ImageUpdateVisitorShorthandDeclarationsSecondPositionTest()
         {
             const string FileName = @"imageupdatevisitorshorthanddeclarationssecondposition.css";
@@ -120,6 +129,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for using a different unit and scale factor.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyUpdateVisitor)]
         public void ImageUpdateVisitorRemTest()
         {
             const string FileName = @"imageupdatevisitorrem.css";
@@ -139,6 +150,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for using a different unit and scale factor.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyUpdateVisitor)]
         public void ImageUpdateVisitorDpiTest()
         {
             const string FileName = @"imageupdatevisitordpi.css";
@@ -158,6 +171,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for media background selectors which should be sprited.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyUpdateVisitor)]
         public void MediaTest()
         {
             const string FileName = @"media.css";
@@ -176,6 +191,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for page background selectors which should be sprited.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyUpdateVisitor)]
         public void PageTest()
         {
             const string FileName = @"page.css";

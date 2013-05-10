@@ -8,6 +8,8 @@ using Microsoft.Ajax.Utilities;
 
 namespace WebGrease.Tests
 {
+    using Microsoft.WebGrease.Tests;
+
     /// <summary>
     /// Encapsulates tests for validating that AjaxMin's direct features are available correctly.
     /// </summary>
@@ -19,6 +21,7 @@ namespace WebGrease.Tests
         /// </summary>
         /// <remarks>This is not meant to test AjaxMin's minification itself, much, just that integration is available from WebGrease</remarks>
         [TestMethod]
+        [TestCategory(TestCategories.AjaxMin)]
         public void MinifyCssWithAjaxMinTest()
         {
             var basicCssFilePath = Path.Combine(TestDeploymentPaths.TestDirectory, @"AjaxMin\Input\BasicTest.css");
@@ -37,6 +40,7 @@ namespace WebGrease.Tests
         /// </summary>
         /// <remarks>This is not meant to test AjaxMin's minification itself, much, just that integration is available from WebGrease</remarks>
         [TestMethod]
+        [TestCategory(TestCategories.AjaxMin)]
         public void MinifyCssWithAjaxMinErrorTest()
         {
             var errorCssFilePath = Path.Combine(TestDeploymentPaths.TestDirectory, @"AjaxMin\Input\ErrorReachedTest.css");
@@ -52,6 +56,7 @@ namespace WebGrease.Tests
         /// </summary>
         /// <remarks>This is not meant to test AjaxMin's minification itself, much, just that integration is available from WebGrease</remarks>
         [TestMethod]
+        [TestCategory(TestCategories.AjaxMin)]
         public void MinifyJSWithAjaxMinTest()
         {
             var jsFilePath = Path.Combine(TestDeploymentPaths.TestDirectory, @"AjaxMin\Input\BasicTest.js");
@@ -70,6 +75,7 @@ namespace WebGrease.Tests
         /// </summary>
         /// <remarks>This is not meant to test AjaxMin's minification itself, much, just that integration is available from WebGrease</remarks>
         [TestMethod]
+        [TestCategory(TestCategories.AjaxMin)]
         public void MinifyJSWithAjaxMinErrorTest()
         {
             var errorFilePath = Path.Combine(TestDeploymentPaths.TestDirectory, @"AjaxMin\Input\ErrorReachedTest.js");

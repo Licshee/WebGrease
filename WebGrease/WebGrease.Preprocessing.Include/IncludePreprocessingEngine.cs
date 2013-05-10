@@ -60,10 +60,10 @@ namespace WebGrease.Preprocessing.Include
         /// <summary>
         /// Determines if the processor can parse the filetype, always true for this engine.
         /// </summary>
-        /// <param name="fullFileName">The full filename</param>
+        /// <param name="contentItem">The full filename</param>
         /// <param name="preprocessConfig">The pre processing config</param>
         /// <returns>True if it can process it, otherwise false.</returns>
-        public bool CanProcess(string fullFileName, PreprocessingConfig preprocessConfig = null)
+        public bool CanProcess(ContentItem contentItem, PreprocessingConfig preprocessConfig = null)
         {
             return true;
         }
@@ -79,30 +79,31 @@ namespace WebGrease.Preprocessing.Include
         /// Processed the contents of the file and returns the processed content.
         /// returns null if anything went wrong, and reports any errors through the lot delegates.
         /// </summary>
-        /// <param name="fileContent">The content of the file.</param>
-        /// <param name="fullFileName">The full filename.</param>
+        /// <param name="contentItem">The content of the file.</param>
         /// <param name="preprocessingConfig">The pre processing configuration</param>
         /// <returns>The processed contents or null of an error occurred.</returns>
-        public string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessingConfig)
+        public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig)
         {
-            this.context.Measure.Start(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process, "WgInclude");
-            var wgincludeCacheImportsSection = this.context.Cache.BeginSection("wginclude", new FileInfo(fullFileName), preprocessingConfig);
+            this.context.Measure.Start(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude");
+            var wgincludeCacheImportsSection = this.context.Cache.BeginSection("wginclude", contentItem, preprocessingConfig);
             try
             {
-                var fi = new FileInfo(fullFileName);
-                var workingFolder = fi.DirectoryName;
-                if (!string.IsNullOrWhiteSpace(fileContent))
+                var workingFolder = this.context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);
+                var content = contentItem.Content;
+                if (string.IsNullOrWhiteSpace(content))
                 {
-                    fileContent = IncludeRegex.Replace(fileContent, match => ReplaceInputs(match, workingFolder, wgincludeCacheImportsSection));
+                    return contentItem;
                 }
 
-                wgincludeCacheImportsSection.Store();
-                return fileContent;
+                content = IncludeRegex.Replace(content, match => ReplaceInputs(match, workingFolder, wgincludeCacheImportsSection));
+                wgincludeCacheImportsSection.Save();
+
+                return ContentItem.FromContent(content, contentItem);
             }
             finally
             {
                 wgincludeCacheImportsSection.EndSection();
-                this.context.Measure.End(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process, "WgInclude");
+                this.context.Measure.End(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude");
             }
         }
 

@@ -61,13 +61,9 @@ namespace WebGrease.Preprocessing
             this.Initialize(webGreaseConfiguration.PreprocessingPluginPath, logManager, timeMeasure);
         }
 
-        #endregion
-
-        #region Public Methods and Operators
-
         /// <summary>Set the current context.</summary>
         /// <param name="webGreaseContext">The web grease context.</param>
-        public void SetContext(WebGreaseContext webGreaseContext)
+        internal void SetContext(WebGreaseContext webGreaseContext)
         {
             this.context = webGreaseContext;
 
@@ -83,24 +79,25 @@ namespace WebGrease.Preprocessing
         /// It will loop through all of them and then return the processed file.
         /// A null value returned by the preprocessors indicates an exceptipon has occurred, and we should break of processing.
         /// The plugins themselves will report the detailed error through the logError and logExtendedError actions.</summary>
-        /// <param name="fileContent">The file content.</param>
-        /// <param name="fullFileName">The full filename.</param>
+        /// <param name="contentItem">The content Item.</param>
         /// <param name="preprocessConfig">The preprocessing config.</param>
         /// <returns>If no preprocessors are found, the passed in file contents.
         /// Or the result of the pre processors, or null if there was an error while calling the preprocessors.</returns>
-        public string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessConfig)
+        internal ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessConfig)
         {
             // Select all the registered preprocessors that are named in the configguration in the order in which they appear in the config and are valid for this file type.
             this.context.Log.Information("Registered preprocessors to use: {0}".InvariantFormat(string.Join(";", preprocessConfig.PreprocessingEngines)));
-            var preprocessorsToUse = preprocessConfig.PreprocessingEngines
-                .SelectMany(ppe => this.registeredPreprocessingEngines.Where(rppe => rppe.Name.Equals(ppe)))
-                .Where(pptu => pptu.CanProcess(fullFileName, preprocessConfig));
+            var preprocessorsToUse = this.GetProcessors(contentItem, preprocessConfig);
+            if (!preprocessorsToUse.Any())
+            {
+                return contentItem;
+            }
 
             var preprocessCacheSection = 
                 preprocessorsToUse.Any() 
                     ? this.context.Cache.BeginSection(
-                        TimeMeasureNames.Preprocessing,
-                        new FileInfo(fullFileName),
+                        SectionIdParts.Preprocessing,
+                        contentItem,
                         new
                             {
                                 preprocessConfig,
@@ -110,12 +107,12 @@ namespace WebGrease.Preprocessing
 
             try
             {
-                if (preprocessorsToUse.Any() && preprocessCacheSection.CanBeRestoredFromCache())
+                if (preprocessCacheSection.CanBeRestoredFromCache())
                 {
-                    return preprocessCacheSection.RestoreContent(TimeMeasureNames.Preprocessing);
+                    return preprocessCacheSection.GetCachedContentItem(CacheFileCategories.PreprocessingResult);
                 }
 
-                this.context.Measure.Start(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process);
+                this.context.Measure.Start(SectionIdParts.Preprocessing, SectionIdParts.Process);
                 try
                 {
                     // Loop through each available engine that was also configured
@@ -125,31 +122,39 @@ namespace WebGrease.Preprocessing
                         this.context.Log.Information("preprocessing with: {0}".InvariantFormat(preprocessingEngine.Name));
 
                         // Get the new content
-                        var newContent = preprocessingEngine.Process(fileContent, fullFileName, preprocessConfig);
+                        contentItem = preprocessingEngine.Process(contentItem, preprocessConfig);
 
-                        // Only if the content is not null (empty is allowed) do we actually use the results.
-                        fileContent = newContent;
-
-                        if (fileContent == null)
+                        if (contentItem == null)
                         {
                             return null;
                         }
                     }
 
-                    preprocessCacheSection.AddResultContent(fileContent, TimeMeasureNames.Preprocessing);
-                    preprocessCacheSection.Store();
-
-                    return fileContent;
+                    preprocessCacheSection.AddResult(contentItem, CacheFileCategories.PreprocessingResult);
+                    preprocessCacheSection.Save();
+                    return contentItem;
                 }
                 finally
                 {
-                    this.context.Measure.End(TimeMeasureNames.Preprocessing, TimeMeasureNames.Process);
+                    this.context.Measure.End(SectionIdParts.Preprocessing, SectionIdParts.Process);
                 }
             }
             finally
             {
                 preprocessCacheSection.EndSection();
             }
+        }
+
+        /// <summary>The get processors.</summary>
+        /// <param name="contentItem">The content item.</param>
+        /// <param name="preprocessConfig">The preprocess config.</param>
+        /// <returns>The list of preprocessors that applies to the content item.</returns>
+        internal IPreprocessingEngine[] GetProcessors(ContentItem contentItem, PreprocessingConfig preprocessConfig)
+        {
+            return preprocessConfig.PreprocessingEngines
+                                   .SelectMany(ppe => this.registeredPreprocessingEngines.Where(rppe => rppe.Name.Equals(ppe, StringComparison.OrdinalIgnoreCase)))
+                                   .Where(pptu => pptu.CanProcess(contentItem, preprocessConfig))
+                                   .ToArray();
         }
 
         #endregion
@@ -162,7 +167,7 @@ namespace WebGrease.Preprocessing
         /// <param name="timeMeasure">The time Measure.</param>
         private void Initialize(string pluginPath, LogManager logManager, ITimeMeasure timeMeasure)
         {
-            timeMeasure.Start(TimeMeasureNames.Preprocessing, TimeMeasureNames.Initialize);
+            timeMeasure.Start(SectionIdParts.Preprocessing, SectionIdParts.Initialize);
             logManager.Information("preprocessing initialize start; from plugin path: {0}".InvariantFormat(pluginPath));
 
             // If no plugin path was provided, we use the assembly path.
@@ -210,7 +215,7 @@ namespace WebGrease.Preprocessing
             }
 
             logManager.Information("preprocessing initialize end;");
-            timeMeasure.End(TimeMeasureNames.Preprocessing, TimeMeasureNames.Initialize);
+            timeMeasure.End(SectionIdParts.Preprocessing, SectionIdParts.Initialize);
         }
     }
 }

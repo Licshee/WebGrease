@@ -12,6 +12,8 @@ namespace Css.Tests.Css30
     using System;
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease.Css;
 
@@ -21,6 +23,7 @@ namespace Css.Tests.Css30
     {
         /// <summary>A test for site parsing various site css.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void ParseTest()
         {
             var directoryName = Path.Combine(TestDeploymentPaths.TestDirectory, @"css.tests\css21\sites");

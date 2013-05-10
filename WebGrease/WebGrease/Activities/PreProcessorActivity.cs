@@ -5,10 +5,8 @@
 // ----------------------------------------------------------------------------------------------------
 namespace WebGrease.Activities
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Text;
 
     using WebGrease.Configuration;
     using WebGrease.Extensions;
@@ -33,28 +31,18 @@ namespace WebGrease.Activities
 
         #region Properties
 
-        /// <summary>
-        /// The default extension of the type of files to process (js / css)
-        /// </summary>
-        internal string DefaultExtension { get; set; }
-
         /// <summary>Gets the list of inputs which need to be assembled.</summary>
-        internal List<InputSpec> Inputs { get; set; }
+        internal List<InputSpec> Inputs { get; private set; }
 
         /// <summary>
         /// The folder to output the results to
         /// </summary>
-        internal string OutputFolder { get; set; }
+        internal string OutputFolder { private get; set; }
 
         /// <summary>
         /// The preprocessing configuration
         /// </summary>
-        internal PreprocessingConfig PreprocessingConfig { get; set; }
-
-        /// <summary>
-        /// If the activity needs to use hashed filenames or not.
-        /// </summary>
-        internal bool UseHashedFileNames { get; set; }
+        internal PreprocessingConfig PreprocessingConfig { private get; set; }
 
         #endregion
 
@@ -62,10 +50,11 @@ namespace WebGrease.Activities
 
         /// <summary>The execute.</summary>
         /// <returns>The list of processed files.</returns>
-        internal IEnumerable<string> Execute()
+        internal IEnumerable<ContentItem> Execute()
         {
-            var preprocessedFiles = new List<string>();
-            foreach (var file in this.Inputs.GetFiles(context.Configuration.SourceDirectory))
+            var preprocessedFiles = new List<ContentItem>();
+            var sourceDirectory = this.context.Configuration.SourceDirectory;
+            foreach (var file in this.Inputs.GetFiles(sourceDirectory))
             {
                 var fi = new FileInfo(file);
                 if (!fi.Exists)
@@ -78,35 +67,18 @@ namespace WebGrease.Activities
                     Directory.CreateDirectory(this.OutputFolder);
                 }
 
-                var content = File.ReadAllText(file);
-                content = this.context.Preprocessing.Process(content, file, this.PreprocessingConfig);
-                if (content == null)
+                var contentItem = ContentItem.FromFile(file, file.MakeRelativeToDirectory(sourceDirectory));
+
+                contentItem = this.context.Preprocessing.Process(contentItem, this.PreprocessingConfig);
+                if (contentItem == null)
                 {
                     throw new WorkflowException("An error occurred while processing the file: " + file);
                 }
 
-                var targetFile = this.GetTargetFile(fi);
-                File.WriteAllText(targetFile, content, Encoding.UTF8);
-                preprocessedFiles.Add(targetFile);
+                preprocessedFiles.Add(contentItem);
             }
 
             return preprocessedFiles;
-        }
-
-        /// <summary>Gets the target file.</summary>
-        /// <param name="fi">The file info</param>
-        /// <returns>The file</returns>
-        private string GetTargetFile(FileSystemInfo fi)
-        {
-            if (this.UseHashedFileNames)
-            {
-                return Path.Combine(
-                    this.OutputFolder, Guid.NewGuid().ToString().Replace("-", string.Empty) + "." + this.DefaultExtension.Trim('.'));
-            }
-
-            return fi.Extension.Trim('.').Equals(this.DefaultExtension.Trim('.'), StringComparison.OrdinalIgnoreCase)
-                       ? Path.Combine(this.OutputFolder, fi.Name + ".processed." + this.DefaultExtension.Trim('.'))
-                       : Path.Combine(this.OutputFolder, fi.Name + "." + this.DefaultExtension.Trim('.'));
         }
 
         #endregion

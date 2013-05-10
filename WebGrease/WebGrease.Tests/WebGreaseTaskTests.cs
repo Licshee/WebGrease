@@ -19,6 +19,7 @@ namespace WebGrease.Tests
 
     using Microsoft.Build.Framework;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using Moq;
 
@@ -39,6 +40,8 @@ namespace WebGrease.Tests
 
         /// <summary>A test for the everything build task.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.WebGreaseTask)]
+        [TestCategory(TestCategories.EverythingActivity)]
         public void MsBuildTaskEverythingTest()
         {
             var outputs = ExecuteEverythingBuildTask("test1");
@@ -48,7 +51,10 @@ namespace WebGrease.Tests
             Assert.IsTrue(output.Contains("\r\n"));
         }
 
+        /// <summary>The ms build task remove selectors.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.WebGreaseTask)]
+        [TestCategory(TestCategories.EverythingActivity)]
         public void MsBuildTaskRemoveSelectors()
         {
             var errorEventArgs = new List<BuildErrorEventArgs>();
@@ -72,7 +78,12 @@ namespace WebGrease.Tests
             Assert.IsTrue(output.Contains("#toc .heading.slate,#toc .heading.slate a{font-size:12px"));
         }
 
+        /// <summary>The ms build task sass error.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.WebGreaseTask)]
+        [TestCategory(TestCategories.EverythingActivity)]
+        [TestCategory(TestCategories.Preprocessing)]
+        [TestCategory(TestCategories.Sass)]
         public void MsBuildTaskSassError()
         {
             var errorEventArgs = new List<BuildErrorEventArgs>();
@@ -89,7 +100,10 @@ namespace WebGrease.Tests
             Assert.IsTrue(errorEventArgs[0].Message.Contains("File to import not found or unreadable: vars.scss"));
         }
 
+        /// <summary>The ms build task assembletest.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.WebGreaseTask)]
+        [TestCategory(TestCategories.EverythingActivity)]
         public void MsBuildTaskAssembletest()
         {
             var outputFolder = ExecuteBuildTask("Bundle", @"WebGrease.Tests\WebGreaseTask\Test2");
@@ -106,6 +120,10 @@ namespace WebGrease.Tests
             Assert.IsTrue(output1.Contains(".asome {"));
         }
 
+        /// <summary>The execute everything build task.</summary>
+        /// <param name="testName">The test name.</param>
+        /// <param name="errorEventArgs">The error event args.</param>
+        /// <returns>The resulting css files.</returns>
         private static Dictionary<string, string> ExecuteEverythingBuildTask(string testName, List<BuildErrorEventArgs> errorEventArgs = null)
         {
             errorEventArgs = errorEventArgs ?? new List<BuildErrorEventArgs>();
@@ -118,6 +136,12 @@ namespace WebGrease.Tests
             return outputs.Select(o => (string)o).ToDictionary(o => o, o => File.ReadAllText(testRootPath + o));
         }
 
+        /// <summary>The execute build task.</summary>
+        /// <param name="activity">The activity.</param>
+        /// <param name="rootFolderForTest">The root folder for test.</param>
+        /// <param name="errorAction">The error action.</param>
+        /// <param name="configType">The config type.</param>
+        /// <returns>The <see cref="string"/>.</returns>
         private static string ExecuteBuildTask(string activity, string rootFolderForTest, Action<BuildErrorEventArgs> errorAction = null, string configType = null)
         {
             var buildEngineMock = new Mock<IBuildEngine>();
@@ -182,21 +206,29 @@ namespace WebGrease.Tests
             return buildTask.RootOutputPath;
         }
 
+        /// <summary>The log custom event.</summary>
+        /// <param name="e">The e.</param>
         private static void LogCustomEvent(CustomBuildEventArgs e)
         {
             Console.WriteLine("Custom :" + e.Message);
         }
 
+        /// <summary>The log warning event.</summary>
+        /// <param name="e">The e.</param>
         private static void LogWarningEvent(BuildWarningEventArgs e)
         {
             Console.WriteLine("Warning :" + e.Message);
         }
 
+        /// <summary>The log message event.</summary>
+        /// <param name="e">The e.</param>
         private static void LogMessageEvent(BuildMessageEventArgs e)
         {
             Console.WriteLine("Message :" + e.Message);
         }
 
+        /// <summary>The log error event.</summary>
+        /// <param name="e">The e.</param>
         private static void LogErrorEvent(BuildErrorEventArgs e)
         {
             Console.WriteLine("Error :" + e.Message);

@@ -19,6 +19,7 @@ namespace WebGrease.Tests
     using Activities;
     using Css.ImageAssemblyAnalysis;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using WebGrease.Configuration;
     using WebGrease.Css;
@@ -40,6 +41,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css pipeline for property exclusion.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
         public void CssExcludePropertiesTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
@@ -60,6 +62,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css pipeline for lower case validation.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
         public void CssLowerCaseValidationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
@@ -79,6 +82,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css pipeline for hack selectors.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
         public void CssHackSelectorsTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
@@ -107,6 +111,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css pipeline for banned selectors.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
         public void CssBannedSelectorsTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
@@ -130,6 +135,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css optimization.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
         public void CssOptimizationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
@@ -150,6 +156,8 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css sprite.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        [TestCategory(TestCategories.Spriting)]
         public void CssImageSpriteTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
@@ -204,6 +212,8 @@ namespace WebGrease.Tests
 
         /// <summary>A test for Css sprite.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        [TestCategory(TestCategories.Spriting)]
         public void CssImageSpriteTest2()
         {
             var sourceDirectory = Path.Combine(
@@ -234,15 +244,14 @@ namespace WebGrease.Tests
 
             Assert.IsTrue(File.Exists(mapFilePath));
             // verify our test file is in the xml file and get the source folder and assembled file name.
-            string relativePath;
             using (var fs = File.OpenRead(mapFilePath))
             {
                 var mapFile = XDocument.Load(fs);
-                var inputElement = mapFile.Root.Descendants()
+                mapFile.Root.Descendants()
                     // get at the input elements
-                    .Descendants().Where(e => e.Name == "input")
+                       .Descendants().Where(e => e.Name == "input")
                     // now at the source file name
-                    .Descendants().FirstOrDefault(i => i.Name == "originalfile" && i.Value.Contains(testImage));
+                       .Descendants().FirstOrDefault(i => i.Name == "originalfile" && i.Value.Contains(testImage));
             }
 
             // Minified result

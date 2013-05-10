@@ -54,7 +54,8 @@ namespace WebGrease
 
         /// <summary>The start.</summary>
         /// <param name="idParts">The id parts.</param>
-        public void Start(params string[] idParts)
+        /// <returns>The id.</returns>
+        public string Start(params string[] idParts)
         {
             var id = GetId(idParts);
             if (this.timers.Any(t => t.Id.Equals(id)))
@@ -64,6 +65,7 @@ namespace WebGrease
 
             this.PauseLastTimer();
             this.timers.Add(new TimeMeasureItem(id, DateTime.Now));
+            return id;
         }
 
         /// <summary>The end.</summary>
@@ -105,14 +107,14 @@ namespace WebGrease
             measurements.Last().Add(sectionMeasurements);
         }
 
-        public void WriteResults(string filePathWithoutExtension, string title, DateTime utcStart)
+        public void WriteResults(string filePathWithoutExtension, string title, DateTimeOffset utcStart)
         {
             var timeMeasureResults = GetResults();
 
             File.WriteAllText(
                 filePathWithoutExtension + ".measure.txt",
                 GetMeasureTable(title, timeMeasureResults)
-                    + "\r\nTotal seconds: {0}".InvariantFormat((DateTime.UtcNow - utcStart).TotalSeconds));
+                    + "\r\nTotal seconds: {0}".InvariantFormat((DateTimeOffset.Now - utcStart).TotalSeconds));
 
             File.WriteAllText(
                 filePathWithoutExtension + ".measure.csv",

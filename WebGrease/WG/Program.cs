@@ -207,7 +207,7 @@ namespace WebGrease
                 hasher.LogFileName = Path.Combine(context.Configuration.LogsDirectory, Strings.JsLogFile);
                 foreach (var fileSet in context.Configuration.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
                 {
-                    var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Autonaming, context.Configuration.ConfigType);
+                    var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.AutoNaming, context.Configuration.ConfigType);
 
                     if (jsConfig.ShouldAutoName)
                     {

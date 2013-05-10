@@ -26,7 +26,7 @@ namespace WebGrease.Configuration
         /// the global settings, thereby completely replacing the default list of locales
         /// with the local set.
         /// </summary>
-        private bool usingFileSetLocales;
+        private readonly bool usingFileSetLocales;
 
         /// <summary>
         /// This flag is used to determine whether we are using the local file-set
@@ -35,7 +35,7 @@ namespace WebGrease.Configuration
         /// the global settings, thereby completely replacing the default list of themes
         /// with the local set.
         /// </summary>
-        private bool usingFileSetThemes;
+        private readonly bool usingFileSetThemes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CssFileSet"/> class.
@@ -55,59 +55,6 @@ namespace WebGrease.Configuration
         /// <summary>
         /// Initializes a new instance of the <see cref="CssFileSet"/> class.
         /// </summary>
-        /// <param name="defaultLocales">The default set of locales.</param>
-        /// <param name="defaultMinification">The default set of minification configs.</param>
-        /// <param name="defaultSpriting">The default set of spriting configs.</param>
-        /// <param name="defaultThemes">The default set of themes.</param>
-        /// <param name="defaultPreprocessing">The default pre processing config.</param>
-        internal CssFileSet(IList<string> defaultLocales, IDictionary<string, CssMinificationConfig> defaultMinification, IDictionary<string, CssSpritingConfig> defaultSpriting, IList<string> defaultThemes, PreprocessingConfig defaultPreprocessing)
-            : this()
-        {
-            // if we were given a default set of locales, add them to the list
-            if (defaultLocales != null && defaultLocales.Count > 0)
-            {
-                foreach (var locale in defaultLocales)
-                {
-                    this.Locales.Add(locale);
-                }
-            }
-
-            // if we were given a default set of themes, add them to the list
-            if (defaultThemes != null && defaultThemes.Count > 0)
-            {
-                foreach (var theme in defaultThemes)
-                {
-                    this.Themes.Add(theme);
-                }
-            }
-
-            // if we were given a default set of minification configs, copy them now
-            if (defaultMinification != null && defaultMinification.Count > 0)
-            {
-                foreach (var configuration in defaultMinification.Keys)
-                {
-                    this.Minification[configuration] = defaultMinification[configuration];
-                }
-            }
-
-            // if we were given a default set of spriting configs, copy them now
-            if (defaultSpriting != null && defaultSpriting.Count > 0)
-            {
-                foreach (var configuration in defaultSpriting.Keys)
-                {
-                    this.ImageSpriting[configuration] = defaultSpriting[configuration];
-                }
-            }
-
-            if (defaultPreprocessing != null)
-            {
-                this.Preprocessing = defaultPreprocessing;
-            }
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CssFileSet"/> class.
-        /// </summary>
         /// <param name="cssFileSetElement">config element containing info for a set of css files</param>
         /// <param name="sourceDirectory">The base directory.</param>
         /// <param name="defaultLocales">The default set of locales.</param>
@@ -120,9 +67,6 @@ namespace WebGrease.Configuration
         {
             Contract.Requires(cssFileSetElement != null);
             Contract.Requires(!string.IsNullOrWhiteSpace(sourceDirectory));
-
-            var nameAttribute = cssFileSetElement.Attribute("name");
-            this.Name = nameAttribute != null ? nameAttribute.Value : string.Empty;
 
             var outputAttribute = cssFileSetElement.Attribute("output");
             this.Output = outputAttribute != null ? outputAttribute.Value : string.Empty;
@@ -169,6 +113,7 @@ namespace WebGrease.Configuration
                                 this.Locales.Add(locale.Trim());
                             }
                         }
+
                         break;
                     case "Themes":
                         if (!this.usingFileSetThemes)
@@ -187,6 +132,7 @@ namespace WebGrease.Configuration
                                 this.Themes.Add(theme.Trim());
                             }
                         }
+
                         break;
                     case "Inputs":
                         foreach (var inputElement in element.Descendants())
@@ -197,27 +143,70 @@ namespace WebGrease.Configuration
                                 this.InputSpecs.Add(input);
                             }
                         }
+
                         break;
                 }
             }
         }
 
-        /// <summary>Gets the themes.</summary>
-        internal IList<string> Themes { get; private set; }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CssFileSet"/> class.
+        /// </summary>
+        /// <param name="defaultLocales">The default set of locales.</param>
+        /// <param name="defaultMinification">The default set of minification configs.</param>
+        /// <param name="defaultSpriting">The default set of spriting configs.</param>
+        /// <param name="defaultThemes">The default set of themes.</param>
+        /// <param name="defaultPreprocessing">The default pre processing config.</param>
+        private CssFileSet(IList<string> defaultLocales, IDictionary<string, CssMinificationConfig> defaultMinification, IDictionary<string, CssSpritingConfig> defaultSpriting, IList<string> defaultThemes, PreprocessingConfig defaultPreprocessing)
+            : this()
+        {
+            // if we were given a default set of locales, add them to the list
+            if (defaultLocales != null && defaultLocales.Count > 0)
+            {
+                foreach (var locale in defaultLocales)
+                {
+                    this.Locales.Add(locale);
+                }
+            }
+
+            // if we were given a default set of themes, add them to the list
+            if (defaultThemes != null && defaultThemes.Count > 0)
+            {
+                foreach (var theme in defaultThemes)
+                {
+                    this.Themes.Add(theme);
+                }
+            }
+
+            // if we were given a default set of minification configs, copy them now
+            if (defaultMinification != null && defaultMinification.Count > 0)
+            {
+                foreach (var configuration in defaultMinification.Keys)
+                {
+                    this.Minification[configuration] = defaultMinification[configuration];
+                }
+            }
+
+            // if we were given a default set of spriting configs, copy them now
+            if (defaultSpriting != null && defaultSpriting.Count > 0)
+            {
+                foreach (var configuration in defaultSpriting.Keys)
+                {
+                    this.ImageSpriting[configuration] = defaultSpriting[configuration];
+                }
+            }
+
+            if (defaultPreprocessing != null)
+            {
+                this.Preprocessing = defaultPreprocessing;
+            }
+        }
 
         /// <summary>Gets the locales.</summary>
         public IList<string> Locales { get; private set; }
 
-        /// <summary>Gets the dictionary of configurations.</summary>
-        internal IDictionary<string, CssMinificationConfig> Minification { get; private set; }
-
         /// <summary>Gets the preprocessing configuration.</summary>
         public PreprocessingConfig Preprocessing { get; private set; }
-
-        /// <summary>
-        /// Gets the dictionary of spriting configurations.
-        /// </summary>
-        internal IDictionary<string, CssSpritingConfig> ImageSpriting { get; private set; }
 
         /// <summary>
         /// Gets the dictionary of auto naming configs
@@ -229,13 +218,21 @@ namespace WebGrease.Configuration
         /// </summary>
         public IDictionary<string, BundlingConfig> Bundling { get; private set; }
 
-        /// <summary>Gets the name of the set.</summary>
-        public string Name { get; set; }
-
         /// <summary>Gets the output specified.</summary>
         public string Output { get; set; }
 
         /// <summary>Gets the list of <see cref="InputSpec"/> items specified.</summary>
         public IList<InputSpec> InputSpecs { get; private set; }
+
+        /// <summary>Gets the themes.</summary>
+        internal IList<string> Themes { get; private set; }
+
+        /// <summary>Gets the dictionary of configurations.</summary>
+        internal IDictionary<string, CssMinificationConfig> Minification { get; private set; }
+
+        /// <summary>
+        /// Gets the dictionary of spriting configurations.
+        /// </summary>
+        internal IDictionary<string, CssSpritingConfig> ImageSpriting { get; private set; }
     }
 }

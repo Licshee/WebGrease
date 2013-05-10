@@ -93,6 +93,7 @@
     <Compile Include="IncludeEngineTest.cs" />
     <Compile Include="CacheTests.cs" />
     <Compile Include="TestCategories.cs" />
+    <Compile Include="WebGreaseContextTests.cs" />
     <Compile Include="WebGreaseTaskTests.cs" />
     <Compile Include="MainActivityTest.cs" />
     <Compile Include="MinifyCssTests.cs" />

@@ -632,6 +632,10 @@
     <Shadow Include="Test References\WebGrease.accessor" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\WebGrease.Tests\WebGrease.Tests.csproj">
+      <Project>{6257263E-2961-41FC-A8FA-634CFA859E75}</Project>
+      <Name>WebGrease.Tests</Name>
+    </ProjectReference>
     <ProjectReference Include="..\WebGrease\WebGrease.csproj">
       <Project>{E853D38C-EFD5-495E-853B-69FFE19FA199}</Project>
       <Name>WebGrease</Name>

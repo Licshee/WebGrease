@@ -12,9 +12,12 @@ namespace WebGrease.Tests
     using System;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
+
     using Activities;
     using Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     /// <summary>The web grease configuration root test.</summary>
     [TestClass]
@@ -28,6 +31,8 @@ namespace WebGrease.Tests
 
         /// <summary>A test for WebGrease Debug Integration</summary>
         [TestMethod]
+        [TestCategory(TestCategories.EverythingActivity)]
+        [TestCategory(TestCategories.WebGreaseTask)]
         public void MainActivityDebugIntegrationTest()
         {
             var testSourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MainActivityTest");
@@ -61,26 +66,25 @@ namespace WebGrease.Tests
             var toolsTemp = Path.Combine(toolsLogs, "ToolsTemp");
             Assert.IsTrue(Directory.Exists(toolsTemp));
 
-            // Verify the Assembled Statics
+            // Verify the Assembled Statics happened in memory
             var staticAssemblerOutput = Path.Combine(toolsTemp, "StaticAssemblerOutput");
-            Assert.IsTrue(Directory.Exists(staticAssemblerOutput));
+            Assert.IsFalse(Directory.Exists(staticAssemblerOutput));
 
-            // Verify the JS resources expansion
+            // Verify the JS resources expansion happened in memory
             var jsExpandResourcesOutput = Path.Combine(toolsTemp, "JSLocalizedOutput");
-            Assert.IsTrue(Directory.Exists(jsExpandResourcesOutput));
+            Assert.IsFalse(Directory.Exists(jsExpandResourcesOutput));
 
-            // Verify the css resources expansion
+            // Verify the css resources expansion happened in memory, should contain no css files
             var cssExpandResourcesOutput = Path.Combine(toolsTemp, "CssLocalizedOutput");
-            Assert.IsTrue(Directory.Exists(cssExpandResourcesOutput));
+            Assert.IsFalse(Directory.Exists(cssExpandResourcesOutput));
 
             // Verify the logs
-            var cssLog = Path.Combine(toolsLogs, "css_log.xml");
-            Assert.IsTrue(File.Exists(cssLog));
-            var jsLog = Path.Combine(toolsLogs, "js_log.xml");
-            Assert.IsTrue(File.Exists(Path.Combine(toolsLogs, jsLog)));
-            var imagesLog = Path.Combine(toolsLogs, "images_log.xml");
-            Assert.IsTrue(File.Exists(Path.Combine(toolsLogs, imagesLog)));
-            Assert.IsTrue(Directory.Exists(Path.Combine(toolsLogs, "ToolsTemp", "Resources")));
+            Assert.IsTrue(File.Exists(Path.Combine(toolsLogs, "css_log.xml")));
+            Assert.IsTrue(File.Exists(Path.Combine(toolsLogs, "js_log.xml")));
+            Assert.IsTrue(File.Exists(Path.Combine(toolsLogs, "images_log.xml")));
+
+            // Happens in memory
+            Assert.IsFalse(Directory.Exists(Path.Combine(toolsLogs, "ToolsTemp", "Resources")));
 
             //// Verify generated statics
             Assert.IsTrue(Directory.Exists(Path.Combine(sc, "css")));

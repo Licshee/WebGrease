@@ -15,6 +15,8 @@ namespace Css.Tests.Css30
     using System.Globalization;
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease.Css;
     using WebGrease.Css.Ast;
@@ -47,6 +49,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for background selectors which should be sprited.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
         public void SpritingCandidatesTest()
         {
             const string FileName = @"spritingcandidates.css";
@@ -67,6 +71,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for background selectors which should be sprited with ignore.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
         public void SpritingCandidatesWithIgnoreTest()
         {
             const string FileName = @"spritingcandidateswithignore.css";
@@ -89,6 +95,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for background selectors which should be sprited with buckets.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
         public void SpritingCandidatesWithBucketsTest()
         {
             const string FileName = @"spritingcandidateswithbuckets.css";
@@ -139,6 +147,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for background selectors with duplicate declaration.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
         public void RepeatedPropertyNameExceptionTest()
         {
             const string FileName = @"repeatedpropertynameexception.css";
@@ -159,6 +169,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for duplicate background format exception.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
         public void DuplicateBackgroundFormatExceptionTest()
         {
             const string FileName = @"duplicatebackgroundformatexception.css";
@@ -179,6 +191,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for duplicate image references with different rules.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
         public void DuplicateImageReferenceWithDifferentRulesExceptionTest()
         {
             const string FileName = @"duplicateimagereferencewithdifferentrulesexception.css";
@@ -199,6 +213,8 @@ namespace Css.Tests.Css30
 
         /// <summary>A test for too many lengths on background node.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
         public void TooManyLengthsExceptionTest()
         {
             const string FileName = @"toomanylengthsexception.css";

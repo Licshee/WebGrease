@@ -40,12 +40,44 @@ namespace WebGrease
         PreprocessingManager Preprocessing { get; }
 
         /// <summary>Gets the session start time.</summary>
-        DateTime SessionStartTime { get; }
+        DateTimeOffset SessionStartTime { get; }
 
         #endregion
 
         #region Public Methods and Operators
 
+
+        /// <summary>Starts a section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="varByContentItem">The var by content item.</param>
+        /// <param name="varBySettings">The var by settings.</param>
+        /// <param name="skipable">If the section is skippable.</param>
+        /// <param name="sectionAction">The section action.</param>
+        /// <returns>The success</returns>
+        bool Section(string[] idParts, ContentItem varByContentItem, object varBySettings, bool skipable, Func<ICacheSection, bool> sectionAction);
+
+        /// <summary>Starts a section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="sectionAction">The section action.</param>
+        /// <returns>The Success</returns>
+        bool Section(string[] idParts, Func<string, bool> sectionAction);
+
+        /// <summary>Starts a section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="varBySettings">The var by settings.</param>
+        /// <param name="skipable">If the section is skippable.</param>
+        /// <param name="sectionAction">The section action.</param>
+        /// <returns>The Success</returns>
+        bool Section(string[] idParts, object varBySettings, bool skipable, Func<ICacheSection, bool> sectionAction);
+
+        /// <summary>Starts a section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="varByContentItem">The var by content item.</param>
+        /// <param name="skipable">If the section is skippable.</param>
+        /// <param name="sectionAction">The section action.</param>
+        /// <returns>The Success</returns>
+        bool Section(string[] idParts, ContentItem varByContentItem, bool skipable, Func<ICacheSection, bool> sectionAction);
+        
         /// <summary>The clean cache.</summary>
         void CleanCache();
 
@@ -61,12 +93,17 @@ namespace WebGrease
         /// <param name="extensions">The extensions.</param>
         /// <param name="fileType">The file type.</param>
         /// <returns>The available files</returns>
-        IEnumerable<ResultFile> GetAvailableFiles(string rootDirectory, IList<string> directories, IList<string> extensions, FileTypes fileType);
+        IDictionary<string, string> GetAvailableFiles(string rootDirectory, IList<string> directories, IList<string> extensions, FileTypes fileType);
 
         /// <summary>The get content hash.</summary>
-        /// <param name="content">The content.</param>
+        /// <param name="value">The content.</param>
         /// <returns>The <see cref="string"/>.</returns>
-        string GetContentHash(string content);
+        string GetValueHash(string value);
+
+        /// <summary>The get content hash.</summary>
+        /// <param name="contentItem">The content.</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        string GetContentItemHash(ContentItem contentItem);
 
         /// <summary>The get file hash.</summary>
         /// <param name="filePath">The file path.</param>
@@ -78,6 +115,11 @@ namespace WebGrease
         /// <param name="relativePath">The relative path.</param>
         /// <returns>The <see cref="string"/>.</returns>
         string MakeRelative(string absolutePath, string relativePath = null);
+
+        /// <summary>Make a path absolute to source directory.</summary>
+        /// <param name="relativePath">The relative path.</param>
+        /// <returns>The absolute path.</returns>
+        string GetWorkingSourceDirectory(string relativePath);
 
         /// <summary>The touch.</summary>
         /// <param name="filePath">The file path.</param>

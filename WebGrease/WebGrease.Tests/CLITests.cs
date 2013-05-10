@@ -10,12 +10,15 @@ namespace WebGrease.Tests
     using System.Xml.Linq;
     using Css;
 
+    using Microsoft.WebGrease.Tests;
+
     using WebGrease.Extensions;
 
     [TestClass]
     public class CLITests
     {
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void CLIUsageDisplayTest()
         {
             // unknown argument test
@@ -42,6 +45,7 @@ namespace WebGrease.Tests
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void CLIMinificationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\CLITests");
@@ -72,6 +76,7 @@ namespace WebGrease.Tests
 
 
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void CLIRelativePathMinificationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\CLITests");
@@ -106,6 +111,7 @@ namespace WebGrease.Tests
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void CLIValidationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyJSActivityTest");
@@ -123,6 +129,7 @@ namespace WebGrease.Tests
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void CLIBundlingTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\AssemblerActivityTest");
@@ -144,6 +151,8 @@ namespace WebGrease.Tests
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
+        [TestCategory(TestCategories.FileHasherActivity)]
         public void CLIHashingTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\CLITests");
@@ -163,6 +172,7 @@ namespace WebGrease.Tests
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.CommandLine)]
         public void CLIImageSpriteTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\CLITests");

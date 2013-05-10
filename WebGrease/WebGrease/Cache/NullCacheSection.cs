@@ -19,6 +19,9 @@ namespace WebGrease
         /// <summary>The empty cache results.</summary>
         internal static readonly IEnumerable<CacheResult> EmptyCacheResults = new CacheResult[] { };
 
+        /// <summary>The empty cache results.</summary>
+        private static readonly IEnumerable<ContentItem> EmptyContentItems = new ContentItem[] { };
+
         /// <summary>The empty source dependencies.</summary>
         private static readonly IEnumerable<CacheSourceDependency> EmptySourceDependencies = new CacheSourceDependency[] { };
 
@@ -40,33 +43,11 @@ namespace WebGrease
 
         #region Public Methods and Operators
 
-        /// <summary>Adds an end result file from a filepath.</summary>
-        /// <param name="filePath">The file path.</param>
-        /// <param name="category">The category.</param>
-        public void AddEndResultFile(string filePath, string category)
-        {
-        }
-
         /// <summary>Adds an end result file from a result file.</summary>
-        /// <param name="resultFile">The result file.</param>
-        /// <param name="category">The category.</param>
-        public void AddEndResultFile(ResultFile resultFile, string category)
-        {
-        }
-
-        /// <summary>Add result content.</summary>
-        /// <param name="content">The content.</param>
-        /// <param name="category">The category.</param>
-        /// <param name="endResult">If it is an endresult.</param>
-        public void AddResultContent(string content, string category, bool endResult = false)
-        {
-        }
-
-        /// <summary>Adds a result file.</summary>
-        /// <param name="filePath">The file path.</param>
-        /// <param name="category">The category.</param>
-        /// <param name="relativePath">The relative path.</param>
-        public void AddResultFile(string filePath, string category, string relativePath = null)
+        /// <param name="contentItem">The result file.</param>
+        /// <param name="id">The category.</param>
+        /// <param name="isEndResult">If it is an endresult.</param>
+        public void AddResult(ContentItem contentItem, string id, bool isEndResult)
         {
         }
 
@@ -130,50 +111,44 @@ namespace WebGrease
             return EmptyCacheResults;
         }
 
-        /// <summary>Gets the cache results for the category recursively.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="endResultOnly">If it should return end results only.</param>
-        /// <returns>The cache results for the category.</returns>
-        public IEnumerable<CacheResult> GetResults(string category = null, bool endResultOnly = false)
-        {
-            return EmptyCacheResults;
-        }
-
-        /// <summary>Restores / Gets content from cache.</summary>
-        /// <param name="category">The category.</param>
-        /// <returns>The content from cache.</returns>
-        public string RestoreContent(string category)
+        /// <summary>Gets the cached content item.</summary>
+        /// <param name="fileCategory">The file category.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public ContentItem GetCachedContentItem(string fileCategory)
         {
             return null;
         }
 
-        /// <summary>Restores the file from cache recursively.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="absolutePath">The absolute path.</param>
-        /// <param name="overwrite">If it should overwrit if the file already exists.</param>
-        public void RestoreFile(string category, string absolutePath, bool overwrite = true)
+        /// <summary>Gets the cached content items.</summary>
+        /// <param name="fileCategory">The file category.</param>
+        /// <param name="endResultOnly">If it should return end results only.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public IEnumerable<ContentItem> GetCachedContentItems(string fileCategory, bool endResultOnly = false)
         {
+            return EmptyContentItems;
         }
 
-        /// <summary>Restore files from cache recursively.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="targetPath">The target path.</param>
-        /// <param name="overwrite">The overwrite.</param>
-        /// <returns>The restored files.</returns>
-        public IEnumerable<CacheResult> RestoreFiles(string category, string targetPath = null, bool overwrite = true)
-        {
-            return EmptyCacheResults;
-        }
-
-        /// <summary>Stores a graph report file (.dgml visual studio file).</summary>
+        /// <summary>Writes a graph report file (.dgml visual studio file).</summary>
         /// <param name="graphReportFilePath">The graph report file path.</param>
-        public void Store(string graphReportFilePath)
+        public void WriteDependencyGraph(string graphReportFilePath)
         {
+        }
+
+        /// <summary>Gets the source dependencies recursively.</summary>
+        /// <returns>The source dependencies.</returns>
+        public IEnumerable<CacheSourceDependency> GetSourceDependencies()
+        {
+            return EmptySourceDependencies;
         }
 
         /// <summary>Varys the section by file.</summary>
-        /// <param name="absoluteFilePath">The absolute file path.</param>
-        public void VaryByFile(string absoluteFilePath)
+        /// <param name="contentItem">The result file.</param>
+        public void VaryByContentItem(ContentItem contentItem)
+        {
+        }
+
+        /// <summary>Stores a graph report file (.dgml visual studio file).</summary>
+        public void Save()
         {
         }
 

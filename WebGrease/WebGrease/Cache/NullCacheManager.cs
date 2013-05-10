@@ -6,7 +6,6 @@
 namespace WebGrease
 {
     using System;
-    using System.IO;
 
     /// <summary>The null cache manager.</summary>
     public class NullCacheManager : ICacheManager
@@ -44,10 +43,10 @@ namespace WebGrease
 
         /// <summary>Begins a new cache section.</summary>
         /// <param name="category">The category.</param>
-        /// <param name="filePath">The file path.</param>
+        /// <param name="contentItem">The result file.</param>
         /// <param name="settings">The settings.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, FileInfo filePath, object settings = null)
+        public ICacheSection BeginSection(string category, ContentItem contentItem, object settings = null)
         {
             return EmptyCacheSection;
         }
@@ -88,20 +87,11 @@ namespace WebGrease
         {
         }
 
-        /// <summary>Stores the content in cache.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="content">The content.</param>
-        /// <returns>The stored cache file path.</returns>
-        public string StoreContentInCache(string category, string content)
-        {
-            return null;
-        }
-
-        /// <summary>Stores the file in cache.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="absolutePath">The absolute path.</param>
-        /// <returns>The stored cache file path.</returns>
-        public string StoreFileInCache(string category, string absolutePath)
+        /// <summary>Stores the content file in cache.</summary>
+        /// <param name="cacheCategory">The cache category.</param>
+        /// <param name="contentItem">The content file.</param>
+        /// <returns>The cache file path.</returns>
+        public string StoreInCache(string cacheCategory, ContentItem contentItem)
         {
             return null;
         }

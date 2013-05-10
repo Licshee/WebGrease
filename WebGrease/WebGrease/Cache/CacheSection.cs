@@ -10,6 +10,9 @@ namespace WebGrease
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
+    using System.Text;
+
+    using Microsoft.Ajax.Utilities;
 
     using Newtonsoft.Json.Linq;
 
@@ -101,8 +104,7 @@ namespace WebGrease
         {
             get
             {
-                return
-                    this.context.GetContentHash(this.UniqueKey) + ".cache.json";
+                return this.context.GetValueHash(this.UniqueKey) + ".cache.json";
             }
         }
 
@@ -111,7 +113,7 @@ namespace WebGrease
         {
             get
             {
-                return string.Join("|", this.varyByFiles.Select(vbf => vbf.Hash + Path.GetExtension(vbf.OriginalAbsoluteFilePath)).Concat(this.varyBySettings));
+                return string.Join("|", this.varyByFiles.Select(vbf => vbf.Hash + vbf.Locale + vbf.Theme + Path.GetExtension(vbf.Path)).Concat(this.varyBySettings));
             }
         }
 
@@ -153,73 +155,20 @@ namespace WebGrease
             return cacheSection;
         }
 
-        /// <summary>Adds an end result file from a filepath.</summary>
-        /// <param name="filePath">The file path.</param>
-        /// <param name="category">The category.</param>
-        public void AddEndResultFile(string filePath, string category)
-        {
-            this.context.Measure.Start(TimeMeasureNames.Cache, TimeMeasureNames.AddResultFile);
-            try
-            {
-                var applicationRootRelativePath = filePath.MakeRelativeToDirectory(this.context.Configuration.DestinationDirectory);
-                this.cacheResults.Add(CacheResult.FromResultFile(this.context, this.cacheCategory, true, category, filePath, applicationRootRelativePath));
-            }
-            finally
-            {
-                this.context.Measure.End(TimeMeasureNames.Cache, TimeMeasureNames.AddResultFile);
-            }
-        }
-
         /// <summary>Adds an end result file from a result file.</summary>
-        /// <param name="resultFile">The result file.</param>
-        /// <param name="category">The category.</param>
-        public void AddEndResultFile(ResultFile resultFile, string category)
+        /// <param name="contentItem">The result file.</param>
+        /// <param name="id">The category.</param>
+        /// <param name="isEndResult">If the result is an endresult.</param>
+        public void AddResult(ContentItem contentItem, string id, bool isEndResult)
         {
-            this.context.Measure.Start(TimeMeasureNames.Cache, TimeMeasureNames.AddResultFile);
+            this.context.Measure.Start(SectionIdParts.Cache, SectionIdParts.AddResultFile);
             try
             {
-                var applicationRootRelativePath = resultFile.Path.MakeRelativeToDirectory(this.context.Configuration.DestinationDirectory);
-                this.cacheResults.Add(CacheResult.FromResultFile(this.context, this.cacheCategory, true, category, resultFile, applicationRootRelativePath));
+                this.cacheResults.Add(CacheResult.FromContentFile(this.context, this.cacheCategory, isEndResult, id, contentItem));
             }
             finally
             {
-                this.context.Measure.End(TimeMeasureNames.Cache, TimeMeasureNames.AddResultFile);
-            }
-        }
-
-        /// <summary>Add result content.</summary>
-        /// <param name="content">The content.</param>
-        /// <param name="category">The category.</param>
-        /// <param name="endResult">If it is an endresult.</param>
-        public void AddResultContent(string content, string category, bool endResult = false)
-        {
-            this.context.Measure.Start(TimeMeasureNames.Cache, TimeMeasureNames.AddResultContent);
-            try
-            {
-                this.cacheResults.Add(CacheResult.FromContent(this.context, this.cacheCategory, endResult, category, content));
-            }
-            finally
-            {
-                this.context.Measure.End(TimeMeasureNames.Cache, TimeMeasureNames.AddResultContent);
-            }
-        }
-
-        /// <summary>Adds a result file.</summary>
-        /// <param name="filePath">The file path.</param>
-        /// <param name="category">The category.</param>
-        /// <param name="relativePath">The relative path.</param>
-        public void AddResultFile(string filePath, string category, string relativePath = null)
-        {
-            this.context.Measure.Start(TimeMeasureNames.Cache, TimeMeasureNames.AddResultFile);
-            try
-            {
-                var applicationRootRelativePath = this.context.MakeRelative(
-                    filePath, (relativePath ?? this.context.Configuration.ApplicationRootDirectory).EnsureEndSeperatorChar());
-                this.cacheResults.Add(CacheResult.FromResultFile(this.context, this.cacheCategory, false, category, filePath, applicationRootRelativePath));
-            }
-            finally
-            {
-                this.context.Measure.End(TimeMeasureNames.Cache, TimeMeasureNames.AddResultFile);
+                this.context.Measure.End(SectionIdParts.Cache, SectionIdParts.AddResultFile);
             }
         }
 
@@ -243,28 +192,28 @@ namespace WebGrease
         /// <param name="inputSpec">The input spec.</param>
         public void AddSourceDependency(InputSpec inputSpec)
         {
-            this.context.Measure.Start(TimeMeasureNames.Cache, TimeMeasureNames.AddSourceDependency);
+            this.context.Measure.Start(SectionIdParts.Cache, SectionIdParts.AddSourceDependency);
             try
             {
                 var key = inputSpec.ToJson(true);
                 if (!this.sourceDependencies.ContainsKey(key))
                 {
                     this.sourceDependencies.Add(
-                        key, 
+                        key,
                         CacheSourceDependency.Create(
-                            this.context, 
+                            this.context,
                             new InputSpec
                                 {
-                                    IsOptional = inputSpec.IsOptional, 
-                                    Path = inputSpec.Path, 
-                                    SearchOption = inputSpec.SearchOption, 
+                                    IsOptional = inputSpec.IsOptional,
+                                    Path = inputSpec.Path,
+                                    SearchOption = inputSpec.SearchOption,
                                     SearchPattern = inputSpec.SearchPattern
                                 }));
                 }
             }
             finally
             {
-                this.context.Measure.End(TimeMeasureNames.Cache, TimeMeasureNames.AddSourceDependency);
+                this.context.Measure.End(SectionIdParts.Cache, SectionIdParts.AddSourceDependency);
             }
         }
 
@@ -304,13 +253,13 @@ namespace WebGrease
         /// <returns>The changed end results.</returns>
         public IEnumerable<CacheResult> GetChangedEndResults()
         {
-            var results = this.cacheResults.Where(cr => cr.EndResult);
+            var results = this.GetCacheResults(null, true).DistinctBy(r => r.RelativeHashedContentPath);
             return results.Where(
                 r =>
-                    {
-                        var absolutePath = Path.Combine(context.Configuration.DestinationDirectory, r.RelativePath);
-                        return !File.Exists(absolutePath) || !r.ContentHash.Equals(context.GetFileHash(absolutePath));
-                    }).Concat(this.childCacheSections.SelectMany(css => css.GetChangedEndResults()));
+                {
+                    var absolutePath = Path.Combine(context.Configuration.DestinationDirectory, r.RelativeHashedContentPath);
+                    return !File.Exists(absolutePath) || !r.ContentHash.Equals(context.GetFileHash(absolutePath));
+                });
         }
 
         /// <summary>Gets the changed source dependencies recursively.</summary>
@@ -323,6 +272,14 @@ namespace WebGrease
                     .Concat(this.childCacheSections.SelectMany(css => css.GetChangedSourceDependencies()));
         }
 
+        /// <summary>Gets the changed source dependencies recursively.</summary>
+        /// <returns>The changed source dependencies.</returns>
+        public IEnumerable<CacheSourceDependency> GetSourceDependencies()
+        {
+            return this.sourceDependencies.Values
+                    .Concat(this.childCacheSections.SelectMany(css => css.GetSourceDependencies()));
+        }
+
         /// <summary>Get the invalid cache results.</summary>
         /// <returns>The invalid cache results.</returns>
         public IEnumerable<CacheResult> GetInvalidCachedResults()
@@ -331,10 +288,10 @@ namespace WebGrease
         }
 
         /// <summary>Gets the cache results for the category recursively.</summary>
-        /// <param name="category">The category.</param>
+        /// <param name="fileCategory">The category.</param>
         /// <param name="endResultOnly">If it should return end results only.</param>
         /// <returns>The cache results for the category.</returns>
-        public IEnumerable<CacheResult> GetResults(string category = null, bool endResultOnly = false)
+        public IEnumerable<CacheResult> GetCacheResults(string fileCategory = null, bool endResultOnly = false)
         {
             if (this.CacheSectionWithResults == null)
             {
@@ -342,66 +299,29 @@ namespace WebGrease
             }
 
             return this.CacheSectionWithResults.cacheResults
-                .Where(cr => (!endResultOnly || cr.EndResult) && (category == null || cr.Category == category))
-                .Concat(this.CacheSectionWithResults.childCacheSections.SelectMany(css => css.GetResults(category, endResultOnly)));
+                .Where(cr => (!endResultOnly || cr.EndResult) && (fileCategory == null || cr.FileCategory == fileCategory))
+                .Concat(this.CacheSectionWithResults.childCacheSections.SelectMany(css => css.GetCacheResults(fileCategory, endResultOnly)));
         }
 
-        /// <summary>Restores / Gets content from cache.</summary>
-        /// <param name="category">The category.</param>
-        /// <returns>The content from cache.</returns>
-        public string RestoreContent(string category)
+        /// <summary>Gets the cached content item.</summary>
+        /// <param name="fileCategory">The file category.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public ContentItem GetCachedContentItem(string fileCategory)
         {
-            var results = this.GetCachedResultFiles(category);
-            if (results.Count() > 1)
-            {
-                throw new BuildWorkflowException("There were more then one files in the cache that matched that result.");
-            }
-
-            return results.Select(r => r.RestoreContent()).FirstOrDefault();
+            return ContentItem.FromCacheResult(this.GetCacheResults(fileCategory).First());
         }
 
-        /// <summary>Restores the file from cache recursively.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="absolutePath">The absolute path.</param>
-        /// <param name="overwrite">If it should overwrit if the file already exists.</param>
-        public void RestoreFile(string category, string absolutePath, bool overwrite = false)
+        /// <summary>Gets the cached content items.</summary>
+        /// <param name="fileCategory">The file category.</param>
+        /// <param name="endResultOnly">If it should return end results only.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public IEnumerable<ContentItem> GetCachedContentItems(string fileCategory, bool endResultOnly = false)
         {
-            var results = this.GetCachedResultFiles(category);
-            if (results.Count() > 1)
-            {
-                throw new BuildWorkflowException("There were more then one files in the cache that matched that result.");
-            }
-
-            foreach (var cacheResult in results)
-            {
-                cacheResult.RestoreFile(absolutePath, overwrite);
-            }
-
-            // Execute on all children
-            this.CacheSectionWithResults.childCacheSections.ForEach(css => css.RestoreFile(category, absolutePath, overwrite));
+            return this.GetCacheResults(fileCategory, endResultOnly).Select(crf => ContentItem.FromCacheResult(crf));
         }
 
-        /// <summary>Restore files from cache recursively.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="targetPath">The target path.</param>
-        /// <param name="overwrite">The overwrite.</param>
-        /// <returns>The restored files.</returns>
-        public IEnumerable<CacheResult> RestoreFiles(string category, string targetPath = null, bool overwrite = true)
-        {
-            var results = this.GetCachedResultFiles(category);
-            foreach (var result in results)
-            {
-                result.RestoreFile(
-                    Path.Combine((targetPath ?? this.context.Configuration.ApplicationRootDirectory).EnsureEndSeperatorChar(), result.RelativePath), overwrite);
-            }
-
-            // Execute on all children
-            return results.Concat(this.CacheSectionWithResults.childCacheSections.SelectMany(css => css.RestoreFiles(category, targetPath, overwrite))).ToArray();
-        }
-
-        /// <summary>Stores a graph report file (.dgml visual studio file).</summary>
-        /// <param name="graphReportFilePath">The graph report file path.</param>
-        public void Store(string graphReportFilePath)
+        /// <summary>Saves the cache section to the cache folder.</summary>
+        public void Save()
         {
             var path = new FileInfo(this.AbsolutePath);
             if (path.Directory != null && !path.Directory.Exists)
@@ -411,8 +331,13 @@ namespace WebGrease
 
             File.WriteAllText(this.AbsolutePath, this.ToJsonString());
             this.TouchAllFiles();
+        }
 
-            if (!string.IsNullOrWhiteSpace(graphReportFilePath) && this.context.Configuration.CacheOutputDependencies)
+        /// <summary>Writes a graph report file (.dgml visual studio file).</summary>
+        /// <param name="graphReportFilePath">The graph report file path.</param>
+        public void WriteDependencyGraph(string graphReportFilePath)
+        {
+            if (!string.IsNullOrWhiteSpace(graphReportFilePath))
             {
                 var dependencyGraph = new CacheDependencyGraph();
                 this.AddDepenciesToGraph(dependencyGraph);
@@ -421,10 +346,10 @@ namespace WebGrease
         }
 
         /// <summary>Varys the section by file.</summary>
-        /// <param name="absoluteFilePath">The absolute file path.</param>
-        public void VaryByFile(string absoluteFilePath)
+        /// <param name="contentItem">The result file.</param>
+        public void VaryByContentItem(ContentItem contentItem)
         {
-            this.varyByFiles.Add(CacheVaryByFile.FromFile(this.context, absoluteFilePath));
+            this.varyByFiles.Add(CacheVaryByFile.FromFile(this.context, contentItem));
         }
 
         /// <summary>Varys the section by settings.</summary>
@@ -507,9 +432,9 @@ namespace WebGrease
         private void AddDepenciesToGraph(CacheDependencyGraph dependencyGraph, string parentNode = null)
         {
             var file = this.varyByFiles.FirstOrDefault();
-            if (file != null && !string.IsNullOrWhiteSpace(file.OriginalAbsoluteFilePath))
+            if (file != null && !string.IsNullOrWhiteSpace(file.Path))
             {
-                parentNode = file.OriginalAbsoluteFilePath.MakeRelativeToDirectory(this.context.Configuration.ApplicationRootDirectory);
+                parentNode = Path.IsPathRooted(file.Path) ? file.Path.MakeRelativeToDirectory(this.context.Configuration.ApplicationRootDirectory) : file.Path;
             }
 
             if (parentNode == null)
@@ -529,19 +454,6 @@ namespace WebGrease
             this.childCacheSections.ForEach(ccs => ccs.AddDepenciesToGraph(dependencyGraph, parentNode));
         }
 
-        /// <summary>Gets the cached result files for a category.</summary>
-        /// <param name="category">The category.</param>
-        /// <returns>The cached result files.</returns>
-        private IEnumerable<CacheResult> GetCachedResultFiles(string category)
-        {
-            if (this.CacheSectionWithResults == null)
-            {
-                throw new WorkflowException("Cached section is null");
-            }
-
-            return this.CacheSectionWithResults.cacheResults.Where(cr => category.Equals(cr.Category));
-        }
-
         /// <summary>Get a unique json string for the cache section.</summary>
         /// <returns>The json string.</returns>
         private string ToJsonString()
@@ -549,10 +461,10 @@ namespace WebGrease
             return
                 new
                     {
-                        this.sourceDependencies, 
-                        this.varyByFiles, 
-                        this.varyBySettings, 
-                        this.cacheResults, 
+                        this.sourceDependencies,
+                        this.varyByFiles,
+                        this.varyBySettings,
+                        this.cacheResults,
                         this.cacheCategory,
                         children = this.childCacheSections.Select(ccs => ccs.AbsolutePath)
                     }.ToJson();

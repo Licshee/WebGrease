@@ -19,7 +19,6 @@ namespace WebGrease.Activities
     using System.Resources;
     using System.Text.RegularExpressions;
     using WebGrease;
-    using WebGrease.Configuration;
 
     /// <summary>Parses the resources from files and loads into the dictionary. 
     /// Implements the Factory method.</summary>
@@ -34,17 +33,17 @@ namespace WebGrease.Activities
         /// <summary>
         /// Output folder path.
         /// </summary>
-        private readonly string OutputDirectoryPath;
+        private readonly string outputDirectoryPath;
 
         /// <summary>
         /// Directories to search the resource files.
         /// </summary>
-        private readonly List<ResourceDirectoryPath> ResourceDirectoryPaths = new List<ResourceDirectoryPath>();
+        private readonly List<ResourceDirectoryPath> resourceDirectoryPaths = new List<ResourceDirectoryPath>();
 
         /// <summary>
         /// The resource keys for which the resources will be compressed.
         /// </summary>
-        private readonly IEnumerable<string> ResourceKeys;
+        private readonly IEnumerable<string> resourceKeys;
 
         /// <summary>Initializes a new instance of the <see cref="ResourcesResolver"/> class.</summary>
         /// <param name="context">The webgrease context</param>
@@ -102,7 +101,7 @@ namespace WebGrease.Activities
                         // This is "Site" directory which can override the resources
                         foreach (var filterDirectory in new DirectoryInfo(siteDirectory).EnumerateDirectories(resourceType.ToString(), SearchOption.AllDirectories))
                         {
-                            this.ResourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = true, Directory = filterDirectory.FullName });
+                            this.resourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = true, Directory = filterDirectory.FullName });
                             context.Cache.CurrentCacheSection.AddSourceDependency(filterDirectory.FullName, "*.resx");
                         }
                     }
@@ -112,14 +111,14 @@ namespace WebGrease.Activities
                     // "Feature" directories
                     foreach (var filterDirectory in contentChildDirectory.EnumerateDirectories(resourceType.ToString(), SearchOption.AllDirectories))
                     {
-                        this.ResourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = false, Directory = filterDirectory.FullName });
+                        this.resourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = false, Directory = filterDirectory.FullName });
                         context.Cache.CurrentCacheSection.AddSourceDependency(filterDirectory.FullName, "*.resx");
                     }
                 }
             }
 
-            this.OutputDirectoryPath = outputDirectoryPath;
-            this.ResourceKeys = resourceKeys ?? new List<string> { Strings.DefaultLocale };
+            this.outputDirectoryPath = outputDirectoryPath;
+            this.resourceKeys = resourceKeys ?? new List<string> { Strings.DefaultLocale };
         }
 
         /// <summary>Resource Manager factory.</summary>
@@ -143,60 +142,90 @@ namespace WebGrease.Activities
             return new ResourcesResolver(context, inputContentDirectory, resourceType, applicationDirectoryName, siteName, resourceKeys, outputDirectoryPath);
         }
 
+        /// <summary>Gets the merged resources.</summary>
+        /// <returns>The <see cref="IDictionary"/>.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Explicit choice.")]
+        internal IDictionary<string, IDictionary<string, string>> GetMergedResources()
+        {
+            var results = new Dictionary<string, IDictionary<string, string>>();
+
+            // False value of this variable indicates generic-generic is not present in the key collection.
+            // After the ResourceKeys loop if genericProcessed value is still false it means generic-generic file is 
+            // not written in the output folder. We want to output generic-generic resource file in all the cases
+            // to process locales in the non locales folders in case of EPPR projects.
+            foreach (var resourceKey in this.resourceKeys)
+            {
+                var localeOrThemeName = resourceKey.Trim().ToLower(CultureInfo.InvariantCulture);
+                results.Add(localeOrThemeName, this.GetResources(resourceKey, localeOrThemeName));
+            }
+
+            return results;
+        }
+
         /// <summary>Gets the resources based on locale or theme key. 
         /// The resource files are searched in input paths
         /// and resolved for precedence and a dictionary is returned.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification="Explicit choice.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Explicit choice.")]
         internal void ResolveHierarchy()
         {
             // False value of this variable indicates generic-generic is not present in the key collection.
             // After the ResourceKeys loop if genericProcessed value is still false it means generic-generic file is 
             // not written in the output folder. We want to output generic-generic resource file in all the cases
             // to process locales in the non locales folders in case of EPPR projects.
-
-            foreach (var resourceKey in this.ResourceKeys)
+            foreach (var resourceKey in this.resourceKeys)
             {
                 var localeOrThemeName = resourceKey.Trim().ToLower(CultureInfo.InvariantCulture);
 
-                // Keep the resolved resources sorted for better readability
-                var resources = new SortedDictionary<string, string>();
-
-                // Get the resources for all sets of folder paths
-                foreach (var resourceDirectoryPath in this.ResourceDirectoryPaths.OrderBy(resourceDirectoryPath => resourceDirectoryPath.AllowOverrides))
-                {
-                    var resourceDirectoryInfo = new DirectoryInfo(resourceDirectoryPath.Directory);
-                    var genericResource = new Dictionary<string, string>();
-
-                    // First of all consider the default locale file with in a directory
-                    if (resourceKey != Strings.DefaultLocale)
-                    {
-                        var defaultLocaleFilePath = Path.Combine(resourceDirectoryInfo.FullName, Strings.DefaultResx);
-                        if (File.Exists(defaultLocaleFilePath))
-                        {
-                            genericResource = ReadResources(defaultLocaleFilePath);
-                        }
-                    }
-
-                    // Now check if the actual locale file is present in same directory.
-                    var resxResource = new Dictionary<string, string>();
-                    var localeFilePath = Path.Combine(resourceDirectoryInfo.FullName, localeOrThemeName + Strings.ResxExtension);
-
-                    if (File.Exists(localeFilePath))
-                    {
-                        resxResource = ReadResources(localeFilePath);
-                    }
-
-                    // Merge the generic and the locale resources with in the same directory
-                    MergeResources(resxResource, genericResource, false, false);
-
-                    // Merge the directory resources into overall locale resources discovered so far
-                    // throws exception if cross feature duplicate key is defined)
-                    MergeResources(resources, resxResource, resourceDirectoryPath.AllowOverrides, resourceDirectoryPath.AllowOverrides);
-                }
+                var resources = this.GetResources(resourceKey, localeOrThemeName);
 
                 // Write the resx files to hard drive
-                WriteResources(this.OutputDirectoryPath, localeOrThemeName, resources);
+                WriteResources(this.outputDirectoryPath, localeOrThemeName, resources);
             }
+        }
+
+        /// <summary>Gets the merged resources for the given locale or theme.</summary>
+        /// <param name="resourceKey">The resource key.</param>
+        /// <param name="localeOrThemeName">The locale or theme name.</param>
+        /// <returns>The merged resources.</returns>
+        private SortedDictionary<string, string> GetResources(string resourceKey, string localeOrThemeName)
+        {
+            // Keep the resolved resources sorted for better readability
+            var resources = new SortedDictionary<string, string>();
+
+            // Get the resources for all sets of folder paths
+            foreach (var resourceDirectoryPath in this.resourceDirectoryPaths.OrderBy(resourceDirectoryPath => resourceDirectoryPath.AllowOverrides))
+            {
+                var resourceDirectoryInfo = new DirectoryInfo(resourceDirectoryPath.Directory);
+                var genericResource = new Dictionary<string, string>();
+
+                // First of all consider the default locale file with in a directory
+                if (resourceKey != Strings.DefaultLocale)
+                {
+                    var defaultLocaleFilePath = Path.Combine(resourceDirectoryInfo.FullName, Strings.DefaultResx);
+                    if (File.Exists(defaultLocaleFilePath))
+                    {
+                        genericResource = ReadResources(defaultLocaleFilePath);
+                    }
+                }
+
+                // Now check if the actual locale file is present in same directory.
+                var resxResource = new Dictionary<string, string>();
+                var localeFilePath = Path.Combine(resourceDirectoryInfo.FullName, localeOrThemeName + Strings.ResxExtension);
+
+                if (File.Exists(localeFilePath))
+                {
+                    resxResource = ReadResources(localeFilePath);
+                }
+
+                // Merge the generic and the locale resources with in the same directory
+                MergeResources(resxResource, genericResource, false, false);
+
+                // Merge the directory resources into overall locale resources discovered so far
+                // throws exception if cross feature duplicate key is defined)
+                MergeResources(resources, resxResource, resourceDirectoryPath.AllowOverrides, resourceDirectoryPath.AllowOverrides);
+            }
+
+            return resources;
         }
 
         /// <summary>Parse the resources.</summary>
@@ -237,7 +266,7 @@ namespace WebGrease.Activities
         /// <param name="input">Input string</param>
         /// <param name="resources">Resources dictionary</param>
         /// <returns>True if any resource key is expanded</returns>
-        internal static string ExpandResourceKeys(string input, Dictionary<string, string> resources)
+        internal static string ExpandResourceKeys(string input, IDictionary<string, string> resources)
         {
             if (input == null || resources == null || resources.Count == 0)
             {

@@ -14,6 +14,7 @@ namespace WebGrease.Tests
     using System.IO;
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using WebGrease.Configuration;
 
@@ -30,18 +31,21 @@ namespace WebGrease.Tests
 
         /// <summary>A test for JS minification.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyJSActivity)]
+        [TestCategory(TestCategories.AjaxMin)]
+        [TestCategory(TestCategories.JavaScript)]
         public void JSMinificationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyJSActivityTest");
             var minifyJSActivity = new MinifyJSActivity(new WebGreaseContext(new WebGreaseConfiguration()));
             minifyJSActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case1\test1.js");
-            minifyJSActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case1\test1.js");
+            var outputFilePath = Path.Combine(sourceDirectory, @"Output\Case1\test1.js");
+            minifyJSActivity.DestinationFile = outputFilePath;
             minifyJSActivity.MinifyArgs = "/global:jQuery";
             minifyJSActivity.ShouldMinify = true;
             minifyJSActivity.Execute();
 
             // Assertions
-            var outputFilePath = minifyJSActivity.DestinationFile;
             Assert.IsTrue(File.Exists(outputFilePath));
             var text = File.ReadAllText(outputFilePath);
             Assert.IsTrue(!string.IsNullOrWhiteSpace(text));
@@ -50,6 +54,9 @@ namespace WebGrease.Tests
 
         /// <summary>A test for JS analysis.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyJSActivity)]
+        [TestCategory(TestCategories.AjaxMin)]
+        [TestCategory(TestCategories.JavaScript)]
         public void JSAnalysisTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyJSActivityTest");

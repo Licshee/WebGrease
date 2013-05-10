@@ -15,6 +15,7 @@ namespace WebGrease.Activities
     using System.Linq;
 
     using WebGrease.Configuration;
+    using WebGrease.Css.Extensions;
     using WebGrease.Extensions;
 
     /// <summary>
@@ -32,13 +33,12 @@ namespace WebGrease.Activities
             this.context = webGreaseContext;
         }
 
-        /// <summary>
-        /// The will execute the Activity
-        /// </summary>
+        /// <summary>The will execute the Activity</summary>
+        /// <param name="fileTypes">The file Types.</param>
         /// <returns>If the execution was successfull.</returns>
         internal bool Execute(FileTypes fileTypes = FileTypes.All)
         {
-            var assembler = new AssemblerActivity(this.context) { InputIsOriginalSource = true };
+            var assembler = new AssemblerActivity(this.context);
             var isValid = new Func<IFileSet, bool>(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace());
 
             this.context.Log.Information("Start bundle pipeline");
@@ -58,12 +58,16 @@ namespace WebGrease.Activities
             return true;
         }
 
+        /// <summary>The bundle file sets.</summary>
+        /// <param name="assembler">The assembler.</param>
+        /// <param name="fileSets">The file sets.</param>
+        /// <param name="fileType">The file type.</param>
         private void BundleFileSets(AssemblerActivity assembler, IEnumerable<IFileSet> fileSets, FileTypes fileType)
         {
             if (fileSets.Any())
             {
                 var cacheSection = this.context.Cache.BeginSection(
-                        TimeMeasureNames.EverythingActivity + "." + fileType,
+                        SectionIdParts.EverythingActivity + "." + fileType,
                         new
                         {
                             fileSets,
@@ -80,11 +84,18 @@ namespace WebGrease.Activities
                         return;
                     }
 
+                    if (cacheSection.CanBeRestoredFromCache())
+                    {
+                        var endResults = cacheSection.GetCachedContentItems(CacheFileCategories.AssemblerResult, true);
+                        endResults.ForEach(er => er.WriteToContentPath(this.context.Configuration.DestinationDirectory));
+                        return;
+                    }
+
                     this.context.Log.Information("Begin " + fileType + " bundle pipeline");
                     this.Bundle(assembler, fileSets);
                     this.context.Log.Information("End " + fileType + " bundle pipeline");
 
-                    cacheSection.Store();
+                    cacheSection.Save();
                 }
                 finally
                 {
@@ -93,6 +104,9 @@ namespace WebGrease.Activities
             }
         }
 
+        /// <summary>The bundle.</summary>
+        /// <param name="assembler">The assembler.</param>
+        /// <param name="fileSets">The file sets.</param>
         private void Bundle(AssemblerActivity assembler, IEnumerable<IFileSet> fileSets)
         {
             // processing pipeline per file set in the config
@@ -123,10 +137,10 @@ namespace WebGrease.Activities
                         assembler.Inputs.Clear();
                         assembler.PreprocessingConfig = fileSet.Preprocessing;
                         assembler.Inputs.AddRange(fileSet.InputSpecs);
-                        assembler.Execute();
+                        var contentItem = assembler.Execute();
 
-                        fileSetCacheSection.AddEndResultFile(outputfile, "bundle");
-                        fileSetCacheSection.Store();
+                        fileSetCacheSection.AddResult(contentItem, CacheFileCategories.AssemblerResult, true);
+                        fileSetCacheSection.Save();
                     }
                     finally
                     {

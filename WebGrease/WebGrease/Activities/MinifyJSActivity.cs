@@ -11,12 +11,11 @@ namespace WebGrease.Activities
 {
     using System;
     using System.IO;
-    using System.Linq;
     using System.Text;
     using Common;
     using Microsoft.Ajax.Utilities;
 
-    using WebGrease.Css.Extensions;
+    using WebGrease.Extensions;
 
     /// <summary>This task will call the minifier with settings from the args, and output the files to the specified directory</summary>
     internal sealed class MinifyJSActivity
@@ -32,44 +31,37 @@ namespace WebGrease.Activities
         }
 
         /// <summary>Gets or sets SourceFile.</summary>
-        internal string SourceFile { get; set; }
+        internal string SourceFile { private get; set; }
 
         /// <summary>Gets or sets DestinationFile.</summary>
-        internal string DestinationFile { get; set; }
+        internal string DestinationFile { private get; set; }
 
-        /// <summary>Gets or sets the output path.</summary>
-        internal string OutputPath { get; set; }
-
-        /// <summary>
-        /// Gets or sets the args to use beyond the default settings
-        /// </summary>
+        /// <summary>Gets or sets the args to use beyond the default settings</summary>
         /// <value>String containing args</value>
-        internal string MinifyArgs { get; set; }
+        internal string MinifyArgs { private get; set; }
 
-        /// <summary>
-        /// Gets or sets the args given to minifier for CSL analyze step. These are just more switches for AjaxMin, but can come from different places in the build.
-        /// </summary>
+        /// <summary>Gets or sets the args given to minifier for CSL analyze step. These are just more switches for AjaxMin, but can come from different places in the build.</summary>
         /// <value>String containging args, e.g. "-WARN:4".</value>
-        internal string AnalyzeArgs { get; set; }
+        internal string AnalyzeArgs { private get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether to analyze files (will use AnalyzeArgs when so).
-        /// </summary>
+        /// <summary>Gets or sets a value indicating whether to analyze files (will use AnalyzeArgs when so).</summary>
         /// <value>True if the files should be analyzed.</value>
-        internal bool ShouldAnalyze { get; set; }
+        internal bool ShouldAnalyze { private get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether to compress files (will use MinifyArgs when so).
-        /// </summary>
+        /// <summary>Gets or sets a value indicating whether to compress files (will use MinifyArgs when so).</summary>
         /// <value>True if the files should be minified.</value>
-        internal bool ShouldMinify { get; set; }
+        internal bool ShouldMinify { private get; set; }
 
-        internal FileHasherActivity FileHasher { get; set; }
+        /// <summary>Gets or sets the file hasher.</summary>
+        internal FileHasherActivity FileHasher { private get; set; }
 
         /// <summary>When overridden in a derived class, executes the task.</summary>
-        internal void Execute()
+        /// <param name="contentItem">The result File.</param>
+        internal void Execute(ContentItem contentItem = null)
         {
-            if (string.IsNullOrWhiteSpace(this.SourceFile))
+            var destinationDirectory = this.context.Configuration.DestinationDirectory;
+
+            if ((contentItem == null) && string.IsNullOrWhiteSpace(this.SourceFile))
             {
                 throw new ArgumentException("MinifyJSActivity - The source file cannot be null or whitespace.");
             }
@@ -79,12 +71,17 @@ namespace WebGrease.Activities
                 throw new ArgumentException("MinifyJSActivity - The destination file cannot be null or whitespace.");
             }
 
-            this.context.Measure.Start(TimeMeasureNames.MinifyJsActivity);
+            if (contentItem == null)
+            {
+                contentItem = ContentItem.FromFile(this.SourceFile, this.SourceFile.MakeRelativeToDirectory(destinationDirectory));
+            }
+
+            this.context.Measure.Start(SectionIdParts.MinifyJsActivity);
 
             // Initialize the minifier
             var cacheSection = this.context.Cache.BeginSection(
                 "minifyjs",
-                new FileInfo(this.SourceFile),
+                contentItem,
                 new
                     {
                         this.ShouldAnalyze,
@@ -99,35 +96,38 @@ namespace WebGrease.Activities
                     return;
                 }
 
-                this.context.Measure.Start(TimeMeasureNames.MinifyJsActivity, TimeMeasureNames.Process);
+                this.context.Measure.Start(SectionIdParts.MinifyJsActivity, SectionIdParts.Process);
                 try
                 {
-                    var minifier = new Minifier { FileName = this.SourceFile };
+                    var minifier = new Minifier { FileName = this.DestinationFile };
                     var minifierSettings = this.GetMinifierSettings(minifier);
-                    var output = minifier.MinifyJavaScript(File.ReadAllText(this.SourceFile), minifierSettings.JSSettings);
+                    var output = minifier.MinifyJavaScript(contentItem.Content, minifierSettings.JSSettings);
 
                     this.HandleMinifierErrors(minifier);
 
-                    var outputEncoding = CreateOutputEncoding(minifierSettings.EncodingOutputName);
+                    var relativeDestinationFile = Path.IsPathRooted(this.DestinationFile) 
+                        ? this.DestinationFile.MakeRelativeToDirectory(destinationDirectory)
+                        : this.DestinationFile;
+
                     if (this.FileHasher != null)
                     {
                         // Write the result to the hard drive with hashing.
-                        var result = this.FileHasher.Hash(ResultFile.FromContent(output, FileTypes.JavaScript, this.DestinationFile, this.OutputPath, outputEncoding));
-                        cacheSection.AddEndResultFile(result, CacheKeys.MinifyJsResultCacheKey);
+                        var result = this.FileHasher.Hash(ContentItem.FromContent(output, relativeDestinationFile));
+                        cacheSection.AddResult(result, CacheFileCategories.MinifyJsResult, isEndResult: true);
                     }
                     else
                     {
                         // Write to disk
-                        FileHelper.WriteFile(this.DestinationFile, output, outputEncoding);
-                        cacheSection.AddResultFile(this.DestinationFile, CacheKeys.MinifyJsResultCacheKey);
+                        FileHelper.WriteFile(this.DestinationFile, output);
+                        cacheSection.AddResult(ContentItem.FromFile(this.DestinationFile, relativeDestinationFile), CacheFileCategories.MinifyJsResult);
                     }
                 }
                 finally
                 {
-                    this.context.Measure.End(TimeMeasureNames.MinifyJsActivity, TimeMeasureNames.Process);
+                    this.context.Measure.End(SectionIdParts.MinifyJsActivity, SectionIdParts.Process);
                 }
 
-                cacheSection.Store();
+                cacheSection.Save();
             }
             catch (Exception exception)
             {
@@ -137,10 +137,12 @@ namespace WebGrease.Activities
             finally
             {
                 cacheSection.EndSection();
-                this.context.Measure.End(TimeMeasureNames.MinifyJsActivity);
+                this.context.Measure.End(SectionIdParts.MinifyJsActivity);
             }
         }
 
+        /// <summary>Handles the minifier errors.</summary>
+        /// <param name="minifier">The minifier.</param>
         private void HandleMinifierErrors(Minifier minifier)
         {
             // throw if this file has errors, but show all that are found
@@ -152,7 +154,7 @@ namespace WebGrease.Activities
                     // log each message individually so we can click through into the source
                     foreach (var errorMessage in minifier.ErrorList)
                     {
-                        var errorHandler = (errorMessage.IsError ? this.context.Log.ExtendedError : this.context.Log.Warning);
+                        var errorHandler = errorMessage.IsError ? this.context.Log.ExtendedError : this.context.Log.Warning;
                         errorHandler(
                             errorMessage.Subcategory,
                             errorMessage.ErrorCode,
@@ -185,54 +187,29 @@ namespace WebGrease.Activities
             }
         }
 
+        /// <summary>Tries to restore the result from cache.</summary>
+        /// <param name="cacheSection">The cache section.</param>
+        /// <returns>If it was able to restore it from cache.</returns>
         private bool TryRestoreFromCache(ICacheSection cacheSection)
         {
             if (cacheSection.CanBeRestoredFromCache())
             {
+                var resultFile = cacheSection.GetCachedContentItem(CacheFileCategories.MinifyJsResult);
+                var destinationDirectory = this.context.Configuration.DestinationDirectory;
                 if (this.FileHasher != null)
                 {
-                    var resultFile = cacheSection.RestoreFiles(CacheKeys.MinifyJsResultCacheKey, this.context.Configuration.DestinationDirectory).First();
-                    this.FileHasher.AppendToWorkLog(resultFile, this.DestinationFile);
+                    resultFile.WriteToHashedPath(destinationDirectory);
+                    this.FileHasher.AppendToWorkLog(resultFile);
                 }
                 else
                 {
-                    cacheSection.RestoreFile(CacheKeys.MinifyJsResultCacheKey, this.DestinationFile);
+                    resultFile.WriteToContentPath(destinationDirectory);
                 }
+
                 return true;
             }
+
             return false;
-        }
-
-        /// <summary>
-        /// create an output encoding from the given encoding name (if any) with
-        /// the appropriate fallback encoder.
-        /// </summary>
-        /// <param name="encodingOutputName">encoding name, use UTF-8 as the default</param>
-        /// <returns>encoding object for JavaScript output</returns>
-        private static Encoding CreateOutputEncoding(string encodingOutputName)
-        {
-            Encoding encodingOutput;
-            var encoderFallback = new JSEncoderFallback();
-            if (string.IsNullOrWhiteSpace(encodingOutputName))
-            {
-                // clone the UTF-8 encoder so we can change the fallback handler
-                encodingOutput = (Encoding)Encoding.UTF8.Clone();
-                encodingOutput.EncoderFallback = encoderFallback;
-            }
-            else
-            {
-                try
-                {
-                    // try to create an encoding from the encoding argument
-                    encodingOutput = Encoding.GetEncoding(encodingOutputName, encoderFallback, new DecoderReplacementFallback("?"));
-                }
-                catch (ArgumentException e)
-                {
-                    throw new WorkflowException("Invalid output encoding name: {0}".FormatInvariant(encodingOutputName), e);
-                }
-            }
-
-            return encodingOutput;
         }
 
         /// <summary>Gets the minifier settings.</summary>

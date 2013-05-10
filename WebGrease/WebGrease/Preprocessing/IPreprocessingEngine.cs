@@ -26,19 +26,18 @@ namespace WebGrease.Preprocessing
         /// <summary>
         /// This method will be called to check if the processor believes it can handle the file based on the filename.
         /// </summary>
-        /// <param name="fullFileName">The full path to the file.</param>
+        /// <param name="contentItem">The full path to the file.</param>
         /// <param name="preprocessConfig">The configuration</param>
         /// <returns>If it thinks it can process it.</returns>
-        bool CanProcess(string fullFileName, PreprocessingConfig preprocessConfig = null);
+        bool CanProcess(ContentItem contentItem, PreprocessingConfig preprocessConfig = null);
 
         /// <summary>
         /// The main method for Preprocessing, this is where the preprocessor gets passed the full content, parses it and returns the parsed content.
         /// </summary>
-        /// <param name="fileContent">Content of the file to parse.</param>
-        /// <param name="fullFileName">The full filename</param>
+        /// <param name="contentItem">Content of the file to parse.</param>
         /// <param name="preprocessingConfig">The configuration.</param>
         /// <returns>The processed content.</returns>
-        string Process(string fileContent, string fullFileName, PreprocessingConfig preprocessingConfig);
+        ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig);
 
         #endregion
 

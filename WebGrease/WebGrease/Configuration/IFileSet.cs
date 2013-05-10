@@ -1,7 +1,16 @@
-﻿namespace WebGrease.Configuration
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="IFileSet.cs" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   A fileset interface
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+namespace WebGrease.Configuration
 {
     using System.Collections.Generic;
 
+    /// <summary>The FileSet interface.</summary>
     internal interface IFileSet
     {
         /// <summary>Gets the locales.</summary>
@@ -13,15 +22,7 @@
         /// <summary>
         /// Gets the dictionary of auto naming configs
         /// </summary>
-        IDictionary<string, AutoNameConfig> Autonaming { get; }
-
-        /// <summary>
-        /// Gets the dictionary of auto naming configs
-        /// </summary>
         IDictionary<string, BundlingConfig> Bundling { get; }
-
-        /// <summary>Gets the name of the set.</summary>
-        string Name { get; }
 
         /// <summary>Gets the output specified.</summary>
         string Output { get; }

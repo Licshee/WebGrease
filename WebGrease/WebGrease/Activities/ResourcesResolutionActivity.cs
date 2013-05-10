@@ -18,6 +18,9 @@ namespace WebGrease.Activities
     /// <summary>The class which is responsible for resolving the resources hierarchy.</summary>
     internal sealed class ResourcesResolutionActivity
     {
+        /// <summary>The empty result.</summary>
+        private static readonly Dictionary<string, IDictionary<string, string>> EmptyResult = new Dictionary<string, IDictionary<string, string>>();
+
         /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
 
@@ -69,22 +72,20 @@ namespace WebGrease.Activities
         /// <summary>Gets or sets the measure name.</summary>
         internal FileTypes FileType { get; set; }
 
-        /// <summary>When overridden in a derived class, executes the task.</summary>
-        internal void Execute()
+        /// <summary>The get merged resources.</summary>
+        /// <returns>The merged resources.</returns>
+        internal IDictionary<string, IDictionary<string, string>> GetMergedResources()
         {
-            if (this.ResourceKeys == null || 
-                this.ResourceKeys.Count() == 0 ||
-                string.IsNullOrWhiteSpace(this.SourceDirectory) ||
-                !Directory.Exists(this.SourceDirectory))
+            if (!this.HasSomethingToResolve())
             {
-                // Nothing to resolve
-                return;
+                return EmptyResult;
             }
 
+            this.context.Measure.Start("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
             try
             {
-                this.context.Measure.Start("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
-                ResourcesResolver.Factory(context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory).ResolveHierarchy();
+            var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
+            return resourcesResolver.GetMergedResources();
             }
             catch (ResourceOverrideException resourceOverrideException)
             {
@@ -102,6 +103,49 @@ namespace WebGrease.Activities
             {
                 this.context.Measure.End("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
             }
+        }
+
+        /// <summary>When overridden in a derived class, executes the task.</summary>
+        internal void Execute()
+        {
+            if (!this.HasSomethingToResolve())
+            {
+                return;
+            }
+
+            this.context.Measure.Start("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
+            try
+            {
+                var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
+                resourcesResolver.ResolveHierarchy();
+            }
+            catch (ResourceOverrideException resourceOverrideException)
+            {
+                // There was a token override in folder path that does not
+                // allow token overriding. For this case, we need to
+                // show a build error.
+                var errorMessage = string.Format(CultureInfo.InvariantCulture, "ResourcesResolutionActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
+                throw new WorkflowException(errorMessage, resourceOverrideException);
+            }
+            catch (Exception exception)
+            {
+                throw new WorkflowException("ResourcesResolutionActivity - Error happened while executing the resolve resources activity", exception);
+            }
+            finally
+            {
+                this.context.Measure.End("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
+            }
+        }
+
+        /// <summary>Check if it has anything to resolve.</summary>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private bool HasSomethingToResolve()
+        {
+            return 
+                this.ResourceKeys != null 
+                && this.ResourceKeys.Any() 
+                && !string.IsNullOrWhiteSpace(this.SourceDirectory) 
+                && Directory.Exists(this.SourceDirectory);
         }
     }
 }

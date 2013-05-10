@@ -24,31 +24,30 @@ namespace WebGrease
         public string Hash { get; private set; }
 
         /// <summary>Gets the original absolute file path.</summary>
-        public string OriginalAbsoluteFilePath { get; private set; }
+        public string Path { get; private set; }
+
+        /// <summary>Gets the theme.</summary>
+        public string Theme { get; private set; }
+
+        /// <summary>Gets the locale.</summary>
+        public string Locale { get; private set; }
 
         #endregion
 
         #region Public Methods and Operators
 
-        /// <summary>Creates a <see cref="CacheVaryByFile"/> from content.</summary>
-        /// <param name="context">The context.</param>
-        /// <param name="fileContent">The file content.</param>
-        /// <returns>The <see cref="CacheVaryByFile"/>.</returns>
-        public static CacheVaryByFile FromContent(IWebGreaseContext context, string fileContent)
-        {
-            return new CacheVaryByFile { Hash = context.GetContentHash(fileContent) };
-        }
-
         /// <summary>Creates a <see cref="CacheVaryByFile"/> from a file.</summary>
         /// <param name="context">The context.</param>
-        /// <param name="absoluteFilePath">The absolute file path.</param>
+        /// <param name="contentItem">The result file.</param>
         /// <returns>The <see cref="CacheVaryByFile"/>.</returns>
-        public static CacheVaryByFile FromFile(IWebGreaseContext context, string absoluteFilePath)
+        public static CacheVaryByFile FromFile(IWebGreaseContext context, ContentItem contentItem)
         {
             return new CacheVaryByFile
                        {
-                           OriginalAbsoluteFilePath = absoluteFilePath, 
-                           Hash = context.GetFileHash(absoluteFilePath), 
+                           Path = contentItem.RelativeContentPath,
+                           Locale = contentItem.Locale,
+                           Theme = contentItem.Theme,
+                           Hash = contentItem.GetContentHash(context)
                        };
         }
 

@@ -13,6 +13,7 @@ namespace WebGrease.Tests
     using System.IO;
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using WebGrease.Configuration;
 
@@ -31,6 +32,7 @@ namespace WebGrease.Tests
 
         /// <summary>A test for JS localization.</summary>
         [TestMethod]
+        [TestCategory(TestCategories.JsLocalizationActivity)]
         public void JSLocalizationTest()
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\JSLocalizationActivityTest");

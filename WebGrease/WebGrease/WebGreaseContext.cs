@@ -30,27 +30,24 @@ namespace WebGrease
     {
         #region Static Fields
 
-        /// <summary>
-        /// The cached content hashes
-        /// </summary>
+        /// <summary>The cached content hashes</summary>
         private static readonly IDictionary<string, string> CachedContentHashes = new Dictionary<string, string>();
 
-        /// <summary>
-        /// The cached file hashes
-        /// </summary>
-        private static readonly IDictionary<string, Tuple<DateTime, string>> CachedFileHashes = new Dictionary<string, Tuple<DateTime, string>>();
+        /// <summary>The cached file hashes</summary>
+        private static readonly IDictionary<string, Tuple<DateTime, long, string>> CachedFileHashes = new Dictionary<string, Tuple<DateTime, long, string>>();
 
-        /// <summary>
-        /// The md5 hasher
-        /// </summary>
-        private static readonly MD5 Hasher = MD5.Create();
+        /// <summary>The md5 hasher</summary>
+        private static readonly MD5CryptoServiceProvider Hasher = new MD5CryptoServiceProvider();
+
+        /// <summary>The no bom utf-8 default encoding (same defaulty encoding as the .net StreamWriter.</summary>
+        private static readonly UTF8Encoding DefaultEncoding = new UTF8Encoding(false, true);
 
         #endregion
 
         #region Fields
 
         /// <summary>Per session in memory cache of available files.</summary>
-        private readonly IDictionary<string, IEnumerable<ResultFile>> availableFiles = new Dictionary<string, IEnumerable<ResultFile>>();
+        private readonly IDictionary<string, IDictionary<string, string>> availableFiles = new Dictionary<string, IDictionary<string, string>>();
 
         #endregion
 
@@ -62,11 +59,13 @@ namespace WebGrease
         public WebGreaseContext(IWebGreaseContext parentContext, FileInfo configFile)
         {
             var configuration = new WebGreaseConfiguration(parentContext.Configuration, configFile);
-            configuration.Validate();
             this.Initialize(
-                configuration, parentContext.Log, parentContext.Cache, parentContext.Preprocessing, parentContext.SessionStartTime, parentContext.Measure);
-
-            // TODO: Add measure of parent context as parent measure.
+                configuration,
+                parentContext.Log,
+                parentContext.Cache,
+                parentContext.Preprocessing,
+                parentContext.SessionStartTime,
+                parentContext.Measure);
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseContext"/> class. The web grease context.</summary>
@@ -76,13 +75,13 @@ namespace WebGrease
         /// <param name="logError">The log error.</param>
         /// <param name="logExtendedError">The log extended error.</param>
         public WebGreaseContext(
-            WebGreaseConfiguration configuration, 
-            Action<string> logInformation = null, 
-            LogExtendedError logWarning = null, 
-            LogError logError = null, 
+            WebGreaseConfiguration configuration,
+            Action<string> logInformation = null,
+            LogExtendedError logWarning = null,
+            LogError logError = null,
             LogExtendedError logExtendedError = null)
         {
-            var runStartTime = DateTime.UtcNow;
+            var runStartTime = DateTimeOffset.Now;
             configuration.Validate();
             var timeMeasure = configuration.Measure ? new TimeMeasure() as ITimeMeasure : new NullTimeMeasure();
             var logManager = new LogManager(logInformation, logWarning, logError, logExtendedError);
@@ -111,50 +110,112 @@ namespace WebGrease
         public PreprocessingManager Preprocessing { get; private set; }
 
         /// <summary>Gets the session start time.</summary>
-        public DateTime SessionStartTime { get; private set; }
+        public DateTimeOffset SessionStartTime { get; private set; }
 
         #endregion
 
         #region Public Methods and Operators
 
-        /// <summary>The clean directory.</summary>
-        /// <param name="directory">The directory.</param>
-        public static void CleanDirectory(string directory)
-        {
-            if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
-            {
-                Directory.Delete(directory, true);
-            }
-
-            Directory.CreateDirectory(directory);
-        }
-
         /// <summary>The compute content hash.</summary>
         /// <param name="content">The content.</param>
+        /// <param name="encoding"> The encoding</param>
         /// <returns>The <see cref="string"/>.</returns>
-        public static string ComputeContentHash(string content)
+        public static string ComputeContentHash(string content, Encoding encoding = null)
         {
-            return BitConverter.ToString(Hasher.ComputeHash(Encoding.ASCII.GetBytes(content))).Replace("-", string.Empty);
+            using (var ms = new MemoryStream())
+            {
+                var sw = new StreamWriter(ms, encoding ?? DefaultEncoding);
+                sw.Write(content);
+                sw.Flush();
+                ms.Seek(0, SeekOrigin.Begin);
+                return BytesToHash(Hasher.ComputeHash(ms));
+            }
         }
 
         /// <summary>The compute file hash.</summary>
         /// <param name="filePath">The file path.</param>
         /// <returns>The <see cref="string"/>.</returns>
-        [SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "MD5 Lower case")]
         public static string ComputeFileHash(string filePath)
         {
-            using (var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                var hash = Hasher.ComputeHash(fileStream);
-
-                var hexString = new StringBuilder(hash.Length);
-                for (var i = 0; i < hash.Length; i++)
-                {
-                    hexString.Append(hash[i].ToString("X2", CultureInfo.InvariantCulture));
-                }
-
-                return hexString.ToString().ToLower(CultureInfo.InvariantCulture);
+                return BytesToHash(Hasher.ComputeHash(fs));
             }
+        }
+
+        /// <summary>Starts a section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="sectionAction">The section action.</param>
+        /// <returns>The Success</returns>
+        public bool Section(string[] idParts, Func<string, bool> sectionAction)
+        {
+            var id = this.Measure.Start(idParts);
+            try
+            {
+                return sectionAction(id);
+            }
+            finally
+            {
+                this.Measure.End(id);
+            }
+        }
+
+        /// <summary>Starts a section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="varBySettings">The var by settings.</param>
+        /// <param name="skipable">If the section is skippable.</param>
+        /// <param name="sectionAction">The section action.</param>
+        /// <returns>The Success</returns>
+        public bool Section(string[] idParts, object varBySettings, bool skipable, Func<ICacheSection, bool> sectionAction)
+        {
+            return this.Section(idParts, null, varBySettings, skipable, sectionAction);
+        }
+
+        /// <summary>Starts a section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="varByContentItem">The var by content item.</param>
+        /// <param name="skipable">If the section is skippable.</param>
+        /// <param name="sectionAction">The section action.</param>
+        /// <returns>The Success</returns>
+        public bool Section(string[] idParts, ContentItem varByContentItem, bool skipable, Func<ICacheSection, bool> sectionAction)
+        {
+            return this.Section(idParts, varByContentItem, null, skipable, sectionAction);
+        }
+
+        /// <summary>Starts a section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="varByContentItem">The var by content item.</param>
+        /// <param name="varBySettings">The var by settings.</param>
+        /// <param name="skipable">If the section is skippable.</param>
+        /// <param name="sectionAction">The section action.</param>
+        /// <returns>The Success</returns>
+        public bool Section(string[] idParts, ContentItem varByContentItem, object varBySettings, bool skipable, Func<ICacheSection, bool> sectionAction)
+        {
+            return this.Section(
+                idParts, 
+                id =>
+                {
+                    var cacheSection = this.Cache.BeginSection(id, varByContentItem, varBySettings);
+                    try
+                    {
+                        if (skipable && cacheSection.CanBeSkipped())
+                        {
+                            return true;
+                        }
+
+                        if (!sectionAction(cacheSection))
+                        {
+                            return false;
+                        }
+
+                        cacheSection.Save();
+                        return true;
+                    }
+                    finally
+                    {
+                        cacheSection.EndSection();
+                    }
+                });
         }
 
         /// <summary>The clean cache.</summary>
@@ -183,25 +244,25 @@ namespace WebGrease
         /// <param name="fileType">The file type.</param>
         /// <returns>The available files.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Need lowercase")]
-        public IEnumerable<ResultFile> GetAvailableFiles(string rootDirectory, IList<string> directories, IList<string> extensions, FileTypes fileType)
+        public IDictionary<string, string> GetAvailableFiles(string rootDirectory, IList<string> directories, IList<string> extensions, FileTypes fileType)
         {
             var key = new { rootDirectory, directories, extensions, fileType }.ToJson();
             if (!this.availableFiles.ContainsKey(key))
             {
-                var results = new List<ResultFile>();
+                var results = new Dictionary<string, string>();
                 if (directories == null)
                 {
                     return results;
                 }
 
-                foreach (string directory in directories)
+                foreach (var directory in directories)
                 {
-                    foreach (string extension in extensions)
+                    foreach (var extension in extensions)
                     {
                         results.AddRange(
                             Directory.GetFiles(directory, extension, SearchOption.AllDirectories)
                                      .Select(f => f.ToLowerInvariant())
-                                     .Select(f => ResultFile.FromFile(f.MakeRelativeToDirectory(rootDirectory), fileType, f, rootDirectory)));
+                                     .ToDictionary(f => f.MakeRelativeToDirectory(rootDirectory), f => f));
                     }
                 }
 
@@ -212,24 +273,37 @@ namespace WebGrease
         }
 
         /// <summary>The get content hash.</summary>
-        /// <param name="content">The content.</param>
+        /// <param name="value">The content.</param>
         /// <returns>The <see cref="string"/>.</returns>
-        public string GetContentHash(string content)
+        public string GetValueHash(string value)
         {
-            this.Measure.Start(TimeMeasureNames.FileHash);
+            if (value == null)
+            {
+                value = string.Empty;
+            }
+
+            this.Measure.Start(SectionIdParts.FileHash);
             try
             {
-                if (!CachedContentHashes.ContainsKey(content))
+                if (!CachedContentHashes.ContainsKey(value))
                 {
-                    CachedContentHashes.Add(content, ComputeContentHash(content));
+                    CachedContentHashes.Add(value, ComputeContentHash(value));
                 }
 
-                return CachedContentHashes[content];
+                return CachedContentHashes[value];
             }
             finally
             {
-                this.Measure.End(TimeMeasureNames.FileHash);
+                this.Measure.End(SectionIdParts.FileHash);
             }
+        }
+
+        /// <summary>Gets the md5 hash for the content file.</summary>
+        /// <param name="contentItem">The content file.</param>
+        /// <returns>The MD5 hash.</returns>
+        public string GetContentItemHash(ContentItem contentItem)
+        {
+            return contentItem.GetContentHash(this);
         }
 
         /// <summary>Gets the hash for the content of the file provided in the file path.</summary>
@@ -237,7 +311,7 @@ namespace WebGrease
         /// <returns>The MD5 hash.</returns>
         public string GetFileHash(string filePath)
         {
-            this.Measure.Start(TimeMeasureNames.FileHash);
+            this.Measure.Start(SectionIdParts.FileHash);
             try
             {
                 var fi = new FileInfo(filePath);
@@ -247,16 +321,16 @@ namespace WebGrease
                 }
 
                 var uniqueId = fi.FullName;
-                if (!CachedFileHashes.ContainsKey(uniqueId) || CachedFileHashes[uniqueId].Item1 != fi.LastWriteTimeUtc)
+                if (!CachedFileHashes.ContainsKey(uniqueId) || CachedFileHashes[uniqueId].Item1 != fi.LastWriteTimeUtc || CachedFileHashes[uniqueId].Item2 != fi.Length)
                 {
-                    CachedFileHashes[uniqueId] = new Tuple<DateTime, string>(fi.LastWriteTimeUtc, ComputeFileHash(fi.FullName));
+                    CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, ComputeFileHash(fi.FullName));
                 }
 
-                return CachedFileHashes[uniqueId].Item2;
+                return CachedFileHashes[uniqueId].Item3;
             }
             finally
             {
-                this.Measure.End(TimeMeasureNames.FileHash);
+                this.Measure.End(SectionIdParts.FileHash);
             }
         }
 
@@ -271,16 +345,51 @@ namespace WebGrease
                 : absolutePath.MakeRelativeTo(this.Configuration.ApplicationRootDirectory);
         }
 
+        /// <summary>The make absolute to source directory.</summary>
+        /// <param name="relativePath">The relative path.</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        public string GetWorkingSourceDirectory(string relativePath)
+        {
+            var sourceDirectory = this.Configuration.SourceDirectory ?? string.Empty;
+            var absolutePath = Path.Combine(sourceDirectory, relativePath);
+            var si = new FileInfo(absolutePath);
+
+            return (sourceDirectory.IsNullOrWhitespace() || si.FullName.StartsWith(sourceDirectory, StringComparison.OrdinalIgnoreCase))
+                ? si.DirectoryName
+                : sourceDirectory;
+        }
+
         /// <summary>The touch.</summary>
         /// <param name="filePath">The file path.</param>
         public void Touch(string filePath)
         {
-            File.SetLastWriteTimeUtc(filePath, this.SessionStartTime);
+            File.SetLastWriteTimeUtc(filePath, this.SessionStartTime.Date);
         }
 
         #endregion
 
         #region Methods
+
+        /// <summary>The bytes to hash.</summary>
+        /// <param name="hash">The hash.</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        [SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "MD5 Lower case")]
+        private static string BytesToHash(byte[] hash)
+        {
+            return BitConverter.ToString(hash).Replace("-", string.Empty).ToLower(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>The clean directory.</summary>
+        /// <param name="directory">The directory.</param>
+        private static void CleanDirectory(string directory)
+        {
+            if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
+            {
+                Directory.Delete(directory, true);
+            }
+
+            Directory.CreateDirectory(directory);
+        }
 
         /// <summary>The initialize.</summary>
         /// <param name="configuration">The configuration.</param>
@@ -290,11 +399,11 @@ namespace WebGrease
         /// <param name="runStartTime">The run start time.</param>
         /// <param name="timeMeasure">The time measure.</param>
         private void Initialize(
-            WebGreaseConfiguration configuration, 
-            LogManager logManager, 
-            ICacheManager cacheManager, 
-            PreprocessingManager preprocessingManager, 
-            DateTime runStartTime, 
+            WebGreaseConfiguration configuration,
+            LogManager logManager,
+            ICacheManager cacheManager,
+            PreprocessingManager preprocessingManager,
+            DateTimeOffset runStartTime,
             ITimeMeasure timeMeasure)
         {
             if (configuration == null)

@@ -1,16 +1,16 @@
 ﻿// ----------------------------------------------------------------------------------------------------
-// <copyright file="ResultContentType.cs" company="Microsoft Corporation">
+// <copyright file="ContentFileType.cs" company="Microsoft Corporation">
 //   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
 namespace WebGrease
 {
     /// <summary>The result file type.</summary>
-    public enum ResultContentType
+    public enum ContentItemType
     {
-        /// <summary>The disk.</summary>
-        Disk,
+        /// <summary>Content is on disk.</summary>
+        Path,
 
-        /// <summary>The memory.</summary>
-        Memory
+        /// <summary>Content as a value string in memory.</summary>
+        Value
     }
 }

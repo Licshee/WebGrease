@@ -26,7 +26,7 @@
     <DefineConstants>TRACE;DEBUG;CODE_ANALYSIS;SILVERLIGHT</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
     <CodeAnalysisRuleSet>..\AllRulesAndTreatWarningsAsErrors.ruleset</CodeAnalysisRuleSet>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
@@ -169,7 +169,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cache\CacheKeys.cs" />
+    <Compile Include="Cache\CacheFileCategories.cs" />
     <Compile Include="Activities\CssLocalizationActivity.cs" />
     <Compile Include="Activities\CssLocalizationInput.cs" />
     <Compile Include="Activities\ErrorCode.cs" />
@@ -343,14 +343,14 @@
     <Compile Include="Extensions\StringPathExtensions.cs" />
     <Compile Include="IWebGreaseContext.cs" />
     <Compile Include="LogManager.cs" />
-    <Compile Include="ResultFile.cs" />
-    <Compile Include="ResultContentType.cs" />
+    <Compile Include="ContentItem.cs" />
+    <Compile Include="ContentItemType.cs" />
     <Compile Include="TimeMeasure\ITimeMeasure.cs" />
     <Compile Include="TimeMeasure\NullTimeMeasure.cs" />
     <Compile Include="TimeMeasure\TimeMeasure.cs" />
     <Compile Include="TimeMeasure\TimeMeasureExtensions.cs" />
     <Compile Include="TimeMeasure\TimeMeasureItem.cs" />
-    <Compile Include="TimeMeasure\TimeMeasureNames.cs" />
+    <Compile Include="TimeMeasure\SectionIdParts.cs" />
     <Compile Include="TimeMeasure\TimeMeasureResult.cs" />
     <Compile Include="Css\Ast\AllowedImportData.cs" />
     <Compile Include="Css\Ast\Animation\KeyFramesBlockNode.cs" />

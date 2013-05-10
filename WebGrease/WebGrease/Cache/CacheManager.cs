@@ -104,17 +104,21 @@ namespace WebGrease
 
         /// <summary>Begins a new cache section.</summary>
         /// <param name="category">The category.</param>
-        /// <param name="filePath">The file path.</param>
+        /// <param name="contentItem">The result file.</param>
         /// <param name="settings">The settings.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, FileInfo filePath, object settings = null)
+        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null)
         {
             return this.currentCacheSection = CacheSection.Begin(
                 this.context, 
                 category, 
                 cs =>
                     {
-                        cs.VaryByFile(filePath.FullName);
+                        if (contentItem != null)
+                        {
+                            cs.VaryByContentItem(contentItem);
+                        }
+
                         cs.VaryBySettings(settings);
                     }, 
                 this.CurrentCacheSection);
@@ -177,61 +181,22 @@ namespace WebGrease
             this.context = newContext;
         }
 
-        /// <summary>Stores the content in cache.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="content">The content.</param>
+        /// <summary>Stores the content file in cache.</summary>
+        /// <param name="cacheCategory">The cache category.</param>
+        /// <param name="contentItem">The content file.</param>
         /// <returns>The cache file path.</returns>
-        public string StoreContentInCache(string category, string content)
+        public string StoreInCache(string cacheCategory, ContentItem contentItem)
         {
-            var uniqueId = this.context.GetContentHash(content);
-            var absoluteCacheFilePath = this.GetAbsoluteCacheFilePath(category, uniqueId + ".txt");
+            // Get the unique hash id for the file.
+            var uniqueId = contentItem.GetContentHash(this.context);
 
-            var targetFi = new FileInfo(absoluteCacheFilePath);
-            if (!targetFi.Exists)
-            {
-                if (targetFi.Directory != null && !targetFi.Directory.Exists)
-                {
-                    targetFi.Directory.Create();
-                }
+            // Get the file extension, fallback to .txt
+            var extension = Path.GetExtension(contentItem.RelativeContentPath) ?? ".txt";
 
-                File.WriteAllText(absoluteCacheFilePath, content);
-            }
+            // Get the absolute cache file path
+            var absoluteCacheFilePath = this.GetAbsoluteCacheFilePath(cacheCategory, uniqueId + extension);
 
-            return absoluteCacheFilePath;
-        }
-
-        /// <summary>Stores the file in cache.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="absolutePath">The absolute path.</param>
-        /// <returns>The stored cache file path.</returns>
-        public string StoreFileInCache(string category, string absolutePath)
-        {
-            var uniqueId = this.context.GetFileHash(absolutePath);
-            var sourceFi = new FileInfo(absolutePath);
-            if (!sourceFi.Exists)
-            {
-                throw new FileNotFoundException("Could not find the result file to store in the cache", absolutePath);
-            }
-
-            var isSourcePath = absolutePath.StartsWith(this.context.Configuration.SourceDirectory, StringComparison.OrdinalIgnoreCase);
-            if (isSourcePath)
-            {
-                return absolutePath;
-            }
-
-            var absoluteCacheFilePath = this.GetAbsoluteCacheFilePath(category, uniqueId + Path.GetExtension(absolutePath));
-            var targetFi = new FileInfo(absoluteCacheFilePath);
-            if (targetFi.Exists)
-            {
-                return absoluteCacheFilePath;
-            }
-
-            if (targetFi.Directory != null && !targetFi.Directory.Exists)
-            {
-                targetFi.Directory.Create();
-            }
-
-            sourceFi.CopyTo(targetFi.FullName, true);
+            contentItem.WriteTo(absoluteCacheFilePath);
 
             return absoluteCacheFilePath;
         }

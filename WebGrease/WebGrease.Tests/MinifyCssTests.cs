@@ -12,6 +12,7 @@ namespace WebGrease.Tests
 {
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
 
     using WebGrease.Configuration;
 
@@ -25,6 +26,7 @@ namespace WebGrease.Tests
         /// Verifies basic tests for good css being minified with available options.
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
         public void MinifiesGoodCssTest()
         {
             var goodCssContent = "p {color:red;}\r\np {margin: 10px}\r\np {width: 10px}\r\nbody {margin: 1em;}";
@@ -45,6 +47,7 @@ namespace WebGrease.Tests
         /// Tests error reporting for bad (unparseable) css.
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
         public void MinifierErrorsTest()
         {
             var badCss = "p {color:red;}\r\np {margin: 10px}\r\np {width: }\r\nbody margin: 1em;}";
@@ -58,6 +61,7 @@ namespace WebGrease.Tests
         /// Tests a complex css file and minifies something without blowing up.
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
         public void MinifyComplexCaseTest()
         {
             var minifier = new CssMinifier(new WebGreaseContext(new WebGreaseConfiguration()));

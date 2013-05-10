@@ -19,6 +19,7 @@ namespace Microsoft.WebGrease.Tests
     public class SassEngineTest
     {
         [TestMethod]
+        [TestCategory(TestCategories.Sass)]
         public void TestScssImports()
         {
             var sassFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\SassTest\Test1\Input\stylesheet1.scss");
@@ -27,6 +28,7 @@ namespace Microsoft.WebGrease.Tests
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.Sass)]
         public void TestTokens()
         {
             var tests = new Dictionary<string, string>
@@ -48,6 +50,7 @@ namespace Microsoft.WebGrease.Tests
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.Sass)]
         public void TestScssVariables()
         {
             const string Input = @"$blue: #3bbfce;
@@ -71,6 +74,7 @@ $margin: 16px;
 
 
         [TestMethod]
+        [TestCategory(TestCategories.Sass)]
         public void TestScssImport()
         {
             const string Include = @"$color: blue;";
@@ -87,14 +91,14 @@ $margin: 16px;
         {
             var sassPreprocessingEngine = new SassPreprocessingEngine();
             sassPreprocessingEngine.SetContext(new WebGreaseContext(new WebGreaseConfiguration(), null, null, null, logExtendedError));
-            return sassPreprocessingEngine
-                .Process(
-                    content, 
-                    filename, 
-                    null);
+            var processSassResult = sassPreprocessingEngine.Process(ContentItem.FromContent(content, filename), null);
+            return processSassResult != null
+                ? processSassResult.Content
+                : null;
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.Sass)]
         public void TestScssSmoke()
         {
             const string Input = @".error {
@@ -115,6 +119,7 @@ $margin: 16px;
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.Sass)]
         public void TestSassNegativeSmoke()
         {
             const string Input = ".foo bar[val=\"//\"]\n { %%baz: bang; }";
@@ -128,6 +133,7 @@ $margin: 16px;
         }
 
         [TestMethod]
+        [TestCategory(TestCategories.Sass)]
         public void TestSassNegativeIncludeSmoke()
         {
             const string Include = "\r\n\r\n\r\naaaaa$color: blue;";

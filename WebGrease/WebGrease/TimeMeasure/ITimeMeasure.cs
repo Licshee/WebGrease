@@ -22,13 +22,14 @@ namespace WebGrease
 
         /// <summary>The start.</summary>
         /// <param name="idParts">The names.</param>
-        void Start(params string[] idParts);
+        /// <returns>The id.</returns>
+        string Start(params string[] idParts);
 
         /// <summary>Writes the results to a txt and a csv file.</summary>
         /// <param name="filePathWithoutExtension">The file path without extension.</param>
         /// <param name="title">The title.</param>
         /// <param name="utcStart">The utc start.</param>
-        void WriteResults(string filePathWithoutExtension, string title, DateTime utcStart);
+        void WriteResults(string filePathWithoutExtension, string title, DateTimeOffset utcStart);
 
         /// <summary>Begins a new section.</summary>
         void BeginSection();

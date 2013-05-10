@@ -11,6 +11,8 @@ namespace Css.Tests.Css30
     using System.Diagnostics;
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WebGrease.Tests;
+
     using TestSuite;
     using WebGrease;
     using WebGrease.Css;
@@ -36,6 +38,7 @@ namespace Css.Tests.Css30
         /// Unit test for upper case charset
         /// </summary>
         [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
         public void LowercaseVisitorExceptions()
         {
             try

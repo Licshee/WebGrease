@@ -36,7 +36,7 @@ namespace WebGrease.Configuration
             this.Locales = new List<string>();
             this.Minification = new Dictionary<string, JsMinificationConfig>(StringComparer.OrdinalIgnoreCase);
             this.InputSpecs = new List<InputSpec>();
-            this.Autonaming = new Dictionary<string, AutoNameConfig>(StringComparer.OrdinalIgnoreCase);
+            this.AutoNaming = new Dictionary<string, AutoNameConfig>(StringComparer.OrdinalIgnoreCase);
             this.Bundling = new Dictionary<string, BundlingConfig>(StringComparer.OrdinalIgnoreCase);
             this.Validation = new Dictionary<string, JSValidationConfig>(StringComparer.OrdinalIgnoreCase);
             this.Preprocessing = new PreprocessingConfig();
@@ -86,9 +86,6 @@ namespace WebGrease.Configuration
             Contract.Requires(jsFileSetElement != null);
             Contract.Requires(!string.IsNullOrWhiteSpace(sourceDirectory));
 
-            var nameAttribute = jsFileSetElement.Attribute("name");
-            this.Name = nameAttribute != null ? nameAttribute.Value : string.Empty;
-
             var outputAttribute = jsFileSetElement.Attribute("output");
             this.Output = outputAttribute != null ? outputAttribute.Value : string.Empty;
 
@@ -110,7 +107,7 @@ namespace WebGrease.Configuration
                         break;
                     case "Autoname":
                         var autoNameConfig = new AutoNameConfig(element);
-                        this.Autonaming[autoNameConfig.Name] = autoNameConfig;
+                        this.AutoNaming[autoNameConfig.Name] = autoNameConfig;
                         break;
                     case "Bundling":
                         var bundlingConfig = new BundlingConfig(element);
@@ -152,9 +149,6 @@ namespace WebGrease.Configuration
             }
         }
 
-        /// <summary>Gets the name of the configuration.</summary>
-        public string Name { get; private set; }
-
         /// <summary>Gets the output specified.</summary>
         public string Output { get; set; }
 
@@ -165,17 +159,9 @@ namespace WebGrease.Configuration
         public PreprocessingConfig Preprocessing { get; private set; }
 
         /// <summary>
-        /// Gets the validation settings
-        /// </summary>
-        internal IDictionary<string, JSValidationConfig> Validation { get; private set; }
-
-        /// <summary>Gets the dictionary of minification configurations.</summary>
-        internal IDictionary<string, JsMinificationConfig> Minification { get; private set; }
-
-        /// <summary>
         /// Gets the dictionary of auto naming configs
         /// </summary>
-        public IDictionary<string, AutoNameConfig> Autonaming { get; private set; }
+        public IDictionary<string, AutoNameConfig> AutoNaming { get; private set; }
 
         /// <summary>
         /// Gets the dictionary of auto naming configs
@@ -184,5 +170,13 @@ namespace WebGrease.Configuration
 
         /// <summary>Gets the list of <see cref="InputSpec"/> items specified.</summary>
         public IList<InputSpec> InputSpecs { get; private set; }
+
+        /// <summary>
+        /// Gets the validation settings
+        /// </summary>
+        internal IDictionary<string, JSValidationConfig> Validation { get; private set; }
+
+        /// <summary>Gets the dictionary of minification configurations.</summary>
+        internal IDictionary<string, JsMinificationConfig> Minification { get; private set; }
     }
 }

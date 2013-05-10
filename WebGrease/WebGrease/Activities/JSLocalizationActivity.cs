@@ -32,13 +32,56 @@ namespace WebGrease.Activities
         }
 
         /// <summary>Gets or sets DestinationDirectory.</summary>
-        internal string DestinationDirectory { get; set; }
+        internal string DestinationDirectory { private get; set; }
 
         /// <summary>Gets or sets ResourcesDirectory.</summary>
-        internal string ResourcesDirectory { get; set; }
+        internal string ResourcesDirectory { private get; set; }
 
         /// <summary>Gets the JS Localization Inputs.</summary>
         internal IList<JSLocalizationInput> JsLocalizationInputs { get; private set; }
+
+        /// <summary>Localize the result file.</summary>
+        /// <param name="context">The context.</param>
+        /// <param name="contentItem">The result file.</param>
+        /// <param name="locales">The locales.</param>
+        /// <param name="localeResources">The locale resources.</param>
+        /// <returns>The localized result files.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Resource keys should be lowercase")]
+        internal static IEnumerable<ContentItem> Localize(IWebGreaseContext context, ContentItem contentItem, IEnumerable<string> locales, IDictionary<string, IDictionary<string, string>> localeResources)
+        {
+            if (!localeResources.Any(lr => lr.Value.Any()) || !locales.Any())
+            {
+                return new[] { contentItem };
+            }
+
+            var results = new List<ContentItem>();
+            context.Measure.Start(SectionIdParts.JSLocalizationActivity);
+            try
+            {
+                var fileContent = contentItem.Content;
+                foreach (var locale in locales.Select(t => t.ToLowerInvariant()))
+                {
+                    var sourceFile = Path.GetFileNameWithoutExtension(contentItem.RelativeContentPath);
+                    var destinationFile = Path.Combine(locale, string.Format(CultureInfo.InvariantCulture, "{0}.{1}", sourceFile, Strings.JS));
+                    results.Add(ContentItem.FromContent(ResourcesResolver.ExpandResourceKeys(fileContent, localeResources[locale]), contentItem, locale));
+                }
+            }
+            catch (ResourceOverrideException resourceOverrideException)
+            {
+                var errorMessage = string.Format(CultureInfo.CurrentUICulture, "JSLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
+                throw new WorkflowException(errorMessage, resourceOverrideException);
+            }
+            catch (Exception exception)
+            {
+                throw new WorkflowException("JSLocalizationActivity - Error happened while executing the expand js resources activity.", exception);
+            }
+            finally
+            {
+                context.Measure.End(SectionIdParts.JSLocalizationActivity);
+            }
+
+            return results;
+        }
 
         /// <summary>When overridden in a derived class, executes the task.</summary>
         internal void Execute()
@@ -59,9 +102,9 @@ namespace WebGrease.Activities
                 return;
             }
 
+            this.context.Measure.Start(SectionIdParts.JSLocalizationActivity);
             try
             {
-                this.context.Measure.Start(TimeMeasureNames.JSLocalizationActivity);
                 Directory.CreateDirectory(this.DestinationDirectory);
                 foreach (var jsLocalizationInput in this.JsLocalizationInputs.Where(_ => (_ != null && !string.IsNullOrWhiteSpace(_.DestinationFile))))
                 {
@@ -84,7 +127,7 @@ namespace WebGrease.Activities
             }
             finally
             {
-                this.context.Measure.End(TimeMeasureNames.JSLocalizationActivity);
+                this.context.Measure.End(SectionIdParts.JSLocalizationActivity);
             }
         }
 
@@ -105,7 +148,7 @@ namespace WebGrease.Activities
             fileContent = ResourcesResolver.ExpandResourceKeys(fileContent, localeResources);
 
             // Write the localized file to disk
-            FileHelper.WriteFile(outputPath, fileContent, Encoding.UTF8);
+            FileHelper.WriteFile(outputPath, fileContent);
         }
     }
 }
