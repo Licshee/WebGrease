@@ -66,48 +66,35 @@ namespace WebGrease.Activities
         {
             if (fileSets.Any())
             {
-                var cacheSection = this.context.Cache.BeginSection(
-                        SectionIdParts.EverythingActivity + "." + fileType,
-                        new
-                        {
-                            fileSets,
-                            fileType,
-                            this.context.Configuration.ConfigType,
-                            this.context.Configuration.SourceDirectory,
-                            this.context.Configuration.DestinationDirectory,
-                        });
-
-                try
-                {
-                    if (cacheSection.CanBeSkipped())
+                var varBySettings = new { fileSets, fileType, this.context.Configuration.ConfigType, this.context.Configuration.SourceDirectory, this.context.Configuration.DestinationDirectory };
+                this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString())
+                    .CanBeCached(varBySettings, true)
+                    .RestoreFromCacheAction(this.RestoreBundleFromCache)
+                    .Execute(cacheSection =>
                     {
-                        return;
-                    }
-
-                    if (cacheSection.CanBeRestoredFromCache())
-                    {
-                        var endResults = cacheSection.GetCachedContentItems(CacheFileCategories.AssemblerResult, true);
-                        endResults.ForEach(er => er.WriteToContentPath(this.context.Configuration.DestinationDirectory));
-                        return;
-                    }
-
-                    this.context.Log.Information("Begin " + fileType + " bundle pipeline");
-                    this.Bundle(assembler, fileSets);
-                    this.context.Log.Information("End " + fileType + " bundle pipeline");
-
-                    cacheSection.Save();
-                }
-                finally
-                {
-                    cacheSection.EndSection();
-                }
+                        this.context.Log.Information("Begin " + fileType + " bundle pipeline");
+                        this.Bundle(assembler, fileSets, fileType);
+                        this.context.Log.Information("End " + fileType + " bundle pipeline");
+                        return true;
+                    });
             }
+        }
+
+        /// <summary>The restore bundle from cache.</summary>
+        /// <param name="cacheSection">The cache section.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private bool RestoreBundleFromCache(ICacheSection cacheSection)
+        {
+            var endResults = cacheSection.GetCachedContentItems(CacheFileCategories.AssemblerResult, true);
+            endResults.ForEach(er => er.WriteToContentPath(this.context.Configuration.DestinationDirectory));
+            return true;
         }
 
         /// <summary>The bundle.</summary>
         /// <param name="assembler">The assembler.</param>
         /// <param name="fileSets">The file sets.</param>
-        private void Bundle(AssemblerActivity assembler, IEnumerable<IFileSet> fileSets)
+        /// <param name="fileType">The file type</param>
+        private void Bundle(AssemblerActivity assembler, IEnumerable<IFileSet> fileSets, FileTypes fileType)
         {
             // processing pipeline per file set in the config
             foreach (var fileSet in fileSets)
@@ -115,37 +102,31 @@ namespace WebGrease.Activities
                 var setConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, this.context.Configuration.ConfigType);
                 if (setConfig.ShouldBundleFiles)
                 {
-                    var fileSetCacheSection = this.context.Cache.BeginSection("bundle", new { fileSets, setConfig });
-                    try
-                    {
-                        if (fileSetCacheSection.CanBeSkipped())
+                    this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString(), SectionIdParts.Process)
+                        .CanBeCached(fileSet, setConfig, true)
+                        .RestoreFromCacheAction(this.RestoreBundleFromCache)
+                        .Execute(fileSetCacheSection =>
                         {
-                            continue;
-                        }
-                        
-                        // for each file set (that isn't empty of inputs)
-                        // bundle the files, however this can only be done on filesets that have an output value of a file (ie: has an extension)
-                        var outputfile = Path.Combine(this.context.Configuration.DestinationDirectory, fileSet.Output);
+                            // for each file set (that isn't empty of inputs)
+                            // bundle the files, however this can only be done on filesets that have an output value of a file (ie: has an extension)
+                            var outputfile = Path.Combine(this.context.Configuration.DestinationDirectory, fileSet.Output);
 
-                        if (Path.GetExtension(outputfile).IsNullOrWhitespace())
-                        {
-                            Console.WriteLine(ResourceStrings.InvalidBundlingOutputFile, outputfile);
-                            continue;
-                        }
+                            if (Path.GetExtension(outputfile).IsNullOrWhitespace())
+                            {
+                                Console.WriteLine(ResourceStrings.InvalidBundlingOutputFile, outputfile);
+                                return true;
+                            }
 
-                        assembler.OutputFile = outputfile;
-                        assembler.Inputs.Clear();
-                        assembler.PreprocessingConfig = fileSet.Preprocessing;
-                        assembler.Inputs.AddRange(fileSet.InputSpecs);
-                        var contentItem = assembler.Execute();
+                            assembler.OutputFile = outputfile;
+                            assembler.Inputs.Clear();
+                            assembler.PreprocessingConfig = fileSet.Preprocessing;
+                            assembler.Inputs.AddRange(fileSet.InputSpecs);
+                            var contentItem = assembler.Execute();
 
-                        fileSetCacheSection.AddResult(contentItem, CacheFileCategories.AssemblerResult, true);
-                        fileSetCacheSection.Save();
-                    }
-                    finally
-                    {
-                        fileSetCacheSection.EndSection();
-                    }
+                            fileSetCacheSection.AddResult(contentItem, CacheFileCategories.AssemblerResult, true);
+
+                            return true;
+                        });
                 }
             }
         }

@@ -11,7 +11,7 @@ namespace WebGrease.Configuration
     using System.Collections.Generic;
 
     /// <summary>The FileSet interface.</summary>
-    internal interface IFileSet
+    public interface IFileSet
     {
         /// <summary>Gets the locales.</summary>
         IList<string> Locales { get; }

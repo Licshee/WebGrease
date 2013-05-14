@@ -19,6 +19,9 @@ namespace WebGrease
         /// <summary>The assembly.</summary>
         public const string Assembly = "Assembly";
 
+        /// <summary>The bundle activity.</summary>
+        public const string BundleActivity = "BundleActivity";
+
         /// <summary>The css.</summary>
         public const string Css = "Css";
 
@@ -34,6 +37,9 @@ namespace WebGrease
         /// <summary>The web grease build task.</summary>
         public const string WebGreaseBuildTask = "WebGreaseBuildTask";
 
+        /// <summary>The web grease build task session.</summary>
+        public const string WebGreaseBuildTaskSession = "WebGreaseBuildTaskSession";
+
         /// <summary>The css file set.</summary>
         public const string CssFileSet = "CssFileSet";
 
@@ -48,6 +54,9 @@ namespace WebGrease
 
         /// <summary>The file hash.</summary>
         public const string FileHash = "FileHash";
+
+        /// <summary>The file hash.</summary>
+        public const string ContentHash = "ContentHash";
 
         /// <summary>The image hash.</summary>
         public const string ImageHash = "ImageHash";
@@ -85,11 +94,11 @@ namespace WebGrease
         /// <summary>The process.</summary>
         public const string Process = "Process";
 
-        /// <summary>The sprite.</summary>
-        public const string Sprite = "Spriting";
+        /// <summary>The resources resolution activity.</summary>
+        public const string ResourcesResolutionActivity = "ResourcesResolutionActivity";
 
-        /// <summary>The unidentified.</summary>
-        public const string Unidentified = "[Unidentified]";
+        /// <summary>The sprite.</summary>
+        public const string Spriting = "Spriting";
 
         /// <summary>The validate.</summary>
         public const string Validate = "Validate";

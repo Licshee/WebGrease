@@ -57,6 +57,7 @@ namespace WebGrease.Configuration
             this.CacheTimeout = configuration.CacheTimeout;
             this.CacheUniqueKey = configuration.CacheUniqueKey;
             this.Measure = configuration.Measure;
+            this.Overrides = configuration.Overrides;
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
@@ -188,6 +189,9 @@ namespace WebGrease.Configuration
         /// gets or sets the value that determines how long to keep cache items that have not been touched. (both read and right will touch a file)
         /// </summary>
         internal TimeSpan CacheTimeout { get; set; }
+
+        /// <summary>Gets or sets the overrides.</summary>
+        internal TemporaryOverrides Overrides { get; set; }
 
         /// <summary>Gets or sets the default list of locales</summary>
         private IList<string> DefaultLocales { get; set; }

@@ -37,7 +37,8 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
+    <DefineConstants>
+    </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -148,6 +149,7 @@
   </Target>
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) NEQ Debug ( 
+  echo "MERGING"
    rd /s /q "$(TargetDir)Merged"
    md "$(TargetDir)Merged"
    
@@ -155,7 +157,8 @@
 $(ProjectDir)\..\ref\build\ilmerge\ilmerge.exe /out:"$(TargetDir)Merged\WG.EXE"  /targetplatform:v4,"%25ProgramFiles%25\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0" /log /t:exe "$(TargetDir)WG.EXE" "$(TargetDir)Antlr3.Runtime.dll" "$(TargetDir)WebGrease.dll"
 
 )
-$(SolutionDir)TmsSdkAfterBuildTask.bat "$(SolutionDir)" "$(TargetDir)" "$(SolutionDir)..\..\..\Workspace2\MSNMetro\Main\MetroSDK\" 1.4.0</PostBuildEvent>
+
+$(SolutionDir)TmsSdkAfterBuildTask.bat "$(SolutionDir)" "$(TargetDir)" "$(SolutionDir)..\..\..\Workspace2\MSNMetro\Main\MetroSDK\" 1.4.2-build20130510133124</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

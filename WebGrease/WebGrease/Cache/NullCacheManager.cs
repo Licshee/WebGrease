@@ -7,6 +7,8 @@ namespace WebGrease
 {
     using System;
 
+    using WebGrease.Configuration;
+
     /// <summary>The null cache manager.</summary>
     public class NullCacheManager : ICacheManager
     {
@@ -34,19 +36,12 @@ namespace WebGrease
 
         /// <summary>Begins a new cache section.</summary>
         /// <param name="category">The category.</param>
-        /// <param name="settings">The settings.</param>
-        /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, object settings)
-        {
-            return EmptyCacheSection;
-        }
-
-        /// <summary>Begins a new cache section.</summary>
-        /// <param name="category">The category.</param>
         /// <param name="contentItem">The result file.</param>
         /// <param name="settings">The settings.</param>
+        /// <param name="cacheVarByFileSet"></param>
+        /// <param name="cacheIsSkipable"></param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, ContentItem contentItem, object settings = null)
+        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVarByFileSet = null, bool cacheIsSkipable = false)
         {
             return EmptyCacheSection;
         }

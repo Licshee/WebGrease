@@ -40,13 +40,12 @@ namespace WebGrease.Extensions
             foreach (var kvp2 in dictionary2)
             {
                 var key = kvp2.Key;
-                var value = kvp2.Value;
                 if (!dictionary1.ContainsKey(key))
                 {
                     dictionary1[key] = 0;
                 }
 
-                dictionary1[key] += value;
+                dictionary1[key] += kvp2.Value;
             } 
         }
 
@@ -60,13 +59,12 @@ namespace WebGrease.Extensions
             foreach (var kvp2 in dictionary2)
             {
                 var key = kvp2.Key;
-                var value = kvp2.Value;
                 if (!dictionary1.ContainsKey(key))
                 {
                     dictionary1[key] = 0;
                 }
 
-                dictionary1[key] += value;
+                dictionary1[key] += kvp2.Value;
             }
         }
     }

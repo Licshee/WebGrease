@@ -81,28 +81,26 @@ namespace WebGrease.Activities
                 return EmptyResult;
             }
 
-            this.context.Measure.Start("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
-            try
+            return this.context.SectionedAction(SectionIdParts.ResourcesResolutionActivity, this.FileType.ToString(), this.ResourceTypeFilter.ToString()).Execute(() =>
             {
-            var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
-            return resourcesResolver.GetMergedResources();
-            }
-            catch (ResourceOverrideException resourceOverrideException)
-            {
-                // There was a token override in folder path that does not
-                // allow token overriding. For this case, we need to
-                // show a build error.
-                var errorMessage = string.Format(CultureInfo.InvariantCulture, "ResourcesResolutionActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
-                throw new WorkflowException(errorMessage, resourceOverrideException);
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException("ResourcesResolutionActivity - Error happened while executing the resolve resources activity", exception);
-            }
-            finally
-            {
-                this.context.Measure.End("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
-            }
+                try
+                {
+                    var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
+                    return resourcesResolver.GetMergedResources();
+                }
+                catch (ResourceOverrideException resourceOverrideException)
+                {
+                    // There was a token override in folder path that does not
+                    // allow token overriding. For this case, we need to
+                    // show a build error.
+                    var errorMessage = string.Format(CultureInfo.InvariantCulture, "ResourcesResolutionActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
+                    throw new WorkflowException(errorMessage, resourceOverrideException);
+                }
+                catch (Exception exception)
+                {
+                    throw new WorkflowException("ResourcesResolutionActivity - Error happened while executing the resolve resources activity", exception);
+                }
+            });
         }
 
         /// <summary>When overridden in a derived class, executes the task.</summary>
@@ -113,28 +111,26 @@ namespace WebGrease.Activities
                 return;
             }
 
-            this.context.Measure.Start("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
-            try
+            this.context.SectionedAction(SectionIdParts.ResourcesResolutionActivity, this.FileType.ToString(), this.ResourceTypeFilter.ToString()).Execute(() =>
             {
-                var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
-                resourcesResolver.ResolveHierarchy();
-            }
-            catch (ResourceOverrideException resourceOverrideException)
-            {
-                // There was a token override in folder path that does not
-                // allow token overriding. For this case, we need to
-                // show a build error.
-                var errorMessage = string.Format(CultureInfo.InvariantCulture, "ResourcesResolutionActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
-                throw new WorkflowException(errorMessage, resourceOverrideException);
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException("ResourcesResolutionActivity - Error happened while executing the resolve resources activity", exception);
-            }
-            finally
-            {
-                this.context.Measure.End("ResourcesResolutionActivity", this.FileType.ToString(), this.ResourceTypeFilter.ToString());
-            }
+                try
+                {
+                    var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
+                    resourcesResolver.ResolveHierarchy();
+                }
+                catch (ResourceOverrideException resourceOverrideException)
+                {
+                    // There was a token override in folder path that does not
+                    // allow token overriding. For this case, we need to
+                    // show a build error.
+                    var errorMessage = string.Format(CultureInfo.InvariantCulture, "ResourcesResolutionActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
+                    throw new WorkflowException(errorMessage, resourceOverrideException);
+                }
+                catch (Exception exception)
+                {
+                    throw new WorkflowException("ResourcesResolutionActivity - Error happened while executing the resolve resources activity", exception);
+                }
+            });
         }
 
         /// <summary>Check if it has anything to resolve.</summary>

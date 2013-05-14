@@ -39,6 +39,21 @@ namespace WebGrease.Extensions
 
         #region Methods
 
+
+        /// <summary>Tries to parse the string into the enum.
+        /// This implementation does not know how to deal with flags.</summary>
+        /// <param name="value">The string to parse. </param>
+        /// <param name="defaultValue">The defaultValue (null if not set)</param>
+        /// <typeparam name="TEnum">The type of the enum </typeparam>
+        /// <returns>The parsed enum or the defaultValue for the enum if unable to parse </returns>
+        public static TEnum? TryParseToEnum<TEnum>(this string value, TEnum? defaultValue = null) where TEnum : struct
+        {
+            TEnum result;
+            return Enum.TryParse(value, true, out result) && Enum.IsDefined(typeof(TEnum), result) 
+                ? result 
+                : defaultValue;
+        }
+
         /// <summary>Checks if the string is null or empty space.</summary>
         /// <param name="text">string to test</param>
         /// <returns>true or false</returns>
@@ -50,10 +65,10 @@ namespace WebGrease.Extensions
         /// <summary>The try parse for string to boolean.</summary>
         /// <param name="textToParse">The text to parse.</param>
         /// <returns>The try parse.</returns>
-        internal static bool TryParseBool(this string textToParse)
+        public static bool TryParseBool(this string textToParse)
         {
-            bool minify;
-            return !bool.TryParse(textToParse, out minify) || minify;
+            bool result;
+            return !bool.TryParse(textToParse, out result) || result;
         }
 
         /// <summary>parses text into a number (if valid)</summary>

@@ -25,6 +25,12 @@ namespace WebGrease
         /// <summary>The empty source dependencies.</summary>
         private static readonly IEnumerable<CacheSourceDependency> EmptySourceDependencies = new CacheSourceDependency[] { };
 
+        /// <summary>Initializes a new instance of the <see cref="NullCacheSection"/> class.</summary>
+        public NullCacheSection()
+        {
+            this.UniqueKey = string.Empty;
+        }
+
         #endregion
 
         #region Public Properties
@@ -38,6 +44,9 @@ namespace WebGrease
                 return NullCacheManager.EmptyCacheSection;
             }
         }
+
+        /// <summary>Gets the unique key.</summary>
+        public string UniqueKey { get; private set; }
 
         #endregion
 
@@ -90,13 +99,6 @@ namespace WebGrease
         {
         }
 
-        /// <summary>Gets the changed end results recursively.</summary>
-        /// <returns>The changed end results.</returns>
-        public IEnumerable<CacheResult> GetChangedEndResults()
-        {
-            return EmptyCacheResults;
-        }
-
         /// <summary>Gets the changed source dependencies recursively.</summary>
         /// <returns>The changed source dependencies.</returns>
         public IEnumerable<CacheSourceDependency> GetChangedSourceDependencies()
@@ -134,11 +136,21 @@ namespace WebGrease
         {
         }
 
-        /// <summary>Gets the source dependencies recursively.</summary>
-        /// <returns>The source dependencies.</returns>
-        public IEnumerable<CacheSourceDependency> GetSourceDependencies()
+        /// <summary>The get cache data.</summary>
+        /// <param name="id">The id.</param>
+        /// <typeparam name="T">The typeof object</typeparam>
+        /// <returns>The <see cref="T"/>.</returns>
+        public T GetCacheData<T>(string id) where T : new()
         {
-            return EmptySourceDependencies;
+            return default(T);
+        }
+
+        /// <summary>The set cache data.</summary>
+        /// <param name="id">The id.</param>
+        /// <param name="obj">The obj.</param>
+        /// <typeparam name="T">The typeof object</typeparam>
+        public void SetCacheData<T>(string id, T obj) where T : new()
+        {
         }
 
         /// <summary>Varys the section by file.</summary>

@@ -11,9 +11,9 @@ namespace WebGrease.Activities
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
-    using System.Text;
     using System.Text.RegularExpressions;
     using System.Xml.Linq;
 
@@ -31,10 +31,10 @@ namespace WebGrease.Activities
     internal sealed class MinifyCssActivity
     {
         /// <summary>The url hash all regex pattern.</summary>
-        private static readonly Regex UrlHashAllRegexPattern = new Regex(@"url\s*\(\s*(?<quote>[""']?)hash://(?<url>.*?)\k<quote>\s*\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex UrlHashAllRegexPattern = new Regex(@"url\((?<quote>[""']?)hash://(?<url>.*?)\k<quote>\)", RegexOptions.Compiled);
 
         /// <summary>The url hash regex pattern.</summary>
-        private static readonly Regex UrlHashRegexPattern = new Regex(@"(?<type>hash)(?:\((?<url>[^)]*))\)|(?<type>url)\((?<quote>[""']?)\s*([-\\:/.\w]+\.[\w]+)\s*\k<quote>\)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex UrlHashRegexPattern = new Regex(@"url\((?<quote>[""']?)(?:hash\((?<url>[^)]*))\)\k<quote>\)", RegexOptions.Compiled);
 
         /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
@@ -148,28 +148,21 @@ namespace WebGrease.Activities
                 return cssContent;
             }
 
-            this.context.Measure.Start(SectionIdParts.MinifyCssActivity);
-            string css;
+            return this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Parse).Execute(() => 
+            {
+                try
+                {
+                    AstNode stylesheetNode = CssParser.Parse(cssContent, shouldLog);
+                    return this.ApplyConfiguredVisitors(stylesheetNode);
+                }
+                catch (Exception exception)
+                {
+                    this.ParserException = exception;
 
-            try
-            {
-                this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.Parse);
-                AstNode stylesheetNode = CssParser.Parse(cssContent, shouldLog);
-                css = this.ApplyConfiguredVisitors(stylesheetNode);
-                this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.Parse);
-            }
-            catch (Exception exception)
-            {
-                // give back the original unmodified
-                css = cssContent;
-                this.ParserException = exception;
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.MinifyCssActivity);
-            }
-
-            return css;
+                    // give back the original unmodified
+                    return cssContent;
+                }
+            });
         }
 
         /// <summary>Executes the task in a build style workflow, i.e. with a file path in and destination file set for out.</summary>
@@ -206,245 +199,177 @@ namespace WebGrease.Activities
             }
 
             var shouldHashCss = this.CssHasher != null;
-            this.context.Measure.Start(SectionIdParts.MinifyCssActivity);
-            var cacheSection = this.context.Cache.BeginSection(
-                "minifycss",
-                contentItem,
-                this.GetVarBySettings());
-
-            try
-            {
-                if (this.TryRestoreFromCache(cacheSection, shouldHashCss, shouldHashImages))
-                {
-                    return;
-                }
-
-                // Get the content from file.
-                var cssContent = contentItem.Content;
-
-                if (shouldHashImages)
-                {
-                    // Pre hash images, replace all hash( with hash:// to make it valid css.
-                    cssContent = this.PreHashImages(cssContent, cacheSection);
-                }
-
-                // Load the Css parser and stylesheet Ast
-                AstNode stylesheetNode;
-                this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.Parse);
-                try
-                {
-                    stylesheetNode = CssParser.Parse(cssContent, false);
-                }
-                finally
-                {
-                    this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.Parse);
-                }
-
-                // Apply all configured visitors, including, validating, optimizing, minifying and spriting.
-                var css = this.ApplyConfiguredVisitors(stylesheetNode);
-
-                if (shouldHashImages)
-                {
-                    // Hash all images that have not been sprited.
-                    css = this.HashImages(css, cacheSection);
-                }
-
-                var destinationFile = this.DestinationFile;
-                var relativeDestinationFile =
-                        Path.IsPathRooted(destinationFile)
-                        ? destinationFile.MakeRelativeToDirectory(this.context.Configuration.DestinationDirectory)
-                        : destinationFile;
-
-                if (shouldHashCss)
-                {
-                    // Write the result to disk using hashing.
-                    var result = this.CssHasher.Hash(ContentItem.FromContent(css, relativeDestinationFile));
-                    cacheSection.AddResult(result, CacheFileCategories.MinifiedCssResult, true);
-                }
-                else
-                {
-                    // Write to the destination file on disk.
-                    FileHelper.WriteFile(this.DestinationFile, css);
-                    cacheSection.AddResult(ContentItem.FromContent(css, relativeDestinationFile), CacheFileCategories.MinifiedCssResult, true);
-                }
-
-                cacheSection.Save();
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException(
-                    "MinifyCssActivity - Error happened while executing the css pipeline activity.", exception);
-            }
-            finally
-            {
-                cacheSection.EndSection();
-                this.context.Measure.End(SectionIdParts.MinifyCssActivity);
-            }
+            this.context
+                .SectionedAction(SectionIdParts.MinifyCssActivity)
+                .CanBeCached(contentItem, this.GetVarBySettings())
+                .RestoreFromCacheAction(cacheSection =>
+                    RestoreAllFromCache(cacheSection, shouldHashCss, shouldHashImages, this.context.Configuration.DestinationDirectory, this.ImageHasher, this.CssHasher, this.ShouldAssembleBackgroundImages))
+                .Execute(cacheSection =>
+                    this.MinifyCssContentItem(contentItem, shouldHashImages, cacheSection, shouldHashCss, this.DestinationFile));
         }
 
-        /// <summary>Tries to restore the sprited image from cache.</summary>
+        /// <summary>The restore all from cache.</summary>
         /// <param name="cacheSection">The cache section.</param>
-        /// <param name="spriteLogFile">The sprite log file.</param>
-        /// <param name="destinationDirectory">The destination directory.</param>
-        /// <returns>If it was able to restore.</returns>
-        private static bool TryRestoreSpritedImageFromCache(ICacheSection cacheSection, string spriteLogFile, string destinationDirectory)
+        /// <param name="shouldHashCss">The should hash css.</param>
+        /// <param name="shouldHashImages">The should hash images.</param>
+        /// <param name="destinationDirectory">The destination Directory.</param>
+        /// <param name="imageHasher">The image Hasher.</param>
+        /// <param name="cssHasher">The css hasher</param>
+        /// <param name="shouldAssembleBackgroundImages">The should Assemble Background Images.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private static bool RestoreAllFromCache(ICacheSection cacheSection, bool shouldHashCss, bool shouldHashImages, string destinationDirectory, FileHasherActivity imageHasher, FileHasherActivity cssHasher, bool shouldAssembleBackgroundImages)
         {
-            if (cacheSection.CanBeRestoredFromCache())
+            var cssContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.MinifiedCssResult).FirstOrDefault();
+            if (cssContentItem == null)
             {
-                var spriteLogFileContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.SpriteLogFile);
-                spriteLogFileContentItem.WriteTo(spriteLogFile);
-
-                RestoreSpritedImages(cacheSection, destinationDirectory);
-                return true;
+                return false;
             }
 
-            return false;
-        }
-
-        /// <summary>Restores sprited images.</summary>
-        /// <param name="cacheSection">The cache section.</param>
-        /// <param name="destinationDirectory">The destination directory.</param>
-        private static void RestoreSpritedImages(ICacheSection cacheSection, string destinationDirectory)
-        {
-            var spritedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedSpriteImage);
-            spritedImageContentItems.ForEach(sici => sici.WriteToContentPath(destinationDirectory));
-        }
-
-        /// <summary>Try and restore from cache.</summary>
-        /// <param name="cacheSection">The cache section.</param>
-        /// <param name="shouldHashCss">The should Hash Css.</param>
-        /// <param name="shouldHashImages">The should Hash Images.</param>
-        /// <returns>If it can restore.</returns>
-        private bool TryRestoreFromCache(ICacheSection cacheSection, bool shouldHashCss, bool shouldHashImages)
-        {
-            if (cacheSection.CanBeRestoredFromCache())
+            if (shouldHashCss)
             {
-                var cssContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.MinifiedCssResult);
-                if (shouldHashCss)
-                {
-                    // Restore hashed css output
-                    this.CssHasher.AppendToWorkLog(cssContentItem);
-                    cssContentItem.WriteToHashedPath(this.context.Configuration.DestinationDirectory);
-                }
-                else
-                {
-                    // Restore css output
-                    cssContentItem.WriteToContentPath(this.context.Configuration.DestinationDirectory, true);
-                }
-
-                if (this.ShouldAssembleBackgroundImages)
-                {
-                    // Restore sprited images
-                    RestoreSpritedImages(cacheSection, this.context.Configuration.DestinationDirectory);
-                }
-
-                if (shouldHashImages)
-                {
-                    // Restore sprited images
-                    var hashedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedImage);
-                    hashedImageContentItems.ForEach(sici => sici.WriteToHashedPath(this.context.Configuration.DestinationDirectory));
-                    this.ImageHasher.AppendToWorkLog(hashedImageContentItems);
-                }
-
-                return true;
+                // Restore hashed css output
+                cssHasher.AppendToWorkLog(cssContentItem);
+                cssContentItem.WriteToHashedPath(destinationDirectory);
+            }
+            else
+            {
+                // Restore css output
+                cssContentItem.WriteToContentPath(destinationDirectory, true);
             }
 
-            return false;
+            if (shouldAssembleBackgroundImages)
+            {
+                // Restore sprited images
+                var spritedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedSpriteImage);
+                spritedImageContentItems.ForEach(sici => sici.WriteToContentPath(destinationDirectory));
+            }
+
+            if (shouldHashImages)
+            {
+                // Restore sprited images
+                var hashedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedImage);
+                hashedImageContentItems.ForEach(sici => sici.WriteToHashedPath(destinationDirectory));
+                imageHasher.AppendToWorkLog(hashedImageContentItems);
+            }
+
+            return true;
         }
 
         /// <summary>The pre hash images.</summary>
+        /// <param name="context">The context.</param>
         /// <param name="cssContent">The css content.</param>
-        /// <param name="cacheSection">The cache section.</param>
         /// <returns>The <see cref="string"/>.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Css image requires lowercase.")]
-        private string PreHashImages(string cssContent, ICacheSection cacheSection)
+        private static string PreHashImages(IWebGreaseContext context, string cssContent)
         {
-            this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.ImageHash);
-            try
-            {
-                cssContent = UrlHashRegexPattern.Replace(
-                    cssContent,
-                    match =>
-                    {
-                        var url = match.Groups["url"].Value.ToLowerInvariant();
-                        cacheSection.AddSourceDependency(Path.Combine(this.context.Configuration.SourceDirectory, url.NormalizeUrl()));
-
-                        if (string.IsNullOrWhiteSpace(match.Groups["url"].Value))
-                        {
-                            return match.Value;
-                        }
-
-                        var result = "hash://" + url;
-                        if (match.Groups["type"].Value == "url")
-                        {
-                            result = "url('" + result + "')";
-                        }
-
-                        return result;
-                    });
-                return cssContent;
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.ImageHash);
-            }
+            // TODO:RTUIT: Optimize to not use regex, or enabled the parser to support hash( and uppercase in the url
+            return
+                context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.ImageHash)
+                       .Execute(() => UrlHashRegexPattern.Replace(cssContent, m => "url('hash://" + m.Groups["url"].Value.ToLowerInvariant() + "')"));
         }
 
+        /// <summary>The minify css content item.</summary>
+        /// <param name="contentItem">The content item.</param>
+        /// <param name="shouldHashImages">The should hash images.</param>
+        /// <param name="cacheSection">The cache section.</param>
+        /// <param name="shouldHashCss">The should hash css.</param>
+        /// <param name="destinationFile">The destination file.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private bool MinifyCssContentItem(ContentItem contentItem, bool shouldHashImages, ICacheSection cacheSection, bool shouldHashCss, string destinationFile)
+        {
+            // Get the content from file.
+            var cssContent = contentItem.Content;
+
+            if (shouldHashImages)
+            {
+                // Pre hash images, replace all hash( with hash:// to make it valid css.
+                cssContent = PreHashImages(this.context, cssContent);
+            }
+
+            // Load the Css parser and stylesheet Ast
+            var stylesheetNode = this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Parse)
+                .Execute(() => CssParser.Parse(cssContent, false));
+
+            // Apply all configured visitors, including, validating, optimizing, minifying and spriting.
+            var css = this.ApplyConfiguredVisitors(stylesheetNode);
+
+            if (shouldHashImages)
+            {
+                // Hash all images that have not been sprited.
+                css = this.HashImages(css, cacheSection);
+            }
+
+            var relativeDestinationFile = Path.IsPathRooted(destinationFile)
+                                              ? destinationFile.MakeRelativeToDirectory(this.context.Configuration.DestinationDirectory)
+                                              : destinationFile;
+
+            if (shouldHashCss)
+            {
+                // Write the result to disk using hashing.
+                var hashResult = this.CssHasher.Hash(ContentItem.FromContent(css, relativeDestinationFile));
+                cacheSection.AddResult(hashResult, CacheFileCategories.MinifiedCssResult, true);
+            }
+            else
+            {
+                // Write to the destination file on disk.
+                FileHelper.WriteFile(this.DestinationFile, css);
+                cacheSection.AddResult(ContentItem.FromContent(css, relativeDestinationFile), CacheFileCategories.MinifiedCssResult, true);
+            }
+
+            return true;
+        }
+        
         /// <summary>Hash the images.</summary>
         /// <param name="cssContent">The css content.</param>
         /// <param name="cacheSection">The cache section.</param>
         /// <returns>The css with hashed images.</returns>
         private string HashImages(string cssContent, ICacheSection cacheSection)
         {
-            this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.ImageHash);
-            try
-            {
-                var urlsToHash = UrlHashAllRegexPattern.Matches(cssContent)
-                    .OfType<Match>()
-                    .Select(m => m.Groups["url"].Value)
-                    .Distinct();
-
-                var contentImagesToHash = new List<ContentItem>();
-                foreach (string hashUrl in urlsToHash)
-                {
-                    var normalizedHashUrl = hashUrl.NormalizeUrl();
-                    var imageContentFile = this.availableSourceImages.ContainsKey(normalizedHashUrl)
-                        ? this.availableSourceImages[normalizedHashUrl]
-                        : null;
-
-                    if (imageContentFile == null)
+            return this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.ImageHash)
+                .Execute(() =>
                     {
-                        throw new BuildWorkflowException("Could not find a macthing source image for url: {0}".InvariantFormat(hashUrl));
-                    }
+                        var contentImagesToHash = new HashSet<string>();
+                        var hashedImages = new Dictionary<string, string>();
+                        cssContent = UrlHashAllRegexPattern.Replace(
+                            cssContent,
+                            match =>
+                                {
+                                    var urlToHash = match.Groups["url"].Value;
+                                    var normalizedHashUrl = urlToHash.NormalizeUrl();
+                                    var imageContentFile = this.availableSourceImages.ContainsKey(normalizedHashUrl)
+                                                               ? this.availableSourceImages[normalizedHashUrl]
+                                                               : null;
 
-                    contentImagesToHash.Add(ContentItem.FromFile(imageContentFile, normalizedHashUrl));
-                }
+                                    if (imageContentFile == null)
+                                    {
+                                        throw new BuildWorkflowException("Could not find a macthing source image for url: {0}".InvariantFormat(urlToHash));
+                                    }
 
-                var hashedImages = this.ImageHasher.Hash(contentImagesToHash);
-                cssContent = UrlHashAllRegexPattern
-                    .Replace(
-                    cssContent,
-                    match =>
-                    {
-                        var normalizedHashUrl = match.Groups["url"].Value.NormalizeUrl();
-                        var hashedUrl = hashedImages.Where(hi => hi.RelativeContentPath.Equals(normalizedHashUrl, StringComparison.OrdinalIgnoreCase)).Select(rf => rf.RelativeHashedContentPath).FirstOrDefault();
-                        if (string.IsNullOrWhiteSpace(hashedUrl))
-                        {
-                            throw new BuildWorkflowException("Could not locate the hashed image for css: {0} and url {1}".InvariantFormat(match.Value, match.Groups["url"].Value));
-                        }
+                                    if (contentImagesToHash.Add(normalizedHashUrl))
+                                    {
+                                        // Add the image as end result
+                                        var imageContentItem = ContentItem.FromFile(imageContentFile, normalizedHashUrl);
+                                        imageContentItem = this.ImageHasher.Hash(imageContentItem);
+                                        cacheSection.AddSourceDependency(imageContentFile);
+                                        cacheSection.AddResult(imageContentItem, CacheFileCategories.HashedImage, true);
 
-                        return "url(" + Path.Combine(ImageHasher.BasePrefixToAddToOutputPath, hashedUrl.Replace('\\', '/')) + ")";
+                                        imageContentFile =
+                                            Path.Combine(
+                                                ImageHasher.BasePrefixToAddToOutputPath ?? Path.AltDirectorySeparatorChar.ToString(CultureInfo.InvariantCulture),
+                                                imageContentItem.RelativeHashedContentPath.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+
+                                        hashedImages.Add(normalizedHashUrl, imageContentFile);
+                                    }
+                                    else
+                                    {
+                                        imageContentFile = hashedImages[normalizedHashUrl];
+                                    }
+
+                                    return "url(" + imageContentFile + ")";
+                                });
+
+                        return cssContent;
                     });
-
-                // Add the image as end result
-                hashedImages.ForEach(hf => cacheSection.AddResult(hf, CacheFileCategories.HashedImage, true));
-
-                return cssContent;
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.ImageHash);
-            }
         }
 
         /// <summary>Gets the unique object for all the settings, used for determining unique cache id.</summary>
@@ -478,8 +403,7 @@ namespace WebGrease.Activities
         /// <returns>Processed node either minified or pretty printed.</returns>
         private string ApplyConfiguredVisitors(AstNode stylesheetNode)
         {
-            this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.Validate);
-            try
+            this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Validate).Execute(() =>
             {
                 // Step # 1 - Remove the Css properties from Ast which need to be excluded (Bridging)
                 if (this.ShouldExcludeProperties)
@@ -504,26 +428,17 @@ namespace WebGrease.Activities
                 {
                     stylesheetNode = stylesheetNode.Accept(new SelectorValidationOptimizationVisitor(this.BannedSelectors, false, false));
                 }
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.Validate);
-            }
+            });
 
             // Step # 5 - Run the Css optimization visitors
             if (this.ShouldOptimize)
             {
-                this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize);
-                try
+                this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize).Execute(() =>
                 {
                     stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor());
                     stylesheetNode = stylesheetNode.Accept(new ColorOptimizationVisitor());
                     stylesheetNode = stylesheetNode.Accept(new FloatOptimizationVisitor());
-                }
-                finally
-                {
-                    this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize);
-                }
+                });
             }
 
             // The image assembly is a 3 step process:
@@ -535,15 +450,8 @@ namespace WebGrease.Activities
                 stylesheetNode = this.SpriteBackgroundImages(stylesheetNode);
             }
 
-            try
-            {
-                this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.PrintCss);
-                return this.ShouldMinify ? stylesheetNode.MinifyPrint() : stylesheetNode.PrettyPrint();
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.PrintCss);
-            }
+            return this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.PrintCss).Execute(() => 
+                this.ShouldMinify ? stylesheetNode.MinifyPrint() : stylesheetNode.PrettyPrint());
         }
 
         /// <summary>
@@ -553,8 +461,7 @@ namespace WebGrease.Activities
         /// <returns>The stylesheet node with the sprited images aplied.</returns>
         private AstNode SpriteBackgroundImages(AstNode stylesheetNode)
         {
-            this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite);
-            try
+            return this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting).Execute(() =>
             {
                 // Step # 6 - Execute the pipeline for image assembly scan
                 stylesheetNode = this.ExecuteImageAssemblyScan(stylesheetNode);
@@ -564,50 +471,12 @@ namespace WebGrease.Activities
                 for (var count = 0; count < this.imageAssemblyScanVisitor.ImageAssemblyScanOutputs.Count; count++)
                 {
                     var scanOutput = this.imageAssemblyScanVisitor.ImageAssemblyScanOutputs[count];
-
-                    var spriteLogFile = this.GetSpriteLogFile(count, scanOutput);
+                    var spriteLogFile = this.GetSpriteLogFileName(count, scanOutput);
 
                     if (File.Exists(spriteLogFile))
                     {
+                        this.SpriteImageFromLog(scanOutput, spriteLogFile);
                         spriteLogFiles.Add(spriteLogFile);
-
-                        var cacheSection = this.context.Cache.BeginSection(
-                            "minifycss.sprite",
-                            new { relativeSpriteCacheKey = this.GetRelativeSpriteCacheKey(scanOutput.ImageReferencesToAssemble) });
-                        try
-                        {
-                            var destinationDirectory = this.context.Configuration.DestinationDirectory;
-
-                            if (TryRestoreSpritedImageFromCache(cacheSection, spriteLogFile, destinationDirectory))
-                            {
-                                continue;
-                            }
-
-                            this.context.Measure.Start(SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite, SectionIdParts.Assembly);
-                            try
-                            {
-                                this.ExecuteImageAssembly(scanOutput.ImageReferencesToAssemble, spriteLogFile);
-                            }
-                            finally
-                            {
-                                this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite, SectionIdParts.Assembly);
-                            }
-
-                            if (File.Exists(spriteLogFile))
-                            {
-                                cacheSection.AddResult(ContentItem.FromContent(spriteLogFile, spriteLogFile.MakeRelativeToDirectory(destinationDirectory)), CacheFileCategories.SpriteLogFile);
-                                foreach (var spritedFile in XDocument.Load(spriteLogFile).Elements("images").Elements("output").Select(e => (string)e.Attribute("file")))
-                                {
-                                    cacheSection.AddResult(ContentItem.FromFile(spritedFile, spritedFile.MakeRelativeToDirectory(destinationDirectory)), CacheFileCategories.HashedSpriteImage);
-                                }
-                            }
-
-                            cacheSection.Save();
-                        }
-                        finally
-                        {
-                            cacheSection.EndSection();
-                        }
                     }
                 }
 
@@ -618,18 +487,73 @@ namespace WebGrease.Activities
                 }
 
                 return stylesheetNode;
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite);
-            }
+            });
+        }
+
+        /// <summary>The sprite image.</summary>
+        /// <param name="scanOutput">The scan output.</param>
+        /// <param name="spriteLogFile">The sprite log file.</param>
+        private void SpriteImageFromLog(ImageAssemblyScanOutput scanOutput, string spriteLogFile)
+        {
+            var imageReferencesToAssemble = scanOutput.ImageReferencesToAssemble;
+            this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly)
+                .CanBeCached(this.GetRelativeSpriteCacheKey(imageReferencesToAssemble))
+                .RestoreFromCacheAction(cacheSection =>
+                {
+                    // restore log file, is required by next step in applying sprites to the css.
+                    var destinationDirectory = this.context.Configuration.DestinationDirectory;
+                    var spriteLogFileContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.SpriteLogFile);
+                    spriteLogFileContentItem.WriteTo(spriteLogFile);
+
+                    // Restore images
+                    var spritedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedSpriteImage);
+                    spritedImageContentItems.ForEach(sici => sici.WriteToContentPath(destinationDirectory));
+
+                    return true;
+                })
+                .Execute(cacheSection =>
+                {
+                    if (imageReferencesToAssemble == null || imageReferencesToAssemble.Count == 0)
+                    {
+                        return false;
+                    }
+
+                    if (!Directory.Exists(this.ImagesOutputDirectory))
+                    {
+                        Directory.CreateDirectory(this.ImagesOutputDirectory);
+                    }
+
+                    ImageAssembleGenerator.AssembleImages(
+                        imageReferencesToAssemble.ToSafeReadOnlyCollection(),
+                        SpritePackingType.Vertical,
+                        this.ImagesOutputDirectory,
+                        spriteLogFile,
+                        string.Empty,
+                        true,
+                        this.context);
+
+                    string destinationDirectory = this.context.Configuration.DestinationDirectory;
+                    cacheSection.AddResult(
+                        ContentItem.FromContent(spriteLogFile, spriteLogFile.MakeRelativeToDirectory(destinationDirectory)),
+                        CacheFileCategories.SpriteLogFile);
+
+                    var spriteLogDocument = XDocument.Load(spriteLogFile);
+                    foreach (var spritedFile in spriteLogDocument.Elements("images").Elements("output").Select(e => (string)e.Attribute("file")))
+                    {
+                        cacheSection.AddResult(
+                            ContentItem.FromFile(spritedFile, spritedFile.MakeRelativeToDirectory(destinationDirectory)),
+                            CacheFileCategories.HashedSpriteImage);
+                    }
+
+                    return true;
+                });
         }
 
         /// <summary>Gets the sprite log file from the scan output.</summary>
         /// <param name="count">The count.</param>
         /// <param name="scanOutput">The scan output.</param>
         /// <returns>The <see cref="string"/>.</returns>
-        private string GetSpriteLogFile(int count, ImageAssemblyScanOutput scanOutput)
+        private string GetSpriteLogFileName(int count, ImageAssemblyScanOutput scanOutput)
         {
             string spriteLogFile;
             if (count == 0)
@@ -710,26 +634,12 @@ namespace WebGrease.Activities
                 this.OutputUnitFactor,
                 shouldHashImages ? this.ImageHasher.BasePrefixToRemoveFromOutputPathInLog : null,
                 shouldHashImages ? this.ImageHasher.BasePrefixToAddToOutputPath : null,
-                availableSourceImages);
+                this.availableSourceImages);
 
             stylesheetNode = stylesheetNode.Accept(this.imageAssemblyUpdateVisitor);
 
             // Return the updated Ast
             return stylesheetNode;
-        }
-
-        /// <summary>Execute the image assembly tool on the image references found after scan</summary>
-        /// <param name="imageReferences">The image references</param>
-        /// <param name="destinationLogFile">The name of the log file that ImageAssembleTool should generate</param>
-        private void ExecuteImageAssembly(ICollection<InputImage> imageReferences, string destinationLogFile)
-        {
-            if (imageReferences == null || imageReferences.Count == 0)
-            {
-                return;
-            }
-
-            Directory.CreateDirectory(this.ImagesOutputDirectory);
-            ImageAssembleGenerator.AssembleImages(imageReferences.ToSafeReadOnlyCollection(), SpritePackingType.Vertical, this.ImagesOutputDirectory, destinationLogFile, string.Empty, true, this.context);
         }
     }
 }

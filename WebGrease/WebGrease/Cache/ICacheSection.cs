@@ -16,6 +16,9 @@ namespace WebGrease
         /// <summary>Gets the parent.</summary>
         ICacheSection Parent { get; }
 
+        /// <summary>Gets the unique key.</summary>
+        string UniqueKey { get; }
+
         /// <summary>Varys the section by settings.</summary>
         /// <param name="settings">The settings.</param>
         /// <param name="nonpublic">Determins if it should non public members of the object as well.</param>
@@ -64,11 +67,6 @@ namespace WebGrease
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Not appropriate.")]
         IEnumerable<CacheSourceDependency> GetChangedSourceDependencies();
 
-        /// <summary>Gets the changed end results recursively.</summary>
-        /// <returns>The changed end results.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Not appropriate.")]
-        IEnumerable<CacheResult> GetChangedEndResults();
-
         /// <summary>Get the invalid cache results.</summary>
         /// <returns>The invalid cache results.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Not appropriate.")]
@@ -89,9 +87,16 @@ namespace WebGrease
         /// <param name="graphReportFilePath">The graph report file path.</param>
         void WriteDependencyGraph(string graphReportFilePath);
 
-        /// <summary>Gets the changed source dependencies recursively.</summary>
-        /// <returns>The changed source dependencies.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Not appropriate.")]
-        IEnumerable<CacheSourceDependency> GetSourceDependencies();
+        /// <summary>The get cache data.</summary>
+        /// <param name="id">The id.</param>
+        /// <typeparam name="T">The typeof object</typeparam>
+        /// <returns>The <see cref="T"/>.</returns>
+        T GetCacheData<T>(string id) where T : new();
+
+        /// <summary>The set cache data.</summary>
+        /// <param name="id">The id.</param>
+        /// <param name="obj">The data object.</param>
+        /// <typeparam name="T">The typeof object</typeparam>
+        void SetCacheData<T>(string id, T obj) where T : new();
     }
 }

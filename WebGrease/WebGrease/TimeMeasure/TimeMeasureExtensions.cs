@@ -89,7 +89,7 @@ namespace WebGrease
                 .GroupBy(groupSelector)
                 .Select(s => new TimeMeasureResult
                                  {
-                                     IdParts = TimeMeasure.GetIdParts(s.Key),
+                                     IdParts = WebGreaseContext.ToIdParts(s.Key),
                                      Count = s.Min(m => m.Count),
                                      Duration = s.Sum(m => m.Duration)
                                  })

@@ -64,6 +64,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActivityName.cs" />
+    <Compile Include="SessionCacheData.cs" />
     <Compile Include="WebGreaseTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

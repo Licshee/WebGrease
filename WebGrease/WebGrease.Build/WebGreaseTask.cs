@@ -11,6 +11,7 @@ namespace WebGrease.Build
 {
     using System;
     using System.IO;
+    using System.Linq;
 
     using Activities;
 
@@ -18,6 +19,8 @@ namespace WebGrease.Build
 
     using WebGrease.Configuration;
     using WebGrease.Extensions;
+
+    using MessageImportance = WebGrease.MessageImportance;
 
     /// <summary>
     /// Build time task for executing web grease runtime.
@@ -28,6 +31,7 @@ namespace WebGrease.Build
         public WebGreaseTask()
         {
             this.FileType = FileTypes.All;
+            this.Activity = "EVERYTHING";
         }
 
         /// ReSharper disable UnusedAutoPropertyAccessor.Global
@@ -72,26 +76,35 @@ namespace WebGrease.Build
         /// <summary>Gets or sets if it should measure and write measure files in the output folder.</summary>
         public bool Measure { get; set; }
 
-        /// <summary>Gets or sets a value indicating whether to clean the tools temp folder.</summary>
-        public bool CleanToolsTemp { get; set; }
-
-        /// <summary>Gets or sets a value indicating whether to clean the destination folder.</summary>
-        public bool CleanDestination { get; set; }
-
-        /// <summary>Gets or sets a value indicating whether to clean the cache folders.</summary>
-        public bool CleanCache { get; set; }
-
         /// <summary>Gets or sets the value that determines to use cache.</summary>
         public bool CacheEnabled { get; set; }
 
         /// <summary>Gets or sets the value that determines if it outputs .dgml cache dependency files.</summary>
         public bool CacheOutputDependencies { get; set; }
 
+        /// <summary>Gets or sets the value that has the temporary locale overrides.</summary>
+        public string OverrideLocales { get; set; }
+
+        /// <summary>Gets or sets the value that has the temporary theme overrides.</summary>
+        public string OverrideThemes { get; set; }
+
+        /// <summary>Gets or sets the value that has the temporary output overrides.</summary>
+        public string OverrideOutputs { get; set; }
+
+        /// <summary>Gets or sets the value that has the temporary output overrides.</summary>
+        public string OverrideOutputExtensions { get; set; }
+
+        /// <summary>Gets or sets the value that has the temporary override file path.</summary>
+        public string OverrideFile { get; set; }
+
         /// <summary>
         /// Gets or sets the root path used for caching, this defaults to the ToolsTempPath.
         /// Use the system temp folder (%temp%) if you want to enable this on the build server.
         /// </summary>
         public string CacheRootPath { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether it is server build.</summary>
+        public string IsBuildServerBuild { get; set; }
 
         /// <summary>
         /// Gets or sets the unique key for the unique key, is required when enabling cache.
@@ -116,91 +129,141 @@ namespace WebGrease.Build
             var start = DateTimeOffset.Now;
             var sessionContext = this.CreateSessionContext();
 
-            this.ExecuteClean(sessionContext);
+            var activity = this.Activity.TryParseToEnum<ActivityName>();
+            if (!activity.HasValue)
+            {
+                sessionContext.Log.Error("Unknown activity: {0}".InvariantFormat(this.Activity));
+                return false;
+            }
 
             var fullPathToConfigFiles = Path.GetFullPath(this.ConfigurationPath);
 
-            var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = SearchOption.TopDirectoryOnly }.GetFiles();
+            var contentTypeSectionId = new[] { SectionIdParts.WebGreaseBuildTask };
 
-            var endResult = sessionContext.Section(
-                new[] { SectionIdParts.WebGreaseBuildTask },
-                new { inputFiles, sessionContext.Configuration },
-                true,
-                sessionCacheSection =>
-                {
-                    var result = true;
-                    try
+            switch (activity)
+            {
+                case ActivityName.CleanDestination:
+                    sessionContext.CleanDestination();
+                    return true;
+                case ActivityName.CleanCache:
+                    sessionContext.CleanCache();
+                    return true;
+            }
+
+            var sessionSuccess = sessionContext.SectionedAction(SectionIdParts.WebGreaseBuildTaskSession)
+                .CanBeCached(new { fullPathToConfigFiles, activity })
+                .Execute(sessionCacheSection =>
                     {
-                        // get a list of the files in the configuration folder
-                        foreach (var configFile in inputFiles)
+                        var sessionCacheData = sessionCacheSection.GetCacheData<SessionCacheData>(CacheFileCategories.SolutionCacheConfig);
+
+                        var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = SearchOption.TopDirectoryOnly }.GetFiles();
+                        var contentTypeSuccess = sessionContext
+                            .SectionedAction(contentTypeSectionId)
+                            .CanBeCached(new { activity, inputFiles, sessionContext.Configuration }, true)
+                            .Execute(contentTypeCacheSection =>
+                            {
+                                var success = true;
+                                try
+                                {
+                                    // get a list of the files in the configuration folder
+                                    foreach (var configFile in inputFiles)
+                                    {
+                                        success &= this.ExecuteConfigFile(sessionContext, configFile, activity.Value);
+                                    }
+                                }
+                                catch (BuildWorkflowException exception)
+                                {
+                                    this.LogError(exception.Subcategory, exception.ErrorCode, exception.HelpKeyword, exception.File, exception.LineNumber, exception.EndLineNumber, exception.ColumnNumber, exception.EndColumnNumber, exception.Message);
+                                    return false;
+                                }
+                                catch (Exception exception)
+                                {
+                                    this.LogError(exception, exception.Message, null);
+                                    return false;
+                                }
+
+                                if (success)
+                                {
+                                    // Add the current cachesection to the sessionCacheData
+                                    if (sessionCacheData != null)
+                                    {
+                                        sessionCacheData.AddConfigType(this.ConfigType, contentTypeCacheSection.UniqueKey);
+                                        sessionCacheSection.SetCacheData(CacheFileCategories.SolutionCacheConfig, sessionCacheData);
+                                    }
+                                }
+
+                                return success;
+                            });
+
+                        if (contentTypeSuccess)
                         {
-                            result = this.ExecuteConfigFile(sessionContext, configFile) && result;
+                            // Add the cache sections of the other already cached contentTypes (Debug/Release) so that they will not get removed.
+                            this.HandleOtherContentTypeCacheSections(sessionContext, sessionCacheSection, sessionCacheData, contentTypeSectionId);
                         }
-                    }
-                    catch (BuildWorkflowException exception)
-                    {
-                        this.LogExtendedError(exception.Subcategory, exception.ErrorCode, exception.HelpKeyword, exception.File, exception.LineNumber, exception.EndLineNumber, exception.ColumnNumber, exception.EndColumnNumber, exception.Message);
-                        return false;
-                    }
-                    catch (Exception exception)
-                    {
-                        this.LogError(exception, exception.Message, null);
-                        return false;
-                    }
 
-                    return result;
-                });
+                        return contentTypeSuccess;
+                    });
 
-            if (endResult)
+            if (sessionSuccess)
             {
                 sessionContext.Cache.CleanUp();
 
                 var sessionReportFile = Path.Combine(this.RootOutputPath, new DirectoryInfo(fullPathToConfigFiles).Name);
                 sessionContext.Measure.WriteResults(sessionReportFile, fullPathToConfigFiles, start);
-                this.MeasureResults = sessionContext.Measure.GetResults();
             }
 
-            return endResult;
+            this.MeasureResults = sessionContext.Measure.GetResults();
+            return sessionSuccess;
+        }
+
+        /// <summary>The handle other content type cache sections.</summary>
+        /// <param name="context">The context.</param>
+        /// <param name="parentCacheSection">The session cache section.</param>
+        /// <param name="sessionCacheData">The session cache data.</param>
+        /// <param name="contentTypeSectionId">The content type section id.</param>
+        private void HandleOtherContentTypeCacheSections(IWebGreaseContext context, ICacheSection parentCacheSection, SessionCacheData sessionCacheData, string[] contentTypeSectionId)
+        {
+            if (sessionCacheData != null)
+            {
+                foreach (var configType in sessionCacheData.ConfigTypes.Keys.Where(ct => ct.Equals(this.ConfigType, StringComparison.OrdinalIgnoreCase)))
+                {
+                    CacheSection.Begin(context, WebGreaseContext.ToStringId(contentTypeSectionId), sessionCacheData.GetUniqueKey(configType), parentCacheSection);
+                }
+            }
         }
 
         /// <summary>Execute a single config file.</summary>
         /// <param name="sessionContext">The session context.</param>
         /// <param name="configFile">The config file.</param>
+        /// <param name="activity">The activity</param>
         /// <returns>The <see cref="bool"/>.</returns>
-        private bool ExecuteConfigFile(IWebGreaseContext sessionContext, string configFile)
+        private bool ExecuteConfigFile(IWebGreaseContext sessionContext, string configFile, ActivityName activity)
         {
             var configFileStart = DateTimeOffset.Now;
             var configFileInfo = new FileInfo(configFile);
             var fileContext = new WebGreaseContext(sessionContext, configFileInfo);
 
-            return sessionContext.Section(
-                new[] { SectionIdParts.WebGreaseBuildTask, SectionIdParts.ConfigurationFile },
-                ContentItem.FromFile(configFileInfo.FullName),
-                fileContext.Configuration,
-                true,
-                configFileCacheSection =>
+            return sessionContext
+                .SectionedActionGroup(SectionIdParts.WebGreaseBuildTask, SectionIdParts.ConfigurationFile)
+                .CanBeCached(ContentItem.FromFile(configFileInfo.FullName), new { activity, fileContext.Configuration }, true)
+                .Execute(configFileCacheSection =>
                 {
-                    bool result;
-                    switch ((this.Activity ?? string.Empty).ToUpperInvariant())
+                    bool success = true;
+
+                    fileContext.Log.Information("WebGreaseTask Activity: {0}" + activity, MessageImportance.High);
+                    switch (activity)
                     {
-                        case "BUNDLE":
-                            fileContext.Log.Information("Activity: Bundle");
-                            var bundleActivity = new BundleActivity(fileContext);
-
+                        case ActivityName.Bundle:
                             // execute the bundle pipeline
-                            result = bundleActivity.Execute(this.FileType);
+                            success &= new BundleActivity(fileContext).Execute(this.FileType);
                             break;
-                        case "EVERYTHING":
-                        default:
-                            fileContext.Log.Information("Activity: Everything");
-                            var everythingActivity = new EverythingActivity(fileContext);
-
+                        case ActivityName.Everything:
                             // execute the full pipeline
-                            result = everythingActivity.Execute(this.FileType);
+                            success &= new EverythingActivity(fileContext).Execute(this.FileType);
                             break;
                     }
 
-                    if (result)
+                    if (success)
                     {
                         var configReportFile = Path.Combine(this.RootOutputPath, configFileInfo.Name);
                         if (this.CacheOutputDependencies)
@@ -211,28 +274,8 @@ namespace WebGrease.Build
                         fileContext.Measure.WriteResults(configReportFile, configFileInfo.FullName, configFileStart);
                     }
 
-                    return result;
+                    return success;
                 });
-        }
-
-        /// <summary>The execute clean.</summary>
-        /// <param name="sessionContext">The session context.</param>
-        private void ExecuteClean(IWebGreaseContext sessionContext)
-        {
-            if (this.CleanCache)
-            {
-                sessionContext.CleanCache();
-            }
-
-            if (this.CleanToolsTemp)
-            {
-                sessionContext.CleanToolsTemp();
-            }
-
-            if (this.CleanDestination)
-            {
-                sessionContext.CleanDestination();
-            }
         }
 
         /// <summary>Creates a new session context base on the current settings.</summary>
@@ -242,9 +285,11 @@ namespace WebGrease.Build
             return new WebGreaseContext(
                 this.CreateSessionConfiguration(),
                 this.LogInformation,
-                this.WarningsAsErrors ? this.LogExtendedError : (LogExtendedError)this.LogExtendedWarning,
+                this.WarningsAsErrors ? this.LogError : (Action<string>)this.LogWarning,
+                this.WarningsAsErrors ? this.LogError : (LogExtendedError)this.LogWarning,
                 this.LogError,
-                this.LogExtendedError);
+                this.LogError,
+                this.LogError);
         }
 
         /// <summary>Creates the session configuration.</summary>
@@ -265,14 +310,44 @@ namespace WebGrease.Build
                            CacheRootPath = this.CacheRootPath,
                            CacheUniqueKey = this.CacheUniqueKey,
                            CacheTimeout = !string.IsNullOrWhiteSpace(this.CacheTimeout) ? TimeSpan.Parse(this.CacheTimeout) : TimeSpan.Zero,
+                           Overrides =
+                                this.IsBuildServerBuild.TryParseBool()
+                                ? null
+                                : TemporaryOverrides.Create(this.OverrideLocales, this.OverrideThemes, this.OverrideOutputs, this.OverrideOutputExtensions, this.OverrideFile)
                        };
         }
 
         /// <summary>Method for logging information messages to the build output.</summary>
         /// <param name="message">message to log</param>
-        private void LogInformation(string message)
+        /// <param name="messageImportance">The importance of the message</param>
+        private void LogInformation(string message, MessageImportance messageImportance = MessageImportance.Normal)
         {
-            this.Log.LogMessageFromText(message, Microsoft.Build.Framework.MessageImportance.Normal);
+            var importance = Microsoft.Build.Framework.MessageImportance.Normal;
+            switch (messageImportance)
+            {
+                case MessageImportance.High:
+                    importance = Microsoft.Build.Framework.MessageImportance.High;
+                    break;
+                case MessageImportance.Low:
+                    importance = Microsoft.Build.Framework.MessageImportance.High;
+                    break;
+            }
+
+            this.Log.LogMessageFromText(message, importance);
+        }
+
+        /// <summary>Method for logging information messages to the build output.</summary>
+        /// <param name="message">message to log</param>
+        private void LogError(string message)
+        {
+            this.Log.LogError(message);
+        }
+
+        /// <summary>Method for logging information messages to the build output.</summary>
+        /// <param name="message">message to log</param>
+        private void LogWarning(string message)
+        {
+            this.Log.LogWarning(message);
         }
 
         /// <summary>Logs an extended error</summary>
@@ -285,7 +360,7 @@ namespace WebGrease.Build
         /// <param name="endLineNumber">The end line number</param>
         /// <param name="endColumnNumber">The end column number</param>
         /// <param name="message">The message</param>
-        private void LogExtendedError(string subcategory, string errorCode, string helpKeyword, string file, int? lineNumber, int? columnNumber, int? endLineNumber, int? endColumnNumber, string message)
+        private void LogError(string subcategory, string errorCode, string helpKeyword, string file, int? lineNumber, int? columnNumber, int? endLineNumber, int? endColumnNumber, string message)
         {
             this.Log.LogError(subcategory, errorCode, helpKeyword, this.ChangeToOriginalProjectLocation(file), lineNumber ?? 0, columnNumber ?? 0, endLineNumber ?? lineNumber ?? 0, endColumnNumber ?? columnNumber ?? 0, message);
         }
@@ -300,7 +375,7 @@ namespace WebGrease.Build
         /// <param name="endLineNumber">The end line number</param>
         /// <param name="endColumnNumber">The end column number</param>
         /// <param name="message">The message</param>
-        private void LogExtendedWarning(string subcategory, string errorCode, string helpKeyword, string file, int? lineNumber, int? columnNumber, int? endLineNumber, int? endColumnNumber, string message)
+        private void LogWarning(string subcategory, string errorCode, string helpKeyword, string file, int? lineNumber, int? columnNumber, int? endLineNumber, int? endColumnNumber, string message)
         {
             this.Log.LogWarning(subcategory, errorCode, helpKeyword, this.ChangeToOriginalProjectLocation(file), lineNumber ?? 0, columnNumber ?? 0, endLineNumber ?? lineNumber ?? 0, endColumnNumber ?? columnNumber ?? 0, message);
         }
@@ -384,7 +459,7 @@ namespace WebGrease.Build
                         buildException.EndColumnNumber,
                         buildException.Message,
                         new object[0]);
-}
+                }
                 else
                 {
                     // if not, just log the exception message.

@@ -1,5 +1,5 @@
 ﻿// ----------------------------------------------------------------------------------------------------
-// <copyright file="WebGreaseMeasure.cs" company="Microsoft Corporation">
+// <copyright file="TimeMeasure.cs" company="Microsoft Corporation">
 //   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
 // ----------------------------------------------------------------------------------------------------
@@ -15,12 +15,6 @@ namespace WebGrease
     /// <summary>The web grease measure.</summary>
     public class TimeMeasure : ITimeMeasure
     {
-        /// <summary>The id parts delimiter.</summary>
-        public const string IdPartsDelimiter = ".";
-
-        /// <summary>The char delimiter.</summary>
-        private const char CharDelimiter = (char)2;
-
         #region Fields
 
         /// <summary>The measurement counts.</summary>
@@ -33,6 +27,7 @@ namespace WebGrease
         private readonly IList<TimeMeasureItem> timers = new List<TimeMeasureItem>();
 
         /// <summary>Gets the results.</summary>
+        /// <returns>The measure results.</returns>
         public TimeMeasureResult[] GetResults()
         {
             return
@@ -41,7 +36,7 @@ namespace WebGrease
                         m =>
                         new TimeMeasureResult
                             {
-                                IdParts = GetIdParts(m.Key),
+                                IdParts = WebGreaseContext.ToIdParts(m.Key),
                                 Duration = m.Value,
                                 Count = this.measurementCounts.Last()[m.Key]
                             })
@@ -53,11 +48,11 @@ namespace WebGrease
         #region Public Methods and Operators
 
         /// <summary>The start.</summary>
+        /// <param name="isGroup">The is Group.</param>
         /// <param name="idParts">The id parts.</param>
-        /// <returns>The id.</returns>
-        public string Start(params string[] idParts)
+        public void Start(bool isGroup, params string[] idParts)
         {
-            var id = GetId(idParts);
+            var id = WebGreaseContext.ToStringId(idParts);
             if (this.timers.Any(t => t.Id.Equals(id)))
             {
                 throw new BuildWorkflowException("An error occurred while measuring, probably a wrong start/end for key: " + id);
@@ -65,14 +60,25 @@ namespace WebGrease
 
             this.PauseLastTimer();
             this.timers.Add(new TimeMeasureItem(id, DateTime.Now));
-            return id;
+
+            if (isGroup)
+            {
+                this.BeginGroup();
+            }
+
         }
 
         /// <summary>The end.</summary>
+        /// <param name="isGroup">The is Group.</param>
         /// <param name="idParts">The id parts.</param>
-        public void End(params string[] idParts)
+        public void End(bool isGroup, params string[] idParts)
         {
-            var id = GetId(idParts);
+            if (isGroup)
+            {
+                this.EndGroup();
+            }
+
+            var id = WebGreaseContext.ToStringId(idParts);
             var lastTimer = this.timers.Last();
             if (lastTimer.Id != id)
             {
@@ -83,44 +89,52 @@ namespace WebGrease
             this.ResumeLastTimer();
         }
 
-
-        public void BeginSection()
+        /// <summary>The begin group.</summary>
+        public void BeginGroup()
         {
-            measurementCounts.Add(new Dictionary<string, int>());
-            measurements.Add(new Dictionary<string, double>());
+            this.measurementCounts.Add(new Dictionary<string, int>());
+            this.measurements.Add(new Dictionary<string, double>());
         }
 
-        public void EndSection()
+        /// <summary>The end group.</summary>
+        public void EndGroup()
         {
-            if (measurementCounts.Count() == 1)
+            if (this.measurementCounts.Count() == 1)
             {
                 throw new BuildWorkflowException("No measure sections available to end.");
             }
 
-            var sectionMeasurementCounts = measurementCounts.Last();
-            var sectionMeasurements = measurements.Last();
+            var sectionMeasurementCounts = this.measurementCounts.Last();
+            var sectionMeasurements = this.measurements.Last();
 
-            measurementCounts.RemoveAt(measurementCounts.Count() - 1);
-            measurements.RemoveAt(measurements.Count() - 1);
+            this.measurementCounts.RemoveAt(this.measurementCounts.Count() - 1);
+            this.measurements.RemoveAt(this.measurements.Count() - 1);
 
-            measurementCounts.Last().Add(sectionMeasurementCounts);
-            measurements.Last().Add(sectionMeasurements);
+            this.measurementCounts.Last().Add(sectionMeasurementCounts);
+            this.measurements.Last().Add(sectionMeasurements);
         }
 
+        /// <summary>The write results.</summary>
+        /// <param name="filePathWithoutExtension">The file path without extension.</param>
+        /// <param name="title">The title.</param>
+        /// <param name="utcStart">The utc start.</param>
         public void WriteResults(string filePathWithoutExtension, string title, DateTimeOffset utcStart)
         {
-            var timeMeasureResults = GetResults();
+            var timeMeasureResults = this.GetResults();
 
             File.WriteAllText(
                 filePathWithoutExtension + ".measure.txt",
-                GetMeasureTable(title, timeMeasureResults)
-                    + "\r\nTotal seconds: {0}".InvariantFormat((DateTimeOffset.Now - utcStart).TotalSeconds));
+                GetMeasureTable(title, timeMeasureResults) + "\r\nTotal seconds: {0}".InvariantFormat((DateTimeOffset.Now - utcStart).TotalSeconds));
 
             File.WriteAllText(
                 filePathWithoutExtension + ".measure.csv",
                 timeMeasureResults.GetCsv());
         }
 
+        /// <summary>The get measure table.</summary>
+        /// <param name="title">The title.</param>
+        /// <param name="measureTotal">The measure total.</param>
+        /// <returns>The <see cref="string"/>.</returns>
         private static string GetMeasureTable(string title, IEnumerable<TimeMeasureResult> measureTotal)
         {
             return "{0}\r\n\r\n{1}\r\n\r\nStarted at: {2:yy-MM-dd HH:mm:ss.fff}".InvariantFormat(
@@ -133,26 +147,6 @@ namespace WebGrease
 
         #region Methods
 
-        /// <summary>The get name.</summary>
-        /// <param name="idParts">The names.</param>
-        /// <returns>The id.</returns>
-        public static string GetId(IEnumerable<string> idParts)
-        {
-            return string.Join(
-                IdPartsDelimiter,
-                idParts
-                    .Where(n => !string.IsNullOrWhiteSpace(n))
-                    .Select(s => s.UppercaseFirst()));
-        }
-
-        /// <summary>The get name.</summary>
-        /// <param name="id">The name.</param>
-        /// <returns>The id parts</returns>
-        internal static IEnumerable<string> GetIdParts(string id)
-        {
-            return id.Replace(IdPartsDelimiter, CharDelimiter + string.Empty).Split(CharDelimiter);
-        }
-
         /// <summary>The add to result.</summary>
         /// <param name="timer">The timer.</param>
         private void AddToResult(TimeMeasureItem timer)
@@ -162,12 +156,14 @@ namespace WebGrease
             {
                 this.measurementCounts.Last().Add(id, 0);
             }
+
             this.measurementCounts.Last()[id]++;
 
             if (!this.measurements.Last().ContainsKey(id))
             {
                 this.measurements.Last().Add(id, 0);
             }
+
             this.measurements.Last()[id] += (DateTime.Now - timer.Value).TotalMilliseconds;
         }
 

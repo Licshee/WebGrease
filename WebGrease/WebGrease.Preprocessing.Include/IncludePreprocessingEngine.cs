@@ -84,27 +84,23 @@ namespace WebGrease.Preprocessing.Include
         /// <returns>The processed contents or null of an error occurred.</returns>
         public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig)
         {
-            this.context.Measure.Start(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude");
-            var wgincludeCacheImportsSection = this.context.Cache.BeginSection("wginclude", contentItem, preprocessingConfig);
-            try
+            this.context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude")
+            .CanBeCached(contentItem, false)
+            .Execute(wgincludeCacheImportsSection =>
             {
                 var workingFolder = this.context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);
                 var content = contentItem.Content;
                 if (string.IsNullOrWhiteSpace(content))
                 {
-                    return contentItem;
+                    return true;
                 }
 
                 content = IncludeRegex.Replace(content, match => ReplaceInputs(match, workingFolder, wgincludeCacheImportsSection));
-                wgincludeCacheImportsSection.Save();
+                contentItem = ContentItem.FromContent(content, contentItem);
+                return true;
+            });
 
-                return ContentItem.FromContent(content, contentItem);
-            }
-            finally
-            {
-                wgincludeCacheImportsSection.EndSection();
-                this.context.Measure.End(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude");
-            }
+            return contentItem;
         }
 
         /// <summary>The method called from the regex replace to replace the matched wgInclude() statements.</summary>

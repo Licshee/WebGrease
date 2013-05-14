@@ -68,46 +68,45 @@ namespace WebGrease.Activities
                 assembleType = assembleType.Trim('.');
             }
 
-            ContentItem contentItem;
-            this.context.Measure.Start(SectionIdParts.AssemblerActivity, assembleType);
-            var cacheSection = this.context.Cache.BeginSection(SectionIdParts.AssemblerActivity, new { this.Inputs, this.PreprocessingConfig, this.AddSemicolons });
-            try
-            {
-                if (cacheSection.CanBeRestoredFromCache())
-                {
-                    return cacheSection.GetCachedContentItem(CacheFileCategories.AssemblerResult);
-                }
+            ContentItem contentItem = null;
+            this.context.SectionedAction(SectionIdParts.AssemblerActivity, assembleType)
+                .CanBeCached(new { this.Inputs, this.PreprocessingConfig, this.AddSemicolons })
+                .RestoreFromCacheAction(cacheSection =>
+                    {
+                        contentItem = cacheSection.GetCachedContentItem(CacheFileCategories.AssemblerResult);
+                        return true;
+                    })
+                .Execute(cacheSection =>
+                    {
+                        try
+                        {
+                            // Add source inputs
+                            this.Inputs.ForEach(this.context.Cache.CurrentCacheSection.AddSourceDependency);
 
-                // Add source inputs
-                this.Inputs.ForEach(this.context.Cache.CurrentCacheSection.AddSourceDependency);
+                            // Create if the directory does not exist.
+                            var outputDirectory = Path.GetDirectoryName(this.OutputFile);
+                            if (resultContentItemType == ContentItemType.Path && !string.IsNullOrWhiteSpace(outputDirectory))
+                            {
+                                Directory.CreateDirectory(outputDirectory);
+                            }
 
-                // Create if the directory does not exist.
-                var outputDirectory = Path.GetDirectoryName(this.OutputFile);
-                if (resultContentItemType == ContentItemType.Path && !string.IsNullOrWhiteSpace(outputDirectory))
-                {
-                    Directory.CreateDirectory(outputDirectory);
-                }
+                            // set the semicolon flag to true so the first file doesn't get a semicolon added before it. 
+                            // IF we are interesting in adding semicolons between bundled files (eg: JavaScript), then this flag 
+                            // will get set after outputting each file, depending on whether or not that file ends in a semicolon.
+                            // the NEXT file will look at the flag and add one if the previous one didn't end in a semicolon.
+                            this.endedInSemicolon = true;
 
-                // set the semicolon flag to true so the first file doesn't get a semicolon added before it. 
-                // IF we are interesting in adding semicolons between bundled files (eg: JavaScript), then this flag 
-                // will get set after outputting each file, depending on whether or not that file ends in a semicolon.
-                // the NEXT file will look at the flag and add one if the previous one didn't end in a semicolon.
-                this.endedInSemicolon = true;
+                            contentItem = this.Bundle(resultContentItemType, outputDirectory, this.OutputFile, this.context.Configuration.SourceDirectory);
 
-                contentItem = this.Bundle(resultContentItemType, outputDirectory, this.OutputFile, this.context.Configuration.SourceDirectory);
+                            cacheSection.AddResult(contentItem, CacheFileCategories.AssemblerResult);
+                        }
+                        catch (Exception exception)
+                        {
+                            throw new WorkflowException("AssemblerActivity - Error happened while executing the assembler activity", exception);
+                        }
 
-                cacheSection.AddResult(contentItem, CacheFileCategories.AssemblerResult);
-                cacheSection.Save();
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException("AssemblerActivity - Error happened while executing the assembler activity", exception);
-            }
-            finally
-            {
-                cacheSection.EndSection();
-                this.context.Measure.End(SectionIdParts.AssemblerActivity, assembleType);
-            }
+                        return true;
+                    });
 
             return contentItem;
         }

@@ -9,16 +9,9 @@
     <language>en-US</language>
     <licenseUrl>http://www.microsoft.com/web/webpi/eula/msn_webgrease_eula.htm</licenseUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <references>
-      <reference file="Antlr3.Runtime.dll" />
-      <reference file="WebGrease.dll" />
-    </references>
-    <!-- TODO: RTUIT: Could someone please verify that this works correctly for the WG.exe -->
-    <dependencies>
-      <dependency id="Newtonsoft.Json" version="5.0.2" />
-    </dependencies>
   </metadata>
   <files>
+    <file src="$InDirPath$Newtonsoft.Json.dll" target="lib"/>
     <file src="$InDirPath$Antlr3.Runtime.dll" target="lib"/>
     <file src="$InDirPath$WebGrease.dll" target="lib"/>
     <file src="$InDirPath$Merged\WG.exe" target="tools"/>

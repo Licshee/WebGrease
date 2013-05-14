@@ -83,14 +83,14 @@ namespace Microsoft.WebGrease.Tests
                         }
 
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should be run");
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite), "Pre-cache run should be spriting");
-                        Assert.IsTrue(HasExecuted(buildTask, 1, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite, SectionIdParts.Assembly), "Pre-cache run should only be assembling once, since the image are the same for all themes/locales.");
+                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Pre-cache run should be spriting");
+                        Assert.IsTrue(HasExecuted(buildTask, 1, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly), "Pre-cache run should only be assembling once, since the image are the same for all themes/locales.");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Pre-cache run should be optimizing");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Pre-cache  run should have css filesets");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Pre-cache  run should have js filesets");
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite, SectionIdParts.Assembly), "Should be doing sprite assembling");
+                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly), "Should be doing sprite assembling");
                         
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Process));
+                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity));
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Parse));
 
                         // Css
@@ -153,9 +153,7 @@ namespace Microsoft.WebGrease.Tests
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Parse));
 
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet));
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity));
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet));
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity));
                 var outputscss2 = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 var outputjs2 = GetOutputContent(buildTask, "js", "test1", "generic-generic");
 
@@ -193,8 +191,8 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should not be run");
-                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite, SectionIdParts.Assembly), "Should not do any sprite assembling");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite), "Should not do sprite analyzing");
+                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly), "Should sprite analyzing");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Should sprite analyzing");
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Should do css since we have updated a source file");
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should do nothing at all for js.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
@@ -209,7 +207,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should not be run");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite, SectionIdParts.Assembly), "Should be spriting again for the new image.");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly), "Should be spriting again for the new image.");
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should do nothing at all for js.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsFalse(outputscss.Contains(".sprite{background:transparent url(../../i/8e/6ab5cb2d7c3ae73a540ecb5b6b0231.png)"));
@@ -226,7 +224,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should not be run");
-                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite, SectionIdParts.Assembly), "Should not be spriting again for the new image.");
+                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly), "Should not be spriting again for the new image.");
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.ImageHash), "Should be hashing again for the new image.");
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should do nothing at all for js.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
@@ -299,7 +297,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should run");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be running minifycss again for changed sass.");
+                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should not be running minifycss again since it is the same as it was before we added it (2 actions above).");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsFalse(outputscss.Contains(".imports2scss"));
             });
@@ -419,7 +417,6 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
                     {
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Process), "Should have a jsfileset process");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
                     });
@@ -431,16 +428,12 @@ namespace Microsoft.WebGrease.Tests
                         Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should not have a jsfileset");
                     });
 
-            ExecuteBuildTask("EVERYTHING", testRoot, "Release",
+            ExecuteBuildTask("CLEANDESTINATION", testRoot, "Release", preExecute, task => { });
+            ExecuteBuildTask("CLEANCACHE", testRoot, "Release", preExecute, task => { });
+
+            ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
                     {
-                        buildTask.CleanDestination = true;
-                        buildTask.CleanCache = true;
-                        preExecute(buildTask);
-                    },
-                buildTask =>
-                    {
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Process), "Should have a jsfileset process");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
                     });
@@ -465,7 +458,6 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
                     {
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Process), "Should have a jsfileset process");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
                     });
@@ -477,16 +469,11 @@ namespace Microsoft.WebGrease.Tests
                         Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should not have a jsfileset");
                     });
 
-            ExecuteBuildTask("EVERYTHING", testRoot, "Release",
+            ExecuteBuildTask("CLEANDESTINATION", testRoot, "Release", preExecute, task => { });
+            ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
                     {
-                        buildTask.CleanDestination = true;
-                        preExecute(buildTask);
-                    },
-                buildTask =>
-                    {
-                        Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Process), "Should not have a jsfileset process");
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
+                        Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
                     });
         }
@@ -508,14 +495,23 @@ namespace Microsoft.WebGrease.Tests
             double measure2 = int.MaxValue / 2;
             double measure3 = int.MaxValue;
 
-            Execute(testRoot, perfRoot, "precache", "Release",
-                buildTask =>
+            var commonPreBuildTask = new Action<WebGreaseTask>((buildTask) =>
                 {
+                    buildTask.OverrideLocales = "";
+                    buildTask.OverrideThemes = "";
+                });
+
+            Action<WebGreaseTask> preExecute1 = buildTask =>
+                {
+                    commonPreBuildTask(buildTask);
                     buildTask.RootOutputPath = Path.Combine(buildTask.ApplicationRootPath, "output1");
                     buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp1");
                     buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache");
                     buildTask.CacheEnabled = true;
-                },
+                };
+
+            Execute(testRoot, perfRoot, "precache", "Release",
+                preExecute1,
                 buildTask =>
                 {
                     var dgmlFiles = Directory.GetFiles(buildTask.RootOutputPath, "*.dgml");
@@ -524,37 +520,26 @@ namespace Microsoft.WebGrease.Tests
                         var fi = new FileInfo(dgmlFile);
                         File.Copy(dgmlFile, new DirectoryInfo(buildTask.RootOutputPath + "..\\..\\..\\..\\..\\..\\..\\").FullName + "precache." + fi.Name, true);
                     }
-                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite), "Pre-cache run should be spriting");
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Pre-cache run should be spriting");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Pre-cache run should be optimizing");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Pre-cache  run should have any css filesets");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Pre-cache  run should have any js filesets");
                     measure1 = buildTask.MeasureResults.Sum(m => m.Duration);
                 });
 
-            Execute(testRoot, perfRoot, "incremental1", "Release",
+            Execute(testRoot, perfRoot, "incremental", "Release",
+                preExecute1,
                 buildTask =>
                 {
-                    buildTask.RootOutputPath = Path.Combine(buildTask.ApplicationRootPath, "output1");
-                    buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp1");
-                    buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache");
-                    buildTask.CacheEnabled = true;
-                },
-                buildTask =>
-                {
-                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite), "Incremental.1 run should not be spriting");
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Incremental.1 run should not be spriting");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Incremental.1 run should not be optimizing");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Incremental.1 run should not have any css filesets");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Incremental.1 run should not have any js filesets");
-                }); 
-            
+                });
+
+            Execute(testRoot, perfRoot, null, "Release", preExecute1, null, "CLEANDESTINATION");
             Execute(testRoot, perfRoot, "postcache", "Release",
-                buildTask =>
-                {
-                    buildTask.RootOutputPath = Path.Combine(buildTask.ApplicationRootPath, "output2");
-                    buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp2");
-                    buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache");
-                    buildTask.CacheEnabled = true;
-                },
+                preExecute1,
                 buildTask =>
                 {
                     var dgmlFiles = Directory.GetFiles(buildTask.RootOutputPath, "*.dgml");
@@ -563,7 +548,32 @@ namespace Microsoft.WebGrease.Tests
                         var fi = new FileInfo(dgmlFile);
                         File.Copy(dgmlFile, new DirectoryInfo(buildTask.RootOutputPath + "..\\..\\..\\..\\..\\..\\..\\").FullName + "postcache." + fi.Name, true);
                     }
-                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite), "Post-cache run should not be spriting");
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Post-cache run should not be spriting");
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Post-cache run should not be optimizing");
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Post-cache  run should have any css filesets");
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Post-cache  run should have any js filesets");
+                    measure2 = buildTask.MeasureResults.Sum(m => m.Duration);
+                });
+
+            Action<WebGreaseTask> preExecute2 = buildTask =>
+                {
+                    commonPreBuildTask(buildTask);
+                    buildTask.RootOutputPath = Path.Combine(buildTask.ApplicationRootPath, "output2");
+                    buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp2");
+                    buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache");
+                    buildTask.CacheEnabled = true;
+                };
+            Execute(testRoot, perfRoot, "postcache2", "Release",
+                preExecute2,
+                buildTask =>
+                {
+                    var dgmlFiles = Directory.GetFiles(buildTask.RootOutputPath, "*.dgml");
+                    foreach (string dgmlFile in dgmlFiles)
+                    {
+                        var fi = new FileInfo(dgmlFile);
+                        File.Copy(dgmlFile, new DirectoryInfo(buildTask.RootOutputPath + "..\\..\\..\\..\\..\\..\\..\\").FullName + "postcache." + fi.Name, true);
+                    }
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Post-cache run should not be spriting");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Post-cache run should not be optimizing");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Post-cache  run should have any css filesets");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Post-cache  run should have any js filesets");
@@ -571,16 +581,10 @@ namespace Microsoft.WebGrease.Tests
                 });
 
             Execute(testRoot, perfRoot, "incremental2", "Release",
+                preExecute2,
                 buildTask =>
                 {
-                    buildTask.RootOutputPath = Path.Combine(buildTask.ApplicationRootPath, "output2");
-                    buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp2");
-                    buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache");
-                    buildTask.CacheEnabled = true;
-                },
-                buildTask =>
-                {
-                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Sprite), "Incremental.2 run should not be spriting");
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Incremental.2 run should not be spriting");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Incremental.2 run should not be optimizing");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Incremental.2 run should not have any css filesets");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Incremental.2 run should not have any js filesets");
@@ -588,7 +592,7 @@ namespace Microsoft.WebGrease.Tests
                 });
 
 #if !DEBUG
-            Assert.IsTrue(measure2 < (measure1 / 2));
+            Assert.IsTrue(measure2 < (measure1 / 1.5));
             Assert.IsTrue(measure3 < (measure2 / 1.5));
 #endif
 
@@ -640,15 +644,21 @@ namespace Microsoft.WebGrease.Tests
             }
         }
 
-        private static void Execute(string testRoot, string perfRoot, string measureName, string configType, Action<WebGreaseTask> preExecute, Action<WebGreaseTask> postExecute)
+        private static void Execute(string testRoot, string perfRoot, string measureName, string configType, Action<WebGreaseTask> preExecute, Action<WebGreaseTask> postExecute, string action = "EVERYTHING")
         {
-            ExecuteBuildTask("EVERYTHING", testRoot, configType, preExecute, (pb) =>
+            ExecuteBuildTask(action, testRoot, configType, preExecute, pb =>
             {
-                var time = DateTime.Now.ToString("yyMMdd_HHmmss");
+                if (measureName != null)
+                {
+                    var time = DateTime.Now.ToString("yyMMdd_HHmmss");
 
-                File.Copy(Path.Combine(pb.RootOutputPath, "TmxSdk.measure.txt"), Path.Combine(perfRoot, "TmxSdk.measure." + time + "." + measureName + ".txt"));
-                File.Copy(Path.Combine(pb.RootOutputPath, "TmxSdk.measure.csv"), Path.Combine(perfRoot, "TmxSdk.measure." + time + "." + measureName + ".csv"));
-                postExecute(pb);
+                    File.Copy(Path.Combine(pb.RootOutputPath, "TmxSdk.measure.txt"), Path.Combine(perfRoot, "TmxSdk.measure." + time + "." + measureName + ".txt"));
+                    File.Copy(Path.Combine(pb.RootOutputPath, "TmxSdk.measure.csv"), Path.Combine(perfRoot, "TmxSdk.measure." + time + "." + measureName + ".csv"));
+                    if (postExecute != null)
+                    {
+                        postExecute(pb);
+                    }
+                }
             });
         }
 
@@ -697,13 +707,19 @@ namespace Microsoft.WebGrease.Tests
             buildTask.Measure = true;
             buildTask.CacheOutputDependencies = true;
 
-            preExecute(buildTask);
+            if (preExecute != null)
+            {
+                preExecute(buildTask);
+            }
 
             buildTask.LogFolderPath = Path.Combine(buildTask.RootOutputPath, "statics");
 
             var result = buildTask.Execute();
 
-            postExecute(buildTask);
+            if (postExecute != null)
+            {
+                postExecute(buildTask);
+            }
 
             if (!result)
             {

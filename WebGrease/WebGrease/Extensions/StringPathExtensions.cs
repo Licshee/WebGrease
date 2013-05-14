@@ -153,6 +153,11 @@ namespace WebGrease.Extensions
         [SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Lowercase is needed.")]
         internal static string NormalizeUrl(this string url)
         {
+            if (url.StartsWith("hash://", StringComparison.OrdinalIgnoreCase))
+            {
+                url = url.Substring(7);
+            }
+
             return url.Replace('/', '\\').TrimStart('\\').ToLowerInvariant();
         }
 

@@ -151,35 +151,40 @@ namespace WebGrease.Preprocessing.Sass
         {
             this.context.Log.Information("Sass: Processing contents for file {0}".InvariantFormat(contentItem.RelativeContentPath));
 
-            this.context.Measure.Start(SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass");
-            var sassCacheImportsSection = this.context.Cache.BeginSection("sass", contentItem, preprocessingConfig);
-            var tempFile = Path.GetTempFileName() + Path.GetExtension(contentItem.RelativeContentPath);
-            try
-            {
-                var workingDirectory = Path.IsPathRooted(contentItem.RelativeContentPath) ? Path.GetDirectoryName(contentItem.RelativeContentPath) : this.context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);
-                var content = ParseImports(contentItem.Content, workingDirectory, sassCacheImportsSection);
-                File.WriteAllText(tempFile, content);
-                content = ProcessFile(tempFile, workingDirectory, contentItem.RelativeContentPath, this.context);
+            this.context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass")
+                .CanBeCached(contentItem, preprocessingConfig)
+                .Execute(
+                    sassCacheImportsSection =>
+                        {
+                            var tempFile = Path.GetTempFileName() + Path.GetExtension(contentItem.RelativeContentPath);
+                            try
+                            {
+                                var workingDirectory = Path.IsPathRooted(contentItem.RelativeContentPath)
+                                                           ? Path.GetDirectoryName(contentItem.RelativeContentPath)
+                                                           : this.context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);
+                                var content = ParseImports(contentItem.Content, workingDirectory, sassCacheImportsSection);
+                                File.WriteAllText(tempFile, content);
+                                content = ProcessFile(tempFile, workingDirectory, contentItem.RelativeContentPath, this.context);
 
-                sassCacheImportsSection.Save();
+                                sassCacheImportsSection.Save();
 
-                return content != null
-                    ? ContentItem.FromContent(content, contentItem)
-                    : null;
-            }
-            finally
-            {
-                try
-                {
-                    File.Delete(tempFile);
-                }
-                catch (Exception)
-                {
-                }
+                                contentItem = content != null ? ContentItem.FromContent(content, contentItem) : null;
 
-                this.context.Measure.End(SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass");
-                sassCacheImportsSection.EndSection();
-            }
+                                return true;
+                            }
+                            finally
+                            {
+                                try
+                                {
+                                    File.Delete(tempFile);
+                                }
+                                catch (Exception)
+                                {
+                                }
+                            }
+                        });
+
+            return contentItem;
         }
 
         /// <summary>
@@ -409,7 +414,7 @@ namespace WebGrease.Preprocessing.Sass
                                 // Unused for now: var file = match.Groups["file"].Value.Trim();
                                 var line = match.Groups["line"].Value.TryParseInt32();
 
-                                context.Log.ExtendedError(
+                                context.Log.Error(
                                     "Sass",
                                     null,
                                     null,

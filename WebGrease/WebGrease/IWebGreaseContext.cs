@@ -46,38 +46,6 @@ namespace WebGrease
 
         #region Public Methods and Operators
 
-
-        /// <summary>Starts a section.</summary>
-        /// <param name="idParts">The id parts.</param>
-        /// <param name="varByContentItem">The var by content item.</param>
-        /// <param name="varBySettings">The var by settings.</param>
-        /// <param name="skipable">If the section is skippable.</param>
-        /// <param name="sectionAction">The section action.</param>
-        /// <returns>The success</returns>
-        bool Section(string[] idParts, ContentItem varByContentItem, object varBySettings, bool skipable, Func<ICacheSection, bool> sectionAction);
-
-        /// <summary>Starts a section.</summary>
-        /// <param name="idParts">The id parts.</param>
-        /// <param name="sectionAction">The section action.</param>
-        /// <returns>The Success</returns>
-        bool Section(string[] idParts, Func<string, bool> sectionAction);
-
-        /// <summary>Starts a section.</summary>
-        /// <param name="idParts">The id parts.</param>
-        /// <param name="varBySettings">The var by settings.</param>
-        /// <param name="skipable">If the section is skippable.</param>
-        /// <param name="sectionAction">The section action.</param>
-        /// <returns>The Success</returns>
-        bool Section(string[] idParts, object varBySettings, bool skipable, Func<ICacheSection, bool> sectionAction);
-
-        /// <summary>Starts a section.</summary>
-        /// <param name="idParts">The id parts.</param>
-        /// <param name="varByContentItem">The var by content item.</param>
-        /// <param name="skipable">If the section is skippable.</param>
-        /// <param name="sectionAction">The section action.</param>
-        /// <returns>The Success</returns>
-        bool Section(string[] idParts, ContentItem varByContentItem, bool skipable, Func<ICacheSection, bool> sectionAction);
-        
         /// <summary>The clean cache.</summary>
         void CleanCache();
 
@@ -126,5 +94,21 @@ namespace WebGrease
         void Touch(string filePath);
 
         #endregion
+
+        /// <summary>The section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <returns>The <see cref="IWebGreaseSection"/>.</returns>
+        IWebGreaseSection SectionedAction(params string[] idParts);
+
+        /// <summary>The section.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <returns>The <see cref="IWebGreaseSection"/>.</returns>
+        IWebGreaseSection SectionedActionGroup(params string[] idParts);
+
+        /// <summary>The temporary ignore.</summary>
+        /// <param name="fileSet">The file set.</param>
+        /// <param name="contentItem">The content item.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        bool TemporaryIgnore(IFileSet fileSet, ContentItem contentItem);
     }
 }

@@ -28,13 +28,16 @@ namespace WebGrease
     /// </summary>
     public class WebGreaseContext : IWebGreaseContext
     {
+        /// <summary>The id parts delimiter.</summary>
+        private const string IdPartsDelimiter = ".";
+
         #region Static Fields
 
         /// <summary>The cached content hashes</summary>
         private static readonly IDictionary<string, string> CachedContentHashes = new Dictionary<string, string>();
 
         /// <summary>The cached file hashes</summary>
-        private static readonly IDictionary<string, Tuple<DateTime, long, string>> CachedFileHashes = new Dictionary<string, Tuple<DateTime, long, string>>();
+        private static readonly IDictionary<string, Tuple<DateTime, long, string>> CachedFileHashes = new Dictionary<string, Tuple<DateTime, long, string>>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>The md5 hasher</summary>
         private static readonly MD5CryptoServiceProvider Hasher = new MD5CryptoServiceProvider();
@@ -45,6 +48,9 @@ namespace WebGrease
         #endregion
 
         #region Fields
+
+        /// <summary>The session cached file hashes.</summary>
+        private readonly IDictionary<string, string> sessionCachedFileHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Per session in memory cache of available files.</summary>
         private readonly IDictionary<string, IDictionary<string, string>> availableFiles = new Dictionary<string, IDictionary<string, string>>();
@@ -59,6 +65,7 @@ namespace WebGrease
         public WebGreaseContext(IWebGreaseContext parentContext, FileInfo configFile)
         {
             var configuration = new WebGreaseConfiguration(parentContext.Configuration, configFile);
+            configuration.Validate();
             this.Initialize(
                 configuration,
                 parentContext.Log,
@@ -71,20 +78,17 @@ namespace WebGrease
         /// <summary>Initializes a new instance of the <see cref="WebGreaseContext"/> class. The web grease context.</summary>
         /// <param name="configuration">The configuration</param>
         /// <param name="logInformation">The log information.</param>
-        /// <param name="logWarning">The log warning.</param>
+        /// <param name="logWarning">The log Warning.</param>
+        /// <param name="logExtendedWarning">The log warning.</param>
+        /// <param name="logErrorMessage">The log Error Message.</param>
         /// <param name="logError">The log error.</param>
         /// <param name="logExtendedError">The log extended error.</param>
-        public WebGreaseContext(
-            WebGreaseConfiguration configuration,
-            Action<string> logInformation = null,
-            LogExtendedError logWarning = null,
-            LogError logError = null,
-            LogExtendedError logExtendedError = null)
+        public WebGreaseContext(WebGreaseConfiguration configuration, Action<string, MessageImportance> logInformation = null, Action<string> logWarning = null, LogExtendedError logExtendedWarning = null, Action<string> logErrorMessage = null, LogError logError = null, LogExtendedError logExtendedError = null)
         {
             var runStartTime = DateTimeOffset.Now;
             configuration.Validate();
             var timeMeasure = configuration.Measure ? new TimeMeasure() as ITimeMeasure : new NullTimeMeasure();
-            var logManager = new LogManager(logInformation, logWarning, logError, logExtendedError);
+            var logManager = new LogManager(logInformation, logWarning, logExtendedWarning, logErrorMessage, logError, logExtendedError);
             var cacheManager = configuration.CacheEnabled ? new CacheManager(configuration, logManager) as ICacheManager : new NullCacheManager();
             var preprocessingManager = new PreprocessingManager(configuration, logManager, timeMeasure);
             this.Initialize(configuration, logManager, cacheManager, preprocessingManager, runStartTime, timeMeasure);
@@ -116,106 +120,32 @@ namespace WebGrease
 
         #region Public Methods and Operators
 
-        /// <summary>The compute content hash.</summary>
-        /// <param name="content">The content.</param>
-        /// <param name="encoding"> The encoding</param>
-        /// <returns>The <see cref="string"/>.</returns>
-        public static string ComputeContentHash(string content, Encoding encoding = null)
-        {
-            using (var ms = new MemoryStream())
-            {
-                var sw = new StreamWriter(ms, encoding ?? DefaultEncoding);
-                sw.Write(content);
-                sw.Flush();
-                ms.Seek(0, SeekOrigin.Begin);
-                return BytesToHash(Hasher.ComputeHash(ms));
-            }
-        }
-
-        /// <summary>The compute file hash.</summary>
-        /// <param name="filePath">The file path.</param>
-        /// <returns>The <see cref="string"/>.</returns>
-        public static string ComputeFileHash(string filePath)
-        {
-            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                return BytesToHash(Hasher.ComputeHash(fs));
-            }
-        }
-
-        /// <summary>Starts a section.</summary>
+        /// <summary>The section.</summary>
         /// <param name="idParts">The id parts.</param>
-        /// <param name="sectionAction">The section action.</param>
-        /// <returns>The Success</returns>
-        public bool Section(string[] idParts, Func<string, bool> sectionAction)
+        /// <returns>The <see cref="IWebGreaseSection"/>.</returns>
+        public IWebGreaseSection SectionedAction(params string[] idParts)
         {
-            var id = this.Measure.Start(idParts);
-            try
-            {
-                return sectionAction(id);
-            }
-            finally
-            {
-                this.Measure.End(id);
-            }
+            return WebGreaseSection.Create(this, idParts, false);
         }
 
-        /// <summary>Starts a section.</summary>
+        /// <summary>The section.</summary>
         /// <param name="idParts">The id parts.</param>
-        /// <param name="varBySettings">The var by settings.</param>
-        /// <param name="skipable">If the section is skippable.</param>
-        /// <param name="sectionAction">The section action.</param>
-        /// <returns>The Success</returns>
-        public bool Section(string[] idParts, object varBySettings, bool skipable, Func<ICacheSection, bool> sectionAction)
+        /// <returns>The <see cref="IWebGreaseSection"/>.</returns>
+        public IWebGreaseSection SectionedActionGroup(params string[] idParts)
         {
-            return this.Section(idParts, null, varBySettings, skipable, sectionAction);
+            return WebGreaseSection.Create(this, idParts, true);
         }
 
-        /// <summary>Starts a section.</summary>
-        /// <param name="idParts">The id parts.</param>
-        /// <param name="varByContentItem">The var by content item.</param>
-        /// <param name="skipable">If the section is skippable.</param>
-        /// <param name="sectionAction">The section action.</param>
-        /// <returns>The Success</returns>
-        public bool Section(string[] idParts, ContentItem varByContentItem, bool skipable, Func<ICacheSection, bool> sectionAction)
+        /// <summary>The temporary ignore.</summary>
+        /// <param name="fileSet">The file set.</param>
+        /// <param name="contentItem">The content item.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool TemporaryIgnore(IFileSet fileSet, ContentItem contentItem)
         {
-            return this.Section(idParts, varByContentItem, null, skipable, sectionAction);
-        }
-
-        /// <summary>Starts a section.</summary>
-        /// <param name="idParts">The id parts.</param>
-        /// <param name="varByContentItem">The var by content item.</param>
-        /// <param name="varBySettings">The var by settings.</param>
-        /// <param name="skipable">If the section is skippable.</param>
-        /// <param name="sectionAction">The section action.</param>
-        /// <returns>The Success</returns>
-        public bool Section(string[] idParts, ContentItem varByContentItem, object varBySettings, bool skipable, Func<ICacheSection, bool> sectionAction)
-        {
-            return this.Section(
-                idParts, 
-                id =>
-                {
-                    var cacheSection = this.Cache.BeginSection(id, varByContentItem, varBySettings);
-                    try
-                    {
-                        if (skipable && cacheSection.CanBeSkipped())
-                        {
-                            return true;
-                        }
-
-                        if (!sectionAction(cacheSection))
-                        {
-                            return false;
-                        }
-
-                        cacheSection.Save();
-                        return true;
-                    }
-                    finally
-                    {
-                        cacheSection.EndSection();
-                    }
-                });
+            return 
+                this.Configuration != null 
+                && this.Configuration.Overrides != null
+                && (this.Configuration.Overrides.ShouldIgnore(fileSet) || this.Configuration.Overrides.ShouldIgnore(contentItem));
         }
 
         /// <summary>The clean cache.</summary>
@@ -282,8 +212,7 @@ namespace WebGrease
                 value = string.Empty;
             }
 
-            this.Measure.Start(SectionIdParts.FileHash);
-            try
+            return this.SectionedAction(SectionIdParts.FileHash).Execute(() =>
             {
                 if (!CachedContentHashes.ContainsKey(value))
                 {
@@ -291,11 +220,7 @@ namespace WebGrease
                 }
 
                 return CachedContentHashes[value];
-            }
-            finally
-            {
-                this.Measure.End(SectionIdParts.FileHash);
-            }
+            });
         }
 
         /// <summary>Gets the md5 hash for the content file.</summary>
@@ -303,7 +228,8 @@ namespace WebGrease
         /// <returns>The MD5 hash.</returns>
         public string GetContentItemHash(ContentItem contentItem)
         {
-            return contentItem.GetContentHash(this);
+            return this.SectionedAction(SectionIdParts.ContentHash).Execute(
+                () => contentItem.GetContentHash(this));
         }
 
         /// <summary>Gets the hash for the content of the file provided in the file path.</summary>
@@ -311,27 +237,35 @@ namespace WebGrease
         /// <returns>The MD5 hash.</returns>
         public string GetFileHash(string filePath)
         {
-            this.Measure.Start(SectionIdParts.FileHash);
-            try
+            var fi = new FileInfo(filePath);
+            if (!fi.Exists)
             {
-                var fi = new FileInfo(filePath);
-                if (!fi.Exists)
-                {
-                    throw new FileNotFoundException("Could not find the file to create a hash for", filePath);
-                }
-
-                var uniqueId = fi.FullName;
-                if (!CachedFileHashes.ContainsKey(uniqueId) || CachedFileHashes[uniqueId].Item1 != fi.LastWriteTimeUtc || CachedFileHashes[uniqueId].Item2 != fi.Length)
-                {
-                    CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, ComputeFileHash(fi.FullName));
-                }
-
-                return CachedFileHashes[uniqueId].Item3;
+                throw new FileNotFoundException("Could not find the file to create a hash for", filePath);
             }
-            finally
+
+            var uniqueId = fi.FullName;
+
+            string hash;
+            if (this.sessionCachedFileHashes.TryGetValue(uniqueId, out hash))
             {
-                this.Measure.End(SectionIdParts.FileHash);
+                // Found in current session cache, just return.
+                return hash;
             }
+
+            Tuple<DateTime, long, string> cachedFileHash;
+            CachedFileHashes.TryGetValue(uniqueId, out cachedFileHash);
+
+            if (cachedFileHash != null && cachedFileHash.Item1 == fi.LastWriteTimeUtc && cachedFileHash.Item2 == fi.Length)
+            {
+                // found in static cache, between sessions, and is up to dat, return.
+                return cachedFileHash.Item3;
+            }
+
+            // either new, or has changed, recompute, and add to cached file hash
+            var computedFileHash = ComputeFileHash(fi.FullName);
+            CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, computedFileHash);
+            this.sessionCachedFileHashes[uniqueId] = computedFileHash;
+            return computedFileHash;
         }
 
         /// <summary>The make relative.</summary>
@@ -363,12 +297,58 @@ namespace WebGrease
         /// <param name="filePath">The file path.</param>
         public void Touch(string filePath)
         {
-            File.SetLastWriteTimeUtc(filePath, this.SessionStartTime.Date);
+            if (File.GetLastWriteTimeUtc(filePath) != this.SessionStartTime.UtcDateTime)
+            {
+                File.SetLastWriteTimeUtc(filePath, this.SessionStartTime.UtcDateTime);
+            }
         }
 
         #endregion
 
         #region Methods
+
+        /// <summary>The get name.</summary>
+        /// <param name="idParts">The names.</param>
+        /// <returns>The id.</returns>
+        internal static string ToStringId(IEnumerable<string> idParts)
+        {
+            return string.Join(IdPartsDelimiter, idParts);
+        }
+
+        /// <summary>The get name.</summary>
+        /// <param name="id">The name.</param>
+        /// <returns>The id parts</returns>
+        internal static IEnumerable<string> ToIdParts(string id)
+        {
+            return id.Split(IdPartsDelimiter[0]);
+        }
+
+        /// <summary>The compute content hash.</summary>
+        /// <param name="content">The content.</param>
+        /// <param name="encoding"> The encoding</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        internal static string ComputeContentHash(string content, Encoding encoding = null)
+        {
+            using (var ms = new MemoryStream())
+            {
+                var sw = new StreamWriter(ms, encoding ?? DefaultEncoding);
+                sw.Write(content);
+                sw.Flush();
+                ms.Seek(0, SeekOrigin.Begin);
+                return BytesToHash(Hasher.ComputeHash(ms));
+            }
+        }
+
+        /// <summary>The compute file hash.</summary>
+        /// <param name="filePath">The file path.</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        internal static string ComputeFileHash(string filePath)
+        {
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                return BytesToHash(Hasher.ComputeHash(fs));
+            }
+        }
 
         /// <summary>The bytes to hash.</summary>
         /// <param name="hash">The hash.</param>

@@ -6,8 +6,8 @@
     <TokensDirectory>Shared</TokensDirectory>
     <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
     <!-- these settings apply to each file set defined in this config -->
-    <Locales>generic-generic;ja-jp</Locales>
-    <Themes>Resolution1x;Resolution2x</Themes>
+    <Locales>generic-generic;ja-jp;en-us;de-de;nl-nl;</Locales>
+    <Themes>Resolution1x;Resolution15x;Resolution2x;Resolution14x;Resolution18x;Resolution24x</Themes>
     <CssMinification config="Debug">
       <Minify>False</Minify>
       <ValidateLowerCase>True</ValidateLowerCase>
@@ -20,9 +20,11 @@
   <CssFileSet output="ChannelHomepage.classic.pc.w3c.css">
     <Spriting config="Debug">
       <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+      <ImagesToIgnore>/images/adchoices/*</ImagesToIgnore>
     </Spriting>
     <Spriting config="Release">
       <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+      <ImagesToIgnore>/images/adchoices/*</ImagesToIgnore>
     </Spriting>
     <Inputs>
       <!-- TMX SDK Files -->
@@ -34,9 +36,11 @@
   <CssFileSet output="ChannelHomepage.classic.pc.ms.ie7.css">
     <Spriting config="Debug">
       <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+      <ImagesToIgnore>/images/adchoices/*</ImagesToIgnore>
     </Spriting>
     <Spriting config="Release">
       <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+      <ImagesToIgnore>/images/adchoices/*</ImagesToIgnore>
     </Spriting>
     <Inputs>
       <!-- TMX SDK Files -->
@@ -48,9 +52,11 @@
   <CssFileSet output="ChannelHomepage.classic.pc.ms.ie8.css">
     <Spriting config="Debug">
       <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+      <ImagesToIgnore>/images/adchoices/*</ImagesToIgnore>
     </Spriting>
     <Spriting config="Release">
       <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+      <ImagesToIgnore>/images/adchoices/*</ImagesToIgnore>
     </Spriting>
     <Inputs>
       <!-- TMX SDK Files -->
@@ -62,9 +68,11 @@
   <CssFileSet output="ChannelHomepage.classic.pc.ms.ie9.css">
     <Spriting config="Debug">
       <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+      <ImagesToIgnore>/images/adchoices/*</ImagesToIgnore>
     </Spriting>
     <Spriting config="Release">
       <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+      <ImagesToIgnore>/images/adchoices/*</ImagesToIgnore>
     </Spriting>
     <Inputs>
       <!-- TMX SDK Files -->

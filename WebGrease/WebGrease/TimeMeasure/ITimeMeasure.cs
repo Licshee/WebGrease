@@ -16,14 +16,15 @@ namespace WebGrease
         TimeMeasureResult[] GetResults();
 
         /// <summary>The end.</summary>
+        /// <param name="isGroup">The is Group.</param>
         /// <param name="idParts">The names.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "End", Justification = "Works well")]
-        void End(params string[] idParts);
+        void End(bool isGroup, params string[] idParts);
 
         /// <summary>The start.</summary>
+        /// <param name="isGroup">The is Group.</param>
         /// <param name="idParts">The names.</param>
-        /// <returns>The id.</returns>
-        string Start(params string[] idParts);
+        void Start(bool isGroup, params string[] idParts);
 
         /// <summary>Writes the results to a txt and a csv file.</summary>
         /// <param name="filePathWithoutExtension">The file path without extension.</param>
@@ -32,9 +33,9 @@ namespace WebGrease
         void WriteResults(string filePathWithoutExtension, string title, DateTimeOffset utcStart);
 
         /// <summary>Begins a new section.</summary>
-        void BeginSection();
+        void BeginGroup();
 
         /// <summary>Ends section.</summary>
-        void EndSection();
+        void EndGroup();
     }
 }

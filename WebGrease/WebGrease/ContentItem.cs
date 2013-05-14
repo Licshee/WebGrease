@@ -139,6 +139,14 @@ namespace WebGrease
                        };
         }
 
+        /// <summary>The from content.</summary>
+        /// <param name="content">The content.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public static ContentItem FromContent(string content)
+        {
+            return FromContent(content, null, null, null, null);
+        }
+
         /// <summary>Creates a content item from a string value and a previous contentItem.</summary>
         /// <summary>The from content.</summary>
         /// <param name="content">The content.</param>

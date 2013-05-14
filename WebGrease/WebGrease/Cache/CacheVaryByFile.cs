@@ -26,12 +26,6 @@ namespace WebGrease
         /// <summary>Gets the original absolute file path.</summary>
         public string Path { get; private set; }
 
-        /// <summary>Gets the theme.</summary>
-        public string Theme { get; private set; }
-
-        /// <summary>Gets the locale.</summary>
-        public string Locale { get; private set; }
-
         #endregion
 
         #region Public Methods and Operators
@@ -45,8 +39,6 @@ namespace WebGrease
             return new CacheVaryByFile
                        {
                            Path = contentItem.RelativeContentPath,
-                           Locale = contentItem.Locale,
-                           Theme = contentItem.Theme,
                            Hash = contentItem.GetContentHash(context)
                        };
         }

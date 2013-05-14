@@ -341,10 +341,15 @@
     <Compile Include="Extensions\InputSpecExtensions.cs" />
     <Compile Include="Extensions\JsonExtensions.cs" />
     <Compile Include="Extensions\StringPathExtensions.cs" />
+    <Compile Include="ICachableWebGreaseSection.cs" />
+    <Compile Include="IWebGreaseSection.cs" />
     <Compile Include="IWebGreaseContext.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="ContentItem.cs" />
     <Compile Include="ContentItemType.cs" />
+    <Compile Include="MessageImportance.cs" />
+    <Compile Include="TemporaryOverrides.cs" />
+    <Compile Include="WebGreaseSection.cs" />
     <Compile Include="TimeMeasure\ITimeMeasure.cs" />
     <Compile Include="TimeMeasure\NullTimeMeasure.cs" />
     <Compile Include="TimeMeasure\TimeMeasure.cs" />

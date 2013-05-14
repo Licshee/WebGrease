@@ -4,7 +4,7 @@
     <TokensDirectory>Shared</TokensDirectory>
     <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
     <!-- these settings apply to each file set defined in this config -->
-    <Locales>generic-generic</Locales>
+    <Locales>generic-generic;ja-jp;en-us;de-de</Locales>
     <JsMinification config="Release">
       <Minify>True</Minify>
       <MinifyArguments>-h -debug:F -fnames:onlyref -rename:all -unused:remove</MinifyArguments>

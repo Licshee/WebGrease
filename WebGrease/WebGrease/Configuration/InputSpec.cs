@@ -21,7 +21,7 @@ namespace WebGrease.Configuration
         public InputSpec()
         {
             // default expectation of existing code when parsing the property prior when it was a string.
-            this.SearchOption = System.IO.SearchOption.AllDirectories;
+            this.SearchOption = SearchOption.AllDirectories;
         }
 
         /// <summary>Initializes a new instance of the <see cref="InputSpec"/> class.</summary>
@@ -55,14 +55,13 @@ namespace WebGrease.Configuration
             var searchOptionAttribute = element.Attribute("searchOption");
             if (searchOptionAttribute != null)
             {
-                System.IO.SearchOption temp;
-                this.SearchOption = Enum.TryParse<System.IO.SearchOption>(searchOptionAttribute.Value, out temp) ? temp : System.IO.SearchOption.AllDirectories;
+                SearchOption temp;
+                this.SearchOption = Enum.TryParse(searchOptionAttribute.Value, out temp) ? temp : SearchOption.AllDirectories;
             }
             else
             {
-                this.SearchOption = System.IO.SearchOption.AllDirectories;
+                this.SearchOption = SearchOption.AllDirectories;
             }
-
 
             if (!string.IsNullOrWhiteSpace(element.Value))
             {
@@ -94,5 +93,58 @@ namespace WebGrease.Configuration
         /// Gets or sets a flag inidcating whether it's not an error if the input file does not exist
         /// </summary>
         public bool IsOptional { get; set; }
+
+        /// <summary>
+        /// Determines whether the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>.
+        /// </summary>
+        /// <returns>
+        /// true if the specified <see cref="T:System.Object"/> is equal to the current <see cref="T:System.Object"/>; otherwise, false.
+        /// </returns>
+        /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
+        public override bool Equals(object obj)
+        {
+            var otherInputSpec = obj as InputSpec;
+            if (otherInputSpec == null)
+            {
+                return false;
+            }
+
+            return
+                otherInputSpec.Path == this.Path
+                && otherInputSpec.SearchOption == this.SearchOption
+                && otherInputSpec.SearchPattern == this.SearchPattern
+                && otherInputSpec.IsOptional == this.IsOptional;
+        }
+
+        /// <summary>
+        /// Serves as a hash function for a particular type. 
+        /// </summary>
+        /// <returns>
+        /// A hash code for the current <see cref="T:System.Object"/>.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
+        public override int GetHashCode()
+        {
+            // Overflow is fine, just wrap
+            unchecked 
+            {
+                var hash = 17;
+                hash = (hash * 23) + GetObjectHashCode(this.Path);
+                hash = (hash * 23) + GetObjectHashCode(this.SearchOption);
+                hash = (hash * 23) + GetObjectHashCode(this.SearchPattern);
+                hash = (hash * 23) + this.IsOptional.GetHashCode();
+                return hash;
+            }
+        }
+
+        /// <summary>The get object hash.</summary>
+        /// <param name="obj">The obj.</param>
+        /// <returns>The <see cref="int"/>.</returns>
+        private static int GetObjectHashCode(object obj)
+        {
+            return obj != null
+                ? obj.GetHashCode() 
+                : 0;
+        }
     }
 }

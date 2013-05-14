@@ -24,13 +24,13 @@ namespace Css.Tests.Css30
     [TestClass]
     public class SelectorValidationOptimizationVisitorTest
     {
-        /// <summary>
-        /// The list of css _hacks
-        /// </summary>
-        private readonly HashSet<string> _hacks = new HashSet<string> { "html>body", "* html", "*:first-child+html p", "head:first-child+body", "head+body", "body>", "*>html", "*html>body" };
-
         /// <summary>The base directory.</summary>
         private static readonly string BaseDirectory;
+
+        /// <summary>
+        /// The list of css hacks
+        /// </summary>
+        private readonly HashSet<string> hacks = new HashSet<string> { "html>body", "* html", "*:first-child+html p", "head:first-child+body", "head+body", "body>", "*>html", "*html>body" };
 
         /// <summary>Initializes static members of the <see cref="SelectorValidationOptimizationVisitorTest"/> class.</summary>
         static SelectorValidationOptimizationVisitorTest()
@@ -52,7 +52,7 @@ namespace Css.Tests.Css30
                 var inputDirectory = new DirectoryInfo(Path.Combine(BaseDirectory, "Hacks"));
                 foreach (var fileInfo in inputDirectory.GetFiles())
                 {
-                    VisitCssWithHacks(fileInfo.FullName, ref exceptionCount);
+                    this.VisitCssWithHacks(fileInfo.FullName, ref exceptionCount);
                 }
 
                 Assert.IsTrue(exceptionCount == ExpectedExceptionCount, "The exception count is not equal to " + ExpectedExceptionCount);
@@ -70,9 +70,9 @@ namespace Css.Tests.Css30
         [TestCategory(TestCategories.CssParser)]
         public void RemoveSelectors()
         {
-            _hacks.Add("foo");
-            MinificationVerifier.VerifyMinification(BaseDirectory, "RemoveSelectors.css", new List<NodeVisitor> { new SelectorValidationOptimizationVisitor(_hacks, false, false) });
-            PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, "RemoveSelectors.css", new List<NodeVisitor> { new SelectorValidationOptimizationVisitor(_hacks, false, false) });
+            this.hacks.Add("foo");
+            MinificationVerifier.VerifyMinification(BaseDirectory, "RemoveSelectors.css", new List<NodeVisitor> { new SelectorValidationOptimizationVisitor(this.hacks, false, false) });
+            PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, "RemoveSelectors.css", new List<NodeVisitor> { new SelectorValidationOptimizationVisitor(this.hacks, false, false) });
         }
 
         /// <summary>
@@ -84,7 +84,7 @@ namespace Css.Tests.Css30
         {
             try
             {
-                CssParser.Parse(new FileInfo(inputFileName)).Accept(new SelectorValidationOptimizationVisitor(_hacks, false, true));
+                CssParser.Parse(new FileInfo(inputFileName)).Accept(new SelectorValidationOptimizationVisitor(this.hacks, false, true));
             }
             catch (BuildWorkflowException exception)
             {

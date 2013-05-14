@@ -24,16 +24,17 @@ namespace WebGrease
         }
 
         /// <summary>The end.</summary>
+        /// <param name="isGroup">The is Group.</param>
         /// <param name="idParts">The names.</param>
-        public void End(params string[] idParts)
+        public void End(bool isGroup, params string[] idParts)
         {
         }
 
         /// <summary>The start.</summary>
+        /// <param name="isGroup">The is Group.</param>
         /// <param name="idParts">The names.</param>
-        public string Start(params string[] idParts)
+        public void Start(bool isGroup, params string[] idParts)
         {
-            return TimeMeasure.GetId(idParts);
         }
 
         /// <summary>Writes the results to a txt and a csv file.</summary>
@@ -45,12 +46,12 @@ namespace WebGrease
         }
 
         /// <summary>Begins a new section.</summary>
-        public void BeginSection()
+        public void BeginGroup()
         {
         }
 
         /// <summary>Ends section.</summary>
-        public void EndSection()
+        public void EndGroup()
         {
         }
     }

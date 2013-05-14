@@ -260,7 +260,7 @@ namespace WebGrease.Css.Visitor
                     // Store the list of failed urls
                     imagesCriteriaFailedUrls.ForEach(imagesCriteriaFailedUrl =>
                     {
-                        var url = imagesCriteriaFailedUrl.MakeAbsoluteTo(_cssPath);
+                        var url = imagesCriteriaFailedUrl.NormalizeUrl().MakeAbsoluteTo(_cssPath);
 
                         // Throw an exception if image has passed the criteria in past and now
                         // now fails the criteria
@@ -309,21 +309,16 @@ namespace WebGrease.Css.Visitor
         /// <param name="backgroundPosition">THe background position</param>
         private void AddImageReference(string url, BackgroundPosition backgroundPosition)
         {
-            if (url.StartsWith("hash://", StringComparison.OrdinalIgnoreCase))
-            {
-                url = url.Substring(7);
-            }
-
+            var relativeUrl = url.NormalizeUrl();
             if (this._availableImageSources != null)
             {
-                url = url.NormalizeUrl();
-                var sourceFile = this._availableImageSources.ContainsKey(url)
-                    ? this._availableImageSources[url]
+                var sourceFile = this._availableImageSources.ContainsKey(relativeUrl)
+                    ? this._availableImageSources[relativeUrl]
                     : null;
 
                 if (string.IsNullOrWhiteSpace(sourceFile))
                 {
-                    throw new FileNotFoundException("Could not find the image file:" + url);
+                    throw new FileNotFoundException("Could not find the image file:" + relativeUrl);
                 }
 
                 url = sourceFile;
@@ -334,7 +329,7 @@ namespace WebGrease.Css.Visitor
             }
 
             // No need to report the url if it is present in ignore list
-            if (this._imageReferencesToIgnore.Contains(url))
+            if (this._imageReferencesToIgnore.Contains(relativeUrl) || this._imageReferencesToIgnore.Contains(Path.GetDirectoryName(relativeUrl) + "\\*"))
             {
                 return;
             }

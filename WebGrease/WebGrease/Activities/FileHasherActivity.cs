@@ -41,7 +41,11 @@ namespace WebGrease.Activities
         {
             this.context = context;
             this.SourceDirectories = new List<string>();
+            this.ConfigType = context.Configuration.ConfigType;
         }
+
+        /// <summary>Gets or sets the config type.</summary>
+        internal string ConfigType { get; set; }
 
         /// <summary>
         /// Gets the list of directories to copy from.
@@ -116,73 +120,60 @@ namespace WebGrease.Activities
             // Clear out the collection since activities objects may be pooled
             this.renamedFilesLog.Clear();
 
-            this.context.Measure.Start(SectionIdParts.FileHasherActivity, this.FileType.ToString());
-            try
+            this.context.SectionedAction(SectionIdParts.FileHasherActivity, this.FileType.ToString()).Execute(() =>
             {
-                if (this.SourceDirectories == null || this.SourceDirectories.Count == 0)
+                try
                 {
-                    // No action for directory not present and no files as input.
-                    Trace.TraceInformation("FileHasherActivity - No source directories passed and hence no action taken for the activity.");
-                    return;
-                }
-
-                // Default the destination directory
-                if (string.IsNullOrWhiteSpace(this.DestinationDirectory))
-                {
-                    this.DestinationDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                }
-
-                // Create an array to filter the file types to retrieve
-                var fileTypeFilter = GetFilters(this.FileTypeFilter);
-
-                // Default the prefix to empty
-                if (string.IsNullOrWhiteSpace(this.BasePrefixToRemoveFromOutputPathInLog))
-                {
-                    this.BasePrefixToRemoveFromOutputPathInLog = string.Empty;
-                }
-
-                // Ensure BasePrefixToRemoveFromInputPathInLog is not null
-                if (string.IsNullOrWhiteSpace(this.BasePrefixToRemoveFromInputPathInLog))
-                {
-                    this.BasePrefixToRemoveFromInputPathInLog = string.Empty;
-                }
-
-                foreach (var sourceDirectory in this.SourceDirectories)
-                {
-                    if (!Directory.Exists(sourceDirectory))
+                    if (this.SourceDirectories == null || this.SourceDirectories.Count == 0)
                     {
-                        // No action for directory not present
-                        Trace.TraceWarning(
-                            string.Format(
-                                CultureInfo.InvariantCulture,
-                                "FileHasherActivity - Could not locate the source directory at {0}",
-                                sourceDirectory));
-                        continue;
+                        // No action for directory not present and no files as input.
+                        Trace.TraceInformation("FileHasherActivity - No source directories passed and hence no action taken for the activity.");
+                        return;
                     }
 
-                    this.Hash(sourceDirectory, this.DestinationDirectory, fileTypeFilter);
+                    // Default the destination directory
+                    if (string.IsNullOrWhiteSpace(this.DestinationDirectory))
+                    {
+                        this.DestinationDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    }
+
+                    // Create an array to filter the file types to retrieve
+                    var fileTypeFilter = GetFilters(this.FileTypeFilter);
+
+                    // Default the prefix to empty
+                    if (string.IsNullOrWhiteSpace(this.BasePrefixToRemoveFromOutputPathInLog))
+                    {
+                        this.BasePrefixToRemoveFromOutputPathInLog = string.Empty;
+                    }
+
+                    // Ensure BasePrefixToRemoveFromInputPathInLog is not null
+                    if (string.IsNullOrWhiteSpace(this.BasePrefixToRemoveFromInputPathInLog))
+                    {
+                        this.BasePrefixToRemoveFromInputPathInLog = string.Empty;
+                    }
+
+                    foreach (var sourceDirectory in this.SourceDirectories)
+                    {
+                        if (!Directory.Exists(sourceDirectory))
+                        {
+                            // No action for directory not present
+                            Trace.TraceWarning(
+                                string.Format(
+                                    CultureInfo.InvariantCulture, "FileHasherActivity - Could not locate the source directory at {0}", sourceDirectory));
+                            continue;
+                        }
+
+                        this.Hash(sourceDirectory, this.DestinationDirectory, fileTypeFilter);
+                    }
+
+                    // All done, if we need to save, save the output
+                    this.Save();
                 }
-
-                // All done, if we need to save, save the output
-                this.Save();
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException(
-                    "FileHasherActivity - Error happened while executing the activity.", exception);
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.FileHasherActivity, this.FileType.ToString());
-            }
-        }
-
-        /// <summary>Hashes the result files.</summary>
-        /// <param name="contentItems">The result files.</param>
-        /// <returns>The result file after the hash.</returns>
-        internal IEnumerable<ContentItem> Hash(IEnumerable<ContentItem> contentItems)
-        {
-            return contentItems.Select(this.Hash);
+                catch (Exception exception)
+                {
+                    throw new WorkflowException("FileHasherActivity - Error happened while executing the activity.", exception);
+                }
+            });
         }
 
         /// <summary>Hash the file.</summary>
@@ -297,10 +288,10 @@ namespace WebGrease.Activities
         /// <summary>Gets the destination file path for a hashed file name: /12/34567xxxxx.png.</summary>
         /// <param name="destination">The destination path.</param>
         /// <param name="hashedFileName">The hashed file name.</param>
-        /// <param name="originRelativePath"></param>
+        /// <param name="relativePath">The relative Path.</param>
         /// <returns>The destination file path.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Hash md5 lowercase")]
-        private string GetDestinationFilePath(string destination, string hashedFileName, string originRelativePath)
+        private string GetDestinationFilePath(string destination, string hashedFileName, string relativePath)
         {
             string destinationFilePath;
 
@@ -320,7 +311,7 @@ namespace WebGrease.Activities
             }
             else if (this.ShouldPreserveSourceDirectoryStructure)
             {
-                destinationFilePath = Path.Combine(destination, Path.GetDirectoryName(originRelativePath), hashedFileName);
+                destinationFilePath = Path.Combine(destination, Path.GetDirectoryName(relativePath), hashedFileName);
             }
             else
             {
@@ -352,6 +343,7 @@ namespace WebGrease.Activities
                 this.renamedFilesLog.Add(fileAfterHashing, new List<string>());
             }
 
+            // if it already exists, we need to ignore it and delete it from disk if it exists.
             var existingRenames = this.renamedFilesLog.Where(rfl => rfl.Value.Contains(fileBeforeHashing) && !rfl.Key.Equals(fileAfterHashing)).ToArray();
             if (existingRenames.Any())
             {
@@ -379,6 +371,19 @@ namespace WebGrease.Activities
             {
                 this.renamedFilesLog[fileAfterHashing].Add(fileBeforeHashing);
             }
+        }
+
+        /// <summary>The make output absolute.</summary>
+        /// <param name="output">The output.</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        private string MakeOutputAbsolute(string output)
+        {
+            if (!string.IsNullOrWhiteSpace(this.BasePrefixToAddToOutputPath) && output.StartsWith(this.BasePrefixToAddToOutputPath, StringComparison.OrdinalIgnoreCase))
+            {
+                output = output.Substring(this.BasePrefixToAddToOutputPath.Length);
+            }
+
+            return Path.Combine(this.BasePrefixToRemoveFromOutputPathInLog ?? this.DestinationDirectory, output.NormalizeUrl());
         }
 
         /// <summary>The normalize file for work log.</summary>
@@ -415,9 +420,9 @@ namespace WebGrease.Activities
                 return;
             }
 
-            if (appendToLog && File.Exists(this.LogFileName))
+            if (appendToLog)
             {
-                this.Load(this.LogFileName);
+                this.LoadBeforeWrite(this.LogFileName);
             }
 
             var stringBuilder = new StringBuilder();
@@ -427,6 +432,7 @@ namespace WebGrease.Activities
             {
                 writer.WriteStartDocument();
                 writer.WriteStartElement("RenamedFiles");
+                writer.WriteAttributeString("configType", this.ConfigType);
 
                 // we still want a log file even if nothing was done to it, just no Flie nodes in it
                 if (this.renamedFilesLog == null || this.renamedFilesLog.Keys.Count < 1)
@@ -437,23 +443,28 @@ namespace WebGrease.Activities
                 {
                     foreach (var key in this.renamedFilesLog.Keys.OrderBy(f => f))
                     {
-                        writer.WriteStartElement("File");
-                        writer.WriteStartElement("Output");
-                        var outputPath = GetUrlPath(key);
-
-                        // if desired, add a base to the path otherwise add the default "/"
-                        outputPath = (this.BasePrefixToAddToOutputPath ?? Path.AltDirectorySeparatorChar.ToString(CultureInfo.InvariantCulture)) + outputPath.TrimStart(Path.AltDirectorySeparatorChar);
-
-                        writer.WriteValue(outputPath);
-                        writer.WriteEndElement();
-                        foreach (var oldName in this.renamedFilesLog[key].OrderBy(r => r))
+                        var inputfiles = this.renamedFilesLog[key];
+                        if (inputfiles.Any())
                         {
-                            writer.WriteStartElement("Input");
-                            writer.WriteValue(Path.AltDirectorySeparatorChar + GetUrlPath(oldName).TrimStart(Path.AltDirectorySeparatorChar));
+                            writer.WriteStartElement("File");
+                            writer.WriteStartElement("Output");
+                            var outputPath = GetUrlPath(key);
+
+                            // if desired, add a base to the path otherwise add the default "/"
+                            outputPath = (this.BasePrefixToAddToOutputPath ?? Path.AltDirectorySeparatorChar.ToString(CultureInfo.InvariantCulture))
+                                         + outputPath.TrimStart(Path.AltDirectorySeparatorChar);
+
+                            writer.WriteValue(outputPath);
+                            writer.WriteEndElement();
+                            foreach (var oldName in inputfiles.OrderBy(r => r))
+                            {
+                                writer.WriteStartElement("Input");
+                                writer.WriteValue(Path.AltDirectorySeparatorChar + GetUrlPath(oldName).TrimStart(Path.AltDirectorySeparatorChar));
+                                writer.WriteEndElement();
+                            }
+
                             writer.WriteEndElement();
                         }
-
-                        writer.WriteEndElement();
                     }
                 }
 
@@ -466,25 +477,85 @@ namespace WebGrease.Activities
 
         /// <summary>Load the log from disk.</summary>
         /// <param name="logFileName">The log file name.</param>
-        private void Load(string logFileName)
+        private void LoadBeforeWrite(string logFileName)
         {
-            var doc = XDocument.Load(logFileName);
-            var files = doc.Elements("RenamedFiles").Elements("File");
-            foreach (var fileElement in files)
+            // Get the possible specific log file name for this content type
+            var currentConfigTypeLogFileName = GetConfigTypeLogFile(logFileName, this.ConfigType);
+
+            XElement rootElement = null;
+
+            // If the log file does not exist
+            if (!File.Exists(logFileName))
             {
-                var outputPath = fileElement.Elements("Output").Select(e => (string)e).FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(outputPath))
+                // also check if there is not a content type specific log file. (for example css_log.debug.xml)
+                if (File.Exists(currentConfigTypeLogFileName))
                 {
-                    if (File.Exists(outputPath))
+                    rootElement = GetLogRoot(currentConfigTypeLogFileName);
+                }
+            }
+            else
+            {
+                // Or load the normal log.
+                rootElement = GetLogRoot(logFileName);
+            }
+
+            if (rootElement != null)
+            {
+                var configType = (string)rootElement.Attribute("configType");
+
+                // If the loaded log file has a different content type.
+                if (configType != this.ConfigType)
+                {
+                    // And the content type is not empty
+                    if (!string.IsNullOrWhiteSpace(configType))
                     {
-                        var inputs = fileElement.Elements("Input").Select(e => (string)e);
-                        foreach (var input in inputs)
+                        // Copy the current log file to a content type specific log file.
+                        var xmlConfigType = GetConfigTypeLogFile(logFileName, configType);
+                        File.Copy(logFileName, xmlConfigType, true);
+                    }
+
+                    // If there is a config type specific log file (for example css_log.debug.xml)
+                    if (File.Exists(currentConfigTypeLogFileName))
+                    {
+                        // Loa it from the log specific file
+                        rootElement = GetLogRoot(currentConfigTypeLogFileName);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
+                var files = rootElement.Elements("File");
+                foreach (var fileElement in files)
+                {
+                    var relativeOutputPath = fileElement.Elements("Output").Select(e => (string)e).FirstOrDefault();
+                    if (!string.IsNullOrWhiteSpace(relativeOutputPath))
+                    {
+                        var absoluteOutputPath = this.MakeOutputAbsolute(relativeOutputPath);
+                        if (File.Exists(absoluteOutputPath))
                         {
-                            this.AppendToWorkLog(input, outputPath, true);
+                            var inputs = fileElement.Elements("Input").Select(e => (string)e);
+                            foreach (var input in inputs)
+                            {
+                                this.AppendToWorkLog(input, absoluteOutputPath, true);
+                            }
                         }
                     }
                 }
             }
+        }
+
+        private static XElement GetLogRoot(string logFileName)
+        {
+            var doc = XDocument.Load(logFileName);
+            var rootElement = doc.Element("RenamedFiles");
+            return rootElement;
+        }
+
+        private static string GetConfigTypeLogFile(string logFileName, string configType)
+        {
+            return Path.Combine(Path.GetDirectoryName(logFileName), Path.GetFileNameWithoutExtension(logFileName) + "." + configType + Path.GetExtension(logFileName));
         }
     }
 }

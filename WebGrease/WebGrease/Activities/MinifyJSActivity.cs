@@ -11,6 +11,7 @@ namespace WebGrease.Activities
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Text;
     using Common;
     using Microsoft.Ajax.Utilities;
@@ -76,28 +77,28 @@ namespace WebGrease.Activities
                 contentItem = ContentItem.FromFile(this.SourceFile, this.SourceFile.MakeRelativeToDirectory(destinationDirectory));
             }
 
-            this.context.Measure.Start(SectionIdParts.MinifyJsActivity);
-
-            // Initialize the minifier
-            var cacheSection = this.context.Cache.BeginSection(
-                "minifyjs",
-                contentItem,
-                new
-                    {
-                        this.ShouldAnalyze,
-                        this.ShouldMinify,
-                        this.AnalyzeArgs,
-                    });
-
-            try
-            {
-                if (this.TryRestoreFromCache(cacheSection))
+            this.context.SectionedAction(SectionIdParts.MinifyJsActivity)
+                .CanBeCached(contentItem, new { this.ShouldAnalyze, this.ShouldMinify, this.AnalyzeArgs })
+                .RestoreFromCacheAction(cacheSection =>
                 {
-                    return;
-                }
+                    var resultFile = cacheSection.GetCachedContentItems(CacheFileCategories.MinifyJsResult).FirstOrDefault();
+                    if (resultFile == null)
+                    {
+                        return false;
+                    }
 
-                this.context.Measure.Start(SectionIdParts.MinifyJsActivity, SectionIdParts.Process);
-                try
+                    if (this.FileHasher != null)
+                    {
+                        resultFile.WriteToHashedPath(this.context.Configuration.DestinationDirectory);
+                        this.FileHasher.AppendToWorkLog(resultFile);
+                    }
+                    else
+                    {
+                        resultFile.WriteToContentPath(this.context.Configuration.DestinationDirectory);
+                    }
+
+                    return true;
+                }).Execute(cacheSection =>
                 {
                     var minifier = new Minifier { FileName = this.DestinationFile };
                     var minifierSettings = this.GetMinifierSettings(minifier);
@@ -105,7 +106,7 @@ namespace WebGrease.Activities
 
                     this.HandleMinifierErrors(minifier);
 
-                    var relativeDestinationFile = Path.IsPathRooted(this.DestinationFile) 
+                    var relativeDestinationFile = Path.IsPathRooted(this.DestinationFile)
                         ? this.DestinationFile.MakeRelativeToDirectory(destinationDirectory)
                         : this.DestinationFile;
 
@@ -121,24 +122,9 @@ namespace WebGrease.Activities
                         FileHelper.WriteFile(this.DestinationFile, output);
                         cacheSection.AddResult(ContentItem.FromFile(this.DestinationFile, relativeDestinationFile), CacheFileCategories.MinifyJsResult);
                     }
-                }
-                finally
-                {
-                    this.context.Measure.End(SectionIdParts.MinifyJsActivity, SectionIdParts.Process);
-                }
 
-                cacheSection.Save();
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException(
-                    "MinifyJSActivity - Error happened while executing the minify JS activity", exception);
-            }
-            finally
-            {
-                cacheSection.EndSection();
-                this.context.Measure.End(SectionIdParts.MinifyJsActivity);
-            }
+                    return true;
+                });
         }
 
         /// <summary>Handles the minifier errors.</summary>
@@ -154,7 +140,7 @@ namespace WebGrease.Activities
                     // log each message individually so we can click through into the source
                     foreach (var errorMessage in minifier.ErrorList)
                     {
-                        var errorHandler = errorMessage.IsError ? this.context.Log.ExtendedError : this.context.Log.Warning;
+                        var errorHandler = errorMessage.IsError ? (LogExtendedError)this.context.Log.Error : this.context.Log.Warning;
                         errorHandler(
                             errorMessage.Subcategory,
                             errorMessage.ErrorCode,
@@ -185,31 +171,6 @@ namespace WebGrease.Activities
                 throw new BuildWorkflowException(
                     exceptionMessage, "MinifyJSActivity", ErrorCode.Default, null, this.SourceFile, 0, 0, 0, 0, null);
             }
-        }
-
-        /// <summary>Tries to restore the result from cache.</summary>
-        /// <param name="cacheSection">The cache section.</param>
-        /// <returns>If it was able to restore it from cache.</returns>
-        private bool TryRestoreFromCache(ICacheSection cacheSection)
-        {
-            if (cacheSection.CanBeRestoredFromCache())
-            {
-                var resultFile = cacheSection.GetCachedContentItem(CacheFileCategories.MinifyJsResult);
-                var destinationDirectory = this.context.Configuration.DestinationDirectory;
-                if (this.FileHasher != null)
-                {
-                    resultFile.WriteToHashedPath(destinationDirectory);
-                    this.FileHasher.AppendToWorkLog(resultFile);
-                }
-                else
-                {
-                    resultFile.WriteToContentPath(destinationDirectory);
-                }
-
-                return true;
-            }
-
-            return false;
         }
 
         /// <summary>Gets the minifier settings.</summary>

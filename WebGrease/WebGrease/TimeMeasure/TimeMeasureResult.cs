@@ -1,5 +1,5 @@
 ﻿// ----------------------------------------------------------------------------------------------------
-// <copyright file="WebGreaseMeasureResult.cs" company="Microsoft Corporation">
+// <copyright file="TimeMeasureResult.cs" company="Microsoft Corporation">
 //   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
 // ----------------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ namespace WebGrease
         {
             get
             {
-                return string.Join(TimeMeasure.IdPartsDelimiter, this.IdParts);
+                return WebGreaseContext.ToStringId(this.IdParts);
             }
         }
 

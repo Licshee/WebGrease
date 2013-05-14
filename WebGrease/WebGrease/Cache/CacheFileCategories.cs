@@ -31,6 +31,9 @@ namespace WebGrease
         /// <summary>The sprite log file.</summary>
         internal const string SpriteLogFile = "SpriteLogFile";
 
+        /// <summary>The solution cache config.</summary>
+        internal const string SolutionCacheConfig = "SolutionCacheConfig";
+
         #endregion
     }
 }

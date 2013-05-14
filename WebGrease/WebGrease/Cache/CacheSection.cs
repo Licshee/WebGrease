@@ -10,7 +10,6 @@ namespace WebGrease
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
-    using System.Text;
 
     using Microsoft.Ajax.Utilities;
 
@@ -52,8 +51,17 @@ namespace WebGrease
         /// <summary>The is from disk.</summary>
         private bool isFromDisk;
 
+        /// <summary>If it is dirty (has changes not saved).</summary>
+        private bool isUnsaved = true;
+
         /// <summary>The parent.</summary>
         private CacheSection parent;
+
+        /// <summary>The last touch time.</summary>
+        private DateTimeOffset? lastTouchTime;
+
+        /// <summary>The unique key.</summary>
+        private string uniqueKey;
 
         #endregion
 
@@ -80,6 +88,15 @@ namespace WebGrease
         #endregion
 
         #region Properties
+
+        /// <summary>Gets the unique key.</summary>
+        public string UniqueKey
+        {
+            get
+            {
+                return this.uniqueKey ?? (this.uniqueKey = string.Join("|", this.varyByFiles.Select(vbf => vbf.Hash).Concat(this.varyBySettings)));
+            }
+        }
 
         /// <summary>Gets the absolute path.</summary>
         private string AbsolutePath
@@ -108,15 +125,6 @@ namespace WebGrease
             }
         }
 
-        /// <summary>Gets the unique key.</summary>
-        private string UniqueKey
-        {
-            get
-            {
-                return string.Join("|", this.varyByFiles.Select(vbf => vbf.Hash + vbf.Locale + vbf.Theme + Path.GetExtension(vbf.Path)).Concat(this.varyBySettings));
-            }
-        }
-
         #endregion
 
         #region Public Methods and Operators
@@ -129,20 +137,19 @@ namespace WebGrease
         /// <returns>The <see cref="CacheSection"/>.</returns>
         public static CacheSection Begin(IWebGreaseContext context, string cacheCategory, Action<ICacheSection> action, ICacheSection parentCacheSection = null)
         {
-            var cacheSection = new CacheSection { parent = parentCacheSection as CacheSection, cacheCategory = cacheCategory };
+            var cacheSection = new CacheSection
+                                   {
+                                       parent = parentCacheSection as CacheSection, 
+                                       cacheCategory = cacheCategory,
+                                       context = context
+                                   };
 
             if (cacheSection.parent != null)
             {
                 cacheSection.parent.AddChildCacheSection(cacheSection);
             }
 
-            var cachePath = context.Cache.GetAbsoluteCacheFilePath(cacheCategory, string.Empty);
-            if (!Directory.Exists(cachePath))
-            {
-                Directory.CreateDirectory(cachePath);
-            }
-
-            cacheSection.context = context;
+            EnsureCachePath(context, cacheCategory);
 
             action(cacheSection);
 
@@ -150,9 +157,56 @@ namespace WebGrease
             if (fileName.Exists)
             {
                 cacheSection.cachedSection = Load(fileName.FullName, context);
+                cacheSection.isUnsaved = false;
             }
 
             return cacheSection;
+        }
+
+        /// <summary>The from unique key.</summary>
+        /// <param name="context">The context.</param>
+        /// <param name="cacheCategory">The cache category.</param>
+        /// <param name="uniqueKey">The unique key.</param>
+        /// <param name="parentCacheSection">The parent Cache Section.</param>
+        public static void Begin(IWebGreaseContext context, string cacheCategory, string uniqueKey, ICacheSection parentCacheSection = null)
+        {
+            Begin(
+                context,
+                cacheCategory,
+                section =>
+                    {
+                        var cacheSection = section as CacheSection;
+                        if (cacheSection != null)
+                        {
+                            cacheSection.uniqueKey = uniqueKey;
+                        }
+                    },
+                parentCacheSection);
+        }
+
+        /// <summary>The get cache data.</summary>
+        /// <param name="id">The id.</param>
+        /// <typeparam name="T">The typeof object</typeparam>
+        /// <returns>The <see cref="T"/>.</returns>
+        public T GetCacheData<T>(string id) where T : new()
+        {
+            var cacheDataContentItem = this.GetCachedContentItems(id).FirstOrDefault();
+            if (cacheDataContentItem != null && !string.IsNullOrWhiteSpace(cacheDataContentItem.Content))
+            {
+                return cacheDataContentItem.Content.FromJson<T>(true);
+            }
+
+            return new T();
+        }
+
+        /// <summary>The set cache data.</summary>
+        /// <param name="id">The id.</param>
+        /// <param name="obj">The obj.</param>
+        /// <typeparam name="T">The typeof object</typeparam>
+        public void SetCacheData<T>(string id, T obj) where T : new()
+        {
+            var json = obj.ToJson(true);
+            this.AddResult(ContentItem.FromContent(json), id, false);
         }
 
         /// <summary>Adds an end result file from a result file.</summary>
@@ -161,21 +215,21 @@ namespace WebGrease
         /// <param name="isEndResult">If the result is an endresult.</param>
         public void AddResult(ContentItem contentItem, string id, bool isEndResult)
         {
-            this.context.Measure.Start(SectionIdParts.Cache, SectionIdParts.AddResultFile);
-            try
-            {
-                this.cacheResults.Add(CacheResult.FromContentFile(this.context, this.cacheCategory, isEndResult, id, contentItem));
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.Cache, SectionIdParts.AddResultFile);
-            }
+            this.isUnsaved = true;
+            this.context.SectionedAction(SectionIdParts.Cache, SectionIdParts.AddResultFile)
+                .Execute(() =>
+                    this.cacheResults.Add(CacheResult.FromContentFile(this.context, this.cacheCategory, isEndResult, id, contentItem)));
         }
 
         /// <summary>Add a source dependency from a file.</summary>
         /// <param name="file">The file.</param>
         public void AddSourceDependency(string file)
         {
+            if (!File.Exists(file))
+            {
+                throw new BuildWorkflowException("Cannot add a source dependency that does not exists on disk: {0}".InvariantFormat(file));
+            }
+
             this.AddSourceDependency(new InputSpec { Path = file });
         }
 
@@ -185,6 +239,11 @@ namespace WebGrease
         /// <param name="searchOption">The search option.</param>
         public void AddSourceDependency(string directory, string searchPattern, SearchOption searchOption = SearchOption.TopDirectoryOnly)
         {
+            if (!Directory.Exists(directory))
+            {
+                throw new BuildWorkflowException("Cannot add a source dependency that does not exists on disk: {0}".InvariantFormat(directory));
+            }
+
             this.AddSourceDependency(new InputSpec { Path = directory, SearchPattern = searchPattern, SearchOption = searchOption });
         }
 
@@ -192,29 +251,26 @@ namespace WebGrease
         /// <param name="inputSpec">The input spec.</param>
         public void AddSourceDependency(InputSpec inputSpec)
         {
-            this.context.Measure.Start(SectionIdParts.Cache, SectionIdParts.AddSourceDependency);
-            try
-            {
-                var key = inputSpec.ToJson(true);
-                if (!this.sourceDependencies.ContainsKey(key))
+            this.isUnsaved = true;
+            this.context.SectionedAction(SectionIdParts.Cache, SectionIdParts.AddSourceDependency)
+                .Execute(() =>
                 {
-                    this.sourceDependencies.Add(
-                        key,
-                        CacheSourceDependency.Create(
-                            this.context,
-                            new InputSpec
+                    var key = inputSpec.ToJson(true).ToLowerInvariant();
+                    if (!this.sourceDependencies.ContainsKey(key))
+                    {
+                        this.sourceDependencies.Add(
+                            key,
+                            CacheSourceDependency.Create(
+                                this.context,
+                                new InputSpec
                                 {
                                     IsOptional = inputSpec.IsOptional,
                                     Path = inputSpec.Path,
                                     SearchOption = inputSpec.SearchOption,
                                     SearchPattern = inputSpec.SearchPattern
                                 }));
-                }
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.Cache, SectionIdParts.AddSourceDependency);
-            }
+                    }
+                });
         }
 
         /// <summary>If all the cache files are valid and all results could be restored from content.</summary>
@@ -250,34 +306,29 @@ namespace WebGrease
         }
 
         /// <summary>Gets the changed end results recursively.</summary>
+        /// <param name="endResults">The end Results.</param>
         /// <returns>The changed end results.</returns>
-        public IEnumerable<CacheResult> GetChangedEndResults()
+        public IEnumerable<CacheResult> GetChangedEndResults(IEnumerable<CacheResult> endResults)
         {
-            var results = this.GetCacheResults(null, true).DistinctBy(r => r.RelativeHashedContentPath);
-            return results.Where(
-                r =>
+            return endResults
+                .DistinctBy(r => r.RelativeHashedContentPath ?? r.RelativeContentPath, StringComparer.OrdinalIgnoreCase)
+                .Where(r =>
                 {
-                    var absolutePath = Path.Combine(context.Configuration.DestinationDirectory, r.RelativeHashedContentPath);
-                    return !File.Exists(absolutePath) || !r.ContentHash.Equals(context.GetFileHash(absolutePath));
-                });
+                    var absolutePath = Path.Combine(this.context.Configuration.DestinationDirectory, r.RelativeHashedContentPath ?? r.RelativeContentPath);
+                    return !File.Exists(absolutePath) || !r.ContentHash.Equals(this.context.GetFileHash(absolutePath));
+                })
+                .ToArray();
         }
 
         /// <summary>Gets the changed source dependencies recursively.</summary>
         /// <returns>The changed source dependencies.</returns>
         public IEnumerable<CacheSourceDependency> GetChangedSourceDependencies()
         {
-            return this.sourceDependencies
-                    .Where(csp => csp.Value == null || csp.Value.HasChanged(this.context))
-                    .Select(csp => csp.Value)
-                    .Concat(this.childCacheSections.SelectMany(css => css.GetChangedSourceDependencies()));
-        }
-
-        /// <summary>Gets the changed source dependencies recursively.</summary>
-        /// <returns>The changed source dependencies.</returns>
-        public IEnumerable<CacheSourceDependency> GetSourceDependencies()
-        {
-            return this.sourceDependencies.Values
-                    .Concat(this.childCacheSections.SelectMany(css => css.GetSourceDependencies()));
+            return
+                this.InternalGetSourceDependencies().Select(k => k.Value)
+                    .Where(csp => csp == null || csp.HasChanged(this.context))
+                    .Concat(this.childCacheSections.SelectMany(css => css.GetChangedSourceDependencies()))
+                    .ToArray();
         }
 
         /// <summary>Get the invalid cache results.</summary>
@@ -323,14 +374,23 @@ namespace WebGrease
         /// <summary>Saves the cache section to the cache folder.</summary>
         public void Save()
         {
-            var path = new FileInfo(this.AbsolutePath);
-            if (path.Directory != null && !path.Directory.Exists)
+            if (this.isUnsaved)
             {
-                path.Directory.Create();
-            }
+                this.isUnsaved = false;
+                if (HasUnsavedChildren(this.childCacheSections))
+                {
+                    throw new BuildWorkflowException("Being saved, but there are unsaved child sections.");
+                }
 
-            File.WriteAllText(this.AbsolutePath, this.ToJsonString());
-            this.TouchAllFiles();
+                var path = new FileInfo(this.AbsolutePath);
+                if (path.Directory != null && !path.Directory.Exists)
+                {
+                    path.Directory.Create();
+                }
+
+                File.WriteAllText(this.AbsolutePath, this.ToJsonString());
+                this.TouchAllFiles();
+            }
         }
 
         /// <summary>Writes a graph report file (.dgml visual studio file).</summary>
@@ -349,6 +409,7 @@ namespace WebGrease
         /// <param name="contentItem">The result file.</param>
         public void VaryByContentItem(ContentItem contentItem)
         {
+            this.isUnsaved = true;
             this.varyByFiles.Add(CacheVaryByFile.FromFile(this.context, contentItem));
         }
 
@@ -357,12 +418,33 @@ namespace WebGrease
         /// <param name="nonpublic">Determins if it should non public members of the object as well.</param>
         public void VaryBySettings(object settings, bool nonpublic = false)
         {
+            this.isUnsaved = true;
             this.varyBySettings.Add(settings.ToJson(nonpublic));
         }
 
         #endregion
 
         #region Methods
+
+        /// <summary>The ensure cache path.</summary>
+        /// <param name="context">The context.</param>
+        /// <param name="cacheCategory">The cache category.</param>
+        private static void EnsureCachePath(IWebGreaseContext context, string cacheCategory)
+        {
+            var cachePath = context.Cache.GetAbsoluteCacheFilePath(cacheCategory, string.Empty);
+            if (!Directory.Exists(cachePath))
+            {
+                Directory.CreateDirectory(cachePath);
+            }
+        }
+
+        /// <summary>The is dirty.</summary>
+        /// <param name="cacheSections">The cache sections.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private static bool HasUnsavedChildren(IEnumerable<CacheSection> cacheSections)
+        {
+            return cacheSections.Any(css => css.isUnsaved || HasUnsavedChildren(css.childCacheSections));
+        }
 
         /// <summary>The can be restored from cache.</summary>
         /// <param name="cacheSection">The cache section.</param>
@@ -375,9 +457,38 @@ namespace WebGrease
         /// <summary>The can be skipped.</summary>
         /// <param name="cacheSection">The cache section.</param>
         /// <returns>The <see cref="bool"/>.</returns>
-        private static bool CanBeSkipped(ICacheSection cacheSection)
+        private static bool CanBeSkipped(CacheSection cacheSection)
         {
-            return cacheSection != null && !cacheSection.GetChangedEndResults().Any() && !cacheSection.GetChangedSourceDependencies().Any();
+            if (cacheSection == null)
+            {
+                return false;
+            }
+
+            var endResults = cacheSection.GetCacheResults(null, true).ToArray();
+            if (!endResults.Any())
+            {
+                return false;
+            }
+
+            var changedEndResults = cacheSection.GetChangedEndResults(endResults).ToArray();
+            var changedSourceDependencies = cacheSection.GetChangedSourceDependencies().ToArray();
+
+            return !changedEndResults.Any() && !changedSourceDependencies.Any();
+        }
+
+        /// <summary>The load.</summary>
+        /// <param name="fullPath">The full path.</param>
+        /// <param name="context">The context.</param>
+        /// <param name="parent">The parent.</param>
+        /// <returns>The <see cref="CacheSection"/>.</returns>
+        private static CacheSection Load(string fullPath, IWebGreaseContext context, CacheSection parent = null)
+        {
+            if (!File.Exists(fullPath))
+            {
+                return null;
+            }
+
+            return context.Cache.LoadCacheSection(fullPath, () => FromJsonString(File.ReadAllText(fullPath), context, parent));
         }
 
         /// <summary>The from json string.</summary>
@@ -400,23 +511,37 @@ namespace WebGrease
             cacheSection.isFromDisk = true;
             cacheSection.parent = parentCacheSection;
             cacheSection.cacheCategory = (string)json["cacheCategory"];
+            cacheSection.lastTouchTime = (DateTimeOffset?)json["lastTouchTime"];
+            cacheSection.isUnsaved = false;
 
             return cacheSection;
         }
 
-        /// <summary>The load.</summary>
-        /// <param name="fullPath">The full path.</param>
-        /// <param name="context">The context.</param>
-        /// <param name="parent">The parent.</param>
-        /// <returns>The <see cref="CacheSection"/>.</returns>
-        private static CacheSection Load(string fullPath, IWebGreaseContext context, CacheSection parent = null)
+        /// <summary>Get a unique json string for the cache section.</summary>
+        /// <returns>The json string.</returns>
+        private string ToJsonString()
         {
-            if (!File.Exists(fullPath))
-            {
-                return null;
-            }
-
-            return context.Cache.LoadCacheSection(fullPath, () => FromJsonString(File.ReadAllText(fullPath), context, parent));
+            return
+                new
+                {
+                    this.sourceDependencies,
+                    this.varyByFiles,
+                    this.varyBySettings,
+                    this.cacheResults,
+                    this.cacheCategory,
+                    children = this.childCacheSections.Select(ccs => ccs.AbsolutePath),
+                    this.lastTouchTime,
+                }.ToJson();
+        }
+        
+        /// <summary>Gets the changed source dependencies recursively.</summary>
+        /// <returns>The changed source dependencies.</returns>
+        private IEnumerable<KeyValuePair<string, CacheSourceDependency>> InternalGetSourceDependencies()
+        {
+            return this.sourceDependencies
+                    .Concat(this.childCacheSections.SelectMany(css =>
+                        css.InternalGetSourceDependencies()))
+                    .DistinctBy(csp => csp.Key, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>The add child cache section.</summary>
@@ -454,27 +579,16 @@ namespace WebGrease
             this.childCacheSections.ForEach(ccs => ccs.AddDepenciesToGraph(dependencyGraph, parentNode));
         }
 
-        /// <summary>Get a unique json string for the cache section.</summary>
-        /// <returns>The json string.</returns>
-        private string ToJsonString()
-        {
-            return
-                new
-                    {
-                        this.sourceDependencies,
-                        this.varyByFiles,
-                        this.varyBySettings,
-                        this.cacheResults,
-                        this.cacheCategory,
-                        children = this.childCacheSections.Select(ccs => ccs.AbsolutePath)
-                    }.ToJson();
-        }
-
         /// <summary>The touch all files.</summary>
         private void TouchAllFiles()
         {
-            this.context.Touch(this.AbsolutePath);
-            this.cacheResults.ForEach(cr => this.context.Touch(cr.CachedFilePath));
+            if (this.lastTouchTime != this.context.SessionStartTime)
+            {
+                this.lastTouchTime = this.context.SessionStartTime;
+
+                this.context.Touch(this.AbsolutePath);
+                this.cacheResults.ForEach(cr => this.context.Touch(cr.CachedFilePath));
+            }
 
             this.childCacheSections.ForEach(ccs => ccs.TouchAllFiles());
         }

@@ -93,56 +93,36 @@ namespace WebGrease.Preprocessing
                 return contentItem;
             }
 
-            var preprocessCacheSection = 
-                preprocessorsToUse.Any() 
-                    ? this.context.Cache.BeginSection(
-                        SectionIdParts.Preprocessing,
-                        contentItem,
-                        new
-                            {
-                                preprocessConfig,
-                                pptu = preprocessorsToUse.Select(pptu => pptu.Name)
-                            }) 
-                    : CacheManager.NullCacheSection;
-
-            try
+           this.context.SectionedAction(SectionIdParts.Preprocessing)
+            .CanBeCached(contentItem, new { preprocessConfig, pptu = preprocessorsToUse.Select(pptu => pptu.Name) })
+            .RestoreFromCacheAction(cacheSection =>
             {
-                if (preprocessCacheSection.CanBeRestoredFromCache())
+                contentItem = cacheSection.GetCachedContentItem(CacheFileCategories.PreprocessingResult);
+                return contentItem != null;
+            })
+            .Execute(cacheSection =>
+            {
+                // Loop through each available engine that was also configured
+                // And check if the engine can process the file
+                foreach (var preprocessingEngine in preprocessorsToUse)
                 {
-                    return preprocessCacheSection.GetCachedContentItem(CacheFileCategories.PreprocessingResult);
-                }
+                    this.context.Log.Information("preprocessing with: {0}".InvariantFormat(preprocessingEngine.Name));
 
-                this.context.Measure.Start(SectionIdParts.Preprocessing, SectionIdParts.Process);
-                try
-                {
-                    // Loop through each available engine that was also configured
-                    // And check if the engine can process the file
-                    foreach (var preprocessingEngine in preprocessorsToUse)
+                    // Get the new content
+                    contentItem = preprocessingEngine.Process(contentItem, preprocessConfig);
+
+                    if (contentItem == null)
                     {
-                        this.context.Log.Information("preprocessing with: {0}".InvariantFormat(preprocessingEngine.Name));
-
-                        // Get the new content
-                        contentItem = preprocessingEngine.Process(contentItem, preprocessConfig);
-
-                        if (contentItem == null)
-                        {
-                            return null;
-                        }
+                        return false;
                     }
+                }
 
-                    preprocessCacheSection.AddResult(contentItem, CacheFileCategories.PreprocessingResult);
-                    preprocessCacheSection.Save();
-                    return contentItem;
-                }
-                finally
-                {
-                    this.context.Measure.End(SectionIdParts.Preprocessing, SectionIdParts.Process);
-                }
-            }
-            finally
-            {
-                preprocessCacheSection.EndSection();
-            }
+                cacheSection.AddResult(contentItem, CacheFileCategories.PreprocessingResult);
+                cacheSection.Save();
+                return true;
+            });
+
+            return contentItem;
         }
 
         /// <summary>The get processors.</summary>
@@ -167,7 +147,7 @@ namespace WebGrease.Preprocessing
         /// <param name="timeMeasure">The time Measure.</param>
         private void Initialize(string pluginPath, LogManager logManager, ITimeMeasure timeMeasure)
         {
-            timeMeasure.Start(SectionIdParts.Preprocessing, SectionIdParts.Initialize);
+            timeMeasure.Start(false, SectionIdParts.Preprocessing, SectionIdParts.Initialize);
             logManager.Information("preprocessing initialize start; from plugin path: {0}".InvariantFormat(pluginPath));
 
             // If no plugin path was provided, we use the assembly path.
@@ -215,7 +195,7 @@ namespace WebGrease.Preprocessing
             }
 
             logManager.Information("preprocessing initialize end;");
-            timeMeasure.End(SectionIdParts.Preprocessing, SectionIdParts.Initialize);
+            timeMeasure.End(false, SectionIdParts.Preprocessing, SectionIdParts.Initialize);
         }
     }
 }

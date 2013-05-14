@@ -61,53 +61,53 @@ namespace WebGrease.Activities
         /// <param name="themes">The themes.</param>
         /// <param name="themeResources">The theme resources.</param>
         /// <param name="localizedAndThemedItemAction">The localized Item Action.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Resource keys should be lowercase")]
         internal static bool LocalizeAndTheme(IWebGreaseContext context, ContentItem inputItem, IEnumerable<string> locales, IDictionary<string, IDictionary<string, string>> localeResources, IEnumerable<string> themes, IDictionary<string, IDictionary<string, string>> themeResources, Func<ContentItem, bool> localizedAndThemedItemAction)
         {
             var successfull = true;
-            context.Measure.Start(SectionIdParts.CssLocalizationActivity);
-            try
+            return context.SectionedAction(SectionIdParts.CssLocalizationActivity).Execute(() =>
             {
-                var css = inputItem.Content;
-                foreach (var locale in locales.Select(t => t.ToLowerInvariant()))
+                try
                 {
-                    var localizedCss = ResourcesResolver.ExpandResourceKeys(css, localeResources[locale]);
+                    var css = inputItem.Content;
+                    foreach (var locale in locales.Select(t => t.ToLowerInvariant()))
+                    {
+                        var localizedCss = ResourcesResolver.ExpandResourceKeys(css, localeResources[locale]);
 
-                    if (!themes.Any())
-                    {
-                        var contentItem = ContentItem.FromContent(localizedCss, inputItem, locale);
-                        localizedAndThemedItemAction(contentItem);
-                    }
-                    else
-                    {
-                        foreach (var theme in themes.Select(t => t.ToLowerInvariant()))
+                        if (!themes.Any())
                         {
-                            var localizedAndthemedCss = ResourcesResolver.ExpandResourceKeys(localizedCss, themeResources[theme]);
+                            var contentItem = ContentItem.FromContent(localizedCss, inputItem, locale);
+                            localizedAndThemedItemAction(contentItem);
+                        }
+                        else
+                        {
+                            foreach (var theme in themes.Select(t => t.ToLowerInvariant()))
+                            {
+                                var localizedAndthemedCss = ResourcesResolver.ExpandResourceKeys(localizedCss, themeResources[theme]);
 
-                            // Compute the output file name
-                            var contentItem = ContentItem.FromContent(localizedAndthemedCss, inputItem, locale, theme);
-                            successfull = localizedAndThemedItemAction(contentItem) && successfull;
+                                // Compute the output file name
+                                var contentItem = ContentItem.FromContent(localizedAndthemedCss, inputItem, locale, theme);
+                                successfull = localizedAndThemedItemAction(contentItem) && successfull;
+                            }
                         }
                     }
                 }
-            }
-            catch (ResourceOverrideException resourceOverrideException)
-            {
-                // There was a resource override in folder path that does not
-                // allow resource overriding. For this case, we need to
-                // show a build error.
-                var errorMessage = string.Format(CultureInfo.CurrentUICulture, "CssLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
-                throw new WorkflowException(errorMessage, resourceOverrideException);
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException("CssLocalizationActivity - Error happened while executing the expand css resources activity", exception);
-            }
-            finally
-            {
-                context.Measure.End(SectionIdParts.CssLocalizationActivity);
-            }
-            return successfull;
+                catch (ResourceOverrideException resourceOverrideException)
+                {
+                    // There was a resource override in folder path that does not
+                    // allow resource overriding. For this case, we need to
+                    // show a build error.
+                    var errorMessage = string.Format(CultureInfo.CurrentUICulture, "CssLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
+                    throw new WorkflowException(errorMessage, resourceOverrideException);
+                }
+                catch (Exception exception)
+                {
+                    throw new WorkflowException("CssLocalizationActivity - Error happened while executing the expand css resources activity", exception);
+                }
+
+                return successfull;
+            });
         }
 
         /// <summary>When overridden in a derived class, executes the task.</summary>
@@ -128,38 +128,36 @@ namespace WebGrease.Activities
                 throw new ArgumentException("CssLocalizationActivity - The css locales directory cannot be null or whitespace.");
             }
 
-            this.context.Measure.Start(SectionIdParts.CssLocalizationActivity);
-            try
+            this.context.SectionedAction(SectionIdParts.CssLocalizationActivity).Execute(() =>
             {
-                // Create the destination directory if does not exist.
-                Directory.CreateDirectory(this.DestinationDirectory);
-
-                foreach (var cssLocalizationInput in this.CssLocalizationInputs.Where(_ => (_ != null && !string.IsNullOrWhiteSpace(_.DestinationFile))))
+                try
                 {
-                    var locales = cssLocalizationInput.Locales.Count == 0 ? new List<string> { Strings.DefaultLocale } : cssLocalizationInput.Locales;
-                    foreach (var localeName in locales.Where(_ => !string.IsNullOrWhiteSpace(_)))
+                    // Create the destination directory if does not exist.
+                    Directory.CreateDirectory(this.DestinationDirectory);
+
+                    foreach (var cssLocalizationInput in this.CssLocalizationInputs.Where(_ => (_ != null && !string.IsNullOrWhiteSpace(_.DestinationFile))))
                     {
-                        // Process the css for locale folders
-                        this.ExpandLocaleAndThemeResources(cssLocalizationInput, localeName);
+                        var locales = cssLocalizationInput.Locales.Count == 0 ? new List<string> { Strings.DefaultLocale } : cssLocalizationInput.Locales;
+                        foreach (var localeName in locales.Where(_ => !string.IsNullOrWhiteSpace(_)))
+                        {
+                            // Process the css for locale folders
+                            this.ExpandLocaleAndThemeResources(cssLocalizationInput, localeName);
+                        }
                     }
                 }
-            }
-            catch (ResourceOverrideException resourceOverrideException)
-            {
-                // There was a resource override in folder path that does not
-                // allow resource overriding. For this case, we need to
-                // show a build error.
-                var errorMessage = string.Format(CultureInfo.CurrentUICulture, "CssLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
-                throw new WorkflowException(errorMessage, resourceOverrideException);
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException("CssLocalizationActivity - Error happened while executing the expand css resources activity", exception);
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.CssLocalizationActivity);
-            }
+                catch (ResourceOverrideException resourceOverrideException)
+                {
+                    // There was a resource override in folder path that does not
+                    // allow resource overriding. For this case, we need to
+                    // show a build error.
+                    var errorMessage = string.Format(CultureInfo.CurrentUICulture, "CssLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
+                    throw new WorkflowException(errorMessage, resourceOverrideException);
+                }
+                catch (Exception exception)
+                {
+                    throw new WorkflowException("CssLocalizationActivity - Error happened while executing the expand css resources activity", exception);
+                }
+            });
         }
 
         /// <summary>Process the files for themes defined at site definition layer.</summary>

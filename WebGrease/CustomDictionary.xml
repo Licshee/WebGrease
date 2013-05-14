@@ -19,6 +19,9 @@
       <Word>MinifyCssActivity</Word>
       <Word>MinifyJsActivity</Word>
       <Word>ResourcesResolutionActivity</Word>
+      <Word>spriting</Word>
+      <Word>Skipable</Word>
+      <Word>Cachable</Word>
     </Recognized>
     <DiscreteExceptions>
       <Term>plugIn</Term>

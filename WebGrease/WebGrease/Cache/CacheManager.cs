@@ -7,7 +7,6 @@ namespace WebGrease
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
 
@@ -19,10 +18,6 @@ namespace WebGrease
     public class CacheManager : ICacheManager
     {
         #region Static Fields
-
-        /// <summary>The null cache section.</summary>
-        [SuppressMessage("Microsoft.Security", "CA2104:DoNotDeclareReadOnlyMutableReferenceTypes", Justification = "For easy access and reuse.")]
-        public static readonly ICacheSection NullCacheSection = new NullCacheSection();
 
         #endregion
 
@@ -66,7 +61,7 @@ namespace WebGrease
                 cacheRoot = Path.Combine(configuration.SourceDirectory, cacheRoot);
             }
 
-            this.cacheRootPath = Path.Combine(cacheRoot, configuration.CacheUniqueKey ?? string.Empty, configuration.ConfigType) ?? string.Empty;
+            this.cacheRootPath = Path.Combine(cacheRoot, configuration.CacheUniqueKey ?? string.Empty);
 
             if (!Directory.Exists(this.cacheRootPath))
             {
@@ -95,19 +90,12 @@ namespace WebGrease
 
         /// <summary>Begins a new cache section.</summary>
         /// <param name="category">The category.</param>
-        /// <param name="settings">The settings.</param>
-        /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, object settings)
-        {
-            return this.currentCacheSection = CacheSection.Begin(this.context, category, cs => cs.VaryBySettings(settings), this.CurrentCacheSection);
-        }
-
-        /// <summary>Begins a new cache section.</summary>
-        /// <param name="category">The category.</param>
         /// <param name="contentItem">The result file.</param>
         /// <param name="settings">The settings.</param>
+        /// <param name="cacheVarByFileSet">The cache Var By File Set.</param>
+        /// <param name="cacheIsSkipable">The cache Is Skipable.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null)
+        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVarByFileSet = null, bool cacheIsSkipable = false)
         {
             return this.currentCacheSection = CacheSection.Begin(
                 this.context, 
@@ -119,7 +107,17 @@ namespace WebGrease
                             cs.VaryByContentItem(contentItem);
                         }
 
-                        cs.VaryBySettings(settings);
+                        if (cacheIsSkipable && context.Configuration.Overrides != null)
+                        {
+                            settings = new { context.Configuration.Overrides.UniqueKey, settings };
+                        }
+
+                        if (cacheVarByFileSet != null)
+                        {
+                            cs.VaryBySettings(cacheVarByFileSet);
+                        }
+
+                        cs.VaryBySettings(settings, true);
                     }, 
                 this.CurrentCacheSection);
         }

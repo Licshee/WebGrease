@@ -14,7 +14,7 @@ namespace WebGrease.Activities
     using System.Globalization;
     using System.IO;
     using System.Linq;
-    using System.Text;
+
     using Common;
 
     /// <summary>The class responsible for expanding the JS resource keys.</summary>
@@ -55,30 +55,30 @@ namespace WebGrease.Activities
             }
 
             var results = new List<ContentItem>();
-            context.Measure.Start(SectionIdParts.JSLocalizationActivity);
-            try
+            context.SectionedAction(SectionIdParts.JSLocalizationActivity).Execute(() =>
             {
-                var fileContent = contentItem.Content;
-                foreach (var locale in locales.Select(t => t.ToLowerInvariant()))
+                try
                 {
-                    var sourceFile = Path.GetFileNameWithoutExtension(contentItem.RelativeContentPath);
-                    var destinationFile = Path.Combine(locale, string.Format(CultureInfo.InvariantCulture, "{0}.{1}", sourceFile, Strings.JS));
-                    results.Add(ContentItem.FromContent(ResourcesResolver.ExpandResourceKeys(fileContent, localeResources[locale]), contentItem, locale));
+                    var fileContent = contentItem.Content;
+                    foreach (var locale in locales.Select(t => t.ToLowerInvariant()))
+                    {
+                        results.Add(
+                            ContentItem.FromContent(ResourcesResolver.ExpandResourceKeys(fileContent, localeResources[locale]), contentItem, locale));
+                    }
                 }
-            }
-            catch (ResourceOverrideException resourceOverrideException)
-            {
-                var errorMessage = string.Format(CultureInfo.CurrentUICulture, "JSLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
-                throw new WorkflowException(errorMessage, resourceOverrideException);
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException("JSLocalizationActivity - Error happened while executing the expand js resources activity.", exception);
-            }
-            finally
-            {
-                context.Measure.End(SectionIdParts.JSLocalizationActivity);
-            }
+                catch (ResourceOverrideException resourceOverrideException)
+                {
+                    var errorMessage = string.Format(
+                        CultureInfo.CurrentUICulture,
+                        "JSLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.",
+                        resourceOverrideException.TokenKey);
+                    throw new WorkflowException(errorMessage, resourceOverrideException);
+                }
+                catch (Exception exception)
+                {
+                    throw new WorkflowException("JSLocalizationActivity - Error happened while executing the expand js resources activity.", exception);
+                }
+            });
 
             return results;
         }
@@ -102,33 +102,31 @@ namespace WebGrease.Activities
                 return;
             }
 
-            this.context.Measure.Start(SectionIdParts.JSLocalizationActivity);
-            try
+            this.context.SectionedAction(SectionIdParts.JSLocalizationActivity).Execute(() =>
             {
-                Directory.CreateDirectory(this.DestinationDirectory);
-                foreach (var jsLocalizationInput in this.JsLocalizationInputs.Where(_ => (_ != null && !string.IsNullOrWhiteSpace(_.DestinationFile))))
+                try
                 {
-                    var locales = jsLocalizationInput.Locales.Count == 0 ? new List<string> { Strings.DefaultLocale } : jsLocalizationInput.Locales;
-                    foreach (var localeName in locales.Where(_ => !string.IsNullOrWhiteSpace(_)))
+                    Directory.CreateDirectory(this.DestinationDirectory);
+                    foreach (var jsLocalizationInput in this.JsLocalizationInputs.Where(_ => (_ != null && !string.IsNullOrWhiteSpace(_.DestinationFile))))
                     {
-                        var destinationFile = jsLocalizationInput.DestinationFile.EndsWith(Strings.JS, StringComparison.OrdinalIgnoreCase) ? jsLocalizationInput.DestinationFile : Path.Combine(this.DestinationDirectory, localeName, string.Format(CultureInfo.InvariantCulture, "{0}.{1}", jsLocalizationInput.DestinationFile, Strings.JS));
-                        this.ExpandLocaleResources(jsLocalizationInput, localeName, destinationFile);
+                        var locales = jsLocalizationInput.Locales.Count == 0 ? new List<string> { Strings.DefaultLocale } : jsLocalizationInput.Locales;
+                        foreach (var localeName in locales.Where(_ => !string.IsNullOrWhiteSpace(_)))
+                        {
+                            var destinationFile = jsLocalizationInput.DestinationFile.EndsWith(Strings.JS, StringComparison.OrdinalIgnoreCase) ? jsLocalizationInput.DestinationFile : Path.Combine(this.DestinationDirectory, localeName, string.Format(CultureInfo.InvariantCulture, "{0}.{1}", jsLocalizationInput.DestinationFile, Strings.JS));
+                            this.ExpandLocaleResources(jsLocalizationInput, localeName, destinationFile);
+                        }
                     }
                 }
-            }
-            catch (ResourceOverrideException resourceOverrideException)
-            {
-                var errorMessage = string.Format(CultureInfo.CurrentUICulture, "JSLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
-                throw new WorkflowException(errorMessage, resourceOverrideException);
-            }
-            catch (Exception exception)
-            {
-                throw new WorkflowException("JSLocalizationActivity - Error happened while executing the expand js resources activity.", exception);
-            }
-            finally
-            {
-                this.context.Measure.End(SectionIdParts.JSLocalizationActivity);
-            }
+                catch (ResourceOverrideException resourceOverrideException)
+                {
+                    var errorMessage = string.Format(CultureInfo.CurrentUICulture, "JSLocalizationActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.", resourceOverrideException.TokenKey);
+                    throw new WorkflowException(errorMessage, resourceOverrideException);
+                }
+                catch (Exception exception)
+                {
+                    throw new WorkflowException("JSLocalizationActivity - Error happened while executing the expand js resources activity.", exception);
+                }
+            });
         }
 
         /// <summary>Process the files for locales</summary>

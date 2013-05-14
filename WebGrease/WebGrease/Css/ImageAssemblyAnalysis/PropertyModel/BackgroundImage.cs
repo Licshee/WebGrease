@@ -148,11 +148,6 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             if (imageReferencesToIgnore != null)
             {
                 var url = this.Url;
-                if (url.StartsWith("hash://", StringComparison.OrdinalIgnoreCase))
-                {
-                    url = url.Substring(7);
-                }
-
                 var fullImageUrl = url.NormalizeUrl();
 
                 if (imageReferencesToIgnore.Contains(fullImageUrl))
