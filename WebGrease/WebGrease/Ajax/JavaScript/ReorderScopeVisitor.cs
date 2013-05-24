@@ -391,9 +391,14 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                // javascript doesn't have block scope, so there really is no point
-                // in nesting blocks. Unnest any now, before we start combining var statements
+                // there really is no point in nesting blocks that don't have any special scopes
+                // attached to them. Unnest any now, before we start combining var statements.
                 UnnestBlocks(node);
+
+                // if we get here, we are going to want to optimize the curly-braces to eliminate
+                // unneeded ones in all blocks except try/catch/finally. So make sure we reset the 
+                // force-braces properties for all blocks whose parent isn't a try-statement.
+                node.ForceBraces = node.Parent is TryNode;
 
                 if (m_combineAdjacentVars)
                 {

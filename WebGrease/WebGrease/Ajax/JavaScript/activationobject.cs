@@ -732,8 +732,11 @@ namespace Microsoft.Ajax.Utilities
                     foreach (var field in NameTable.Values)
                     {
                         // if the field can't be crunched, or if it can but we've already crunched it,
-                        // add it to the avoid list so we don't reuse that name
-                        if (!field.CanCrunch || field.CrunchedName != null)
+                        // or if it's an outer variable (that hasn't been generated) and its OWNING scope isn't known 
+                        // (and therefore we CANNOT crunch it),
+                        // then add it to the avoid list so we don't reuse that name
+                        if (!field.CanCrunch || field.CrunchedName != null
+                            || (field.OuterField != null && !field.IsGenerated && field.OwningScope != null && !field.OwningScope.IsKnownAtCompileTime))
                         {
                             avoidSet.Add(field.ToString());
                         }

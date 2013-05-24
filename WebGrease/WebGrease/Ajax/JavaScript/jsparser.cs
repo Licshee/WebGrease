@@ -1172,15 +1172,16 @@ namespace Microsoft.Ajax.Utilities
         //---------------------------------------------------------------------------------------
         Block ParseBlock()
         {
-            Context ctx;
-            return ParseBlock(out ctx);
-        }
-
-        Block ParseBlock(out Context closingBraceContext)
-        {
-            closingBraceContext = null;
             m_blockType.Add(BlockType.Block);
-            Block codeBlock = new Block(m_currentToken.Clone(), this);
+
+            // set the force-braces property to true because we are assuming this is only called
+            // when we encounter a left-brace and we will want to keep it going forward. If we are optimizing
+            // the code, we will reset these properties as we encounter them so that unneeded curly-braces 
+            // can be removed.
+            Block codeBlock = new Block(m_currentToken.Clone(), this)
+                {
+                    ForceBraces = true
+                };
             codeBlock.BraceOnNewLine = m_foundEndOfLine;
             GetNextToken();
 
@@ -1226,7 +1227,7 @@ namespace Microsoft.Ajax.Utilities
                 m_blockType.RemoveAt(m_blockType.Count - 1);
             }
 
-            closingBraceContext = m_currentToken.Clone();
+            codeBlock.TerminatingContext = m_currentToken.Clone();
             // update the block context
             codeBlock.Context.UpdateWith(m_currentToken);
             GetNextToken();
@@ -3098,7 +3099,6 @@ namespace Microsoft.Ajax.Utilities
             Context tryCtx = m_currentToken.Clone();
             Context catchContext = null;
             Context finallyContext = null;
-            Context tryEndContext = null;
             Block body = null;
             Context idContext = null;
             Block handler = null;
@@ -3116,7 +3116,7 @@ namespace Microsoft.Ajax.Utilities
                 m_noSkipTokenSet.Add(NoSkipTokenSet.s_NoTrySkipTokenSet);
                 try
                 {
-                    body = ParseBlock(out tryEndContext);
+                    body = ParseBlock();
                 }
                 catch (RecoveryTokenException exc)
                 {

@@ -82,6 +82,12 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        /// <summary>
+        /// Gets or sets whether to force this block to always have curly-braces around it
+        /// and never to optimize them away.
+        /// </summary>
+        public bool ForceBraces { get; set; }
+
         public Block(Context context, JSParser parser)
             : base(context, parser)
         {
@@ -100,17 +106,37 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                // 0 statements, true (lone semicolon)
-                // 1 and list[0].HideFromOutput = false 
-                // 1 = ask list[0]
-                // > 1, false (enclosed in braces
-                // if there are 2 or more statements in the block, then
-                // we'll wrap them in braces and they won't need a separator
-                return (
-                  m_list.Count == 0
-                  ? true
-                  : (m_list.Count == 1  && !m_list[0].HideFromOutput ? m_list[0].RequiresSeparator : false)
-                  );
+                // if we are forcing the braces around this block or there are multiple statments
+                // within it, then we will be wrapping it in braces and never need to follow it with 
+                // a semicolon separator.
+                if (ForceBraces || m_list.Count > 1)
+                {
+                    return false;
+                }
+
+                // if there are no statements in this block, then we're not going to output it
+                // at all, which means we'll need to have a separator added to be the replacement
+                // empty statement.
+                if (m_list.Count == 0)
+                {
+                    return true;
+                }
+
+                // if we get here, then there is only a single statement in the block.
+                // if the first statement is null, then we actually have an empty block and will need to use a separator. 
+                if (m_list[0] == null)
+                {
+                    return true;
+                }
+
+                // if the statement is hidden, then we do not need a separator (WHY?)
+                if (m_list[0].HideFromOutput)
+                {
+                    return false;
+                }
+
+                // otherwise just ask that one contained statement to see what it needs
+                return m_list[0].RequiresSeparator;
             }
         }
 
