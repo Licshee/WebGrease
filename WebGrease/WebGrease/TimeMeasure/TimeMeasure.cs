@@ -9,7 +9,9 @@ namespace WebGrease
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text;
 
+    using WebGrease.Activities;
     using WebGrease.Extensions;
 
     /// <summary>The web grease measure.</summary>
@@ -65,7 +67,6 @@ namespace WebGrease
             {
                 this.BeginGroup();
             }
-
         }
 
         /// <summary>The end.</summary>
@@ -129,6 +130,61 @@ namespace WebGrease
             File.WriteAllText(
                 filePathWithoutExtension + ".measure.csv",
                 timeMeasureResults.GetCsv());
+        }
+
+        /// <summary>The write results.</summary>
+        /// <param name="filePathWithoutExtension">The file path without extension.</param>
+        /// <param name="results">The results.</param>
+        /// <param name="title">The title.</param>
+        /// <param name="startTime">The start time.</param>
+        /// <param name="activityName">The activity name.</param>
+        internal static void WriteResults(string filePathWithoutExtension, IDictionary<FileTypes, TimeMeasureResult[]> results, string title, DateTimeOffset startTime, string activityName)
+        {
+            var endTime = DateTimeOffset.Now;
+
+            var textReportBuilder = new StringBuilder();
+            textReportBuilder.AppendFormat("Configuration file: {0}", title);
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendFormat("Activity: {0}", activityName);
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendFormat("Started at: {0:yy-MM-dd HH:mm:ss.fff}", startTime);
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendFormat("Ended at: {0:yy-MM-dd HH:mm:ss.fff}", endTime);
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendFormat("Total Seconds: {0}", (endTime - startTime).TotalSeconds);
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendLine();
+
+            foreach (var result in results.OrderByDescending(r => r.Value.Sum(v => v.Duration)))
+            {
+                var fileType = result.Key;
+                var timeMeasureResults = result.Value;
+
+                textReportBuilder.AppendLine(timeMeasureResults.GetTextTable(fileType + " - " + "Details"));
+            }
+
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendLine();
+            textReportBuilder.AppendLine();
+
+            foreach (var result in results.OrderByDescending(r => r.Value.Sum(v => v.Duration)))
+            {
+                var fileType = result.Key;
+                var timeMeasureResults = result.Value;
+
+                textReportBuilder.AppendLine(timeMeasureResults.Group(tm => tm.IdParts.FirstOrDefault()).GetTextTable(fileType + " - " + "Summary"));
+            }
+
+            File.WriteAllText("{0}.{1}.measure.txt".InvariantFormat(filePathWithoutExtension, activityName), textReportBuilder.ToString());
+
+            foreach (var result in results)
+            {
+                File.WriteAllText(
+                    "{0}.{1}.{2}.measure.csv".InvariantFormat(filePathWithoutExtension, activityName, result.Key),
+                    result.Value.GetCsv());
+            }
         }
 
         /// <summary>The get measure table.</summary>

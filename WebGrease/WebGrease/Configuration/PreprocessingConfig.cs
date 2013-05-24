@@ -57,6 +57,7 @@ namespace WebGrease.Configuration
                     this.PreprocessingEngines.Add(preProcessor);
                 }
             }
+
             this.Element = element;
         }
 

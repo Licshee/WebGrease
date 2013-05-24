@@ -21,93 +21,29 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
     /// <summary>Represents the image log generated from image assembler tool</summary>
     internal class ImageLog
     {
-        /// <summary>Initializes a new instance of the ImageLog class</summary>
-        /// <param name="logPath">The log path which has the information for input and output files</param>
-        internal ImageLog(string logPath)
+        /// <summary>Initializes a new instance of the <see cref="ImageLog"/> class.</summary>
+        internal ImageLog()
         {
-            if (string.IsNullOrWhiteSpace(logPath))
-            {
-                throw new ArgumentNullException("logPath");
-            }
-
-            if (!File.Exists(logPath))
-            {
-                throw new FileNotFoundException(string.Format(CultureInfo.CurrentUICulture, CssStrings.FileNotFoundError, logPath));
-            }
-
             // List input file object
             this.InputImages = new List<AssembledImage>();
+        }
 
-            var document = XDocument.Load(logPath);
+        /// <summary>Initializes a new instance of the <see cref="ImageLog"/> class.</summary>
+        /// <param name="imageMapDocument">The image map.</param>
+        internal ImageLog(XDocument imageMapDocument)
+            : this()
+        {
+            if (imageMapDocument == null)
+            {
+                throw new ArgumentNullException("imageMapDocument");
+            }
 
-            if (document.Root != null)
+            if (imageMapDocument.Root != null)
             {
                 // For each output child element
-                document.Root
+                imageMapDocument.Root
                     .Elements(ImageAssembleConstants.OutputElementName)
-                    .ForEach(outputElement =>
-                                 {
-                                     // Get the total sprite width and height.
-                                     var spriteWidth = (int?)outputElement.Attribute("width");
-                                     var spriteHeight = (int?)outputElement.Attribute("height");
-
-                                     var fileAttribute = outputElement.Attribute(ImageAssembleConstants.FileAttributeName);
-
-                                     // This is a case of images ignored by image assembler
-                                     if (fileAttribute == null)
-                                     {
-                                         return;
-                                     }
-
-                                     // Output image file path
-                                     var outputFilePath = fileAttribute.Value;
-
-                                     if (string.IsNullOrWhiteSpace(outputFilePath))
-                                     {
-                                         // This is a case of images ignored by image assembler
-                                         return;
-                                     }
-
-                                     // TODO - Spec. issue: Shall we support http:// paths?
-                                     outputFilePath = outputFilePath.GetFullPathWithLowercase();
-
-                                     // Validate the output file
-                                     if (!File.Exists(outputFilePath))
-                                     {
-                                         throw new FileNotFoundException(string.Format(CultureInfo.CurrentUICulture, CssStrings.FileNotFoundError, outputFilePath));
-                                     }
-
-                                     outputElement.Descendants(ImageAssembleConstants.InputElementName).ForEach(inputElement =>
-                                                                                                                    {
-                                                                                                                        // Load the input image object
-                                                                                                                        var inputImage = new AssembledImage(inputElement, spriteWidth, spriteHeight);
-
-                                                                                                                        // Validate the original file path
-                                                                                                                        var originalFilePath = inputImage.OriginalFilePath;
-
-                                                                                                                        // Original file path cannot be empty
-                                                                                                                        if (string.IsNullOrWhiteSpace(originalFilePath))
-                                                                                                                        {
-                                                                                                                            throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.OriginalFileElementEmptyError, logPath));
-                                                                                                                        }
-
-                                                                                                                        // Note - Spec. issue: Shall we support http:// paths?
-                                                                                                                        originalFilePath = originalFilePath.GetFullPathWithLowercase();
-
-                                                                                                                        // Validate the original file
-                                                                                                                        if (!File.Exists(originalFilePath))
-                                                                                                                        {
-                                                                                                                            throw new FileNotFoundException(string.Format(CultureInfo.CurrentUICulture, CssStrings.FileNotFoundError, originalFilePath));
-                                                                                                                        }
-
-                                                                                                                        // Assign the full paths in input object
-                                                                                                                        inputImage.OriginalFilePath = originalFilePath;
-                                                                                                                        inputImage.OutputFilePath = outputFilePath;
-
-                                                                                                                        // Add the input object to dictionary
-                                                                                                                        this.InputImages.Add(inputImage);
-                                                                                                                    });
-                                 });
+                    .ForEach(this.ProcessOutputElement);
             }
         }
 
@@ -115,5 +51,61 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
         /// Gets the list of output images
         /// </summary>
         internal List<AssembledImage> InputImages { get; private set; }
+
+        /// <summary>The process output elements.</summary>
+        /// <param name="outputElement">The output element.</param>
+        private void ProcessOutputElement(XElement outputElement)
+        {
+            // Get the total sprite width and height.
+            var spriteWidth = (int?)outputElement.Attribute("width");
+            var spriteHeight = (int?)outputElement.Attribute("height");
+
+            var fileAttribute = outputElement.Attribute(ImageAssembleConstants.FileAttributeName);
+
+            // This is a case of images ignored by image assembler
+            if (fileAttribute == null)
+            {
+                return;
+            }
+
+            // Output image file path
+            var outputFilePath = fileAttribute.Value;
+
+            if (string.IsNullOrWhiteSpace(outputFilePath))
+            {
+                // This is a case of images ignored by image assembler
+                return;
+            }
+
+            // TODO - Spec. issue: Shall we support http:// paths?
+            outputFilePath = outputFilePath.GetFullPathWithLowercase();
+
+            // Validate the output file
+            if (!File.Exists(outputFilePath))
+            {
+                throw new FileNotFoundException(string.Format(CultureInfo.CurrentUICulture, CssStrings.FileNotFoundError, outputFilePath));
+            }
+
+            outputElement.Descendants(ImageAssembleConstants.InputElementName).ForEach(
+                inputElement => this.ProcessInputElement(inputElement, spriteWidth, spriteHeight, outputFilePath));
+        }
+
+        /// <summary>The process input elements.</summary>
+        /// <param name="inputElement">The input element.</param>
+        /// <param name="spriteWidth">The sprite width.</param>
+        /// <param name="spriteHeight">The sprite height.</param>
+        /// <param name="outputFilePath">The output file path.</param>
+        private void ProcessInputElement(XElement inputElement, int? spriteWidth, int? spriteHeight, string outputFilePath)
+        {
+            // Add the input object to dictionary
+            this.InputImages.Add(
+                new AssembledImage(
+                    inputElement, 
+                    spriteWidth, 
+                    spriteHeight)
+                    {
+                        OutputFilePath = outputFilePath
+                    });
+        }
     }
 }

@@ -27,6 +27,9 @@
         /// <summary>The unique key.</summary>
         private string uniqueKey;
 
+        /// <summary>Gets or sets a value indicating whether skip all.</summary>
+        public bool SkipAll { get; set; }
+
         /// <summary>Gets the unique key.</summary>
         public string UniqueKey
         {
@@ -40,8 +43,8 @@
         /// <param name="overrideLocales">The override locales.</param>
         /// <param name="overrideThemes">The override themes.</param>
         /// <param name="overrideOutputs">The override outputs.</param>
-        /// <param name="overrideFile">The override file.</param>
         /// <param name="overrideOutputExtensions">The file Type Overrides.</param>
+        /// <param name="overrideFile">The override file.</param>
         /// <returns>The <see cref="TemporaryOverrides"/>.</returns>
         public static TemporaryOverrides Create(string overrideLocales, string overrideThemes, string overrideOutputs, string overrideOutputExtensions, string overrideFile)
         {
@@ -54,7 +57,7 @@
             to.uniqueKey = to.ToJson(true);
 
             // Only return when there are any values to override
-            return to.locales.Any() || to.themes.Any() || to.outputs.Any()
+            return to.locales.Any() || to.themes.Any() || to.outputs.Any() || to.SkipAll
                 ? to
                 : null;
         }
@@ -66,7 +69,9 @@
         {
             return
                 contentItem != null
-                && (this.ShouldIgnoreLocale(contentItem.Locale) || this.ShouldIgnoreTheme(contentItem.Theme));
+                && contentItem.Pivots != null
+                && contentItem.Pivots.Any()
+                && contentItem.Pivots.All(cp => this.ShouldIgnoreLocale(cp.Locale) || this.ShouldIgnoreTheme(cp.Theme));
         }
 
         /// <summary>The should ignore.</summary>
@@ -148,6 +153,7 @@
             {
                 var doc = XDocument.Load(overrideFile);
                 var overrideElements = doc.Elements("Overrides");
+                this.SkipAll = overrideElements.Attributes("SkipAll").Select(a => (bool?)a).FirstOrDefault() == true; 
                 this.locales.AddRange(GetElementItems(overrideElements, "Locales"));
                 this.themes.AddRange(GetElementItems(overrideElements, "Themes"));
                 this.outputs.AddRange(GetElementItems(overrideElements, "Outputs"));

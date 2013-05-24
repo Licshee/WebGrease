@@ -5,7 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 namespace WebGrease
 {
-    using System;
+    using System.Collections.Generic;
 
     using WebGrease.Configuration;
 
@@ -29,6 +29,9 @@ namespace WebGrease
                 return EmptyCacheSection;
             }
         }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Justification = "Null code")]
+        public IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections { get; private set; }
 
         #endregion
 
@@ -64,16 +67,6 @@ namespace WebGrease
         public string GetAbsoluteCacheFilePath(string category, string fileName)
         {
             return null;
-        }
-
-        /// <summary>Loads a cache section from disk, uses per session in memory cache as well.</summary>
-        /// <param name="fullPath">The full path.</param>
-        /// <param name="loadAction">The load action.</param>
-        /// <typeparam name="T">The Type of ICacheSection</typeparam>
-        /// <returns>The cache section.</returns>
-        public T LoadCacheSection<T>(string fullPath, Func<T> loadAction) where T : class, ICacheSection
-        {
-            return EmptyCacheSection as T;
         }
 
         /// <summary>Sets the current context.</summary>

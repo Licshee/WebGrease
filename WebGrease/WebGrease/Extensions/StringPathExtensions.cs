@@ -41,7 +41,7 @@ namespace WebGrease.Extensions
             }
             catch
             {
-                return originalPath;
+                return originalPath.ToLower(CultureInfo.CurrentUICulture);
             }
         }
 

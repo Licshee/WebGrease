@@ -17,17 +17,13 @@ namespace WebGrease
     /// <summary>The cache manager.</summary>
     public class CacheManager : ICacheManager
     {
-        #region Static Fields
-
-        #endregion
-
         #region Fields
+
+        /// <summary>The loaded cache sections.</summary>
+        private readonly IDictionary<string, ReadOnlyCacheSection> loadedCacheSections = new Dictionary<string, ReadOnlyCacheSection>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>The cache root path.</summary>
         private readonly string cacheRootPath;
-
-        /// <summary>The cached cache sections.</summary>
-        private readonly IDictionary<string, ICacheSection> cachedCacheSections = new Dictionary<string, ICacheSection>();
 
         /// <summary>The context.</summary>
         private IWebGreaseContext context;
@@ -84,6 +80,14 @@ namespace WebGrease
             }
         }
 
+        public IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections
+        {
+            get
+            {
+                return this.loadedCacheSections;
+            }
+        }
+
         #endregion
 
         #region Public Methods and Operators
@@ -102,19 +106,23 @@ namespace WebGrease
                 category, 
                 cs =>
                     {
+                        bool hasOverridables = false;
                         if (contentItem != null)
                         {
                             cs.VaryByContentItem(contentItem);
-                        }
-
-                        if (cacheIsSkipable && context.Configuration.Overrides != null)
-                        {
-                            settings = new { context.Configuration.Overrides.UniqueKey, settings };
+                            cs.VaryBySettings(contentItem.Pivots);
+                            hasOverridables |= contentItem.Pivots != null && contentItem.Pivots.Any();
                         }
 
                         if (cacheVarByFileSet != null)
                         {
                             cs.VaryBySettings(cacheVarByFileSet);
+                            hasOverridables = true;
+                        }
+
+                        if (hasOverridables && context.Configuration.Overrides != null)
+                        {
+                            cs.VaryBySettings(context.Configuration.Overrides.UniqueKey);
                         }
 
                         cs.VaryBySettings(settings, true);
@@ -125,12 +133,16 @@ namespace WebGrease
         /// <summary>Cleans up all the cache files that we don't need anymore.</summary>
         public void CleanUp()
         {
-            var startTime = this.context.SessionStartTime;
+            var startTime = this.context.SessionStartTime.UtcDateTime;
             if (this.context.Configuration.CacheTimeout.TotalSeconds > 0)
             {
                 var expireTime = startTime - this.context.Configuration.CacheTimeout;
                 var allFiles = Directory.GetFiles(this.cacheRootPath, "*.*", SearchOption.AllDirectories);
-                allFiles.Where(f => File.GetLastWriteTimeUtc(f) < expireTime).ForEach(File.Delete);
+                var filesToDelete = allFiles.Where(f => File.GetLastWriteTimeUtc(f) < expireTime);
+                foreach (var fileToDelete in filesToDelete)
+                {
+                    File.Delete(fileToDelete);
+                }
             }
         }
 
@@ -153,23 +165,6 @@ namespace WebGrease
         public string GetAbsoluteCacheFilePath(string category, string fileName)
         {
             return Path.Combine(this.cacheRootPath, category, fileName);
-        }
-
-        /// <summary>Loads a cache section from disk, uses per session in memory cache as well.</summary>
-        /// <param name="fullPath">The full path.</param>
-        /// <param name="loadAction">The load action.</param>
-        /// <typeparam name="T">The Type of ICacheSection</typeparam>
-        /// <returns>The cache section.</returns>
-        public T LoadCacheSection<T>(string fullPath, Func<T> loadAction) where T : class, ICacheSection
-        {
-            var key = new FileInfo(fullPath).FullName.ToUpperInvariant();
-            if (!this.cachedCacheSections.ContainsKey(key))
-            {
-                this.cachedCacheSections.Add(key, loadAction());
-            }
-
-            var cacheSection = this.cachedCacheSections[key] as T;
-            return cacheSection;
         }
 
         /// <summary>Sets the current context.</summary>

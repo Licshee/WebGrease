@@ -6,7 +6,7 @@
     <TokensDirectory>Shared</TokensDirectory>
     <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
     <!-- these settings apply to each file set defined in this config -->
-    <Locales>generic-generic;ja-jp;en-us;de-de;nl-nl;</Locales>
+    <Locales>generic-generic;ja-jp;en-us;en-ca;en-au;en-in;es-ar;es-cl;es-co;de-de;nl-nl;</Locales>
     <Themes>Resolution1x;Resolution15x;Resolution2x;Resolution14x;Resolution18x;Resolution24x</Themes>
     <CssMinification config="Debug">
       <Minify>False</Minify>

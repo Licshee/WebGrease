@@ -31,11 +31,5 @@ namespace WebGrease
         /// <param name="title">The title.</param>
         /// <param name="utcStart">The utc start.</param>
         void WriteResults(string filePathWithoutExtension, string title, DateTimeOffset utcStart);
-
-        /// <summary>Begins a new section.</summary>
-        void BeginGroup();
-
-        /// <summary>Ends section.</summary>
-        void EndGroup();
     }
 }

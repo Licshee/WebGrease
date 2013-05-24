@@ -9,6 +9,7 @@
 
 namespace WebGrease.ImageAssemble
 {
+    using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
     using System.Xml.Linq;
@@ -84,11 +85,6 @@ namespace WebGrease.ImageAssemble
         /// Xml Encoding
         /// </summary>
         private const string XmlEncoding = "UTF-8";
-
-        /// <summary>
-        /// Stand-alone flag
-        /// </summary>
-        private const string XmlStandAlone = "yes";
 
         /// <summary>
         /// Root node name
@@ -171,6 +167,9 @@ namespace WebGrease.ImageAssemble
         /// </summary>
         private readonly XDocument xdoc;
 
+        /// <summary>The output files.</summary>
+        private readonly IList<string> spritedFiles = new List<string>();
+
         /// <summary>
         /// Current Output node
         /// </summary>
@@ -186,17 +185,30 @@ namespace WebGrease.ImageAssemble
         internal ImageMap(string mapFileName)
         {
             this.xdoc = new XDocument();
-            this.xdoc.Declaration = new XDeclaration(XmlVersion, XmlEncoding, XmlEncoding);
+            this.Document.Declaration = new XDeclaration(XmlVersion, XmlEncoding, XmlEncoding);
             this.root = new XElement(RootNode);
-            this.xdoc.AddFirst(this.root);
+            this.Document.AddFirst(this.root);
             this.mapFileName = mapFileName;
         }
 
         /// <summary>
-        /// Prevents a default instance of the ImageMap class from being created.
+        /// XDocument used for generating the log
         /// </summary>
-        private ImageMap()
+        internal XDocument Document
         {
+            get
+            {
+                return this.xdoc;
+            }
+        }
+
+        /// <summary>The output files.</summary>
+        internal IList<string> SpritedFiles
+        {
+            get
+            {
+                return this.spritedFiles;
+            }
         }
 
         /// <summary>Override method to log the file name that cannot be assembled.</summary>
@@ -237,6 +249,7 @@ namespace WebGrease.ImageAssemble
         {
             if (addOutputNode)
             {
+                this.SpritedFiles.Add(genFile);
                 this.currentOutputNode = new XElement(OutputNode);
                 this.currentOutputNode.SetAttributeValue(GeneratedFile, genFile);
                 this.root.Add(this.currentOutputNode);
@@ -269,9 +282,12 @@ namespace WebGrease.ImageAssemble
         }
 
         /// <summary>Saves log as XML file</summary>
-        internal void SaveXmlMap()
+        private void SaveXmlMap()
         {
-            this.xdoc.Save(this.mapFileName);
+            if (!string.IsNullOrWhiteSpace(this.mapFileName))
+            {
+                this.Document.Save(this.mapFileName);
+            }
         }
 
         /// <summary>Updates Assembled Image name with new Name passed.</summary>
@@ -290,6 +306,7 @@ namespace WebGrease.ImageAssemble
             if (node.Count() > 0)
             {
                 var elem = node.First();
+
                 // No need for checking file attribute exist or not as
                 // it is already filtered above
                 elem.Attribute("file").Value = newName;

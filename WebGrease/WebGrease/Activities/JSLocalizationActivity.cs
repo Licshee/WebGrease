@@ -59,11 +59,14 @@ namespace WebGrease.Activities
             {
                 try
                 {
-                    var fileContent = contentItem.Content;
-                    foreach (var locale in locales.Select(t => t.ToLowerInvariant()))
+                    var js = contentItem.Content;
+                    var groupedLocaleResources = ResourcesResolver.GetGroupedUsedResourceKeys(js, localeResources);
+                    foreach (var groupedLocaleResource in groupedLocaleResources)
                     {
-                        results.Add(
-                            ContentItem.FromContent(ResourcesResolver.ExpandResourceKeys(fileContent, localeResources[locale]), contentItem, locale));
+                        var localePivots = groupedLocaleResource.Item1.Select(locale => new ContentPivot(locale)).ToArray();
+                        var localizedJs = ResourcesResolver.ExpandResourceKeys(js, groupedLocaleResource.Item2);
+                        var localizedContentItem = ContentItem.FromContent(localizedJs, contentItem, localePivots);
+                        results.Add(localizedContentItem);
                     }
                 }
                 catch (ResourceOverrideException resourceOverrideException)

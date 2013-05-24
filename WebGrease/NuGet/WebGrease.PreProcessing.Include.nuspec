@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>WebGrease.Preprocessing.Include</id>
-    <version>1.4.2</version>
+    <version>1.5.0</version>
     <owners>Microsoft</owners>
     <authors>webgrease@microsoft.com</authors>
     <description>Includes files in any source file by using wgInclude(pathOrFile, searchPattern?)</description>
@@ -10,7 +10,7 @@
     <licenseUrl>http://www.microsoft.com/web/webpi/eula/msn_webgrease_eula.htm</licenseUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <dependencies>
-      <dependency id="WebGrease" version="1.4.2" />
+      <dependency id="WebGrease" version="1.5.0" />
     </dependencies>
   </metadata>
   <files>

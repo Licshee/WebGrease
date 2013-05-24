@@ -6,7 +6,7 @@
 namespace WebGrease.Build
 {
     /// <summary>The activity name.</summary>
-    internal enum ActivityName
+    public enum ActivityName
     {
         /// <summary>The bundle.</summary>
         Bundle, 

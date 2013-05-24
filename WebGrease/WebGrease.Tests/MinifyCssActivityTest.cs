@@ -178,7 +178,7 @@ namespace WebGrease.Tests
             var outputFilePath = minifyCssActivity.DestinationFile;
 
             // mapping file (so we can look up the target name of the assembled image, as the generated image can be different based on gdi dll versions)
-            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".scan.xml";
+            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".xml";
             var testImage = "media.gif";
 
             Assert.IsTrue(File.Exists(outputFilePath));
@@ -237,7 +237,7 @@ namespace WebGrease.Tests
             var outputFilePath = minifyCssActivity.DestinationFile;
 
             // mapping file (so we can look up the target name of the assembled image, as the generated image can be different based on gdi dll versions)
-            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".scan.xml";
+            var mapFilePath = minifyCssActivity.ImageAssembleScanDestinationFile + ".xml";
             var testImage = "media.gif";
 
             Assert.IsTrue(File.Exists(outputFilePath));

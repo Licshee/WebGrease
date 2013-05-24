@@ -19,6 +19,7 @@ namespace WebGrease.ImageAssemble
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Xml.Linq;
 
     using Css.ImageAssemblyAnalysis;
 
@@ -32,16 +33,16 @@ namespace WebGrease.ImageAssemble
         /// <param name="inputImages">List of InputImage</param>
         /// <param name="packingType">Image Packing Type(Horizontal/Vertical)</param>
         /// <param name="assembleFileFolder">folder path where the assembled file will be created.</param>
-        /// <param name="mapFileName">Map xml file name</param>
         /// <param name="pngOptimizerToolCommand">PNG Optimizer tool command</param>
         /// <param name="dedup">Remove duplicate images</param>
         /// <param name="context">The webgrease context</param>
-        internal static void AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string mapFileName, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context)
+        internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context)
         {
             // deduping is optional.  CssPipelineTask already has deduping built into it, so it skips deduping in ImageAssembleTool.
             var inputImagesDeduped = dedup ? DedupImages(inputImages, context) : inputImages;
             var separatedLists = SeparateByImageType(inputImagesDeduped);
 
+#if DEBUG
             foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))
             {
                 Console.WriteLine();
@@ -51,9 +52,10 @@ namespace WebGrease.ImageAssemble
                     Console.WriteLine(entry.Key.ImagePath);
                 }
             }
+#endif
 
             var padding = ArgumentParser.DefaultPadding;
-            var xmlMap = new ImageMap(mapFileName);
+            var xmlMap = new ImageMap(string.Empty);
             var registeredAssemblers = RegisterAvailableAssemblers(context);
             Dictionary<InputImage, Bitmap> separatedList = null;
             foreach (var registeredAssembler in registeredAssemblers)
@@ -102,21 +104,22 @@ namespace WebGrease.ImageAssemble
                 }
             }
 
-            // Save Log file
-            xmlMap.SaveXmlMap();
-
             var notSupportedList = separatedLists[ImageType.NotSupported];
             if (notSupportedList != null && notSupportedList.Count > 0)
             {
                 var message = new StringBuilder("The following files were not assembled because their formats are not supported:");
+#if DEBUG
                 foreach (var entry in notSupportedList)
                 {
                     message.Append(" " + entry.Key.ImagePath);
                 }
 
                 Console.WriteLine(message.ToString());
+#endif
                 throw new ImageAssembleException(message.ToString());
             }
+
+            return xmlMap;
         }
 
         /// <summary>
@@ -234,13 +237,17 @@ namespace WebGrease.ImageAssemble
                     }
                     else
                     {
+#if DEBUG
                         Console.WriteLine(ResourceStrings.SemiTransparencyFound);
+#endif
                         return false;
                     }
 
                     if (totalColorsSeen > 256)
                     {
+#if DEBUG
                         Console.WriteLine(ResourceStrings.MoreThan256Colours);
+#endif
                         return false;
                     }
                 }
@@ -285,7 +292,9 @@ namespace WebGrease.ImageAssemble
             foreach (var inputImage in inputImages)
             {
                 Bitmap bitmap = null;
+#if DEBUG
                 Console.WriteLine(inputImage.ImagePath);
+#endif
                 try
                 {
                     bitmap = (Bitmap)Image.FromFile(inputImage.ImagePath);
@@ -338,7 +347,9 @@ namespace WebGrease.ImageAssemble
                 {
                     var matchingImage = imageHashDictionary[imageHashString];
                     matchingImage.DuplicateImagePaths.Add(inputImage.ImagePath);
+#if DEBUG
                     Console.WriteLine(ResourceStrings.DuplicateFoundFormat, matchingImage.ImagePath, inputImage.ImagePath, inputImage.Position);
+#endif
                 }
                 else
                 {

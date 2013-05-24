@@ -54,7 +54,6 @@ namespace Microsoft.WebGrease.Tests
                     wgt.RootOutputPath = Path.Combine(wgt.ApplicationRootPath, "output");
                     wgt.CacheRootPath = Path.Combine(wgt.ApplicationRootPath, "cache");
                     wgt.CacheEnabled = true;
-                    wgt.CacheOutputDependencies = true;
                 });
 
             var allPreExecute2 = new Action<WebGreaseTask>(wgt =>
@@ -63,7 +62,6 @@ namespace Microsoft.WebGrease.Tests
                     wgt.RootOutputPath = Path.Combine(wgt.ApplicationRootPath, "output2");
                     wgt.CacheRootPath = Path.Combine(wgt.ApplicationRootPath, "cache");
                     wgt.CacheEnabled = true;
-                    wgt.CacheOutputDependencies = true;
                 });
 
             // Ensure logo is there, initially using the msn blue logo.
@@ -163,8 +161,8 @@ namespace Microsoft.WebGrease.Tests
             });
 
             Func<string, string> logFileChange = logFileContent => logFileContent.Replace("/output2/", "/output/");
-            this.DirectoryMatch(Path.Combine(testRoot, "output"), Path.Combine(testRoot, "output2"), logFileChange);
-            this.DirectoryMatch(Path.Combine(testRoot, "output2"), Path.Combine(testRoot, "output"), logFileChange);
+            DirectoryMatch(Path.Combine(testRoot, "output"), Path.Combine(testRoot, "output2"), logFileChange);
+            DirectoryMatch(Path.Combine(testRoot, "output2"), Path.Combine(testRoot, "output"), logFileChange);
 
             // ----------------------------------------------------------------------------------------
             // Nothing should happen again
@@ -181,8 +179,8 @@ namespace Microsoft.WebGrease.Tests
                 Assert.AreEqual(outputjs1, outputjs2);
             });
 
-            this.DirectoryMatch(Path.Combine(testRoot, "output"), Path.Combine(testRoot, "output2"), logFileChange);
-            this.DirectoryMatch(Path.Combine(testRoot, "output2"), Path.Combine(testRoot, "output"), logFileChange);
+            DirectoryMatch(Path.Combine(testRoot, "output"), Path.Combine(testRoot, "output2"), logFileChange);
+            DirectoryMatch(Path.Combine(testRoot, "output2"), Path.Combine(testRoot, "output"), logFileChange);
 
             // ----------------------------------------------------------------------------------------
             // Update one of the css source files and make sure it regenerates.
@@ -411,7 +409,7 @@ namespace Microsoft.WebGrease.Tests
                     buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp1.clean.cache");
                     buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache.clean.cache");
                     buildTask.CacheEnabled = true;
-                    buildTask.FileType = FileTypes.JavaScript;
+                    buildTask.FileType = FileTypes.JS;
                 };
 
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
@@ -452,7 +450,7 @@ namespace Microsoft.WebGrease.Tests
                     buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp1.clean.destination");
                     buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache.clean.destination");
                     buildTask.CacheEnabled = true;
-                    buildTask.FileType = FileTypes.JavaScript;
+                    buildTask.FileType = FileTypes.JS;
                 };
 
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
@@ -514,12 +512,6 @@ namespace Microsoft.WebGrease.Tests
                 preExecute1,
                 buildTask =>
                 {
-                    var dgmlFiles = Directory.GetFiles(buildTask.RootOutputPath, "*.dgml");
-                    foreach (string dgmlFile in dgmlFiles)
-                    {
-                        var fi = new FileInfo(dgmlFile);
-                        File.Copy(dgmlFile, new DirectoryInfo(buildTask.RootOutputPath + "..\\..\\..\\..\\..\\..\\..\\").FullName + "precache." + fi.Name, true);
-                    }
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Pre-cache run should be spriting");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Pre-cache run should be optimizing");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Pre-cache  run should have any css filesets");
@@ -542,12 +534,6 @@ namespace Microsoft.WebGrease.Tests
                 preExecute1,
                 buildTask =>
                 {
-                    var dgmlFiles = Directory.GetFiles(buildTask.RootOutputPath, "*.dgml");
-                    foreach (string dgmlFile in dgmlFiles)
-                    {
-                        var fi = new FileInfo(dgmlFile);
-                        File.Copy(dgmlFile, new DirectoryInfo(buildTask.RootOutputPath + "..\\..\\..\\..\\..\\..\\..\\").FullName + "postcache." + fi.Name, true);
-                    }
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Post-cache run should not be spriting");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Post-cache run should not be optimizing");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Post-cache  run should have any css filesets");
@@ -567,12 +553,6 @@ namespace Microsoft.WebGrease.Tests
                 preExecute2,
                 buildTask =>
                 {
-                    var dgmlFiles = Directory.GetFiles(buildTask.RootOutputPath, "*.dgml");
-                    foreach (string dgmlFile in dgmlFiles)
-                    {
-                        var fi = new FileInfo(dgmlFile);
-                        File.Copy(dgmlFile, new DirectoryInfo(buildTask.RootOutputPath + "..\\..\\..\\..\\..\\..\\..\\").FullName + "postcache." + fi.Name, true);
-                    }
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Post-cache run should not be spriting");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Post-cache run should not be optimizing");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Post-cache  run should have any css filesets");
@@ -591,11 +571,6 @@ namespace Microsoft.WebGrease.Tests
                     measure3 = buildTask.MeasureResults.Sum(m => m.Duration);
                 });
 
-#if !DEBUG
-            Assert.IsTrue(measure2 < (measure1 / 1.5));
-            Assert.IsTrue(measure3 < (measure2 / 1.5));
-#endif
-
             Func<string, string> logFileChange = logFileContent => logFileContent.Replace("/output1/", "/output2/");
             DirectoryMatch(Path.Combine(testRoot, "output2"), Path.Combine(testRoot, "output1"), logFileChange);
             DirectoryMatch(Path.Combine(testRoot, "output1"), Path.Combine(testRoot, "output2"), logFileChange);
@@ -603,7 +578,7 @@ namespace Microsoft.WebGrease.Tests
             // TODO: Assert folder output1 == output2
         }
 
-        private void DirectoryMatch(string path1, string path2, Func<string, string> logFileChange)
+        private static void DirectoryMatch(string path1, string path2, Func<string, string> logFileChange)
         {
             foreach (var file1 in Directory.GetFiles(path1))
             {
@@ -640,7 +615,7 @@ namespace Microsoft.WebGrease.Tests
             foreach (var directory1 in Directory.GetDirectories(path1))
             {
                 var relative = directory1.MakeRelativeTo(path1.EnsureEndSeparator());
-                this.DirectoryMatch(directory1, Path.Combine(path2, relative), logFileChange);
+                DirectoryMatch(directory1, Path.Combine(path2, relative), logFileChange);
             }
         }
 
@@ -652,8 +627,7 @@ namespace Microsoft.WebGrease.Tests
                 {
                     var time = DateTime.Now.ToString("yyMMdd_HHmmss");
 
-                    File.Copy(Path.Combine(pb.RootOutputPath, "TmxSdk.measure.txt"), Path.Combine(perfRoot, "TmxSdk.measure." + time + "." + measureName + ".txt"));
-                    File.Copy(Path.Combine(pb.RootOutputPath, "TmxSdk.measure.csv"), Path.Combine(perfRoot, "TmxSdk.measure." + time + "." + measureName + ".csv"));
+                    File.Copy(Path.Combine(pb.MeasureReportPath, "TmxSdk.Everything.measure.txt"), Path.Combine(perfRoot, "TmxSdk.Everything.measure." + time + "." + measureName + ".txt"));
                     if (postExecute != null)
                     {
                         postExecute(pb);
@@ -705,7 +679,6 @@ namespace Microsoft.WebGrease.Tests
             buildTask.RootInputPath = Path.Combine(rootPath, "input");
             buildTask.CacheRootPath = Path.Combine(rootPath, "cache");
             buildTask.Measure = true;
-            buildTask.CacheOutputDependencies = true;
 
             if (preExecute != null)
             {
@@ -713,6 +686,7 @@ namespace Microsoft.WebGrease.Tests
             }
 
             buildTask.LogFolderPath = Path.Combine(buildTask.RootOutputPath, "statics");
+            buildTask.MeasureReportPath = Path.Combine(buildTask.RootOutputPath, "reports");
 
             var result = buildTask.Execute();
 

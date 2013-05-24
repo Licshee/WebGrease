@@ -22,9 +22,6 @@ namespace WebGrease
         /// <summary>The empty cache results.</summary>
         private static readonly IEnumerable<ContentItem> EmptyContentItems = new ContentItem[] { };
 
-        /// <summary>The empty source dependencies.</summary>
-        private static readonly IEnumerable<CacheSourceDependency> EmptySourceDependencies = new CacheSourceDependency[] { };
-
         /// <summary>Initializes a new instance of the <see cref="NullCacheSection"/> class.</summary>
         public NullCacheSection()
         {
@@ -99,20 +96,6 @@ namespace WebGrease
         {
         }
 
-        /// <summary>Gets the changed source dependencies recursively.</summary>
-        /// <returns>The changed source dependencies.</returns>
-        public IEnumerable<CacheSourceDependency> GetChangedSourceDependencies()
-        {
-            return EmptySourceDependencies;
-        }
-
-        /// <summary>Get the invalid cache results.</summary>
-        /// <returns>The invalid cache results.</returns>
-        public IEnumerable<CacheResult> GetInvalidCachedResults()
-        {
-            return EmptyCacheResults;
-        }
-
         /// <summary>Gets the cached content item.</summary>
         /// <param name="fileCategory">The file category.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
@@ -128,12 +111,6 @@ namespace WebGrease
         public IEnumerable<ContentItem> GetCachedContentItems(string fileCategory, bool endResultOnly = false)
         {
             return EmptyContentItems;
-        }
-
-        /// <summary>Writes a graph report file (.dgml visual studio file).</summary>
-        /// <param name="graphReportFilePath">The graph report file path.</param>
-        public void WriteDependencyGraph(string graphReportFilePath)
-        {
         }
 
         /// <summary>The get cache data.</summary>

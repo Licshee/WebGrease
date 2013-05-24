@@ -14,6 +14,7 @@ namespace WebGrease
     using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Threading;
 
     using WebGrease.Activities;
     using WebGrease.Configuration;
@@ -33,17 +34,17 @@ namespace WebGrease
 
         #region Static Fields
 
-        /// <summary>The cached content hashes</summary>
-        private static readonly IDictionary<string, string> CachedContentHashes = new Dictionary<string, string>();
-
         /// <summary>The cached file hashes</summary>
         private static readonly IDictionary<string, Tuple<DateTime, long, string>> CachedFileHashes = new Dictionary<string, Tuple<DateTime, long, string>>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>The file hash lock.</summary>
+        private static readonly object CachedFileHashLock = new object();
+
         /// <summary>The md5 hasher</summary>
-        private static readonly MD5CryptoServiceProvider Hasher = new MD5CryptoServiceProvider();
+        private static readonly ThreadLocal<MD5CryptoServiceProvider> Hasher = new ThreadLocal<MD5CryptoServiceProvider>(() => new MD5CryptoServiceProvider());
 
         /// <summary>The no bom utf-8 default encoding (same defaulty encoding as the .net StreamWriter.</summary>
-        private static readonly UTF8Encoding DefaultEncoding = new UTF8Encoding(false, true);
+        private static readonly ThreadLocal<Encoding> DefaultEncoding = new ThreadLocal<Encoding>(() => new UTF8Encoding(false, true));
 
         #endregion
 
@@ -53,7 +54,7 @@ namespace WebGrease
         private readonly IDictionary<string, string> sessionCachedFileHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Per session in memory cache of available files.</summary>
-        private readonly IDictionary<string, IDictionary<string, string>> availableFiles = new Dictionary<string, IDictionary<string, string>>();
+        private readonly IDictionary<string, IDictionary<string, string>> availableFileCollections = new Dictionary<string, IDictionary<string, string>>();
 
         #endregion
 
@@ -77,6 +78,19 @@ namespace WebGrease
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseContext"/> class. The web grease context.</summary>
         /// <param name="configuration">The configuration</param>
+        /// <param name="logManager">The log Manager.</param>
+        public WebGreaseContext(WebGreaseConfiguration configuration, LogManager logManager)
+        {
+            var runStartTime = DateTimeOffset.Now;
+            configuration.Validate();
+            var timeMeasure = configuration.Measure ? new TimeMeasure() as ITimeMeasure : new NullTimeMeasure();
+            var cacheManager = configuration.CacheEnabled ? new CacheManager(configuration, logManager) as ICacheManager : new NullCacheManager();
+            var preprocessingManager = new PreprocessingManager(configuration, logManager, timeMeasure);
+            this.Initialize(configuration, logManager, cacheManager, preprocessingManager, runStartTime, timeMeasure);
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="WebGreaseContext"/> class. The web grease context.</summary>
+        /// <param name="configuration">The configuration</param>
         /// <param name="logInformation">The log information.</param>
         /// <param name="logWarning">The log Warning.</param>
         /// <param name="logExtendedWarning">The log warning.</param>
@@ -84,14 +98,8 @@ namespace WebGrease
         /// <param name="logError">The log error.</param>
         /// <param name="logExtendedError">The log extended error.</param>
         public WebGreaseContext(WebGreaseConfiguration configuration, Action<string, MessageImportance> logInformation = null, Action<string> logWarning = null, LogExtendedError logExtendedWarning = null, Action<string> logErrorMessage = null, LogError logError = null, LogExtendedError logExtendedError = null)
+            : this(configuration, new LogManager(logInformation, logWarning, logExtendedWarning, logErrorMessage, logError, logExtendedError))
         {
-            var runStartTime = DateTimeOffset.Now;
-            configuration.Validate();
-            var timeMeasure = configuration.Measure ? new TimeMeasure() as ITimeMeasure : new NullTimeMeasure();
-            var logManager = new LogManager(logInformation, logWarning, logExtendedWarning, logErrorMessage, logError, logExtendedError);
-            var cacheManager = configuration.CacheEnabled ? new CacheManager(configuration, logManager) as ICacheManager : new NullCacheManager();
-            var preprocessingManager = new PreprocessingManager(configuration, logManager, timeMeasure);
-            this.Initialize(configuration, logManager, cacheManager, preprocessingManager, runStartTime, timeMeasure);
         }
 
         #endregion
@@ -142,8 +150,8 @@ namespace WebGrease
         /// <returns>The <see cref="bool"/>.</returns>
         public bool TemporaryIgnore(IFileSet fileSet, ContentItem contentItem)
         {
-            return 
-                this.Configuration != null 
+            return
+                this.Configuration != null
                 && this.Configuration.Overrides != null
                 && (this.Configuration.Overrides.ShouldIgnore(fileSet) || this.Configuration.Overrides.ShouldIgnore(contentItem));
         }
@@ -177,7 +185,8 @@ namespace WebGrease
         public IDictionary<string, string> GetAvailableFiles(string rootDirectory, IList<string> directories, IList<string> extensions, FileTypes fileType)
         {
             var key = new { rootDirectory, directories, extensions, fileType }.ToJson();
-            if (!this.availableFiles.ContainsKey(key))
+            IDictionary<string, string> availableFileCollection;
+            if (!this.availableFileCollections.TryGetValue(key, out availableFileCollection))
             {
                 var results = new Dictionary<string, string>();
                 if (directories == null)
@@ -196,10 +205,10 @@ namespace WebGrease
                     }
                 }
 
-                this.availableFiles.Add(key, results);
+                this.availableFileCollections.Add(key, availableFileCollection = results);
             }
 
-            return this.availableFiles[key];
+            return availableFileCollection;
         }
 
         /// <summary>The get content hash.</summary>
@@ -212,15 +221,7 @@ namespace WebGrease
                 value = string.Empty;
             }
 
-            return this.SectionedAction(SectionIdParts.FileHash).Execute(() =>
-            {
-                if (!CachedContentHashes.ContainsKey(value))
-                {
-                    CachedContentHashes.Add(value, ComputeContentHash(value));
-                }
-
-                return CachedContentHashes[value];
-            });
+            return this.SectionedAction(SectionIdParts.ContentHash).Execute(() => ComputeContentHash(value));
         }
 
         /// <summary>Gets the md5 hash for the content file.</summary>
@@ -252,20 +253,23 @@ namespace WebGrease
                 return hash;
             }
 
-            Tuple<DateTime, long, string> cachedFileHash;
-            CachedFileHashes.TryGetValue(uniqueId, out cachedFileHash);
-
-            if (cachedFileHash != null && cachedFileHash.Item1 == fi.LastWriteTimeUtc && cachedFileHash.Item2 == fi.Length)
+            lock (CachedFileHashLock)
             {
-                // found in static cache, between sessions, and is up to dat, return.
-                return cachedFileHash.Item3;
-            }
+                Tuple<DateTime, long, string> cachedFileHash;
+                CachedFileHashes.TryGetValue(uniqueId, out cachedFileHash);
 
-            // either new, or has changed, recompute, and add to cached file hash
-            var computedFileHash = ComputeFileHash(fi.FullName);
-            CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, computedFileHash);
-            this.sessionCachedFileHashes[uniqueId] = computedFileHash;
-            return computedFileHash;
+                if (cachedFileHash != null && cachedFileHash.Item1 == fi.LastWriteTimeUtc && cachedFileHash.Item2 == fi.Length)
+                {
+                    // found in static cache, between sessions, and is up to dat, return.
+                    return cachedFileHash.Item3;
+                }
+
+                // either new, or has changed, recompute, and add to cached file hash
+                var computedFileHash = ComputeFileHash(fi.FullName);
+                CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, computedFileHash);
+                this.sessionCachedFileHashes[uniqueId] = computedFileHash;
+                return computedFileHash;
+            }
         }
 
         /// <summary>The make relative.</summary>
@@ -297,10 +301,8 @@ namespace WebGrease
         /// <param name="filePath">The file path.</param>
         public void Touch(string filePath)
         {
-            if (File.GetLastWriteTimeUtc(filePath) != this.SessionStartTime.UtcDateTime)
-            {
-                File.SetLastWriteTimeUtc(filePath, this.SessionStartTime.UtcDateTime);
-            }
+            var newTime = this.SessionStartTime.UtcDateTime;
+            File.SetLastWriteTimeUtc(filePath, newTime);
         }
 
         #endregion
@@ -331,11 +333,11 @@ namespace WebGrease
         {
             using (var ms = new MemoryStream())
             {
-                var sw = new StreamWriter(ms, encoding ?? DefaultEncoding);
+                var sw = new StreamWriter(ms, encoding ?? DefaultEncoding.Value);
                 sw.Write(content);
                 sw.Flush();
                 ms.Seek(0, SeekOrigin.Begin);
-                return BytesToHash(Hasher.ComputeHash(ms));
+                return BytesToHash(Hasher.Value.ComputeHash(ms));
             }
         }
 
@@ -346,7 +348,7 @@ namespace WebGrease
         {
             using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                return BytesToHash(Hasher.ComputeHash(fs));
+                return BytesToHash(Hasher.Value.ComputeHash(fs));
             }
         }
 

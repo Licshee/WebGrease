@@ -28,7 +28,7 @@ namespace WebGrease.Activities
         /// Gets the localization resource key format
         /// </summary>
         /// <value>Regular expression pattern</value>
-        private static readonly Regex LocalizationResourceKeyRegex = new Regex(@"%([-./\w]+)%", RegexOptions.Compiled);
+        private static readonly Regex LocalizationResourceKeyRegex = new Regex(@"%([-./\w_]+)%", RegexOptions.Compiled);
 
         /// <summary>
         /// Output folder path.
@@ -341,6 +341,40 @@ namespace WebGrease.Activities
                     writer.AddResource(resourceKey, resources[resourceKey]);
                 }
             }
+        }
+
+        /// <summary>The get used resource keys.</summary>
+        /// <param name="css">The css.</param>
+        /// <param name="resources">The resources.</param>
+        /// <returns>The <see cref="IEnumerable"/>.</returns>
+        public static IEnumerable<Tuple<List<string>, Dictionary<string, string>>> GetGroupedUsedResourceKeys(string css, IDictionary<string, IDictionary<string, string>> resources)
+        {
+            var availableResourceKeys = new HashSet<string>(resources.Values.SelectMany(v => v.Keys).Distinct());
+            var usedResourceKeys = 
+                    new HashSet<string>(LocalizationResourceKeyRegex
+                        .Matches(css)
+                        .OfType<Match>()
+                        .Select(m => m.Groups[1].Value)
+                        .Where(availableResourceKeys.Contains)
+                        .OrderBy(rk => rk)
+                        .ToArray());
+
+            var result = new Dictionary<string, Tuple<List<string>, Dictionary<string, string>>>();
+            foreach (var resource in resources)
+            {
+                var usedKeyValues = resource.Value.Where(kvp => usedResourceKeys.Contains(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                var uniqueKey = string.Join("%", usedKeyValues.Select(kv => kv.ToString()));
+                Tuple<List<string>, Dictionary<string, string>> matchingResourceKeys;
+                if (!result.TryGetValue(uniqueKey, out matchingResourceKeys))
+                {
+                    matchingResourceKeys = new Tuple<List<string>, Dictionary<string, string>>(new List<string>(), usedKeyValues);
+                    result.Add(uniqueKey, matchingResourceKeys);
+                }
+
+                matchingResourceKeys.Item1.Add(resource.Key);
+            }
+
+            return result.Values;
         }
     }
 }

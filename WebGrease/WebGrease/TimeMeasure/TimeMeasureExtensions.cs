@@ -7,7 +7,6 @@ namespace WebGrease
 {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.Linq;
     using System.Text;
 
@@ -61,21 +60,6 @@ namespace WebGrease
             sb.AppendLine("\\______________________________________________________________________________________");
 
             return sb.ToString();
-        }
-
-        /// <summary>Uppercase the first letter of a string.</summary>
-        /// <param name="value">The string.</param>
-        /// <returns>The string with the first letter uppercase..</returns>
-        public static string UppercaseFirst(this string value)
-        {
-            // Check for empty string.
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            // Return char and concat substring.
-            return char.ToUpper(value[0], CultureInfo.InvariantCulture) + value.Substring(1);
         }
 
         /// <summary>Add resultsToAdd to results.</summary>

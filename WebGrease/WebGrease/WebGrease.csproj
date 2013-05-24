@@ -169,11 +169,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DelayedLogManager.cs" />
     <Compile Include="Cache\CacheFileCategories.cs" />
     <Compile Include="Activities\CssLocalizationActivity.cs" />
     <Compile Include="Activities\CssLocalizationInput.cs" />
     <Compile Include="Activities\ErrorCode.cs" />
-    <Compile Include="Activities\FileType.cs" />
+    <Compile Include="Activities\FileTypes.cs" />
     <Compile Include="Activities\JSLocalizationActivity.cs" />
     <Compile Include="Activities\JSLocalizationInput.cs" />
     <Compile Include="Activities\EverythingActivity.cs" />
@@ -322,6 +323,7 @@
     <Compile Include="Cache\ICacheSection.cs" />
     <Compile Include="Cache\NullCacheManager.cs" />
     <Compile Include="Cache\NullCacheSection.cs" />
+    <Compile Include="Cache\ReadOnlyCacheSection.cs" />
     <Compile Include="Common\FileHelper.cs" />
     <Compile Include="Configuration\ActivityMode.cs" />
     <Compile Include="Configuration\ArgumentProcessor.cs" />
@@ -337,6 +339,7 @@
     <Compile Include="Configuration\JSValidationConfig.cs" />
     <Compile Include="Configuration\PreprocessingConfig.cs" />
     <Compile Include="Configuration\WebGreaseConfiguration.cs" />
+    <Compile Include="ContentPivot.cs" />
     <Compile Include="Extensions\DictionaryExtensions.cs" />
     <Compile Include="Extensions\InputSpecExtensions.cs" />
     <Compile Include="Extensions\JsonExtensions.cs" />

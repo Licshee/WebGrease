@@ -77,21 +77,35 @@ namespace WebGrease.Activities
             this.staticAssemblerDirectory = Path.Combine(this.toolsTempDirectory, StaticAssemblerDirectoryName);
         }
 
-        /// <summary>The main execution point.</summary>
-        /// <param name="fileTypes">The file Types.</param>
+        /// <summary>Will execute the pipeline for all filesets in the provided context configuration.</summary>
+        /// <returns>If it is successfull.</returns>
+        internal bool Execute()
+        {
+            return this.Execute(this.context.Configuration.CssFileSets.OfType<IFileSet>().Concat(this.context.Configuration.JSFileSets));
+        }
+
+        /// <summary>The main execution point, executes for all given file sets.</summary>
+        /// <param name="fileSets">The file Types.</param>
         /// <returns>If it failed or succeeded.</returns>
-        internal bool Execute(FileTypes fileTypes = FileTypes.All)
+        internal bool Execute(IEnumerable<IFileSet> fileSets)
         {
             var success = true;
-            if (fileTypes.HasFlag(FileTypes.JavaScript))
+
+            var jsFileSets = fileSets.OfType<JSFileSet>().ToArray();
+            if (jsFileSets.Any())
             {
-                success &= this.ExecuteJS(this.context.Configuration.JSFileSets, this.context.Configuration.ConfigType, this.context.Configuration.SourceDirectory, this.context.Configuration.DestinationDirectory);
+                success &= this.ExecuteJS(
+                    jsFileSets,
+                    this.context.Configuration.ConfigType,
+                    this.context.Configuration.SourceDirectory,
+                    this.context.Configuration.DestinationDirectory);
             }
 
-            if (fileTypes.HasFlag(FileTypes.StyleSheet))
+            var cssFileSets = fileSets.OfType<CssFileSet>().ToArray();
+            if (cssFileSets.Any())
             {
                 success &= this.ExecuteCss(
-                    this.context.Configuration.CssFileSets,
+                    cssFileSets,
                     this.context.Configuration.SourceDirectory,
                     this.context.Configuration.DestinationDirectory,
                     this.context.Configuration.ConfigType,
@@ -196,6 +210,48 @@ namespace WebGrease.Activities
             jsHasher.AppendToWorkLog(cacheSection.GetCachedContentItems(CacheFileCategories.MinifyJsResult));
         }
 
+        /// <summary>Gets the destination file paths.</summary>
+        /// <param name="inputFile">The input file.</param>
+        /// <param name="destinationDirectoryName">The destination directory name.</param>
+        /// <param name="destinationExtension">The destination Extension.</param>
+        /// <returns>The destination files as a colon seperated list.</returns>
+        private static string GetDestinationFilePaths(ContentItem inputFile, string destinationDirectoryName, string destinationExtension)
+        {
+            if (inputFile.Pivots == null || !inputFile.Pivots.Any())
+            {
+                return GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension);
+            }
+
+            var fileNames = new List<string>();
+            foreach (var contentPivot in inputFile.Pivots)
+            {
+                fileNames.Add(GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension, contentPivot));
+            }
+
+            return string.Join("|", fileNames);
+        }
+
+        /// <summary>The get content pivot destination file path.</summary>
+        /// <param name="relativeContentPath">The relative Content Path.</param>
+        /// <param name="destinationDirectoryName">The destination directory name.</param>
+        /// <param name="destinationExtension">The destination Extension.</param>
+        /// <param name="contentPivot">The content pivot.</param>
+        /// <returns>The destination path.</returns>
+        private static string GetContentPivotDestinationFilePath(string relativeContentPath, string destinationDirectoryName, string destinationExtension, ContentPivot contentPivot = null)
+        {
+            var themeFilePrefix = contentPivot != null && !contentPivot.Theme.IsNullOrWhitespace()
+                                      ? contentPivot.Theme + "_"
+                                      : string.Empty;
+
+            var localePath = contentPivot != null && !contentPivot.Locale.IsNullOrWhitespace()
+                                 ? contentPivot.Locale
+                                 : string.Empty;
+
+            var fileName = Path.Combine(localePath, destinationDirectoryName, themeFilePrefix + Path.ChangeExtension(relativeContentPath, destinationExtension));
+
+            return fileName;
+        }
+
         /// <summary>Execute the css pipeline.</summary>
         /// <param name="cssFileSets">The css File Sets.</param>
         /// <param name="sourceDirectory">The source Directory.</param>
@@ -204,7 +260,7 @@ namespace WebGrease.Activities
         /// <param name="imageDirectories">The image Directories.</param>
         /// <param name="imageExtensions">The image Extensions.</param>
         /// <returns>If it was successfull</returns>
-        private bool ExecuteCss(IList<CssFileSet> cssFileSets, string sourceDirectory, string destinationDirectory, string configType, IList<string> imageDirectories, IList<string> imageExtensions)
+        private bool ExecuteCss(IEnumerable<CssFileSet> cssFileSets, string sourceDirectory, string destinationDirectory, string configType, IList<string> imageDirectories, IList<string> imageExtensions)
         {
             var cssLogPath = Path.Combine(this.context.Configuration.LogsDirectory, Strings.CssLogFile);
             var cssHashedOutputPath = Path.Combine(destinationDirectory, CssDestinationDirectoryName);
@@ -224,7 +280,7 @@ namespace WebGrease.Activities
                     "../../", // The hashed image path relative to the css path.
                     imageExtensions);
 
-            var cssHasher = GetFileHasher(this.context, cssHashedOutputPath, cssLogPath, FileTypes.StyleSheet, this.context.Configuration.ApplicationRootDirectory);
+            var cssHasher = GetFileHasher(this.context, cssHashedOutputPath, cssLogPath, FileTypes.CSS, this.context.Configuration.ApplicationRootDirectory);
 
             var totalSuccess = this.context.SectionedAction(SectionIdParts.EverythingActivity, SectionIdParts.Css)
                 .CanBeCached(new { cssFileSets, sourceDirectory, destinationDirectory, configType, imageExtensions, imageDirectories }, true)
@@ -232,8 +288,6 @@ namespace WebGrease.Activities
                 .Execute(cacheSection =>
                 {
                     var success = true;
-
-                    this.context.Log.Information("Begin CSS file pipeline.");
 
                     foreach (var cssFileSet in cssFileSets)
                     {
@@ -271,7 +325,7 @@ namespace WebGrease.Activities
                     {
                         var cssMinifier = this.CreateCssMinifier(cssFileSet, cssHasher, imageHasher, imageExtensions, imageDirectories, imagesDestinationDirectory);
                         var outputFile = Path.Combine(this.staticAssemblerDirectory, cssFileSet.Output);
-                        var inputFiles = this.Bundle(cssFileSet, outputFile, FileTypes.StyleSheet, configType);
+                        var inputFiles = this.Bundle(cssFileSet, outputFile, FileTypes.CSS, configType);
                         if (inputFiles == null)
                         {
                             return false;
@@ -281,38 +335,38 @@ namespace WebGrease.Activities
                         this.context.Log.Information("Resolving tokens and performing localization.");
 
                         // Resolve resources
-                        var localeResources = GetLocaleResources(cssFileSet, this.context, FileTypes.StyleSheet);
-                        var themeResources = GetThemeResources(cssFileSet, this.context, FileTypes.StyleSheet);
+                        var localeResources = GetLocaleResources(cssFileSet, this.context, FileTypes.CSS);
+                        var themeResources = GetThemeResources(cssFileSet, this.context, FileTypes.CSS);
 
                         // Localize the css
-                        var success = this.LocalizeCss(
+                        var localizedAndThemedCssItems = this.LocalizeAndThemeCss(
                             inputFiles,
-                            cssFileSet.Locales,
                             localeResources,
-                            cssFileSet.Themes,
                             themeResources,
-                            localizedContentItem =>
-                            {
-                                this.context.Log.Information("Minifying css files, and spriting background images.");
-                                var minifyResults = this.MinifyCss(localizedContentItem, cssMinifier);
+                            cssMinifier.ShouldMinify);
 
-                                if (!minifyResults)
-                                {
-                                    // minification failed.
-                                    this.context.Log.Error(null, "There were errors while minifying the css files.");
-                                    return false;
-                                }
+                        this.context.Log.Information("Minifying css files, and spriting background images.");
+                        var localizeSuccess = localizedAndThemedCssItems.All(l => l != null);
 
-                                return true;
-                            });
-
-                        if (!success)
+                        if (!localizeSuccess)
                         {
                             // localization failed for this batch
-                            this.context.Log.Error(null, "There were errors encountered while resolving tokens.");
+                            this.context.Log.Error(null, "There were errors while minifying the css files.");
+                        }
+                        
+                        var minifySuccess = true;
+                        foreach (var localizedAndThemedCssItem in localizedAndThemedCssItems)
+                        {
+                            minifySuccess &= this.MinifyCss(localizedAndThemedCssItem, cssMinifier);
                         }
 
-                        return success;
+                        if (!minifySuccess)
+                        {
+                            // localization failed for this batch
+                            this.context.Log.Error(null, "There were errors while minifying the css files.");
+                        }
+
+                        return minifySuccess && localizeSuccess;
                     });
         }
 
@@ -322,7 +376,7 @@ namespace WebGrease.Activities
         /// <param name="sourceDirectory">The source Directory.</param>
         /// <param name="destinationDirectory">The destination Directory.</param>
         /// <returns>If it was successfull</returns>
-        private bool ExecuteJS(IList<JSFileSet> jsFileSets, string configType, string sourceDirectory, string destinationDirectory)
+        private bool ExecuteJS(IEnumerable<JSFileSet> jsFileSets, string configType, string sourceDirectory, string destinationDirectory)
         {
             var jsLogPath = Path.Combine(this.context.Configuration.LogsDirectory, Strings.JsLogFile);
             var jsHashedOutputPath = Path.Combine(destinationDirectory, JsDestinationDirectoryName);
@@ -332,7 +386,7 @@ namespace WebGrease.Activities
                 return true;
             }
 
-            var jsHasher = GetFileHasher(this.context, jsHashedOutputPath, jsLogPath, FileTypes.JavaScript, this.context.Configuration.ApplicationRootDirectory);
+            var jsHasher = GetFileHasher(this.context, jsHashedOutputPath, jsLogPath, FileTypes.JS, this.context.Configuration.ApplicationRootDirectory);
             var varBySettings = new { jsFileSets, configType, sourceDirectory, destinationDirectory };
             var totalSuccess = this.context.SectionedAction(SectionIdParts.EverythingActivity, SectionIdParts.Js)
                 .CanBeCached(varBySettings, true)
@@ -374,7 +428,7 @@ namespace WebGrease.Activities
                         var outputFile = Path.Combine(this.staticAssemblerDirectory, jsFileSet.Output);
 
                         // bundling
-                        var bundledFiles = this.Bundle(jsFileSet, outputFile, FileTypes.JavaScript, configType);
+                        var bundledFiles = this.Bundle(jsFileSet, outputFile, FileTypes.JS, configType);
 
                         if (bundledFiles == null)
                         {
@@ -382,7 +436,7 @@ namespace WebGrease.Activities
                         }
 
                         // resolve the resources
-                        var localeResources = GetLocaleResources(jsFileSet, this.context, FileTypes.JavaScript);
+                        var localeResources = GetLocaleResources(jsFileSet, this.context, FileTypes.JS);
 
                         // localize
                         this.context.Log.Information("Resolving tokens and performing localization.");
@@ -513,16 +567,13 @@ namespace WebGrease.Activities
         {
             var successful = true;
 
-            var themeFilePrefix = !inputFile.Theme.IsNullOrWhitespace() ? inputFile.Theme + "_" : string.Empty;
-            var fileName = Path.Combine(inputFile.Locale ?? string.Empty, CssDestinationDirectoryName, themeFilePrefix + Path.GetFileNameWithoutExtension(inputFile.RelativeContentPath) + "." + Strings.Css);
-            this.context.Log.Information("Css Minify start: " + fileName);
+            var sourceFile = inputFile.RelativeContentPath;
+            var destinationFiles = GetDestinationFilePaths(inputFile, CssDestinationDirectoryName, Strings.Css);
 
-            // TODO:RTUIT: Make the scan file in memory as well.
-            var scanFilePath = Path.Combine(this.toolsTempDirectory, Strings.Css, Path.GetFileNameWithoutExtension(inputFile.RelativeContentPath) + "_" + inputFile.Locale + "_" + inputFile.Theme + ".scan." + Strings.Css);
+            this.context.Log.Information("Css Minify start: " + destinationFiles + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
 
-            minifier.ImageAssembleScanDestinationFile = scanFilePath;
-            minifier.SourceFile = fileName;
-            minifier.DestinationFile = fileName;
+            minifier.SourceFile = sourceFile;
+            minifier.DestinationFile = destinationFiles;
 
             try
             {
@@ -537,7 +588,8 @@ namespace WebGrease.Activities
                 if ((aggEx = ex as AggregateException) != null || ((ex.InnerException != null) && (aggEx = ex.InnerException as AggregateException) != null))
                 {
                     // antlr can throw a blob of errors, so they need to be deduped to get the real set of errors
-                    var errors = aggEx.CreateBuildErrors(fileName);
+                    // TODO: RTUIT: Save the actual content in a temp folder and point to it for errors.
+                    var errors = aggEx.CreateBuildErrors(sourceFile);
                     foreach (var error in errors)
                     {
                         this.HandleError(error);
@@ -546,7 +598,8 @@ namespace WebGrease.Activities
                 else
                 {
                     // Catch, record and display error
-                    this.HandleError(ex, fileName);
+                    // TODO: RTUIT: Save the actual content in a temp folder and point to it for errors.
+                    this.HandleError(ex, sourceFile);
                 }
             }
 
@@ -582,17 +635,19 @@ namespace WebGrease.Activities
 
             foreach (var inputFile in inputFiles)
             {
-                var outputFile = Path.Combine(inputFile.Locale ?? string.Empty, JsDestinationDirectoryName, Path.GetFileNameWithoutExtension(inputFile.RelativeContentPath) + "." + Strings.JS);
-                this.context.Log.Information("Js Minify start: " + outputFile);
+                var sourceFile = inputFile.RelativeContentPath;
+                var destinationFiles = GetDestinationFilePaths(inputFile, JsDestinationDirectoryName, Strings.JS);
 
-                minifier.DestinationFile = outputFile;
+                minifier.DestinationFile = destinationFiles;
+
+                this.context.Log.Information("Js Minify start: " + sourceFile + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
                 try
                 {
                     minifier.Execute(inputFile);
                 }
                 catch (Exception ex)
                 {
-                    this.HandleError(ex, outputFile);
+                    this.HandleError(ex, sourceFile);
                     success = false;
                 }
             }
@@ -637,20 +692,17 @@ namespace WebGrease.Activities
 
         /// <summary>Localize the css files based on the expanded resource tokens for locales and themes</summary>
         /// <param name="cssInputItems">The css files to localize</param>
-        /// <param name="locales">A collection of locale codes to localize for</param>
         /// <param name="localeResources">The locale resources</param>
-        /// <param name="themes">A collection of theme names to base resources on.</param>
         /// <param name="themeResources">The theme resources</param>
-        /// <param name="localizedItemAction">The item action</param>
+        /// <param name="shouldMinify">If it should minify, in this case we preemtively remove comments, faster to do before multiplication of files.</param>
         /// <returns>True if it succeeded, false if it did not</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Handles all errors")]
-        private bool LocalizeCss(IEnumerable<ContentItem> cssInputItems, IEnumerable<string> locales, IDictionary<string, IDictionary<string, string>> localeResources, IEnumerable<string> themes, IDictionary<string, IDictionary<string, string>> themeResources, Func<ContentItem, bool> localizedItemAction)
+        private IEnumerable<ContentItem> LocalizeAndThemeCss(IEnumerable<ContentItem> cssInputItems, IDictionary<string, IDictionary<string, string>> localeResources, IDictionary<string, IDictionary<string, string>> themeResources, bool shouldMinify)
         {
-            var success = true;
+            var results = new List<ContentItem>();
 
-            if (!locales.Any())
+            if (!localeResources.Any())
             {
-                locales = new[] { Strings.DefaultLocale };
                 localeResources[Strings.DefaultLocale] = new Dictionary<string, string>();
             }
 
@@ -658,16 +710,16 @@ namespace WebGrease.Activities
             {
                 try
                 {
-                    success &= CssLocalizationActivity.LocalizeAndTheme(this.context, cssInputItem, locales, localeResources, themes, themeResources, localizedItemAction);
+                    results.AddRange(CssLocalizationActivity.LocalizeAndTheme(this.context, cssInputItem, localeResources, themeResources, shouldMinify));
                 }
                 catch (Exception ex)
                 {
                     this.HandleError(ex, cssInputItem.RelativeContentPath);
-                    success = false;
+                    results.Add(null);
                 }
             }
 
-            return success;
+            return results;
         }
 
         /// <summary>Combine files discovered through the input specs into the output file</summary>
@@ -684,7 +736,7 @@ namespace WebGrease.Activities
             var assemblerActivity = new AssemblerActivity(this.context)
                 {
                     PreprocessingConfig = preprocessing,
-                    AddSemicolons = fileType == FileTypes.JavaScript
+                    AddSemicolons = fileType == FileTypes.JS
                 };
 
             foreach (var inputSpec in inputSpecs)

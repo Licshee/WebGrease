@@ -5,6 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 namespace WebGrease.Build
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>The session cache data.</summary>
@@ -13,7 +14,7 @@ namespace WebGrease.Build
         /// <summary>Initializes a new instance of the <see cref="SessionCacheData"/> class.</summary>
         public SessionCacheData()
         {
-            this.ConfigTypes = new Dictionary<string, string>();
+            this.ConfigTypes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>Gets the config types.</summary>

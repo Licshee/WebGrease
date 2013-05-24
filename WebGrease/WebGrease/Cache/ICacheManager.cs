@@ -6,6 +6,7 @@
 namespace WebGrease
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
 
     using WebGrease.Configuration;
@@ -17,6 +18,8 @@ namespace WebGrease
 
         /// <summary>Gets the current cache section.</summary>
         ICacheSection CurrentCacheSection { get; }
+
+        IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections { get; }
 
         #endregion
 
@@ -43,13 +46,6 @@ namespace WebGrease
         /// <param name="fileName">The relative cache file name.</param>
         /// <returns>The absolute cache file path.</returns>
         string GetAbsoluteCacheFilePath(string category, string fileName);
-
-        /// <summary>Loads a cache section from disk, uses per session in memory cache as well.</summary>
-        /// <param name="fullPath">The full path.</param>
-        /// <param name="loadAction">The load action.</param>
-        /// <typeparam name="T">The Type of ICacheSection</typeparam>
-        /// <returns>The cache section.</returns>
-        T LoadCacheSection<T>(string fullPath, Func<T> loadAction) where T : class, ICacheSection;
 
         /// <summary>Sets the current context.</summary>
         /// <param name="newContext">The current context.</param>

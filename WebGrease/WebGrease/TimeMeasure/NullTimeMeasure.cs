@@ -44,15 +44,5 @@ namespace WebGrease
         public void WriteResults(string filePathWithoutExtension, string title, DateTimeOffset utcStart)
         {
         }
-
-        /// <summary>Begins a new section.</summary>
-        public void BeginGroup()
-        {
-        }
-
-        /// <summary>Ends section.</summary>
-        public void EndGroup()
-        {
-        }
     }
 }

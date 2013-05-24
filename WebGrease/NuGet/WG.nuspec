@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>WebGrease</id>
-    <version>1.4.2</version>
+    <version>1.5.0</version>
     <owners>Microsoft</owners>
     <authors>webgrease@microsoft.com</authors>
     <description>Web Grease is a suite of tools for optimizing javascript, css files and images.</description>

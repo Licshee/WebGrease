@@ -64,7 +64,7 @@ namespace WebGrease.Tests
 
             // Verify tools temp
             var toolsTemp = Path.Combine(toolsLogs, "ToolsTemp");
-            Assert.IsTrue(Directory.Exists(toolsTemp));
+            Assert.IsFalse(Directory.Exists(toolsTemp));
 
             // Verify the Assembled Statics happened in memory
             var staticAssemblerOutput = Path.Combine(toolsTemp, "StaticAssemblerOutput");

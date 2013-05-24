@@ -10,17 +10,17 @@
 namespace WebGrease.Build
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Threading.Tasks;
 
     using Activities;
-
-    using Microsoft.Build.Utilities;
 
     using WebGrease.Configuration;
     using WebGrease.Extensions;
 
-    using MessageImportance = WebGrease.MessageImportance;
+    using Task = Microsoft.Build.Utilities.Task;
 
     /// <summary>
     /// Build time task for executing web grease runtime.
@@ -67,6 +67,9 @@ namespace WebGrease.Build
         /// <summary>Gets or sets the folder path used for writing log files.</summary>
         public string LogFolderPath { get; set; }
 
+        /// <summary>Gets or sets the folder path used for writing report files.</summary>
+        public string MeasureReportPath { get; set; }
+
         /// <summary>Gets or sets the folder path used as temp folder.</summary>
         public string ToolsTempPath { get; set; }
 
@@ -78,9 +81,6 @@ namespace WebGrease.Build
 
         /// <summary>Gets or sets the value that determines to use cache.</summary>
         public bool CacheEnabled { get; set; }
-
-        /// <summary>Gets or sets the value that determines if it outputs .dgml cache dependency files.</summary>
-        public bool CacheOutputDependencies { get; set; }
 
         /// <summary>Gets or sets the value that has the temporary locale overrides.</summary>
         public string OverrideLocales { get; set; }
@@ -103,9 +103,6 @@ namespace WebGrease.Build
         /// </summary>
         public string CacheRootPath { get; set; }
 
-        /// <summary>Gets or sets a value indicating whether it is server build.</summary>
-        public string IsBuildServerBuild { get; set; }
-
         /// <summary>
         /// Gets or sets the unique key for the unique key, is required when enabling cache.
         /// You should use the project guid and debug/release mode to make distinction between cache for different projects.
@@ -127,40 +124,201 @@ namespace WebGrease.Build
         public override bool Execute()
         {
             var start = DateTimeOffset.Now;
-            var sessionContext = this.CreateSessionContext();
 
             var activity = this.Activity.TryParseToEnum<ActivityName>();
             if (!activity.HasValue)
             {
-                sessionContext.Log.Error("Unknown activity: {0}".InvariantFormat(this.Activity));
+                this.LogError("Unknown activity: {0}".InvariantFormat(this.Activity));
                 return false;
             }
 
-            var fullPathToConfigFiles = Path.GetFullPath(this.ConfigurationPath);
+            var logManager = this.CreateLogManager();
+
+            var globalContext = this.CreateSessionContext(logManager);
+
+            if (globalContext.Configuration.Overrides != null && globalContext.Configuration.Overrides.SkipAll)
+            {
+                logManager.Information("WebGrease Skipping because of SkipAll in webgrease override file.");
+                return true;
+            }
+
+            var success = true;
+            this.MeasureResults = new TimeMeasureResult[] { };
+            var localLock = new object();
+
+            if (this.CleanActivity(activity))
+            {
+                return true;
+            }
+
+            var activityResults = new Dictionary<FileTypes, Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration>>();
+
+            var delayedLogManagers = new List<DelayedLogManager>();
+            logManager.Information("WebGrease starting");
+            Parallel.ForEach(
+                GetFileTypes(this.FileType),
+                fileType =>
+                {
+                    logManager.Information("Starting WebGrease thread for " + fileType);
+                    var delayedLogManager = new DelayedLogManager(logManager, fileType.ToString());
+                    delayedLogManagers.Add(delayedLogManager);
+
+                    var result = this.Execute(delayedLogManager.LogManager, fileType, activity.Value, this.ConfigurationPath);
+                    success = success & (result != null && result.Item1);
+                    if (success && result != null)
+                    {
+                        lock (localLock)
+                        {
+                            activityResults.Add(fileType, result);
+                        }
+                    }
+
+                    delayedLogManager.Flush();
+                    delayedLogManagers.ForEach(dlm => dlm.Flush());
+                });
+
+            if (this.Measure && success && activityResults.Count > 0)
+            {
+                var configuration = activityResults.Select(ar => ar.Value.Item3).FirstOrDefault(ar => ar != null);
+                if (configuration != null)
+                {
+                    var reportFileBase = Path.Combine(configuration.MeasureReportPath, new DirectoryInfo(this.ConfigurationPath).Name);
+                    logManager.Information("Writing overal report file to:".InvariantFormat(reportFileBase));
+                    TimeMeasure.WriteResults(reportFileBase, activityResults.ToDictionary(k => k.Key, v => v.Value.Item2), this.ConfigurationPath, start, activity.ToString());
+                }
+
+                this.MeasureResults = activityResults.SelectMany(ar => ar.Value.Item2).ToArray();
+            }
+
+            logManager.Information("WebGrease done");
+            return success;
+        }
+
+        /// <summary>The get file sets.</summary>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="fileType">The file type.</param>
+        /// <returns>The filesets fot the file type.</returns>
+        private static IEnumerable<IFileSet> GetFileSets(WebGreaseConfiguration configuration, FileTypes fileType)
+        {
+            switch (fileType)
+            {
+                case FileTypes.All:
+                    return configuration.CssFileSets.OfType<IFileSet>().Concat(configuration.JSFileSets);
+                case FileTypes.JS:
+                    return configuration.JSFileSets;
+                case FileTypes.CSS:
+                    return configuration.CssFileSets;
+            }
+
+            return new IFileSet[] { };
+        }
+
+        /// <summary>The get file types.</summary>
+        /// <param name="fileType">The file type.</param>
+        /// <returns>A list of file types to use.</returns>
+        private static IEnumerable<FileTypes> GetFileTypes(FileTypes fileType)
+        {
+            switch (fileType)
+            {
+                case FileTypes.All:
+                    return new[] { FileTypes.JS, FileTypes.CSS };
+                default:
+                    return new[] { fileType };
+            }
+        }
+
+        /// <summary>Execute a single config file.</summary>
+        /// <param name="sessionContext">The session context.</param>
+        /// <param name="configFile">The config file.</param>
+        /// <param name="activity">The activity</param>
+        /// <param name="fileType">The file types</param>
+        /// <param name="measure">If it should measure.</param>
+        /// <returns>The success.</returns>
+        private static Tuple<bool, int> ExecuteConfigFile(IWebGreaseContext sessionContext, string configFile, ActivityName activity, FileTypes fileType, bool measure)
+        {
+            var configFileStart = DateTimeOffset.Now;
+            var configFileInfo = new FileInfo(configFile);
+            var fileContext = new WebGreaseContext(sessionContext, configFileInfo);
+
+            var configFileSuccess = true;
+            var fileSets = GetFileSets(fileContext.Configuration, fileType).ToArray();
+            if (fileSets.Length > 0)
+            {
+                configFileSuccess = sessionContext
+                    .SectionedActionGroup(SectionIdParts.WebGreaseBuildTask, SectionIdParts.ConfigurationFile)
+                    .CanBeCached(ContentItem.FromFile(configFileInfo.FullName), new { activity, fileContext.Configuration }, activity == ActivityName.Bundle)
+                    .Execute(configFileCacheSection =>
+                        {
+                            var success = true;
+                            fileContext.Log.Information("Activity Start: [{0}] for [{1}] on configuration file \"{2}\"".InvariantFormat(activity, fileType, configFile), MessageImportance.High);
+                            switch (activity)
+                            {
+                                case ActivityName.Bundle:
+                                    // execute the bundle pipeline
+                                    var bundleActivity = new BundleActivity(fileContext);
+                                    success &= bundleActivity.Execute(fileSets);
+                                    break;
+                                case ActivityName.Everything:
+                                    // execute the full pipeline
+                                    var everythingActivity = new EverythingActivity(fileContext);
+                                    success &= everythingActivity.Execute(fileSets);
+                                    break;
+                            }
+
+                            if (measure && success)
+                            {
+                                var configReportFile = Path.Combine(sessionContext.Configuration.MeasureReportPath, (configFileInfo.Directory != null ? configFileInfo.Directory.Name + "." : string.Empty) + activity.ToString() + "." + fileType + "." + configFileInfo.Name + ".");
+                                fileContext.Measure.WriteResults(configReportFile, configFileInfo.FullName, configFileStart);
+                            }
+
+                            fileContext.Log.Information("Activity End: [{0}] for [{1}] on configuration file \"{2}\"".InvariantFormat(activity, fileType, configFile), MessageImportance.High);
+                            return success;
+                        });
+            }
+
+            return Tuple.Create(configFileSuccess, fileSets.Length);
+        }
+
+        /// <summary>Create the log manager for the current msbuild context.</summary>
+        /// <returns>The <see cref="LogManager"/>.</returns>
+        private LogManager CreateLogManager()
+        {
+            return new LogManager(
+                this.LogInformation,
+                this.WarningsAsErrors ? this.LogError : (Action<string>)this.LogWarning,
+                this.WarningsAsErrors ? this.LogError : (LogExtendedError)this.LogWarning,
+                this.LogError,
+                this.LogError,
+                this.LogError);
+        }
+
+        /// <summary>The execute.</summary>
+        /// <param name="logManager">The log Manager.</param>
+        /// <param name="fileType">The file type.</param>
+        /// <param name="activity">The activity.</param>
+        /// <param name="configurationPath">The configuration path</param>
+        /// <returns>The <see cref="Tuple"/>.</returns>
+        private Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration> Execute(LogManager logManager, FileTypes fileType, ActivityName activity, string configurationPath)
+        {
+            var availableFileSetsForFileType = 0;
+            var sessionContext = this.CreateSessionContext(logManager, fileType, activity);
+
+            var fullPathToConfigFiles = Path.GetFullPath(configurationPath);
 
             var contentTypeSectionId = new[] { SectionIdParts.WebGreaseBuildTask };
 
-            switch (activity)
-            {
-                case ActivityName.CleanDestination:
-                    sessionContext.CleanDestination();
-                    return true;
-                case ActivityName.CleanCache:
-                    sessionContext.CleanCache();
-                    return true;
-            }
-
-            var sessionSuccess = sessionContext.SectionedAction(SectionIdParts.WebGreaseBuildTaskSession)
+            var sessionSuccess = sessionContext
+                .SectionedAction(SectionIdParts.WebGreaseBuildTaskSession)
                 .CanBeCached(new { fullPathToConfigFiles, activity })
                 .Execute(sessionCacheSection =>
-                    {
-                        var sessionCacheData = sessionCacheSection.GetCacheData<SessionCacheData>(CacheFileCategories.SolutionCacheConfig);
+                {
+                    var sessionCacheData = sessionCacheSection.GetCacheData<SessionCacheData>(CacheFileCategories.SolutionCacheConfig);
 
-                        var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = SearchOption.TopDirectoryOnly }.GetFiles();
-                        var contentTypeSuccess = sessionContext
-                            .SectionedAction(contentTypeSectionId)
-                            .CanBeCached(new { activity, inputFiles, sessionContext.Configuration }, true)
-                            .Execute(contentTypeCacheSection =>
+                    var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = SearchOption.TopDirectoryOnly }.GetFiles();
+                    var contentTypeSuccess = sessionContext
+                        .SectionedAction(contentTypeSectionId)
+                        .CanBeCached(new { activity, inputFiles, sessionContext.Configuration }, activity == ActivityName.Bundle)
+                        .Execute(contentTypeCacheSection =>
                             {
                                 var success = true;
                                 try
@@ -168,7 +326,10 @@ namespace WebGrease.Build
                                     // get a list of the files in the configuration folder
                                     foreach (var configFile in inputFiles)
                                     {
-                                        success &= this.ExecuteConfigFile(sessionContext, configFile, activity.Value);
+                                        var executeConfigFileResult = ExecuteConfigFile(sessionContext, configFile, activity, fileType, this.Measure);
+                                        success &= executeConfigFileResult.Item1;
+                                        availableFileSetsForFileType += executeConfigFileResult.Item2;
+                                        GC.Collect();
                                     }
                                 }
                                 catch (BuildWorkflowException exception)
@@ -195,25 +356,21 @@ namespace WebGrease.Build
                                 return success;
                             });
 
-                        if (contentTypeSuccess)
-                        {
-                            // Add the cache sections of the other already cached contentTypes (Debug/Release) so that they will not get removed.
-                            this.HandleOtherContentTypeCacheSections(sessionContext, sessionCacheSection, sessionCacheData, contentTypeSectionId);
-                        }
+                    if (contentTypeSuccess)
+                    {
+                        // Add the cache sections of the other already cached contentTypes (Debug/Release) so that they will not get removed.
+                        this.HandleOtherContentTypeCacheSections(sessionContext, sessionCacheSection, sessionCacheData, contentTypeSectionId);
+                    }
 
-                        return contentTypeSuccess;
-                    });
+                    return contentTypeSuccess;
+                });
 
-            if (sessionSuccess)
+            if (sessionSuccess && (availableFileSetsForFileType > 0))
             {
                 sessionContext.Cache.CleanUp();
-
-                var sessionReportFile = Path.Combine(this.RootOutputPath, new DirectoryInfo(fullPathToConfigFiles).Name);
-                sessionContext.Measure.WriteResults(sessionReportFile, fullPathToConfigFiles, start);
             }
 
-            this.MeasureResults = sessionContext.Measure.GetResults();
-            return sessionSuccess;
+            return Tuple.Create(sessionSuccess, sessionContext.Measure.GetResults(), sessionContext.Configuration);
         }
 
         /// <summary>The handle other content type cache sections.</summary>
@@ -225,77 +382,58 @@ namespace WebGrease.Build
         {
             if (sessionCacheData != null)
             {
-                foreach (var configType in sessionCacheData.ConfigTypes.Keys.Where(ct => ct.Equals(this.ConfigType, StringComparison.OrdinalIgnoreCase)))
+                foreach (var configType in sessionCacheData.ConfigTypes.Keys.Where(ct => !ct.Equals(this.ConfigType, StringComparison.OrdinalIgnoreCase)))
                 {
-                    CacheSection.Begin(context, WebGreaseContext.ToStringId(contentTypeSectionId), sessionCacheData.GetUniqueKey(configType), parentCacheSection);
+                    // TODO: Do a better job at touching all the files used by the last build from another config type.
+                    var otherContentTypeCacheSection = CacheSection.Begin(context, WebGreaseContext.ToStringId(contentTypeSectionId), sessionCacheData.GetUniqueKey(configType), parentCacheSection);
+                    otherContentTypeCacheSection.Save();
                 }
             }
         }
 
-        /// <summary>Execute a single config file.</summary>
-        /// <param name="sessionContext">The session context.</param>
-        /// <param name="configFile">The config file.</param>
-        /// <param name="activity">The activity</param>
-        /// <returns>The <see cref="bool"/>.</returns>
-        private bool ExecuteConfigFile(IWebGreaseContext sessionContext, string configFile, ActivityName activity)
+        /// <summary>Executes the clean activity if the given activity is a clean one.</summary>
+        /// <param name="activity">The activity.</param>
+        /// <returns>If it was a valid clean activity.</returns>
+        private bool CleanActivity(ActivityName? activity)
         {
-            var configFileStart = DateTimeOffset.Now;
-            var configFileInfo = new FileInfo(configFile);
-            var fileContext = new WebGreaseContext(sessionContext, configFileInfo);
+            var logManager = this.CreateLogManager();
 
-            return sessionContext
-                .SectionedActionGroup(SectionIdParts.WebGreaseBuildTask, SectionIdParts.ConfigurationFile)
-                .CanBeCached(ContentItem.FromFile(configFileInfo.FullName), new { activity, fileContext.Configuration }, true)
-                .Execute(configFileCacheSection =>
-                {
-                    bool success = true;
+            switch (activity)
+            {
+                case ActivityName.CleanDestination:
+                    this.CreateSessionContext(logManager).CleanDestination();
+                    return true;
+                case ActivityName.CleanCache:
+                    this.CreateSessionContext(logManager, FileTypes.All, ActivityName.Bundle).CleanCache();
+                    this.CreateSessionContext(logManager, FileTypes.CSS, ActivityName.Bundle).CleanCache();
+                    this.CreateSessionContext(logManager, FileTypes.JS, ActivityName.Bundle).CleanCache();
+                    this.CreateSessionContext(logManager, FileTypes.All, ActivityName.Everything).CleanCache();
+                    this.CreateSessionContext(logManager, FileTypes.JS, ActivityName.Everything).CleanCache();
+                    this.CreateSessionContext(logManager, FileTypes.CSS, ActivityName.Everything).CleanCache();
+                    return true;
+            }
 
-                    fileContext.Log.Information("WebGreaseTask Activity: {0}" + activity, MessageImportance.High);
-                    switch (activity)
-                    {
-                        case ActivityName.Bundle:
-                            // execute the bundle pipeline
-                            success &= new BundleActivity(fileContext).Execute(this.FileType);
-                            break;
-                        case ActivityName.Everything:
-                            // execute the full pipeline
-                            success &= new EverythingActivity(fileContext).Execute(this.FileType);
-                            break;
-                    }
-
-                    if (success)
-                    {
-                        var configReportFile = Path.Combine(this.RootOutputPath, configFileInfo.Name);
-                        if (this.CacheOutputDependencies)
-                        {
-                            configFileCacheSection.WriteDependencyGraph(configReportFile);
-                        }
-
-                        fileContext.Measure.WriteResults(configReportFile, configFileInfo.FullName, configFileStart);
-                    }
-
-                    return success;
-                });
+            return false;
         }
 
         /// <summary>Creates a new session context base on the current settings.</summary>
+        /// <param name="logManager">The log Manager.</param>
+        /// <param name="fileTypes">The file Type.</param>
+        /// <param name="activity">The activity.</param>
         /// <returns>The <see cref="IWebGreaseContext"/>.</returns>
-        private IWebGreaseContext CreateSessionContext()
+        private IWebGreaseContext CreateSessionContext(LogManager logManager, FileTypes? fileTypes = null, ActivityName? activity = null)
         {
-            return new WebGreaseContext(
-                this.CreateSessionConfiguration(),
-                this.LogInformation,
-                this.WarningsAsErrors ? this.LogError : (Action<string>)this.LogWarning,
-                this.WarningsAsErrors ? this.LogError : (LogExtendedError)this.LogWarning,
-                this.LogError,
-                this.LogError,
-                this.LogError);
+            return new WebGreaseContext(this.CreateSessionConfiguration(fileTypes, activity), logManager);
         }
 
         /// <summary>Creates the session configuration.</summary>
+        /// <param name="fileTypes">The file Type.</param>
+        /// <param name="activity">The activity.</param>
         /// <returns>The <see cref="WebGreaseConfiguration"/>.</returns>
-        private WebGreaseConfiguration CreateSessionConfiguration()
+        private WebGreaseConfiguration CreateSessionConfiguration(FileTypes? fileTypes = null, ActivityName? activity = null)
         {
+            var fileTypeKey = fileTypes != null ? "." + fileTypes : string.Empty;
+            var activityKey = activity != null ? "." + activity : string.Empty;
             return new WebGreaseConfiguration(
                 this.ConfigType,
                 this.RootInputPath,
@@ -308,12 +446,10 @@ namespace WebGrease.Build
                            Measure = this.Measure,
                            CacheEnabled = this.CacheEnabled,
                            CacheRootPath = this.CacheRootPath,
-                           CacheUniqueKey = this.CacheUniqueKey,
-                           CacheTimeout = !string.IsNullOrWhiteSpace(this.CacheTimeout) ? TimeSpan.Parse(this.CacheTimeout) : TimeSpan.Zero,
-                           Overrides =
-                                this.IsBuildServerBuild.TryParseBool()
-                                ? null
-                                : TemporaryOverrides.Create(this.OverrideLocales, this.OverrideThemes, this.OverrideOutputs, this.OverrideOutputExtensions, this.OverrideFile)
+                           CacheUniqueKey = this.CacheUniqueKey + fileTypeKey + activityKey,
+                           MeasureReportPath = this.MeasureReportPath,
+                           CacheTimeout = !string.IsNullOrWhiteSpace(this.CacheTimeout) ? TimeSpan.Parse(this.CacheTimeout) : TimeSpan.FromHours(48),
+                           Overrides = TemporaryOverrides.Create(this.OverrideLocales, this.OverrideThemes, this.OverrideOutputs, this.OverrideOutputExtensions, this.OverrideFile)
                        };
         }
 

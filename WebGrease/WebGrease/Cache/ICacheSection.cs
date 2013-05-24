@@ -55,22 +55,12 @@ namespace WebGrease
         /// <param name="inputSpec">The input spec.</param>
         void AddSourceDependency(InputSpec inputSpec);
 
-        /// <summary>Stores a graph report file (.dgml visual studio file).</summary>
+        /// <summary>Stores the section.</summary>
         void Save();
 
         /// <summary>Determiones if all the end results are there and valid, and can therefor be skipped for processing.</summary>
         /// <returns>If it can be skipped.</returns>
         bool CanBeSkipped();
-
-        /// <summary>Gets the changed source dependencies recursively.</summary>
-        /// <returns>The changed source dependencies.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Not appropriate.")]
-        IEnumerable<CacheSourceDependency> GetChangedSourceDependencies();
-
-        /// <summary>Get the invalid cache results.</summary>
-        /// <returns>The invalid cache results.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate", Justification = "Not appropriate.")]
-        IEnumerable<CacheResult> GetInvalidCachedResults();
 
         /// <summary>Gets the cached content item.</summary>
         /// <param name="fileCategory">The file category.</param>
@@ -82,10 +72,6 @@ namespace WebGrease
         /// <param name="endResultOnly">If it should return end results only.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
         IEnumerable<ContentItem> GetCachedContentItems(string fileCategory, bool endResultOnly = false);
-
-        /// <summary>Writes a graph report file (.dgml visual studio file).</summary>
-        /// <param name="graphReportFilePath">The graph report file path.</param>
-        void WriteDependencyGraph(string graphReportFilePath);
 
         /// <summary>The get cache data.</summary>
         /// <param name="id">The id.</param>

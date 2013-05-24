@@ -49,7 +49,7 @@ namespace WebGrease.Css.Visitor
         /// <summary>
         /// The input images computed from log file
         /// </summary>
-        private readonly List<AssembledImage> inputImages;
+        private readonly IEnumerable<AssembledImage> inputImages;
 
         /// <summary>
         /// The default DPI to use for the entire stylesheet
@@ -69,16 +69,16 @@ namespace WebGrease.Css.Visitor
 
         /// <summary>Initializes a new instance of the ImageAssemblyUpdateVisitor class</summary>
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
-        /// <param name="logFiles">The log path which contains the image map after spriting</param>
+        /// <param name="imageLogs">The log path which contains the image map after spriting</param>
         /// <param name="dpi">The dpi.</param>
         /// <param name="outputUnit">The output unit </param>
         /// <param name="outputUnitFactor">The output unit factor. </param>
         /// <param name="destinationDirectory">The destination directory</param>
         /// <param name="prependToDestination">Prepend the the relative output path.</param>
         /// <param name="availableSourceImages">The available Source Images.</param>
-        public ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<string> logFiles, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1, string destinationDirectory = null, string prependToDestination = null, IDictionary<string, string> availableSourceImages = null)
+        internal ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<ImageLog> imageLogs, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1, string destinationDirectory = null, string prependToDestination = null, IDictionary<string, string> availableSourceImages = null)
         {
-            Contract.Requires(logFiles != null);
+            Contract.Requires(imageLogs != null);
 
             // Output unit and factor
             this.outputUnit = outputUnit;
@@ -96,22 +96,12 @@ namespace WebGrease.Css.Visitor
 
             try
             {
-                // Validate the log path and load the input dictionary after validation
-                // Key = input/original image full path in lower case
-                // Value = object which has properties such as, assembled image path, x, y coordinates etc.
-                this.inputImages = new List<AssembledImage>();
-                foreach (var logFile in logFiles)
-                {
-                    if (File.Exists(logFile))
-                    {
-                        // Lazy load file is optional
-                        this.inputImages.AddRange(new ImageLog(logFile).InputImages);
-                    }
-                }
+                // Load all input images.
+                this.inputImages = imageLogs.SelectMany(i => i.InputImages);
             }
             catch (Exception exception)
             {
-                throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.InnerExceptionFile, string.Join(CssConstants.Comma.ToString(CultureInfo.InvariantCulture), logFiles)), exception);
+                throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.InnerExceptionFile, string.Join(CssConstants.Comma.ToString(CultureInfo.InvariantCulture), imageLogs)), exception);
             }
         }
 

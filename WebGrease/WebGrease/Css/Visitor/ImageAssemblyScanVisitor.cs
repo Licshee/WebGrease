@@ -131,7 +131,7 @@ namespace WebGrease.Css.Visitor
                 // Normalize the image references paths to lazy load
                 additionalImageSpriteBucket.ImagesInBucket.ForEach(imagePath =>
                                                                               {
-                                                                                  var path = imagePath.MakeAbsoluteTo(_cssPath);
+                                                                                  var path = imagePath.NormalizeUrl().MakeAbsoluteTo(_cssPath);
                                                                                   if (!string.IsNullOrWhiteSpace(path))
                                                                                   {
                                                                                       imagesInBucket.Add(path);
@@ -325,7 +325,7 @@ namespace WebGrease.Css.Visitor
             }
             else
             {
-                url = url.MakeAbsoluteTo(this._cssPath);
+                url = relativeUrl.MakeAbsoluteTo(this._cssPath);
             }
 
             // No need to report the url if it is present in ignore list

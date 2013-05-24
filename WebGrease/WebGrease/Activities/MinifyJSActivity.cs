@@ -74,53 +74,64 @@ namespace WebGrease.Activities
 
             if (contentItem == null)
             {
-                contentItem = ContentItem.FromFile(this.SourceFile, this.SourceFile.MakeRelativeToDirectory(destinationDirectory));
+                contentItem = ContentItem.FromFile(this.SourceFile, Path.IsPathRooted(this.SourceFile) ? this.SourceFile.MakeRelativeToDirectory(destinationDirectory) : this.SourceFile);
             }
 
             this.context.SectionedAction(SectionIdParts.MinifyJsActivity)
                 .CanBeCached(contentItem, new { this.ShouldAnalyze, this.ShouldMinify, this.AnalyzeArgs })
                 .RestoreFromCacheAction(cacheSection =>
                 {
-                    var resultFile = cacheSection.GetCachedContentItems(CacheFileCategories.MinifyJsResult).FirstOrDefault();
-                    if (resultFile == null)
+                    var jsContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.MinifyJsResult);
+                    if (!jsContentItems.Any())
                     {
                         return false;
                     }
 
                     if (this.FileHasher != null)
                     {
-                        resultFile.WriteToHashedPath(this.context.Configuration.DestinationDirectory);
-                        this.FileHasher.AppendToWorkLog(resultFile);
+                        // Restore hashed css output
+                        foreach (var jsContentItem in jsContentItems)
+                        {
+                            this.FileHasher.AppendToWorkLog(jsContentItem);
+                            jsContentItem.WriteToRelativeHashedPath(destinationDirectory);
+                        }
                     }
                     else
                     {
-                        resultFile.WriteToContentPath(this.context.Configuration.DestinationDirectory);
+                        foreach (var jsContentItem in jsContentItems)
+                        {
+                            // Restore css output
+                            jsContentItem.WriteToContentPath(destinationDirectory, true);
+                        }
                     }
 
                     return true;
                 }).Execute(cacheSection =>
                 {
-                    var minifier = new Minifier { FileName = this.DestinationFile };
+                    var minifier = new Minifier { FileName = SourceFile };
                     var minifierSettings = this.GetMinifierSettings(minifier);
-                    var output = minifier.MinifyJavaScript(contentItem.Content, minifierSettings.JSSettings);
-
+                    var js = minifier.MinifyJavaScript(contentItem.Content, minifierSettings.JSSettings);
                     this.HandleMinifierErrors(minifier);
 
-                    var relativeDestinationFile = Path.IsPathRooted(this.DestinationFile)
-                        ? this.DestinationFile.MakeRelativeToDirectory(destinationDirectory)
-                        : this.DestinationFile;
+                    var destinationFiles = this.DestinationFile.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
 
                     if (this.FileHasher != null)
                     {
-                        // Write the result to the hard drive with hashing.
-                        var result = this.FileHasher.Hash(ContentItem.FromContent(output, relativeDestinationFile));
-                        cacheSection.AddResult(result, CacheFileCategories.MinifyJsResult, isEndResult: true);
+                        // Write the result to disk using hashing.
+                        var hashResults = this.FileHasher.Hash(js, destinationFiles);
+                        foreach (var hashResult in hashResults)
+                        {
+                            cacheSection.AddResult(hashResult, CacheFileCategories.MinifyJsResult, true);
+                        }
                     }
                     else
                     {
-                        // Write to disk
-                        FileHelper.WriteFile(this.DestinationFile, output);
-                        cacheSection.AddResult(ContentItem.FromFile(this.DestinationFile, relativeDestinationFile), CacheFileCategories.MinifyJsResult);
+                        foreach (var destinationFile in destinationFiles)
+                        {
+                            // Write to the destination file on disk.
+                            FileHelper.WriteFile(destinationFile, js);
+                            cacheSection.AddResult(ContentItem.FromFile(destinationFile, destinationFile.MakeRelativeTo(destinationDirectory)), CacheFileCategories.MinifyJsResult, true);
+                        }
                     }
 
                     return true;

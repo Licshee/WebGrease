@@ -25,6 +25,9 @@ namespace WebGrease.Configuration
         /// <summary>The environment variables match pattern.</summary>
         private static readonly Regex EnvironmentVariablesMatchPattern = new Regex("%(?<name>[a-zA-Z]*?)%", RegexOptions.Compiled);
 
+        /// <summary>The minimum cache timeout.</summary>
+        private static readonly TimeSpan MinimumCacheTimeout = TimeSpan.FromHours(1);
+
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
         internal WebGreaseConfiguration()
         {
@@ -58,6 +61,7 @@ namespace WebGrease.Configuration
             this.CacheUniqueKey = configuration.CacheUniqueKey;
             this.Measure = configuration.Measure;
             this.Overrides = configuration.Overrides;
+            this.MeasureReportPath = configuration.MeasureReportPath;
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
@@ -142,6 +146,11 @@ namespace WebGrease.Configuration
         /// The logs directory.
         /// </summary>
         internal string LogsDirectory { get; set; }
+
+        /// <summary>
+        /// The report directory.
+        /// </summary>
+        internal string MeasureReportPath { get; set; }
 
         /// <summary>
         /// The tools temp directory.
@@ -249,6 +258,15 @@ namespace WebGrease.Configuration
             this.LogsDirectory = EnsureAndExpandDirectory(this.LogsDirectory, true);
             this.CacheRootPath = EnsureAndExpandDirectory(this.CacheRootPath, true);
             this.ToolsTempDirectory = EnsureAndExpandDirectory(this.ToolsTempDirectory, true);
+
+            this.MeasureReportPath = EnsureAndExpandDirectory(this.MeasureReportPath ?? this.LogsDirectory, true);
+
+            if (this.CacheTimeout > TimeSpan.Zero && this.CacheTimeout < MinimumCacheTimeout)
+            {
+                // Only timeout of an hour makes sense, otherwise don't use cache.
+                this.CacheTimeout = MinimumCacheTimeout;
+            }
+            
         }
 
         /// <summary>Expands and ensures a directory exists and creates it if enabled.</summary>

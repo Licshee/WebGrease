@@ -93,34 +93,34 @@ namespace WebGrease.Preprocessing
                 return contentItem;
             }
 
-           this.context.SectionedAction(SectionIdParts.Preprocessing)
-            .CanBeCached(contentItem, new { preprocessConfig, pptu = preprocessorsToUse.Select(pptu => pptu.Name) })
-            .RestoreFromCacheAction(cacheSection =>
-            {
-                contentItem = cacheSection.GetCachedContentItem(CacheFileCategories.PreprocessingResult);
-                return contentItem != null;
-            })
-            .Execute(cacheSection =>
-            {
-                // Loop through each available engine that was also configured
-                // And check if the engine can process the file
-                foreach (var preprocessingEngine in preprocessorsToUse)
-                {
-                    this.context.Log.Information("preprocessing with: {0}".InvariantFormat(preprocessingEngine.Name));
+            this.context.SectionedAction(SectionIdParts.Preprocessing)
+             .CanBeCached(contentItem, new { preprocessConfig, pptu = preprocessorsToUse.Select(pptu => pptu.Name) })
+             .RestoreFromCacheAction(cacheSection =>
+             {
+                 contentItem = cacheSection.GetCachedContentItem(CacheFileCategories.PreprocessingResult);
+                 return contentItem != null;
+             })
+             .Execute(cacheSection =>
+             {
+                 // Loop through each available engine that was also configured
+                 // And check if the engine can process the file
+                 foreach (var preprocessingEngine in preprocessorsToUse)
+                 {
+                     this.context.Log.Information("preprocessing with: {0}".InvariantFormat(preprocessingEngine.Name));
 
-                    // Get the new content
-                    contentItem = preprocessingEngine.Process(contentItem, preprocessConfig);
+                     // Get the new content
+                     contentItem = preprocessingEngine.Process(contentItem, preprocessConfig);
 
-                    if (contentItem == null)
-                    {
-                        return false;
-                    }
-                }
+                     if (contentItem == null)
+                     {
+                         return false;
+                     }
+                 }
 
-                cacheSection.AddResult(contentItem, CacheFileCategories.PreprocessingResult);
-                cacheSection.Save();
-                return true;
-            });
+                 cacheSection.AddResult(contentItem, CacheFileCategories.PreprocessingResult);
+                 cacheSection.Save();
+                 return true;
+             });
 
             return contentItem;
         }
@@ -182,7 +182,7 @@ namespace WebGrease.Preprocessing
                         }
                         catch (CompositionException compositionException)
                         {
-                            Console.WriteLine(compositionException.ToString());
+                            logManager.Error(compositionException, "Error occurred while loading preprocessors.");
                         }
 
                         foreach (var registeredPreprocessingEngine in this.registeredPreprocessingEngines)

@@ -33,7 +33,11 @@ namespace WebGrease
         {
             var guid1 = this.AddDependencyNode(label1);
             var guid2 = this.AddDependencyNode(label2);
-            this.links.Add(new KeyValuePair<Guid, Guid>(guid1, guid2));
+            var link = new KeyValuePair<Guid, Guid>(guid1, guid2);
+            if (!this.links.Contains(link))
+            {
+                this.links.Add(link);
+            }
         }
 
         /// <summary>The save.</summary>

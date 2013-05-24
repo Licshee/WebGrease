@@ -20,6 +20,7 @@ namespace Css.Tests.Css30
     using WebGrease.Css;
     using WebGrease.Css.Ast;
     using WebGrease.Css.ImageAssemblyAnalysis;
+    using WebGrease.Css.ImageAssemblyAnalysis.LogModel;
     using WebGrease.Css.Visitor;
 
     /// <summary>
@@ -218,7 +219,7 @@ namespace Css.Tests.Css30
             var xmlPathLazyLoad = cssPath + ".lazyload.xml";
             XDocument.Parse(XDocument.Load(xmlPath).ToString().Replace("[FolderPath]", new FileInfo(xmlPath).DirectoryName)).Save(xmlPath);
             XDocument.Parse(XDocument.Load(xmlPathLazyLoad).ToString().Replace("[FolderPath]", new FileInfo(xmlPathLazyLoad).DirectoryName)).Save(xmlPathLazyLoad);
-            return new ImageAssemblyUpdateVisitor(cssPath, new[] { xmlPath, xmlPathLazyLoad }, dpi, outputUnit, outputUnitFactor);
+            return new ImageAssemblyUpdateVisitor(cssPath, new[] { new ImageLog(XDocument.Load(xmlPath)), new ImageLog(XDocument.Load(xmlPathLazyLoad)) }, dpi, outputUnit, outputUnitFactor);
         }
     }
 }

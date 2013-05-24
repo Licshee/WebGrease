@@ -14,12 +14,16 @@ namespace WebGrease.Activities
     using System.Globalization;
     using System.IO;
     using System.Linq;
+    using System.Text.RegularExpressions;
 
     using Common;
 
     /// <summary>Css Localization ActivityMode class</summary>
     internal sealed class CssLocalizationActivity
     {
+        /// <summary>The replace css comments regex pattern.</summary>
+        private static readonly Regex ReplaceCssCommentsRegexPattern = new Regex(@"\s*/\*.*?\*/", RegexOptions.Compiled);
+
         /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
 
@@ -56,40 +60,45 @@ namespace WebGrease.Activities
         /// <summary>Localize and theme the input file.</summary>
         /// <param name="context">The context.</param>
         /// <param name="inputItem">The input file.</param>
-        /// <param name="locales">The locales.</param>
         /// <param name="localeResources">The locale resources.</param>
-        /// <param name="themes">The themes.</param>
         /// <param name="themeResources">The theme resources.</param>
-        /// <param name="localizedAndThemedItemAction">The localized Item Action.</param>
+        /// <param name="shouldMinify">If it should minify, in this case we preemtively remove comments, faster to do before multiplication of files.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Resource keys should be lowercase")]
-        internal static bool LocalizeAndTheme(IWebGreaseContext context, ContentItem inputItem, IEnumerable<string> locales, IDictionary<string, IDictionary<string, string>> localeResources, IEnumerable<string> themes, IDictionary<string, IDictionary<string, string>> themeResources, Func<ContentItem, bool> localizedAndThemedItemAction)
+        internal static IEnumerable<ContentItem> LocalizeAndTheme(IWebGreaseContext context, ContentItem inputItem, IDictionary<string, IDictionary<string, string>> localeResources, IDictionary<string, IDictionary<string, string>> themeResources, bool shouldMinify)
         {
-            var successfull = true;
-            return context.SectionedAction(SectionIdParts.CssLocalizationActivity).Execute(() =>
+            if (!localeResources.Any())
+            {
+                return new[] { inputItem };
+            }
+
+            var results = new List<ContentItem>();
+            context.SectionedAction(SectionIdParts.CssLocalizationActivity).Execute(() =>
             {
                 try
                 {
                     var css = inputItem.Content;
-                    foreach (var locale in locales.Select(t => t.ToLowerInvariant()))
+                    if (shouldMinify)
                     {
-                        var localizedCss = ResourcesResolver.ExpandResourceKeys(css, localeResources[locale]);
+                        css = ReplaceCssCommentsRegexPattern.Replace(css, string.Empty);
+                    }
 
-                        if (!themes.Any())
+                    var groupedLocaleResources = ResourcesResolver.GetGroupedUsedResourceKeys(css, localeResources);
+                    var groupedThemeResources = ResourcesResolver.GetGroupedUsedResourceKeys(css, themeResources);
+                    foreach (var groupedLocaleResource in groupedLocaleResources)
+                    {
+                        var localizedCss = ResourcesResolver.ExpandResourceKeys(css, groupedLocaleResource.Item2);
+                        if (!groupedThemeResources.Any())
                         {
-                            var contentItem = ContentItem.FromContent(localizedCss, inputItem, locale);
-                            localizedAndThemedItemAction(contentItem);
+                            var localePivots = groupedLocaleResource.Item1.Select(locale => new ContentPivot(locale)).ToArray();
+                            results.Add(ContentItem.FromContent(localizedCss, inputItem, localePivots));
                         }
-                        else
-                        {
-                            foreach (var theme in themes.Select(t => t.ToLowerInvariant()))
-                            {
-                                var localizedAndthemedCss = ResourcesResolver.ExpandResourceKeys(localizedCss, themeResources[theme]);
 
-                                // Compute the output file name
-                                var contentItem = ContentItem.FromContent(localizedAndthemedCss, inputItem, locale, theme);
-                                successfull = localizedAndThemedItemAction(contentItem) && successfull;
-                            }
+                        foreach (var groupedThemeResource in groupedThemeResources)
+                        {
+                            var localizedAndthemedCss = ResourcesResolver.ExpandResourceKeys(localizedCss, groupedThemeResource.Item2);
+                            var localeAndThemePivots = groupedLocaleResource.Item1.SelectMany(locale => groupedThemeResource.Item1.Select(theme => new ContentPivot(locale, theme))).ToArray();
+                            results.Add(ContentItem.FromContent(localizedAndthemedCss, inputItem, localeAndThemePivots));
                         }
                     }
                 }
@@ -105,9 +114,9 @@ namespace WebGrease.Activities
                 {
                     throw new WorkflowException("CssLocalizationActivity - Error happened while executing the expand css resources activity", exception);
                 }
-
-                return successfull;
             });
+
+            return results;
         }
 
         /// <summary>When overridden in a derived class, executes the task.</summary>

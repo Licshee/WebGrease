@@ -89,15 +89,16 @@ namespace WebGrease.Tests
             var errorEventArgs = new List<BuildErrorEventArgs>();
             ExecuteBuildTask("Everything", @"WebGrease.Tests\WebGreaseTask\Test3", errorEventArgs.Add);
 
-            Assert.AreEqual(4, errorEventArgs.Count);
-            Assert.AreEqual(2, errorEventArgs[0].LineNumber);
-            Assert.AreEqual(2, errorEventArgs[0].EndLineNumber);
-            Assert.AreEqual(0, errorEventArgs[0].ColumnNumber);
-            Assert.AreEqual(0, errorEventArgs[0].EndColumnNumber);
-            Assert.AreEqual("Sass", errorEventArgs[0].Subcategory);
-            Assert.IsTrue(errorEventArgs[0].File.EndsWith("errorStylesheet.scss"));
-            Assert.IsTrue(errorEventArgs[0].Message.Contains("SASS Syntax error"));
-            Assert.IsTrue(errorEventArgs[0].Message.Contains("File to import not found or unreadable: vars.scss"));
+            var sassError = errorEventArgs.FirstOrDefault(eea => eea.Subcategory.Equals("Sass"));
+            Assert.IsNotNull(sassError);
+
+            Assert.AreEqual(2, sassError.LineNumber);
+            Assert.AreEqual(2, sassError.EndLineNumber);
+            Assert.AreEqual(0, sassError.ColumnNumber);
+            Assert.AreEqual(0, sassError.EndColumnNumber);
+            Assert.IsTrue(sassError.File.EndsWith("errorStylesheet.scss"));
+            Assert.IsTrue(sassError.Message.Contains("SASS Syntax error"));
+            Assert.IsTrue(sassError.Message.Contains("File to import not found or unreadable: vars.scss"));
         }
 
         /// <summary>The ms build task assembletest.</summary>

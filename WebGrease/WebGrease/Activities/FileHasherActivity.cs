@@ -176,6 +176,29 @@ namespace WebGrease.Activities
             });
         }
 
+        /// <summary>The hash.</summary>
+        /// <param name="content">The content.</param>
+        /// <param name="destinationFiles">The destination files.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        internal IEnumerable<ContentItem> Hash(string content, IEnumerable<string> destinationFiles)
+        {
+            var hashedFiles = new List<ContentItem>();
+            if (destinationFiles.Any())
+            {
+                var firstDestinationFile = destinationFiles.FirstOrDefault();
+                var hashedContentItem = this.Hash(ContentItem.FromContent(content, firstDestinationFile));
+                hashedFiles.Add(hashedContentItem);
+                foreach (var destinationFile in destinationFiles.Skip(1))
+                {
+                    var alternateHashedContentItem = ContentItem.FromContentItem(hashedContentItem, destinationFile);
+                    this.AppendToWorkLog(alternateHashedContentItem);
+                    hashedFiles.Add(alternateHashedContentItem);
+                }
+            }
+
+            return hashedFiles;
+        }
+
         /// <summary>Hash the file.</summary>
         /// <param name="contentItem">The content item.</param>
         /// <returns>The result file after the hash.</returns>
@@ -196,7 +219,7 @@ namespace WebGrease.Activities
             contentItem = ContentItem.FromContentItem(contentItem, null, relativeHashedPath);
 
             // Do not overwrite if exists, since filename is md5 hash, filename changes if content changes.
-            contentItem.WriteToHashedPath(hashedDestinationFolder);
+            contentItem.WriteToRelativeHashedPath(hashedDestinationFolder);
 
             // Append to the log
             this.AppendToWorkLog(contentItem);

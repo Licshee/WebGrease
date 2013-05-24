@@ -188,7 +188,7 @@ namespace WebGrease.Tests
             Assert.IsTrue(Directory.Exists(Path.Combine(outputPath, "images")));
 
             // mapping file (so we can look up the target name of the assembled image, as the generated image can be different based on gdi dll versions)
-            var mapFilePath = Path.Combine(outputPath, "SpriteTest.scan.css.scan.xml");
+            var mapFilePath = Path.Combine(outputPath, "SpriteTest.scan.css.xml");
             var testImage = "media.gif";
 
             Assert.IsTrue(File.Exists(mapFilePath));

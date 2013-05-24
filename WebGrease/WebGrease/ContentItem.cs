@@ -5,6 +5,7 @@
 // ----------------------------------------------------------------------------------------------------
 namespace WebGrease
 {
+    using System.Collections.Generic;
     using System.IO;
 
     /// <summary>The content item.</summary>
@@ -27,11 +28,8 @@ namespace WebGrease
         /// <summary>Gets the origin relative source path.</summary>
         public string RelativeContentPath { get; private set; }
 
-        /// <summary>Gets the theme.</summary>
-        public string Theme { get; private set; }
-
         /// <summary>Gets the locale.</summary>
-        public string Locale { get; private set; }
+        public IEnumerable<ContentPivot> Pivots { get; private set; }
 
         /// <summary>Gets the alternate relative path.</summary>
         public string RelativeHashedContentPath { get; private set; }
@@ -61,32 +59,11 @@ namespace WebGrease
 
         #region Public Methods and Operators
 
-        /// <summary>The from content.</summary>
-        /// <param name="content">The content.</param>
-        /// <param name="relativeContentPath">The original Relative Path.</param>
-        /// <param name="relativeHashedContentPath">The alternate Relative Path.</param>
-        /// <param name="locale">The locale.</param>
-        /// <param name="theme">The theme.</param>
-        /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromContent(string content, string relativeContentPath, string relativeHashedContentPath = null, string locale = null, string theme = null)
-        {
-            return new ContentItem
-                         {
-                             ContentItemType = ContentItemType.Value,
-                             ContentValue = content,
-                             Locale = locale,
-                             Theme = theme,
-                             RelativeContentPath = relativeContentPath,
-                             RelativeHashedContentPath = relativeHashedContentPath,
-                         };
-        }
-
         /// <summary>Creates a content item from a cache result.</summary>
         /// <param name="cacheResult">The cache result.</param>
-        /// <param name="locale">The locale.</param>
-        /// <param name="theme">The theme.</param>
+        /// <param name="pivots">The pivots.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromCacheResult(CacheResult cacheResult, string locale = null, string theme = null)
+        public static ContentItem FromCacheResult(CacheResult cacheResult, params ContentPivot[] pivots)
         {
             return new ContentItem
                        {
@@ -94,8 +71,7 @@ namespace WebGrease
                            AbsoluteContentPath = cacheResult.CachedFilePath,
                            RelativeContentPath = cacheResult.RelativeContentPath,
                            RelativeHashedContentPath = cacheResult.RelativeHashedContentPath,
-                           Locale = locale,
-                           Theme = theme,
+                           Pivots = pivots,
                        };
         }
 
@@ -103,10 +79,9 @@ namespace WebGrease
         /// <param name="absoluteContentPath">The path.</param>
         /// <param name="relativeContentPath">The original Relative Path.</param>
         /// <param name="relativeHashedContentPath">The alternate Relative Path.</param>
-        /// <param name="locale">The locale.</param>
-        /// <param name="theme">The theme.</param>
+        /// <param name="pivots">The pivots.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromFile(string absoluteContentPath, string relativeContentPath = null, string relativeHashedContentPath = null, string locale = null, string theme = null)
+        public static ContentItem FromFile(string absoluteContentPath, string relativeContentPath = null, string relativeHashedContentPath = null, params ContentPivot[] pivots)
         {
             return new ContentItem
                          {
@@ -114,8 +89,7 @@ namespace WebGrease
                              AbsoluteContentPath = absoluteContentPath,
                              RelativeContentPath = relativeContentPath ?? absoluteContentPath,
                              RelativeHashedContentPath = relativeHashedContentPath,
-                             Locale = locale,
-                             Theme = theme,
+                             Pivots = pivots,
                          };
         }
 
@@ -134,41 +108,65 @@ namespace WebGrease
                            AbsoluteContentPath = contentItem.AbsoluteContentPath,
                            ContentItemType = contentItem.ContentItemType,
                            ContentValue = contentItem.ContentValue,
-                           Locale = contentItem.Locale,
-                           Theme = contentItem.Theme,
+                           Pivots = contentItem.Pivots,
                        };
         }
 
         /// <summary>The from content.</summary>
         /// <param name="content">The content.</param>
+        /// <param name="pivots">The pivots.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromContent(string content)
+        public static ContentItem FromContent(string content, params ContentPivot[] pivots)
         {
-            return FromContent(content, null, null, null, null);
+            return new ContentItem
+            {
+                ContentItemType = ContentItemType.Value,
+                ContentValue = content,
+                Pivots = pivots,
+            };
+        }
+
+        /// <summary>The from content.</summary>
+        /// <param name="content">The content.</param>
+        /// <param name="relativeContentPath">The original Relative Path.</param>
+        /// <param name="relativeHashedContentPath">The alternate Relative Path.</param>
+        /// <param name="pivots">The pivots.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public static ContentItem FromContent(string content, string relativeContentPath, string relativeHashedContentPath = null, params ContentPivot[] pivots)
+        {
+            return new ContentItem
+            {
+                ContentItemType = ContentItemType.Value,
+                ContentValue = content,
+                Pivots = pivots,
+                RelativeContentPath = relativeContentPath,
+                RelativeHashedContentPath = relativeHashedContentPath,
+            };
         }
 
         /// <summary>Creates a content item from a string value and a previous contentItem.</summary>
         /// <summary>The from content.</summary>
         /// <param name="content">The content.</param>
         /// <param name="contentItem">The content item.</param>
-        /// <param name="locale">The locale.</param>
-        /// <param name="theme">The theme.</param>
+        /// <param name="pivots">The pivots.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromContent(string content, ContentItem contentItem, string locale = null, string theme = null)
+        public static ContentItem FromContent(string content, ContentItem contentItem, params ContentPivot[] pivots)
         {
-            return FromContent(
-                content,
-                contentItem.RelativeContentPath,
-                contentItem.RelativeHashedContentPath,
-                locale ?? contentItem.Locale,
-                theme ?? contentItem.Theme);
+            return new ContentItem
+            {
+                ContentItemType = ContentItemType.Value,
+                ContentValue = content,
+                RelativeContentPath = contentItem.RelativeContentPath,
+                RelativeHashedContentPath = contentItem.RelativeHashedContentPath,
+                Pivots = pivots ?? contentItem.Pivots
+            };
         }
 
         #endregion
 
-        /// <summary>The get content hash.</summary>
+        /// <summary>Gets the md5 hash for the current content item.</summary>
         /// <param name="context">The context.</param>
-        /// <returns>The <see cref="string"/>.</returns>
+        /// <returns>The md5 hash as a string.</returns>
         internal string GetContentHash(IWebGreaseContext context)
         {
             return this.contentHash ??
@@ -177,15 +175,16 @@ namespace WebGrease
                     : context.GetFileHash(this.AbsoluteContentPath));
         }
 
-        /// <summary>The save to alternate.</summary>
+        /// <summary>Writes the content to the relative hashed path using the provided destination directory as a root.</summary>
+        /// <summary>The the current content to the hashed file path.</summary>
         /// <param name="destinationDirectory">The destination directory.</param>
-        /// <param name="overwrite">The overwrite.</param>
-        internal void WriteToHashedPath(string destinationDirectory, bool overwrite = false)
+        /// <param name="overwrite">if it should overwrite if it already exists.</param>
+        internal void WriteToRelativeHashedPath(string destinationDirectory, bool overwrite = false)
         {
             this.WriteTo(Path.Combine(destinationDirectory, this.RelativeHashedContentPath), overwrite);
         }
 
-        /// <summary>The save to alternate.</summary>
+        /// <summary>Writes the content to the relative content path using the provided destination directory as a root.</summary>
         /// <param name="destinationDirectory">The destination directory.</param>
         /// <param name="overwrite">The overwrite.</param>
         internal void WriteToContentPath(string destinationDirectory, bool overwrite = false)
