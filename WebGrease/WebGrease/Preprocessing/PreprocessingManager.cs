@@ -94,7 +94,7 @@ namespace WebGrease.Preprocessing
             }
 
             this.context.SectionedAction(SectionIdParts.Preprocessing)
-             .CanBeCached(contentItem, new { preprocessConfig, pptu = preprocessorsToUse.Select(pptu => pptu.Name) })
+             .CanBeCached(contentItem, new { relativePath = Path.GetDirectoryName(contentItem.RelativeContentPath), preprocessConfig, pptu = preprocessorsToUse.Select(pptu => pptu.Name) })
              .RestoreFromCacheAction(cacheSection =>
              {
                  contentItem = cacheSection.GetCachedContentItem(CacheFileCategories.PreprocessingResult);
@@ -118,7 +118,6 @@ namespace WebGrease.Preprocessing
                  }
 
                  cacheSection.AddResult(contentItem, CacheFileCategories.PreprocessingResult);
-                 cacheSection.Save();
                  return true;
              });
 

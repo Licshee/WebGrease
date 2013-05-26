@@ -282,7 +282,7 @@ namespace WebGrease.ImageAssemble
         }
 
         /// <summary>Hashes the Assembled Image using MD5 hash algorithm</summary>
-        protected virtual void HashImage()
+        protected void HashImage()
         {
             var fileInfo = new FileInfo(this.AssembleFileName);
 

@@ -156,6 +156,17 @@ namespace WebGrease
                 && (this.Configuration.Overrides.ShouldIgnore(fileSet) || this.Configuration.Overrides.ShouldIgnore(contentItem));
         }
 
+        /// <summary>The temporary ignore.</summary>
+        /// <param name="contentPivot">The content Pivot.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool TemporaryIgnore(ContentPivot contentPivot)
+        {
+            return
+                this.Configuration != null
+                && this.Configuration.Overrides != null
+                && (this.Configuration.Overrides.ShouldIgnore(contentPivot));
+        }
+
         /// <summary>The clean cache.</summary>
         public void CleanCache()
         {
@@ -299,10 +310,17 @@ namespace WebGrease
 
         /// <summary>The touch.</summary>
         /// <param name="filePath">The file path.</param>
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all on purpose.")]
         public void Touch(string filePath)
         {
             var newTime = this.SessionStartTime.UtcDateTime;
-            File.SetLastWriteTimeUtc(filePath, newTime);
+            try
+            {
+                File.SetLastWriteTimeUtc(filePath, newTime);
+            }
+            catch (Exception)
+            {
+            }
         }
 
         #endregion

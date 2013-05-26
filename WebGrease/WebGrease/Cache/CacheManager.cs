@@ -131,6 +131,7 @@ namespace WebGrease
         }
 
         /// <summary>Cleans up all the cache files that we don't need anymore.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all by design.")]
         public void CleanUp()
         {
             var startTime = this.context.SessionStartTime.UtcDateTime;
@@ -141,7 +142,13 @@ namespace WebGrease
                 var filesToDelete = allFiles.Where(f => File.GetLastWriteTimeUtc(f) < expireTime);
                 foreach (var fileToDelete in filesToDelete)
                 {
-                    File.Delete(fileToDelete);
+                    try
+                    {
+                        File.Delete(fileToDelete);
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
             }
         }

@@ -129,7 +129,7 @@ namespace WebGrease.Activities
                 this.context.Log.Information("Start bundling output file: {0}".InvariantFormat(outputFile));
                 foreach (var file in this.Inputs.GetFiles(sourceDirectory, this.context.Log, true))
                 {
-                    this.Append(writer, file, this.PreprocessingConfig);
+                    this.Append(writer, file, sourceDirectory, this.PreprocessingConfig);
                 }
 
                 this.context.Log.Information("End bundling output file: {0}".InvariantFormat(outputFile));
@@ -143,8 +143,9 @@ namespace WebGrease.Activities
         /// <summary>The append file.</summary>
         /// <param name="writer">The writer.</param>
         /// <param name="filePath">The file path</param>
+        /// <param name="sourceDirectory">The source directory</param>
         /// <param name="preprocessingConfig">The configuration for the preprocessing.</param>
-        private void Append(TextWriter writer, string filePath, PreprocessingConfig preprocessingConfig = null)
+        private void Append(TextWriter writer, string filePath, string sourceDirectory, PreprocessingConfig preprocessingConfig = null)
         {
             // Add a newline to make sure what comes next doesn't get mistakenly attached to the end of
             // a single-line comment or anything. add two so we get an easy-to-read separation between files
@@ -158,10 +159,15 @@ namespace WebGrease.Activities
                 writer.Write(';');
             }
 
-            writer.WriteLine("/* {0} */".InvariantFormat(filePath));
+            string relativeFilePath =
+                Path.IsPathRooted(filePath) && !sourceDirectory.IsNullOrWhitespace()
+                ? filePath.MakeRelativeTo(sourceDirectory)
+                : filePath;
+
+            writer.WriteLine("/* {0} {1} */".InvariantFormat(relativeFilePath, filePath != relativeFilePath ? "(" + filePath + ")" : string.Empty));
             writer.WriteLine();
 
-            var contentItem = ContentItem.FromFile(filePath);
+            var contentItem = ContentItem.FromFile(filePath, relativeFilePath);
 
             // Executing any applicable preprocessors from the list of configured preprocessors on the file content
             if (preprocessingConfig != null && preprocessingConfig.Enabled)

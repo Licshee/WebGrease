@@ -178,22 +178,37 @@ namespace WebGrease.Activities
 
         /// <summary>The hash.</summary>
         /// <param name="content">The content.</param>
-        /// <param name="destinationFiles">The destination files.</param>
+        /// <param name="originalFiles">The destination files.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        internal IEnumerable<ContentItem> Hash(string content, IEnumerable<string> destinationFiles)
+        internal IEnumerable<ContentItem> Hash(string content, IEnumerable<string> originalFiles)
         {
             var hashedFiles = new List<ContentItem>();
-            if (destinationFiles.Any())
+
+            if (originalFiles.Any())
             {
-                var firstDestinationFile = destinationFiles.FirstOrDefault();
+                var firstDestinationFile = originalFiles.FirstOrDefault();
                 var hashedContentItem = this.Hash(ContentItem.FromContent(content, firstDestinationFile));
                 hashedFiles.Add(hashedContentItem);
-                foreach (var destinationFile in destinationFiles.Skip(1))
-                {
-                    var alternateHashedContentItem = ContentItem.FromContentItem(hashedContentItem, destinationFile);
-                    this.AppendToWorkLog(alternateHashedContentItem);
-                    hashedFiles.Add(alternateHashedContentItem);
-                }
+
+                hashedFiles.AddRange(this.AppendToWorkLog(hashedContentItem, originalFiles.Skip(1)));
+            }
+
+            return hashedFiles;
+        }
+
+        /// <summary>The append to work log.</summary>
+        /// <param name="hashedContentItem">The hashed content item.</param>
+        /// <param name="originalFiles">The original files.</param>
+        /// <returns>The hashed items.</returns>
+        internal IEnumerable<ContentItem> AppendToWorkLog(ContentItem hashedContentItem, IEnumerable<string> originalFiles)
+        {
+            var hashedFiles = new List<ContentItem>();
+
+            foreach (var destinationFile in originalFiles)
+            {
+                var alternateHashedContentItem = ContentItem.FromContentItem(hashedContentItem, destinationFile);
+                this.AppendToWorkLog(alternateHashedContentItem);
+                hashedFiles.Add(alternateHashedContentItem);
             }
 
             return hashedFiles;

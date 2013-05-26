@@ -120,7 +120,7 @@ namespace WebGrease.Configuration
         /// <summary>
         /// The source directory for all paths in configuration.
         /// </summary>
-        internal string SourceDirectory { get; set; }
+        public string SourceDirectory { get; set; }
 
         /// <summary>
         /// The destination directory where the static files should be generated.

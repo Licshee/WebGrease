@@ -1,4 +1,9 @@
-﻿namespace WebGrease
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TemporaryOverrides.cs" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
+namespace WebGrease
 {
     using System;
     using System.Collections.Generic;
@@ -72,6 +77,16 @@
                 && contentItem.Pivots != null
                 && contentItem.Pivots.Any()
                 && contentItem.Pivots.All(cp => this.ShouldIgnoreLocale(cp.Locale) || this.ShouldIgnoreTheme(cp.Theme));
+        }
+
+        /// <summary>The should ignore.</summary>
+        /// <param name="contentPivot">The content Pivot.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        public bool ShouldIgnore(ContentPivot contentPivot)
+        {
+            return
+                contentPivot != null
+                && (this.ShouldIgnoreLocale(contentPivot.Locale) || this.ShouldIgnoreTheme(contentPivot.Theme));
         }
 
         /// <summary>The should ignore.</summary>

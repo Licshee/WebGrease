@@ -62,9 +62,6 @@ namespace WebGrease.ImageAssemble
             {
                 try
                 {
-                    // Set Assembled Image Name
-                    registeredAssembler.AssembleFileName = GenerateAssembleFileName(inputImages, assembleFileFolder) + registeredAssembler.DefaultExtension;
-
                     // Set Image orientation as passed
                     registeredAssembler.PackingType = packingType;
 
@@ -85,6 +82,9 @@ namespace WebGrease.ImageAssemble
 
                     // Assemble images of this type
                     separatedList = separatedLists[registeredAssembler.Type];
+
+                    // Set Assembled Image Name
+                    registeredAssembler.AssembleFileName = GenerateAssembleFileName(separatedList.Keys, assembleFileFolder) + registeredAssembler.DefaultExtension;
 
                     separatedList.ForEach(i => context.Cache.CurrentCacheSection.AddSourceDependency(i.Key.ImagePath));
                     registeredAssembler.Assemble(separatedList);
@@ -130,10 +130,10 @@ namespace WebGrease.ImageAssemble
         /// <returns>the name of the file, without extention</returns>
         private static string GenerateAssembleFileName(IEnumerable<InputImage> inputImages, string targetFolder)
         {
-            string fileName = string.Join("_", inputImages.Select(image => Path.GetFileNameWithoutExtension(image.ImagePath)));   
+            var uniqueKey = WebGreaseContext.ComputeContentHash(string.Join("|", inputImages.Select(i => i.ImagePath)));
 
             // the filename is the hash code of the joined file names (to prevent a large sprite from going over the 260 limit of paths).
-            return Path.GetFullPath(Path.Combine(targetFolder,fileName.GetHashCode().ToString("X2",CultureInfo.InvariantCulture)));
+            return Path.GetFullPath(Path.Combine(targetFolder, uniqueKey));
         }
 
         /// <summary>Registers available Image Assemblers.</summary>

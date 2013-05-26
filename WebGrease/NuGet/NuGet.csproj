@@ -115,7 +115,7 @@
     <Message Text="Building Package" Importance="high" />
     <!-- Build Machine-->
     <PropertyGroup Condition="$(SemanticVersionText)==''">
-      <SemanticVersionText>1.4.2</SemanticVersionText>
+      <SemanticVersionText>1.5</SemanticVersionText>
     </PropertyGroup>
     <PropertyGroup Condition="$(VersionPreRelease)==''">
       <VersionTxt>$(SemanticVersionText)</VersionTxt>
@@ -158,7 +158,7 @@ $(ProjectDir)\..\ref\build\ilmerge\ilmerge.exe /out:"$(TargetDir)Merged\WG.EXE" 
 
 )
 
-$(SolutionDir)TmsSdkAfterBuildTask.bat "$(SolutionDir)" "$(TargetDir)" "$(SolutionDir)..\..\..\Workspace2\MSNMetro\Main\MetroSDK\" 1.4.2-build20130510133124</PostBuildEvent>
+$(SolutionDir)TmsSdkAfterBuildTask.bat "$(SolutionDir)" "$(TargetDir)" "$(SolutionDir)..\..\..\Workspace2\MSNMetro\Main\MetroSDK\" 1.5-build20130524153857</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

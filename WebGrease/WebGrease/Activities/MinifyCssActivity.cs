@@ -192,48 +192,51 @@ namespace WebGrease.Activities
                 contentItem = ContentItem.FromFile(this.SourceFile, Path.IsPathRooted(this.SourceFile) ? this.SourceFile.MakeRelativeToDirectory(this.context.Configuration.SourceDirectory) : this.SourceFile);
             }
 
+            var relativeDestinationFiles = this.DestinationFile
+                .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(f => Path.IsPathRooted(f)
+                                                ? f.MakeRelativeToDirectory(this.context.Configuration.DestinationDirectory)
+                                                : f);
+
             var shouldHashCss = this.CssHasher != null;
             this.context
                 .SectionedAction(SectionIdParts.MinifyCssActivity)
                 .CanBeCached(contentItem, this.GetVarBySettings())
                 .RestoreFromCacheAction(cacheSection =>
-                    RestoreAllFromCache(cacheSection, shouldHashCss, shouldHashImages, this.context.Configuration.DestinationDirectory, this.ImageHasher, this.CssHasher, this.ShouldAssembleBackgroundImages))
+                    RestoreAllFromCache(cacheSection, this.CssHasher, this.ImageHasher, this.context.Configuration.DestinationDirectory, relativeDestinationFiles, shouldHashCss, shouldHashImages, this.ShouldAssembleBackgroundImages))
                 .Execute(cacheSection =>
-                    this.MinifyCssContentItem(contentItem, shouldHashImages, cacheSection, shouldHashCss, this.DestinationFile));
+                    this.MinifyCssContentItem(cacheSection, contentItem, relativeDestinationFiles, shouldHashImages, shouldHashCss));
         }
 
         /// <summary>The restore all from cache.</summary>
         /// <param name="cacheSection">The cache section.</param>
+        /// <param name="cssHasher">The css hasher</param>
+        /// <param name="imageHasher">The image Hasher.</param>
+        /// <param name="destinationDirectory">The destination Directory.</param>
+        /// <param name="relativeDestinationFiles">Relative destination files.</param>
         /// <param name="shouldHashCss">The should hash css.</param>
         /// <param name="shouldHashImages">The should hash images.</param>
-        /// <param name="destinationDirectory">The destination Directory.</param>
-        /// <param name="imageHasher">The image Hasher.</param>
-        /// <param name="cssHasher">The css hasher</param>
         /// <param name="shouldAssembleBackgroundImages">The should Assemble Background Images.</param>
         /// <returns>The <see cref="bool"/>.</returns>
-        private static bool RestoreAllFromCache(ICacheSection cacheSection, bool shouldHashCss, bool shouldHashImages, string destinationDirectory, FileHasherActivity imageHasher, FileHasherActivity cssHasher, bool shouldAssembleBackgroundImages)
+        private static bool RestoreAllFromCache(ICacheSection cacheSection, FileHasherActivity cssHasher, FileHasherActivity imageHasher, string destinationDirectory, IEnumerable<string> relativeDestinationFiles, bool shouldHashCss, bool shouldHashImages, bool shouldAssembleBackgroundImages)
         {
-            var cssContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.MinifiedCssResult);
-            if (cssContentItems == null)
+            var cssContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.MinifiedCssResult).FirstOrDefault();
+            if (cssContentItem == null)
             {
                 return false;
             }
 
             if (shouldHashCss)
             {
-                // Restore hashed css output
-                foreach (var cssContentItem in cssContentItems)
-                {
-                    cssHasher.AppendToWorkLog(cssContentItem);
-                    cssContentItem.WriteToRelativeHashedPath(destinationDirectory);
-                }
+                cssContentItem.WriteToRelativeHashedPath(destinationDirectory);
+                cssHasher.AppendToWorkLog(cssContentItem, relativeDestinationFiles);
             }
             else
             {
-                foreach (var cssContentItem in cssContentItems)
+                foreach (var relativeDestinationFile in relativeDestinationFiles)
                 {
                     // Restore css output
-                    cssContentItem.WriteToContentPath(destinationDirectory, true);
+                    cssContentItem.WriteTo(Path.Combine(destinationDirectory, relativeDestinationFile));
                 }
             }
 
@@ -269,13 +272,13 @@ namespace WebGrease.Activities
         }
 
         /// <summary>The minify css content item.</summary>
-        /// <param name="contentItem">The content item.</param>
-        /// <param name="shouldHashImages">The should hash images.</param>
         /// <param name="cacheSection">The cache section.</param>
+        /// <param name="contentItem">The content item.</param>
+        /// <param name="relativeDestinationFiles">The relative Destination Files.</param>
+        /// <param name="shouldHashImages">The should hash images.</param>
         /// <param name="shouldHashCss">The should hash css.</param>
-        /// <param name="destinationFile">The destination file.</param>
         /// <returns>The <see cref="bool"/>.</returns>
-        private bool MinifyCssContentItem(ContentItem contentItem, bool shouldHashImages, ICacheSection cacheSection, bool shouldHashCss, string destinationFile)
+        private bool MinifyCssContentItem(ICacheSection cacheSection, ContentItem contentItem, IEnumerable<string> relativeDestinationFiles, bool shouldHashImages, bool shouldHashCss)
         {
             // Get the content from file.
             var cssContent = contentItem.Content;
@@ -298,13 +301,6 @@ namespace WebGrease.Activities
                 // Hash all images that have not been sprited.
                 css = this.HashImages(css, cacheSection);
             }
-
-            var relativeDestinationFiles = 
-                    destinationFile
-                    .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(f => Path.IsPathRooted(f)
-                                                  ? f.MakeRelativeToDirectory(this.context.Configuration.DestinationDirectory)
-                                                  : f);
 
             if (shouldHashCss)
             {

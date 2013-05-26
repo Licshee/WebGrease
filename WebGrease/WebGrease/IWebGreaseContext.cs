@@ -110,5 +110,10 @@ namespace WebGrease
         /// <param name="contentItem">The content item.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         bool TemporaryIgnore(IFileSet fileSet, ContentItem contentItem);
+
+        /// <summary>The temporary ignore.</summary>
+        /// <param name="contentPivot">The content Pivot.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        bool TemporaryIgnore(ContentPivot contentPivot);
     }
 }

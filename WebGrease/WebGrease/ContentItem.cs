@@ -46,6 +46,24 @@ namespace WebGrease
             }
         }
 
+        /// <summary>Gets a value indicating whether is from disk.</summary>
+        public bool IsFromDisk
+        {
+            get
+            {
+                return this.ContentItemType == ContentItemType.Path;
+            }
+        }
+
+        /// <summary>Gets the absolute disk path.</summary>
+        public string AbsoluteDiskPath
+        {
+            get
+            {
+                return this.IsFromDisk ? this.AbsoluteContentPath : null;
+            }
+        }
+
         /// <summary>Gets the content.</summary>
         private string ContentValue { get; set; }
 
@@ -109,6 +127,8 @@ namespace WebGrease
                            ContentItemType = contentItem.ContentItemType,
                            ContentValue = contentItem.ContentValue,
                            Pivots = contentItem.Pivots,
+
+                           contentHash = contentItem.contentHash
                        };
         }
 

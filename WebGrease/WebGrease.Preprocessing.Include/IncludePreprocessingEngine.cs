@@ -16,8 +16,10 @@
 
 namespace WebGrease.Preprocessing.Include
 {
+    using System;
     using System.ComponentModel.Composition;
     using System.IO;
+    using System.Linq;
     using System.Text.RegularExpressions;
 
     using WebGrease.Configuration;
@@ -65,6 +67,19 @@ namespace WebGrease.Preprocessing.Include
         /// <returns>True if it can process it, otherwise false.</returns>
         public bool CanProcess(ContentItem contentItem, PreprocessingConfig preprocessConfig = null)
         {
+            if (preprocessConfig != null && preprocessConfig.Element != null)
+            {
+                var extensions = (string)preprocessConfig.Element.Attribute("wgincludeextensions")
+                              ?? (string)preprocessConfig.Element.Element("wgincludeextensions");
+
+                if (!string.IsNullOrWhiteSpace(extensions))
+                {
+                    return extensions
+                        .Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Any(wgIncludeExtension => contentItem.RelativeContentPath.EndsWith(wgIncludeExtension, StringComparison.OrdinalIgnoreCase));
+                }
+            }
+
             return true;
         }
 

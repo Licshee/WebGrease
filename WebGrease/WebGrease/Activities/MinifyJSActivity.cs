@@ -77,31 +77,33 @@ namespace WebGrease.Activities
                 contentItem = ContentItem.FromFile(this.SourceFile, Path.IsPathRooted(this.SourceFile) ? this.SourceFile.MakeRelativeToDirectory(destinationDirectory) : this.SourceFile);
             }
 
+            var relativeDestinationFiles = this.DestinationFile
+                                            .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
+                                            .Select(f => Path.IsPathRooted(f)
+                                                                            ? f.MakeRelativeToDirectory(this.context.Configuration.DestinationDirectory)
+                                                                            : f);
+
             this.context.SectionedAction(SectionIdParts.MinifyJsActivity)
                 .CanBeCached(contentItem, new { this.ShouldAnalyze, this.ShouldMinify, this.AnalyzeArgs })
                 .RestoreFromCacheAction(cacheSection =>
                 {
-                    var jsContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.MinifyJsResult);
-                    if (!jsContentItems.Any())
+                    var jsContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.MinifyJsResult).FirstOrDefault();
+                    if (jsContentItem == null)
                     {
                         return false;
                     }
 
                     if (this.FileHasher != null)
                     {
-                        // Restore hashed css output
-                        foreach (var jsContentItem in jsContentItems)
-                        {
-                            this.FileHasher.AppendToWorkLog(jsContentItem);
-                            jsContentItem.WriteToRelativeHashedPath(destinationDirectory);
-                        }
+                        jsContentItem.WriteToRelativeHashedPath(destinationDirectory);
+                        this.FileHasher.AppendToWorkLog(jsContentItem, relativeDestinationFiles);
                     }
                     else
                     {
-                        foreach (var jsContentItem in jsContentItems)
+                        foreach (var relativeDestinationFile in relativeDestinationFiles)
                         {
-                            // Restore css output
-                            jsContentItem.WriteToContentPath(destinationDirectory, true);
+                            // Restore js output
+                            jsContentItem.WriteTo(Path.Combine(destinationDirectory, relativeDestinationFile));
                         }
                     }
 
@@ -113,12 +115,10 @@ namespace WebGrease.Activities
                     var js = minifier.MinifyJavaScript(contentItem.Content, minifierSettings.JSSettings);
                     this.HandleMinifierErrors(minifier);
 
-                    var destinationFiles = this.DestinationFile.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
-
                     if (this.FileHasher != null)
                     {
                         // Write the result to disk using hashing.
-                        var hashResults = this.FileHasher.Hash(js, destinationFiles);
+                        var hashResults = this.FileHasher.Hash(js, relativeDestinationFiles);
                         foreach (var hashResult in hashResults)
                         {
                             cacheSection.AddResult(hashResult, CacheFileCategories.MinifyJsResult, true);
@@ -126,7 +126,7 @@ namespace WebGrease.Activities
                     }
                     else
                     {
-                        foreach (var destinationFile in destinationFiles)
+                        foreach (var destinationFile in relativeDestinationFiles)
                         {
                             // Write to the destination file on disk.
                             FileHelper.WriteFile(destinationFile, js);
@@ -230,7 +230,7 @@ namespace WebGrease.Activities
                 : this.MinifyArgs;
 
             // create a switch parser that starts with the default settings
-            // (ignore the CSS settings) and parse the switches on top of them
+            // (ignore the js settings) and parse the switches on top of them
             var switchParser = new SwitchParser(defaultJSSettings, null);
             switchParser.Parse(args);
 

@@ -149,40 +149,74 @@ namespace WebGrease.Preprocessing.Sass
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Is meant to catch all, if delete fails it is not important, it is in the temp folder.")]
         public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig)
         {
-            this.context.Log.Information("Sass: Processing contents for file {0}".InvariantFormat(contentItem.RelativeContentPath));
+            var relativeContentPath = contentItem.RelativeContentPath;
+            this.context.Log.Information("Sass: Processing contents for file {0}".InvariantFormat(relativeContentPath));
 
             this.context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass")
-                .CanBeCached(contentItem, preprocessingConfig)
                 .Execute(
-                    sassCacheImportsSection =>
+                    () =>
+                    {
+                        var sassCacheImportsSection = context.Cache.CurrentCacheSection;
+
+                        string fileToProcess = null;
+                        bool isTemp = false;
+                        try
                         {
-                            var tempFile = Path.GetTempFileName() + Path.GetExtension(contentItem.RelativeContentPath);
-                            try
+                            var workingDirectory = Path.IsPathRooted(relativeContentPath)
+                                                       ? Path.GetDirectoryName(relativeContentPath)
+                                                       : this.context.GetWorkingSourceDirectory(relativeContentPath);
+
+                            var content = ParseImports(contentItem.Content, workingDirectory, sassCacheImportsSection);
+
+                            var currentContentHash = context.GetValueHash(content);
+
+                            var contentIsUnchangedFromDisk = !string.IsNullOrWhiteSpace(contentItem.AbsoluteDiskPath)
+                                && File.Exists(contentItem.AbsoluteDiskPath)
+                                && context.GetFileHash(contentItem.AbsoluteDiskPath).Equals(currentContentHash);
+
+                            if (contentIsUnchangedFromDisk)
                             {
-                                var workingDirectory = Path.IsPathRooted(contentItem.RelativeContentPath)
-                                                           ? Path.GetDirectoryName(contentItem.RelativeContentPath)
-                                                           : this.context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);
-                                var content = ParseImports(contentItem.Content, workingDirectory, sassCacheImportsSection);
-                                File.WriteAllText(tempFile, content);
-                                content = ProcessFile(tempFile, workingDirectory, contentItem.RelativeContentPath, this.context);
-
-                                sassCacheImportsSection.Save();
-
-                                contentItem = content != null ? ContentItem.FromContent(content, contentItem) : null;
-
-                                return true;
+                                fileToProcess = contentItem.AbsoluteDiskPath;
                             }
-                            finally
+                            else if (!string.IsNullOrWhiteSpace(relativeContentPath))
+                            {
+                                fileToProcess = Path.Combine(this.context.Configuration.SourceDirectory ?? string.Empty, relativeContentPath);
+
+                                fileToProcess = Path.ChangeExtension(fileToProcess, ".generated" + Path.GetExtension(fileToProcess));
+                                relativeContentPath = Path.ChangeExtension(relativeContentPath, ".generated" + Path.GetExtension(relativeContentPath));
+
+                                if (!File.Exists(fileToProcess) || !context.GetFileHash(fileToProcess).Equals(currentContentHash))
+                                {
+                                    File.WriteAllText(fileToProcess, content);
+                                }
+                            }
+                            else
+                            {
+                                isTemp = true;
+                                fileToProcess = Path.GetTempFileName() + Path.GetExtension(relativeContentPath);
+                                File.WriteAllText(fileToProcess, content);
+                            }
+
+                            content = ProcessFile(fileToProcess, workingDirectory, relativeContentPath, this.context);
+
+                            contentItem = content != null ? ContentItem.FromContent(content, contentItem) : null;
+
+                            return true;
+                        }
+                        finally
+                        {
+                            if (isTemp && !string.IsNullOrWhiteSpace(fileToProcess))
                             {
                                 try
                                 {
-                                    File.Delete(tempFile);
+                                    File.Delete(fileToProcess);
                                 }
                                 catch (Exception)
                                 {
                                 }
                             }
-                        });
+                        }
+                    });
 
             return contentItem;
         }
@@ -251,9 +285,21 @@ namespace WebGrease.Preprocessing.Sass
                             : Directory.GetFiles(pathInfo.FullName);
 
             return
-                string.Join(
+                GetImportsComment(path, string.Empty)
+                + string.Join(
                     " ",
-                    files.Select(file => "@import \"{0}\";".InvariantFormat(MakeRelativePath(workingFolder, file).Replace("\\", "/"))));
+                    files
+                        .Select(file => MakeRelativePath(workingFolder, file))
+                        .Select(relativeFile => "\r\n{0}\r\n@import \"{1}\";".InvariantFormat(GetImportsComment(path, Path.GetFileName(relativeFile)), relativeFile.Replace("\\", "/"))));
+        }
+
+        /// <summary>Gets the imports comment.</summary>
+        /// <param name="path">The path.</param>
+        /// <param name="file">The file.</param>
+        /// <returns>The import comment string: /* SASS Imports: path : file */</returns>
+        private static string GetImportsComment(string path, string file)
+        {
+            return "/* #imports \"{0} \\{1}\" */".InvariantFormat(path, file);
         }
 
         /// <summary>

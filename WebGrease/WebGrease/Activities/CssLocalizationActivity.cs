@@ -90,15 +90,30 @@ namespace WebGrease.Activities
                         var localizedCss = ResourcesResolver.ExpandResourceKeys(css, groupedLocaleResource.Item2);
                         if (!groupedThemeResources.Any())
                         {
-                            var localePivots = groupedLocaleResource.Item1.Select(locale => new ContentPivot(locale)).ToArray();
-                            results.Add(ContentItem.FromContent(localizedCss, inputItem, localePivots));
+                            var localePivots = groupedLocaleResource.Item1
+                                .Select(locale => new ContentPivot(locale))
+                                .Where(p => !context.TemporaryIgnore(p))
+                                .ToArray();
+
+                            if (localePivots.Any())
+                            {
+                                results.Add(ContentItem.FromContent(localizedCss, inputItem, localePivots));
+                            }
                         }
 
                         foreach (var groupedThemeResource in groupedThemeResources)
                         {
                             var localizedAndthemedCss = ResourcesResolver.ExpandResourceKeys(localizedCss, groupedThemeResource.Item2);
-                            var localeAndThemePivots = groupedLocaleResource.Item1.SelectMany(locale => groupedThemeResource.Item1.Select(theme => new ContentPivot(locale, theme))).ToArray();
-                            results.Add(ContentItem.FromContent(localizedAndthemedCss, inputItem, localeAndThemePivots));
+                            var localeAndThemePivots = groupedLocaleResource.Item1
+                                .SelectMany(locale => groupedThemeResource.Item1
+                                    .Select(theme => new ContentPivot(locale, theme)))
+                                .Where(p => !context.TemporaryIgnore(p))
+                                .ToArray();
+
+                            if (localeAndThemePivots.Any())
+                            {
+                                results.Add(ContentItem.FromContent(localizedAndthemedCss, inputItem, localeAndThemePivots));
+                            }
                         }
                     }
                 }

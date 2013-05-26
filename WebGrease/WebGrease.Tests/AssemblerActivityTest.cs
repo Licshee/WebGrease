@@ -56,10 +56,10 @@ namespace WebGrease.Tests
             Assert.IsTrue(File.Exists(outputFilePath));
             var text = File.ReadAllText(outputFilePath);
             Assert.IsTrue(!string.IsNullOrWhiteSpace(text));
-            Assert.IsTrue(text.Contains("Stylesheet1.scss */"));
+            Assert.IsTrue(text.Contains("Stylesheet1.scss  */"));
             Assert.IsTrue(text.Contains("font-size: %MetroSdk.BaseFontSize%;"));
             Assert.IsTrue(text.Contains("@media screen and (min-width: %MetroSdk.Mq.MinWidth%) and (max-width: %MetroSdk.Mq.MaxWidth%) {"));
-            Assert.IsTrue(text.Contains("Stylesheet2.css */"));
+            Assert.IsTrue(text.Contains("Stylesheet2.css  */"));
             Assert.IsTrue(text.Contains(".asome {\r\n    color: blue;\r\n}"));
         }
 

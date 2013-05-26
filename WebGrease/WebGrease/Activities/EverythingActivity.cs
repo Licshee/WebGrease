@@ -215,7 +215,7 @@ namespace WebGrease.Activities
         /// <param name="destinationDirectoryName">The destination directory name.</param>
         /// <param name="destinationExtension">The destination Extension.</param>
         /// <returns>The destination files as a colon seperated list.</returns>
-        private static string GetDestinationFilePaths(ContentItem inputFile, string destinationDirectoryName, string destinationExtension)
+        private string GetDestinationFilePaths(ContentItem inputFile, string destinationDirectoryName, string destinationExtension)
         {
             if (inputFile.Pivots == null || !inputFile.Pivots.Any())
             {
@@ -225,6 +225,11 @@ namespace WebGrease.Activities
             var fileNames = new List<string>();
             foreach (var contentPivot in inputFile.Pivots)
             {
+                if (this.context.TemporaryIgnore(contentPivot))
+                {
+                    continue;
+                }
+
                 fileNames.Add(GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension, contentPivot));
             }
 
@@ -568,38 +573,41 @@ namespace WebGrease.Activities
             var successful = true;
 
             var sourceFile = inputFile.RelativeContentPath;
-            var destinationFiles = GetDestinationFilePaths(inputFile, CssDestinationDirectoryName, Strings.Css);
+            var destinationFiles = this.GetDestinationFilePaths(inputFile, CssDestinationDirectoryName, Strings.Css);
 
-            this.context.Log.Information("Css Minify start: " + destinationFiles + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
-
-            minifier.SourceFile = sourceFile;
-            minifier.DestinationFile = destinationFiles;
-
-            try
+            if (!destinationFiles.IsNullOrWhitespace())
             {
-                // execute the minifier on the css.
-                minifier.Execute(inputFile);
-            }
-            catch (Exception ex)
-            {
-                successful = false;
-                AggregateException aggEx;
+                this.context.Log.Information("Css Minify start: " + destinationFiles + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
 
-                if ((aggEx = ex as AggregateException) != null || ((ex.InnerException != null) && (aggEx = ex.InnerException as AggregateException) != null))
+                minifier.SourceFile = sourceFile;
+                minifier.DestinationFile = destinationFiles;
+
+                try
                 {
-                    // antlr can throw a blob of errors, so they need to be deduped to get the real set of errors
-                    // TODO: RTUIT: Save the actual content in a temp folder and point to it for errors.
-                    var errors = aggEx.CreateBuildErrors(sourceFile);
-                    foreach (var error in errors)
-                    {
-                        this.HandleError(error);
-                    }
+                    // execute the minifier on the css.
+                    minifier.Execute(inputFile);
                 }
-                else
+                catch (Exception ex)
                 {
-                    // Catch, record and display error
-                    // TODO: RTUIT: Save the actual content in a temp folder and point to it for errors.
-                    this.HandleError(ex, sourceFile);
+                    successful = false;
+                    AggregateException aggEx;
+
+                    if ((aggEx = ex as AggregateException) != null || ((ex.InnerException != null) && (aggEx = ex.InnerException as AggregateException) != null))
+                    {
+                        // antlr can throw a blob of errors, so they need to be deduped to get the real set of errors
+                        // TODO: RTUIT: Save the actual content in a temp folder and point to it for errors.
+                        var errors = aggEx.CreateBuildErrors(sourceFile);
+                        foreach (var error in errors)
+                        {
+                            this.HandleError(error);
+                        }
+                    }
+                    else
+                    {
+                        // Catch, record and display error
+                        // TODO: RTUIT: Save the actual content in a temp folder and point to it for errors.
+                        this.HandleError(ex, sourceFile);
+                    }
                 }
             }
 
@@ -636,19 +644,22 @@ namespace WebGrease.Activities
             foreach (var inputFile in inputFiles)
             {
                 var sourceFile = inputFile.RelativeContentPath;
-                var destinationFiles = GetDestinationFilePaths(inputFile, JsDestinationDirectoryName, Strings.JS);
-
-                minifier.DestinationFile = destinationFiles;
-
-                this.context.Log.Information("Js Minify start: " + sourceFile + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
-                try
+                var destinationFiles = this.GetDestinationFilePaths(inputFile, JsDestinationDirectoryName, Strings.JS);
+                if (!destinationFiles.IsNullOrWhitespace())
                 {
-                    minifier.Execute(inputFile);
-                }
-                catch (Exception ex)
-                {
-                    this.HandleError(ex, sourceFile);
-                    success = false;
+
+                    minifier.DestinationFile = destinationFiles;
+
+                    this.context.Log.Information("Js Minify start: " + sourceFile + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
+                    try
+                    {
+                        minifier.Execute(inputFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        this.HandleError(ex, sourceFile);
+                        success = false;
+                    }
                 }
             }
 

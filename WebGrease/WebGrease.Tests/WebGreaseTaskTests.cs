@@ -96,7 +96,7 @@ namespace WebGrease.Tests
             Assert.AreEqual(2, sassError.EndLineNumber);
             Assert.AreEqual(0, sassError.ColumnNumber);
             Assert.AreEqual(0, sassError.EndColumnNumber);
-            Assert.IsTrue(sassError.File.EndsWith("errorStylesheet.scss"));
+            Assert.IsTrue(sassError.File.EndsWith("errorStylesheet.generated.scss", StringComparison.OrdinalIgnoreCase));
             Assert.IsTrue(sassError.Message.Contains("SASS Syntax error"));
             Assert.IsTrue(sassError.Message.Contains("File to import not found or unreadable: vars.scss"));
         }
