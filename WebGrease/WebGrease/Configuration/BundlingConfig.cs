@@ -13,7 +13,7 @@ namespace WebGrease.Configuration
     /// <summary>
     /// BundlingConfig class.
     /// </summary>
-    public class BundlingConfig
+    public class BundlingConfig : INamedConfig
     {
         /// <summary>
         /// Creates a new instance of the BundlingConfig class.
@@ -37,8 +37,7 @@ namespace WebGrease.Configuration
              */
 
 
-            var nameAttribute = element.Attribute("config");
-            this.Name = nameAttribute != null ? nameAttribute.Value : string.Empty;
+            this.Name = (string)element.Attribute("config") ?? string.Empty;
 
             foreach (var descendant in element.Descendants())
             {

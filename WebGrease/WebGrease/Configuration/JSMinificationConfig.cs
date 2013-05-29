@@ -13,10 +13,10 @@ namespace WebGrease.Configuration
     /// <summary>
     /// Configuration for js-specific settings.
     /// </summary>
-    internal sealed class JsMinificationConfig
+    internal sealed class JsMinificationConfig : INamedConfig
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="JSConfiguration"/> class.
+        /// Initializes a new instance of the <see cref="JsMinificationConfig"/> class.
         /// </summary>
         public JsMinificationConfig()
         {
@@ -27,13 +27,13 @@ namespace WebGrease.Configuration
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="JSConfiguration"/> class.
+        /// Initializes a new instance of the <see cref="JsMinificationConfig"/> class.
         /// </summary>
-        /// <param name="jsConfigurationSetElement">element containing js config info</param>
-        internal JsMinificationConfig(XElement jsConfigurationSetElement)
+        /// <param name="element">element containing js config info</param>
+        internal JsMinificationConfig(XElement element)
             : this()
         {
-            Contract.Requires(jsConfigurationSetElement != null);
+            Contract.Requires(element != null);
             /* expect this format:
              <Minification name="Debug">
               <GlobalsToIgnore>jQuery</GlobalsToIgnore>
@@ -41,10 +41,9 @@ namespace WebGrease.Configuration
             </Minification>
              */
 
-            var nameAttribute = jsConfigurationSetElement.Attribute("config");
-            this.Name = nameAttribute != null ? nameAttribute.Value : string.Empty;
+            this.Name = (string)element.Attribute("config") ?? string.Empty;
 
-            foreach (var descendant in jsConfigurationSetElement.Descendants())
+            foreach (var descendant in element.Descendants())
             {
                 var name = descendant.Name.ToString();
                 var value = descendant.Value;
@@ -65,21 +64,15 @@ namespace WebGrease.Configuration
         }
 
         /// <summary>Gets or sets the name of the configuration.</summary>
-        internal string Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>Gets or sets a value indicating whether the set should be minified.</summary>
         internal bool ShouldMinify { get; set; }
 
-     
-
         /// <summary>Gets or sets the list of global variables to ignore.</summary>
         internal string GlobalsToIgnore { get; set; }
 
-        /// <summary>
-        /// Gets or sets the minification arguments
-        /// </summary>
+        /// <summary>Gets or sets the minification arguments</summary>
         internal string MinificationArugments { get; set; }
-
-      
     }
 }

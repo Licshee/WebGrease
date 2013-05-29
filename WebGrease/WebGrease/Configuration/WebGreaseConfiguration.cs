@@ -11,6 +11,7 @@ namespace WebGrease.Configuration
 {
     using System;
     using System.Collections.Generic;
+    using System.Configuration;
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Linq;
@@ -37,6 +38,10 @@ namespace WebGrease.Configuration
             this.JSFileSets = new List<JSFileSet>();
             this.DefaultLocales = new List<string>();
             this.DefaultThemes = new List<string>();
+            this.DefaultPreprocessing = new Dictionary<string, PreprocessingConfig>();
+            this.DefaultJSMinification = new Dictionary<string, JsMinificationConfig>();
+            this.DefaultSpriting = new Dictionary<string, CssSpritingConfig>();
+            this.DefaultCssMinification = new Dictionary<string, CssMinificationConfig>();
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
@@ -113,14 +118,14 @@ namespace WebGrease.Configuration
         }
 
         /// <summary>
-        /// The configuration type
-        /// </summary>
-        internal string ConfigType { get; private set; }
-
-        /// <summary>
         /// The source directory for all paths in configuration.
         /// </summary>
         public string SourceDirectory { get; set; }
+
+        /// <summary>
+        /// The configuration type
+        /// </summary>
+        internal string ConfigType { get; private set; }
 
         /// <summary>
         /// The destination directory where the static files should be generated.
@@ -135,12 +140,12 @@ namespace WebGrease.Configuration
         /// <summary>
         /// The directory within which the <see cref="ResourcesResolutionActivity"/> can find resource tokens meant to override any other tokens with.
         /// </summary>
-        internal string OverrideTokensDirectory { get; set; }
+        internal string OverrideTokensDirectory { get; private set; }
 
         /// <summary>
-        /// Gets or sets the root application directory.
+        /// Gets the root application directory.
         /// </summary>
-        internal string ApplicationRootDirectory { get; set; }
+        internal string ApplicationRootDirectory { get; private set; }
 
         /// <summary>
         /// The logs directory.
@@ -155,24 +160,24 @@ namespace WebGrease.Configuration
         /// <summary>
         /// The tools temp directory.
         /// </summary>
-        internal string ToolsTempDirectory { get; set; }
+        internal string ToolsTempDirectory { get; private set; }
 
         /// <summary>
         /// The path to the pre processing plugin assemblies
         /// </summary>
         internal string PreprocessingPluginPath { get; private set; }
 
-        /// <summary>Gets or sets the image directories to be used.</summary>
-        internal IList<string> ImageDirectories { get; set; }
+        /// <summary>Gets the image directories to be used.</summary>
+        internal IList<string> ImageDirectories { get; private set; }
 
-        /// <summary>Gets or sets the image extensions to be used.</summary>
+        /// <summary>Gets the image extensions to be used.</summary>
         internal IList<string> ImageExtensions { get; set; }
 
-        /// <summary>Gets or sets the css file sets to be used.</summary>
-        internal IList<CssFileSet> CssFileSets { get; set; }
+        /// <summary>Gets the css file sets to be used.</summary>
+        internal IList<CssFileSet> CssFileSets { get; private set; }
 
-        /// <summary>Gets or sets the javascript file sets to be used.</summary>
-        internal IList<JSFileSet> JSFileSets { get; set; }
+        /// <summary>Gets the javascript file sets to be used.</summary>
+        internal IList<JSFileSet> JSFileSets { get; private set; }
 
         /// <summary>Gets or sets the value that determines if webgrease measures it tasks.</summary>
         internal bool Measure { get; set; }
@@ -218,33 +223,53 @@ namespace WebGrease.Configuration
         private IDictionary<string, CssSpritingConfig> DefaultSpriting { get; set; }
 
         /// <summary>Gets or sets the default preprocessing configuration.</summary>
-        private PreprocessingConfig DefaultPreprocessing { get; set; }
+        private IDictionary<string, PreprocessingConfig> DefaultPreprocessing { get; set; }
 
-        /// <summary>
-        /// Gets the named configuration from the dictionary, or the first config if no name is passed or returns a default config if not found.
-        /// </summary>
-        /// <typeparam name="T">ConfigurationType to retrieve</typeparam>
-        /// <param name="configDictionary">Dictionary of config objects</param>
-        /// <param name="configName">Named configuration to find</param>
-        /// <returns>the configuration object.</returns>
-        internal static T GetNamedConfig<T>(IDictionary<string, T> configDictionary, string configName)
-            where T : new()
+        /// <summary>Get the default theme list</summary>
+        /// <param name="list">The list</param>
+        /// <param name="seperatedValues">The string with seperated values</param>
+        /// <param name="action">The action.</param>
+        internal static void AddSeperatedValues(IList<string> list, string seperatedValues, Func<string, string> action = null)
         {
-            T config;
-            bool nullConfig = configName.IsNullOrWhitespace();
-
-            // if the config name is blank, return the first config
-            if (configDictionary.Keys.Any() && nullConfig)
+            // if it's null or whitespace, ignore it
+            if (!string.IsNullOrWhiteSpace(seperatedValues))
             {
-                config = configDictionary[configDictionary.Keys.First()];
+                // split it by semicolons, ignore empty entries, and add them to the list
+                foreach (var theme in seperatedValues.Split(Strings.SemicolonSeparator, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var trimmedValue = theme.Trim();
+                    list.Add(action != null
+                        ? action(trimmedValue)
+                        : trimmedValue);
+                }
             }
-            else if (nullConfig || !configDictionary.TryGetValue(configName, out config))
-            {
-                // if the config is not found, use a default instance
-                config = new T();
-            }
+        }
 
-            return config;
+        /// <summary>The get config source elements.</summary>
+        /// <param name="parentElement">The parent element.</param>
+        /// <param name="parentFilePath">The parent file path.</param>
+        /// <param name="configSourceAction">The config source action</param>
+        internal static void ForEachConfigSourceElement(XElement parentElement, string parentFilePath, Action<XElement, string> configSourceAction)
+        {
+            var configSources = parentElement.Elements("ConfigSource").Select(e => (string)e).ToList();
+            configSources.Add((string)parentElement.Attribute("configSource"));
+            foreach (var configSource in configSources.Where(cs => !cs.IsNullOrWhitespace()))
+            {
+                var configSourceFile = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(parentFilePath), configSource));
+                if (!File.Exists(configSourceFile))
+                {
+                    throw new ConfigurationErrorsException("Configuration file not found: {0}, referenced in : {1}".InvariantFormat(configSourceFile, parentFilePath));
+                }
+
+                try
+                {
+                    configSourceAction(XDocument.Load(configSourceFile).Root, configSourceFile);
+                }
+                catch (Exception ex)
+                {
+                    throw new ConfigurationErrorsException("Could not load configuration file: {0}, references in {1}".InvariantFormat(configSource, parentFilePath), ex);
+                }
+            }
         }
 
         /// <summary>Validates the configuration.</summary>
@@ -266,7 +291,6 @@ namespace WebGrease.Configuration
                 // Only timeout of an hour makes sense, otherwise don't use cache.
                 this.CacheTimeout = MinimumCacheTimeout;
             }
-            
         }
 
         /// <summary>Expands and ensures a directory exists and creates it if enabled.</summary>
@@ -299,33 +323,71 @@ namespace WebGrease.Configuration
 
             return null;
         }
-        
+
         /// <summary>Parses the configurations segments.</summary>
         /// <param name="configurationFile">The configuration file.</param>
         private void Parse(string configurationFile)
         {
             var element = XElement.Load(configurationFile);
+            this.Parse(element, configurationFile);
+        }
 
-            var settingsElement = element.Descendants("Settings");
-            this.ParseSettings(settingsElement);
+        /// <summary>The parse.</summary>
+        /// <param name="element">The element.</param>
+        /// <param name="configurationFile">The configuration file.</param>
+        private void Parse(XElement element, string configurationFile)
+        {
+            this.ParseSettings(element.Descendants("Settings"), configurationFile);
 
             foreach (var cssFileSetElement in element.Descendants("CssFileSet"))
             {
-                var cssSet = new CssFileSet(cssFileSetElement, this.SourceDirectory, this.DefaultLocales, this.DefaultCssMinification, this.DefaultSpriting, this.DefaultThemes, this.DefaultPreprocessing);
-                this.CssFileSets.Add(cssSet);
+                this.CssFileSets.Add(
+                    new CssFileSet(
+                        cssFileSetElement,
+                        this.SourceDirectory,
+                        this.DefaultLocales,
+                        this.DefaultCssMinification,
+                        this.DefaultSpriting,
+                        this.DefaultThemes,
+                        this.DefaultPreprocessing,
+                        configurationFile));
             }
 
             foreach (var jsFileSetElement in element.Descendants("JsFileSet"))
             {
-                var jsFileSet = new JSFileSet(jsFileSetElement, this.SourceDirectory, this.DefaultLocales, this.DefaultJSMinification, this.DefaultPreprocessing);
-                this.JSFileSets.Add(jsFileSet);
+                this.JSFileSets.Add(
+                    new JSFileSet(
+                        jsFileSetElement,
+                        this.SourceDirectory,
+                        this.DefaultLocales,
+                        this.DefaultJSMinification,
+                        this.DefaultPreprocessing,
+                        configurationFile));
             }
         }
 
         /// <summary>Parses the settings xml elements.</summary>
-        /// <param name="settingsElement">The settings xml element.</param>
-        private void ParseSettings(IEnumerable<XElement> settingsElement)
+        /// <param name="settingsElements">The settings xml elements.</param>
+        /// <param name="configurationFile">The configuration file</param>
+        private void ParseSettings(IEnumerable<XElement> settingsElements, string configurationFile)
         {
+            foreach (var settingsElement in settingsElements.Where(e => e != null))
+            {
+                this.ParseSettings(settingsElement, configurationFile);
+            }
+        }
+
+        /// <summary>Parses the settings xml element.</summary>
+        /// <param name="settingsElement">The settings xml element.</param>
+        /// <param name="configurationFile">The configuration file</param>
+        private void ParseSettings(XElement settingsElement, string configurationFile)
+        {
+            if (settingsElement == null)
+            {
+                throw new ArgumentNullException("settingsElement");
+            }
+
+            ForEachConfigSourceElement(settingsElement, configurationFile, this.ParseSettings);
             foreach (var settingElement in settingsElement.Descendants())
             {
                 var settingName = settingElement.Name.ToString();
@@ -333,29 +395,11 @@ namespace WebGrease.Configuration
                 switch (settingName)
                 {
                     case "ImageDirectories":
-                        if (!string.IsNullOrWhiteSpace(settingValue))
-                        {
-                            foreach (
-                                var imageDirectory in
-                                    settingValue.Split(Strings.SemicolonSeparator, StringSplitOptions.RemoveEmptyEntries))
-                            {
-                                // Path.GetFullPath would make the path uniform taking alt directory separators into account
-                                this.ImageDirectories.Add(Path.GetFullPath(Path.Combine(this.SourceDirectory, imageDirectory)));
-                            }
-                        }
-
+                        AddSeperatedValues(this.ImageDirectories, settingValue, value => Path.GetFullPath(Path.Combine(this.SourceDirectory, value)));
                         break;
-                    case "ImageExtensions":
-                        if (!string.IsNullOrWhiteSpace(settingValue))
-                        {
-                            foreach (
-                                var imageExtension in
-                                    settingValue.Split(Strings.SemicolonSeparator, StringSplitOptions.RemoveEmptyEntries))
-                            {
-                                this.ImageExtensions.Add(imageExtension);
-                            }
-                        }
 
+                    case "ImageExtensions":
+                        AddSeperatedValues(this.ImageExtensions, settingValue);
                         break;
 
                     case "TokensDirectory":
@@ -368,120 +412,35 @@ namespace WebGrease.Configuration
 
                     case "Locales":
                         // get the default set of locales
-                        this.LoadDefaultLocales(settingValue);
+                        AddSeperatedValues(this.DefaultLocales, settingValue);
                         break;
 
                     case "Themes":
                         // get the default set of locales
-                        this.LoadDefaultThemes(settingValue);
+                        AddSeperatedValues(this.DefaultThemes, settingValue);
                         break;
 
                     case "CssMinification":
-                        // get the default CSS minification configuration
-                        this.LoadDefaultCssMinification(settingElement);
+                        // get and the default CSS minification configuration
+                        this.DefaultCssMinification.AddNamedConfig(new CssMinificationConfig(settingElement));
                         break;
 
                     case "Spriting":
                         // get the default CSS minification configuration
-                        this.LoadDefaultSpriting(settingElement);
+                        this.DefaultSpriting.AddNamedConfig(new CssSpritingConfig(settingElement));
                         break;
 
                     case "JsMinification":
                         // get the default JavaScript minification configuration
-                        this.LoadDefaultJSMinification(settingElement);
+                        this.DefaultJSMinification.AddNamedConfig(new JsMinificationConfig(settingElement));
                         break;
 
                     case "Preprocessing":
-                        // get the default JavaScript minification configuration
-                        this.DefaultPreprocessing = new PreprocessingConfig(settingElement);
+                        // get the default pre processing configuration
+                        this.DefaultPreprocessing.AddNamedConfig(new PreprocessingConfig(settingElement));
                         break;
                 }
             }
-        }
-
-        /// <summary>
-        /// Get the default theme list
-        /// </summary>
-        /// <param name="settingValue">settings string containing a semicolon-separate list of themes</param>
-        private void LoadDefaultThemes(string settingValue)
-        {
-            // if it's null or whitespace, ignore it
-            if (!string.IsNullOrWhiteSpace(settingValue))
-            {
-                // split it by semicolons, ignore empty entries, and add them to the list
-                foreach (var theme in settingValue.Split(Strings.SemicolonSeparator, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    this.DefaultThemes.Add(theme);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Get the default locales list
-        /// </summary>
-        /// <param name="settingValue">settings string containing a semicolon-separate list of locales</param>
-        private void LoadDefaultLocales(string settingValue)
-        {
-            // if it's null or whitespace, ignore it
-            if (!string.IsNullOrWhiteSpace(settingValue))
-            {
-                // split it by semicolons, ignore empty entries, and add them to the list
-                foreach (var locale in settingValue.Split(Strings.SemicolonSeparator, StringSplitOptions.RemoveEmptyEntries))
-                {
-                    this.DefaultLocales.Add(locale);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Get the default JavaScript Minification configuration collection
-        /// </summary>
-        /// <param name="element">XML element from the Settings section</param>
-        private void LoadDefaultJSMinification(XElement element)
-        {
-            // create a configuration object from the markup and set it in the dictionary.
-            // create the dictionary if it hasn't been created yet.
-            var configuration = new JsMinificationConfig(element);
-            if (this.DefaultJSMinification == null)
-            {
-                this.DefaultJSMinification = new Dictionary<string, JsMinificationConfig>(StringComparer.OrdinalIgnoreCase);
-            }
-
-            this.DefaultJSMinification[configuration.Name] = configuration;
-        }
-
-        /// <summary>
-        /// Get the default CSS Minification configuration collection
-        /// </summary>
-        /// <param name="element">XML element from the Settings section</param>
-        private void LoadDefaultCssMinification(XElement element)
-        {
-            // create a configuration object from the markup and set it in the dictionary.
-            // create the dictionary if it hasn't been created yet.
-            var miniConfig = new CssMinificationConfig(element);
-            if (this.DefaultCssMinification == null)
-            {
-                this.DefaultCssMinification = new Dictionary<string, CssMinificationConfig>(StringComparer.OrdinalIgnoreCase);
-            }
-
-            this.DefaultCssMinification[miniConfig.Name] = miniConfig;
-        }
-
-        /// <summary>
-        /// Get the default spriting configuration collection
-        /// </summary>
-        /// <param name="element">XML element from the Settings section</param>
-        private void LoadDefaultSpriting(XElement element)
-        {
-            // create a configuration object from the markup and set it in the dictionary.
-            // create the dictionary if it hasn't been created yet.
-            var miniConfig = new CssSpritingConfig(element);
-            if (this.DefaultSpriting == null)
-            {
-                this.DefaultSpriting = new Dictionary<string, CssSpritingConfig>(StringComparer.OrdinalIgnoreCase);
-            }
-
-            this.DefaultSpriting[miniConfig.Name] = miniConfig;
         }
     }
 }

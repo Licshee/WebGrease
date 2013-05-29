@@ -9,6 +9,7 @@ namespace WebGrease.Extensions
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Xml.Linq;
 
     using WebGrease.Configuration;
 
@@ -25,7 +26,7 @@ namespace WebGrease.Extensions
         /// <returns>The files for the input spec</returns>
         public static IEnumerable<string> GetFiles(this IEnumerable<InputSpec> inputs, string rootPath, LogManager log = null, bool throwWhenMissingAndNotOptional = false)
         {
-            return inputs.Where(_ => _ != null && !string.IsNullOrWhiteSpace(_.Path)).SelectMany(i => i.GetFiles(rootPath, log, throwWhenMissingAndNotOptional));
+            return inputs.Where(_ => _ != null && !String.IsNullOrWhiteSpace(_.Path)).SelectMany(i => i.GetFiles(rootPath, log, throwWhenMissingAndNotOptional));
         }
 
         /// <summary>Gets all the files for an input spec.</summary>
@@ -37,7 +38,7 @@ namespace WebGrease.Extensions
         public static IEnumerable<string> GetFiles(this InputSpec input, string rootPath = null, LogManager log = null, bool throwWhenMissingAndNotOptional = false)
         {
             var files = new List<string>();
-            var path = Path.Combine(rootPath ?? string.Empty, input.Path);
+            var path = Path.Combine(rootPath ?? String.Empty, input.Path);
             
             if (File.Exists(path))
             {
@@ -59,7 +60,7 @@ namespace WebGrease.Extensions
 
                 // Get and Add all files using the searchpattern and options
                 files.AddRange(
-                    Directory.EnumerateFiles(path, string.IsNullOrWhiteSpace(input.SearchPattern) ? "*.*" : input.SearchPattern, input.SearchOption)
+                    Directory.EnumerateFiles(path, String.IsNullOrWhiteSpace(input.SearchPattern) ? "*.*" : input.SearchPattern, input.SearchOption)
                              .OrderBy(name => name, StringComparer.OrdinalIgnoreCase));
 
                 if (log != null)
@@ -83,5 +84,17 @@ namespace WebGrease.Extensions
         }
 
         #endregion
+
+        internal static void AddInputSpecs(this IList<InputSpec> inputSpecs, string sourceDirectory, XElement element)
+        {
+            foreach (var inputElement in element.Descendants())
+            {
+                var input = new InputSpec(inputElement, sourceDirectory);
+                if (!string.IsNullOrWhiteSpace(input.Path))
+                {
+                    inputSpecs.Add(input);
+                }
+            }
+        }
     }
 }

@@ -16,17 +16,17 @@ namespace WebGrease.Configuration
     /// Expects a semi colon seperated list of preprocessor names as the Engines element.
     /// All the other values will be passed on to the preprocessors as configuration.
     /// </summary>
-    public class PreprocessingConfig
+    public class PreprocessingConfig : INamedConfig
     {
         #region Constructors and Destructors
 
+        /// <summary>Initializes a new instance of the <see cref="PreprocessingConfig"/> class.</summary>
         public PreprocessingConfig()
         {
             this.PreprocessingEngines = new Collection<string>();
         }
 
-        /// <summary>
-        /// Creates a ProProcessConfig object.
+        /// <summary>Initializes a new instance of the <see cref="PreprocessingConfig"/> class. 
         /// expect this format in the element:
         /// &lt;PreProcess&gt;
         ///  &lt;Engines&gt;engine1;engine2;engine3&lt;/Engines&gt;
@@ -40,13 +40,14 @@ namespace WebGrease.Configuration
         ///      SettingForEngine1="SomeValue"&gt;
         ///          &lt;SettingForEngine3&gt;Value3&lt;/SettingForEngine3&gt;
         /// &lt;/PreProcess&gt;
-        /// or any combination of the 2 above.
-        /// </summary>
+        /// or any combination of the 2 above.</summary>
         /// <param name="element">The element containing the configuration</param>
         public PreprocessingConfig(XElement element)
             : this()
         {
             Contract.Requires(element != null);
+
+            this.Name = (string)element.Attribute("config") ?? string.Empty;
 
             var preProcessors = (string)element.Element("Engines") ?? (string)element.Attribute("Engines");
             if (!string.IsNullOrWhiteSpace(preProcessors))
@@ -79,6 +80,9 @@ namespace WebGrease.Configuration
         /// The list of preprocessors to use
         /// </summary>
         public Collection<string> PreprocessingEngines { get; private set; }
+
+        /// <summary>Gets the name of the config.</summary>
+        public string Name { get; private set; }
 
         #endregion
     }

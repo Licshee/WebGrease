@@ -11,9 +11,13 @@ namespace WebGrease.Tests
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
+    using System.Xml.Linq;
+
     using Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WebGrease.Tests;
+    using WebGrease.Extensions;
 
     /// <summary>The web grease configuration root test.</summary>
     [TestClass]
@@ -24,6 +28,102 @@ namespace WebGrease.Tests
         /// information about and functionality for the current test run.
         /// </summary>
         public TestContext TestContext { get; set; }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Configuration)]
+        public void ConfigSourceTest()
+        {
+            var configurationFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\configsource.webgrease.config");
+            var configDirectory = Path.GetDirectoryName(configurationFile);
+            var config = new WebGreaseConfiguration(new FileInfo(configurationFile), null, configDirectory, configDirectory, configDirectory);
+
+            // global1.config
+            Assert.IsTrue(config.ImageDirectories.All(id => id.EndsWith("global1imagedirectories")));
+            Assert.IsTrue(config.ImageExtensions.Contains("global1imageextensions"));
+
+            // global2.config
+            Assert.AreEqual(config.TokensDirectory, "global2tokendirectory");
+
+            // global3.config
+            Assert.AreEqual(config.OverrideTokensDirectory, "global3overridetokendirectory");
+
+            // css fileset 1 - settings\css1.config
+            var cssfileset1 = config.CssFileSets[0];
+            Assert.IsNotNull(cssfileset1);
+            Assert.AreEqual(2, cssfileset1.Themes.Count());
+            Assert.IsTrue(cssfileset1.Themes.Contains("red"));
+            Assert.IsTrue(cssfileset1.Themes.Contains("blue"));
+            Assert.AreEqual(2, cssfileset1.Locales.Count());
+            Assert.IsTrue(cssfileset1.Locales.Contains("en-us"));
+            Assert.IsTrue(cssfileset1.Locales.Contains("fr-ca"));
+            
+            var debugMinification = cssfileset1.Minification.GetNamedConfig("deBUG");
+            var defaultMinification = cssfileset1.Minification.GetNamedConfig();
+            Assert.AreEqual(debugMinification, defaultMinification);
+            Assert.IsNotNull(debugMinification);
+            Assert.AreEqual("Debug", debugMinification.Name);
+            Assert.AreEqual(false, debugMinification.ShouldValidateLowerCase);
+
+            var releaseMinification = cssfileset1.Minification.GetNamedConfig("release");
+            Assert.AreNotEqual(debugMinification, releaseMinification);
+            Assert.AreEqual(true, releaseMinification.ShouldValidateLowerCase);
+
+            var defaultSpriting = cssfileset1.ImageSpriting.GetNamedConfig();
+            Assert.AreEqual(string.Empty, defaultSpriting.Name);
+            Assert.AreEqual(false, defaultSpriting.ShouldAutoSprite);
+
+            var releaseSpriting = cssfileset1.ImageSpriting.GetNamedConfig("Release");
+            Assert.AreEqual("Release", releaseSpriting.Name);
+            Assert.AreEqual(true, releaseSpriting.ShouldAutoSprite);
+
+            // css fileset 2 - settings\css2.config
+            var cssfileset2 = config.CssFileSets.FirstOrDefault(fs => fs.Output.Equals("cssfileset2.css"));
+            Assert.IsNotNull(cssfileset2);
+
+            Assert.AreEqual(2, cssfileset2.Themes.Count());
+            Assert.IsTrue(cssfileset2.Themes.Contains("themecss2a"));
+            Assert.IsTrue(cssfileset2.Themes.Contains("themecss2b"));
+
+            Assert.AreEqual(2, cssfileset2.Locales.Count());
+            Assert.IsTrue(cssfileset2.Locales.Contains("localecss2a"));
+            Assert.IsTrue(cssfileset2.Locales.Contains("localecss2b"));
+
+            var debugPreprocessing = cssfileset2.Preprocessing.GetNamedConfig("debug");
+            Assert.IsNotNull(debugPreprocessing);
+            Assert.IsNotNull(debugPreprocessing.Element);
+            Assert.AreEqual(debugPreprocessing.Element.Elements("Sass").Attributes("sourceMaps").Select(s => (bool?)s).FirstOrDefault(), true);
+            Assert.AreEqual("Debug", debugPreprocessing.Name);
+            Assert.AreEqual(1, debugPreprocessing.PreprocessingEngines.Count);
+            Assert.AreEqual("sass", debugPreprocessing.PreprocessingEngines[0]);
+            Assert.AreEqual(true, debugPreprocessing.Enabled);
+
+            var releasePreprocessing = cssfileset2.Preprocessing.GetNamedConfig("REleasE");
+            Assert.IsNotNull(releasePreprocessing);
+            Assert.IsNotNull(releasePreprocessing.Element);
+            Assert.IsNull(releasePreprocessing.Element.Elements("Sass").Attributes("sourceMaps").Select(s => (bool?)s).FirstOrDefault());
+            Assert.AreEqual("Release", releasePreprocessing.Name);
+            Assert.AreEqual(1, releasePreprocessing.PreprocessingEngines.Count);
+            Assert.AreEqual("sass", releasePreprocessing.PreprocessingEngines[0]);
+            Assert.AreEqual(true, releasePreprocessing.Enabled);
+
+            // js fileset 1 - settings\css1.config
+            var jsfileset1 = config.JSFileSets.FirstOrDefault(fs => fs.Output.Equals("jsfileset1.js"));
+            Assert.IsNotNull(jsfileset1);
+
+            Assert.AreEqual(2, jsfileset1.Locales.Count());
+            Assert.IsTrue(jsfileset1.Locales.Contains("jsinclude1"));
+            Assert.IsTrue(jsfileset1.Locales.Contains("jsinclude2"));
+
+            var debugJsMinification = jsfileset1.Minification.GetNamedConfig("DEBUG");
+            Assert.IsNotNull(debugJsMinification);
+            Assert.AreEqual("Debug", debugJsMinification.Name);
+            Assert.AreEqual("jQuery;Msn", debugJsMinification.GlobalsToIgnore);
+
+            var releaseJsMinification = jsfileset1.Minification.GetNamedConfig("release");
+            Assert.IsNotNull(releaseJsMinification);
+            Assert.AreEqual("Release", releaseJsMinification.Name);
+            Assert.AreEqual("jQuery2;Msn2", releaseJsMinification.GlobalsToIgnore);
+        }
 
         /// <summary>A test for WebGrease Configuration from an xml file</summary>
         [TestMethod]

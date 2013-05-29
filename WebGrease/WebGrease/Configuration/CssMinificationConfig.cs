@@ -14,7 +14,7 @@ namespace WebGrease.Configuration
     /// <summary>
     /// Configuration for CSS Minification settings.
     /// </summary>
-    internal class CssMinificationConfig
+    internal class CssMinificationConfig : INamedConfig
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CssMinificationConfig"/> class.
@@ -40,8 +40,7 @@ namespace WebGrease.Configuration
            </Minification>
             */
 
-            var nameAttribute = element.Attribute("config");
-            this.Name = nameAttribute != null ? nameAttribute.Value : string.Empty;
+            this.Name = (string)element.Attribute("config") ?? string.Empty;
 
             foreach (var descendant in element.Descendants())
             {
@@ -54,6 +53,7 @@ namespace WebGrease.Configuration
                         this.ShouldMinify = value.TryParseBool();
                         break;
                     case "ValidateLowerCase":
+                    case "ValidateForLowerCase": // Found some old tests that used this one, assume it is needed.
                         this.ShouldValidateLowerCase = value.TryParseBool();
                         break;
                     case "ExcludeProperties":
@@ -73,7 +73,7 @@ namespace WebGrease.Configuration
         /// <summary>
         /// Gets or sets the name for this config instance.
         /// </summary>
-        internal string Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>Gets or sets a value indicating whether the set should be minified.</summary>
         internal bool ShouldMinify { get; set; }

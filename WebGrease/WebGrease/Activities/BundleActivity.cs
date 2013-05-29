@@ -85,15 +85,16 @@ namespace WebGrease.Activities
             // processing pipeline per file set in the config
             foreach (var fileSet in fileSets)
             {
-                var setConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, this.context.Configuration.ConfigType);
-                if (setConfig.ShouldBundleFiles)
+                var configType = this.context.Configuration.ConfigType;
+                var bundleConfig = fileSet.Bundling.GetNamedConfig(configType);
+                if (bundleConfig.ShouldBundleFiles)
                 {
                     // for each file set (that isn't empty of inputs)
                     // bundle the files, however this can only be done on filesets that have an output value of a file (ie: has an extension)
                     var outputFile = Path.Combine(this.context.Configuration.DestinationDirectory, fileSet.Output);
 
                     this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString(), SectionIdParts.Process)
-                        .CanBeCached(fileSet, setConfig, true)
+                        .CanBeCached(fileSet, bundleConfig, true)
                         .RestoreFromCacheAction(this.RestoreBundleFromCache)
                         .Execute(fileSetCacheSection =>
                         {
@@ -103,9 +104,10 @@ namespace WebGrease.Activities
                                 return true;
                             }
 
+                            var preprocessingConfig = fileSet.Preprocessing.GetNamedConfig(configType);
                             assembler.OutputFile = outputFile;
                             assembler.Inputs.Clear();
-                            assembler.PreprocessingConfig = fileSet.Preprocessing;
+                            assembler.PreprocessingConfig = preprocessingConfig;
                             assembler.Inputs.AddRange(fileSet.InputSpecs);
                             var contentItem = assembler.Execute();
                             fileSetCacheSection.AddResult(contentItem, CacheFileCategories.AssemblerResult, true);

@@ -13,7 +13,7 @@ namespace WebGrease.Configuration
     /// <summary>
     /// Auto Renaming config class
     /// </summary>
-    public class AutoNameConfig
+    public class AutoNameConfig : INamedConfig
     {
         /// <summary>
         /// Creates a new instance of the AutoNameConfig class.
@@ -37,9 +37,7 @@ namespace WebGrease.Configuration
            </Autoname>
             */
 
-            var nameAttribute = element.Attribute("config");
-            this.Name = nameAttribute != null ? nameAttribute.Value : string.Empty;
-
+            this.Name = (string)element.Attribute("config") ?? string.Empty;
             foreach (var descendant in element.Descendants())
             {
                 var name = descendant.Name.ToString();

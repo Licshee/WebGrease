@@ -12,8 +12,10 @@ namespace WebGrease.Configuration
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
+    using System.Linq;
     using System.Xml.Linq;
     using WebGrease;
+    using WebGrease.Extensions;
 
     /// <summary>
     /// A set of js files that are defined together.
@@ -39,7 +41,7 @@ namespace WebGrease.Configuration
             this.AutoNaming = new Dictionary<string, AutoNameConfig>(StringComparer.OrdinalIgnoreCase);
             this.Bundling = new Dictionary<string, BundlingConfig>(StringComparer.OrdinalIgnoreCase);
             this.Validation = new Dictionary<string, JSValidationConfig>(StringComparer.OrdinalIgnoreCase);
-            this.Preprocessing = new PreprocessingConfig();
+            this.Preprocessing = new Dictionary<string, PreprocessingConfig>(StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -48,7 +50,7 @@ namespace WebGrease.Configuration
         /// <param name="defaultLocales">The default set of locales.</param>
         /// <param name="defaultMinification">The default set of minification configs.</param>
         /// <param name="defaultPreProcessing">The default pre processing config. </param>
-        internal JSFileSet(IList<string> defaultLocales, IDictionary<string, JsMinificationConfig> defaultMinification, PreprocessingConfig defaultPreProcessing)
+        internal JSFileSet(IList<string> defaultLocales, IDictionary<string, JsMinificationConfig> defaultMinification, IDictionary<string, PreprocessingConfig> defaultPreProcessing)
             : this()
         {
             // if we were given a default set of locales, add then to the list now
@@ -69,7 +71,14 @@ namespace WebGrease.Configuration
                 }
             }
 
-            this.Preprocessing = defaultPreProcessing;
+            // if we were given a default set of minification configs, copy them now
+            if (defaultPreProcessing != null && defaultPreProcessing.Count > 0)
+            {
+                foreach (var configuration in defaultPreProcessing.Keys)
+                {
+                    this.Preprocessing[configuration] = defaultPreProcessing[configuration];
+                }
+            }
         }
 
         /// <summary>
@@ -80,7 +89,9 @@ namespace WebGrease.Configuration
         /// <param name="defaultLocales">The default set of locales.</param>
         /// <param name="defaultMinification">The default set of minification configs.</param>
         /// <param name="defaultPreProcessing">The default pre processing config. </param>
-        internal JSFileSet(XElement jsFileSetElement, string sourceDirectory, IList<string> defaultLocales, IDictionary<string, JsMinificationConfig> defaultMinification, PreprocessingConfig defaultPreProcessing)
+        /// <param name="configurationFile"></param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Is not excessive")]
+        internal JSFileSet(XElement jsFileSetElement, string sourceDirectory, IList<string> defaultLocales, IDictionary<string, JsMinificationConfig> defaultMinification, IDictionary<string, PreprocessingConfig> defaultPreProcessing, string configurationFile)
             : this(defaultLocales, defaultMinification, defaultPreProcessing)
         {
             Contract.Requires(jsFileSetElement != null);
@@ -89,7 +100,11 @@ namespace WebGrease.Configuration
             var outputAttribute = jsFileSetElement.Attribute("output");
             this.Output = outputAttribute != null ? outputAttribute.Value : string.Empty;
 
-            foreach (var element in jsFileSetElement.Descendants())
+            var fileSetElements = jsFileSetElement.Descendants().ToList();
+            WebGreaseConfiguration.ForEachConfigSourceElement(jsFileSetElement, configurationFile, (element, s) => fileSetElements.AddRange(element.Descendants()));
+
+
+            foreach (var element in fileSetElements)
             {
                 var name = element.Name.ToString();
                 var value = element.Value;
@@ -99,23 +114,19 @@ namespace WebGrease.Configuration
                     case "Minification":
                         // generate a configuration and set it on the dictionary. If the name
                         // already exists, this clobbers it.
-                        var configuration = new JsMinificationConfig(element);
-                        this.Minification[configuration.Name] = configuration;
+                        this.Minification.AddNamedConfig(new JsMinificationConfig(element));
                         break;
                     case "Preprocessing":
-                        this.Preprocessing = new PreprocessingConfig(element);
+                        this.Preprocessing.AddNamedConfig(new PreprocessingConfig(element));
                         break;
                     case "Autoname":
-                        var autoNameConfig = new AutoNameConfig(element);
-                        this.AutoNaming[autoNameConfig.Name] = autoNameConfig;
+                        this.AutoNaming.AddNamedConfig(new AutoNameConfig(element));
                         break;
                     case "Bundling":
-                        var bundlingConfig = new BundlingConfig(element);
-                        this.Bundling[bundlingConfig.Name] = bundlingConfig;
+                        this.Bundling.AddNamedConfig(new BundlingConfig(element));
                         break;
                     case "Validation":
-                        var validateConfig = new JSValidationConfig(element);
-                        this.Validation[validateConfig.Name] = validateConfig;
+                        this.Validation.AddNamedConfig(new JSValidationConfig(element));
                         break;
                     case "Locales":
                         if (!this.usingFileSetLocales)
@@ -127,23 +138,11 @@ namespace WebGrease.Configuration
                             this.Locales.Clear();
                         }
 
-                        if (!string.IsNullOrWhiteSpace(value))
-                        {
-                            foreach (var locale in value.Split(Strings.SemicolonSeparator, StringSplitOptions.RemoveEmptyEntries))
-                            {
-                                this.Locales.Add(locale);
-                            }
-                        }
+                        WebGreaseConfiguration.AddSeperatedValues(this.Locales, value);
                         break;
+
                     case "Inputs":
-                        foreach (var inputElement in element.Descendants())
-                        {
-                            var input = new InputSpec(inputElement, sourceDirectory);
-                            if (!string.IsNullOrWhiteSpace(input.Path))
-                            {
-                                this.InputSpecs.Add(input);
-                            }
-                        }
+                        this.InputSpecs.AddInputSpecs(sourceDirectory, element);
                         break;
                 }
             }
@@ -156,7 +155,7 @@ namespace WebGrease.Configuration
         public IList<string> Locales { get; private set; }
 
         /// <summary>Gets the preprocessing configuration.</summary>
-        public PreprocessingConfig Preprocessing { get; private set; }
+        public IDictionary<string, PreprocessingConfig> Preprocessing { get; private set; }
 
         /// <summary>
         /// Gets the dictionary of auto naming configs

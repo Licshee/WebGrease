@@ -169,6 +169,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\INamedConfig.cs" />
     <Compile Include="DelayedLogManager.cs" />
     <Compile Include="Cache\CacheFileCategories.cs" />
     <Compile Include="Activities\CssLocalizationActivity.cs" />

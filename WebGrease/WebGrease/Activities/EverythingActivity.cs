@@ -456,8 +456,8 @@ namespace WebGrease.Activities
 
                         var jsFileSetResults = this.MinifyJs(
                             localizedJsFiles,
-                            WebGreaseConfiguration.GetNamedConfig(jsFileSet.Minification, configType),
-                            WebGreaseConfiguration.GetNamedConfig(jsFileSet.Validation, configType),
+                            jsFileSet.Minification.GetNamedConfig(configType),
+                            jsFileSet.Validation.GetNamedConfig(configType),
                             jsHasher);
 
                         if (!jsFileSetResults)
@@ -480,12 +480,13 @@ namespace WebGrease.Activities
         /// <returns>The resulting files.</returns>
         private IEnumerable<ContentItem> Bundle(IFileSet fileSet, string outputFile, FileTypes fileType, string configType)
         {
-            var bundleConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, configType);
+            var bundleConfig = fileSet.Bundling.GetNamedConfig(configType);
+            var preprocessingConfig = fileSet.Preprocessing.GetNamedConfig(this.context.Configuration.ConfigType);
 
             if (bundleConfig.ShouldBundleFiles)
             {
                 this.context.Log.Information("Bundling files.");
-                var resultFile = this.BundleFiles(fileSet.InputSpecs, outputFile, fileSet.Preprocessing, fileType);
+                var resultFile = this.BundleFiles(fileSet.InputSpecs, outputFile, preprocessingConfig, fileType);
                 if (resultFile == null)
                 {
                     // bundling failed
@@ -497,10 +498,10 @@ namespace WebGrease.Activities
                 return new[] { resultFile };
             }
 
-            if (fileSet.Preprocessing.Enabled)
+            if (preprocessingConfig != null && preprocessingConfig.Enabled)
             {
                 // bundling calls the preprocessor, so we need to do it seperately if there was no bundling.
-                return this.PreprocessFiles(this.preprocessingTempDirectory, fileSet.InputSpecs, fileSet.Preprocessing);
+                return this.PreprocessFiles(this.preprocessingTempDirectory, fileSet.InputSpecs, preprocessingConfig);
             }
 
             fileSet.InputSpecs.ForEach(this.context.Cache.CurrentCacheSection.AddSourceDependency);
@@ -519,8 +520,8 @@ namespace WebGrease.Activities
         /// <returns>The <see cref="MinifyCssActivity"/>.</returns>
         private MinifyCssActivity CreateCssMinifier(CssFileSet cssFileSet, FileHasherActivity cssHasher, FileHasherActivity imageHasher, IList<string> imageExtensions, IList<string> imageDirectories, string imagesDestinationDirectory)
         {
-            var cssConfig = WebGreaseConfiguration.GetNamedConfig(cssFileSet.Minification, this.context.Configuration.ConfigType);
-            var spritingConfig = WebGreaseConfiguration.GetNamedConfig(cssFileSet.ImageSpriting, this.context.Configuration.ConfigType);
+            var cssConfig = cssFileSet.Minification.GetNamedConfig(this.context.Configuration.ConfigType);
+            var spritingConfig = cssFileSet.ImageSpriting.GetNamedConfig(this.context.Configuration.ConfigType);
             var cssMinifier = new MinifyCssActivity(this.context)
                                   {
                                       ShouldAssembleBackgroundImages = spritingConfig.ShouldAutoSprite,

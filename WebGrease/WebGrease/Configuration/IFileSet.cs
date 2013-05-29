@@ -17,7 +17,7 @@ namespace WebGrease.Configuration
         IList<string> Locales { get; }
 
         /// <summary>Gets the preprocessing configuration.</summary>
-        PreprocessingConfig Preprocessing { get; }
+        IDictionary<string, PreprocessingConfig> Preprocessing { get; }
 
         /// <summary>
         /// Gets the dictionary of auto naming configs

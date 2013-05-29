@@ -17,7 +17,7 @@ namespace WebGrease.Configuration
     /// Configuration object for image spriting.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spriting", Justification="Despite FxCop, this is spelled correctly.")]
-    public class CssSpritingConfig
+    public class CssSpritingConfig : INamedConfig
     {
         /// <summary>
         /// Creates a new instance of the CssSpritingConfig class.
@@ -50,8 +50,7 @@ namespace WebGrease.Configuration
            </Spriting>
             */
 
-            var nameAttribute = element.Attribute("config");
-            this.Name = nameAttribute != null ? nameAttribute.Value : string.Empty;
+            this.Name = (string)element.Attribute("config") ?? string.Empty;
 
             foreach (var descendant in element.Descendants())
             {

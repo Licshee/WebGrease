@@ -92,7 +92,7 @@ namespace WebGrease
             foreach (var fileSet in context.Configuration.CssFileSets.Where(file => file.InputSpecs.Any()))
             {
                 // for each file set, get the configuration and setup the assembler object.
-                var spriteConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.ImageSpriting, context.Configuration.ConfigType);
+                var spriteConfig = fileSet.ImageSpriting.GetNamedConfig(context.Configuration.ConfigType);
 
                 if (spriteConfig.ShouldAutoSprite)
                 {
@@ -170,7 +170,7 @@ namespace WebGrease
                 hasher.LogFileName = Path.Combine(context.Configuration.LogsDirectory, Strings.CssLogFile);
                 foreach (var fileSet in context.Configuration.CssFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
                 {
-                    var cssConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Autonaming, context.Configuration.ConfigType);
+                    var cssConfig = fileSet.Autonaming.GetNamedConfig(context.Configuration.ConfigType);
 
                     if (cssConfig.ShouldAutoName)
                     {
@@ -207,7 +207,7 @@ namespace WebGrease
                 hasher.LogFileName = Path.Combine(context.Configuration.LogsDirectory, Strings.JsLogFile);
                 foreach (var fileSet in context.Configuration.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
                 {
-                    var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.AutoNaming, context.Configuration.ConfigType);
+                    var jsConfig = fileSet.AutoNaming.GetNamedConfig(context.Configuration.ConfigType);
 
                     if (jsConfig.ShouldAutoName)
                     {
@@ -249,7 +249,7 @@ namespace WebGrease
 
             foreach (var fileSet in context.Configuration.CssFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
             {
-                var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, context.Configuration.ConfigType);
+                var jsConfig = fileSet.Bundling.GetNamedConfig(context.Configuration.ConfigType);
 
                 if (jsConfig.ShouldBundleFiles)
                 {
@@ -287,7 +287,7 @@ namespace WebGrease
             foreach (var fileSet in context.Configuration.JSFileSets.Where(file => file.InputSpecs.Any() && !file.Output.IsNullOrWhitespace()))
 
             {
-                var cssConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Bundling, context.Configuration.ConfigType);
+                var cssConfig = fileSet.Bundling.GetNamedConfig(context.Configuration.ConfigType);
 
                 if (cssConfig.ShouldBundleFiles)
                 {
@@ -329,7 +329,7 @@ namespace WebGrease
 
             foreach (var fileSet in context.Configuration.JSFileSets.Where(set => set.InputSpecs.Any()))
             {
-                var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Validation, context.Configuration.ConfigType);
+                var jsConfig = fileSet.Validation.GetNamedConfig(context.Configuration.ConfigType);
 
                 if (jsConfig.ShouldAnalyze)
                 {
@@ -394,7 +394,7 @@ namespace WebGrease
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         private static void ProcessJsFileSet(MinifyJSActivity jsCruncher, JSFileSet fileSet, string configType, string baseOutputPath)
         {
-            var jsConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Minification, configType);
+            var jsConfig = fileSet.Minification.GetNamedConfig(configType);
 
             if (jsConfig.ShouldMinify)
             {
@@ -443,7 +443,7 @@ namespace WebGrease
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         private static void ProcessCssFileSet(MinifyCssActivity cssCruncher, CssFileSet fileSet, string configType, string baseOutputPath)
         {
-            var cssConfig = WebGreaseConfiguration.GetNamedConfig(fileSet.Minification, configType);
+            var cssConfig = fileSet.Minification.GetNamedConfig(configType);
 
             if (cssConfig.ShouldMinify)
             {

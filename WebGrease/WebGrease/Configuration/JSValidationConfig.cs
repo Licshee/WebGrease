@@ -13,7 +13,7 @@ namespace WebGrease.Configuration
     /// <summary>
     /// TODO: Update summary.
     /// </summary>
-    public class JSValidationConfig
+    public class JSValidationConfig : INamedConfig
     {
          /// <summary>
         /// Initializes a new instance of the <see cref="JSValidationConfig"/> class.
@@ -28,11 +28,11 @@ namespace WebGrease.Configuration
           /// <summary>
         /// Initializes a new instance of the <see cref="JSValidationConfig"/> class.
         /// </summary>
-        /// <param name="jsConfigurationSetElement">element containing js config info</param>
-        internal JSValidationConfig(XElement jsConfigurationSetElement)
+        /// <param name="element">element containing js config info</param>
+        internal JSValidationConfig(XElement element)
             : this()
         {
-            Contract.Requires(jsConfigurationSetElement != null);
+            Contract.Requires(element != null);
             /* expect this format:
              <Analyze name="Debug">
               <ShouldAnalyze>True</ShouldAnalyze>
@@ -40,10 +40,9 @@ namespace WebGrease.Configuration
             </Analyze>
              */
 
-            var nameAttribute = jsConfigurationSetElement.Attribute("config");
-            this.Name = nameAttribute != null ? nameAttribute.Value : string.Empty;
+            this.Name = (string)element.Attribute("config") ?? string.Empty;
 
-            foreach (var descendant in jsConfigurationSetElement.Descendants())
+            foreach (var descendant in element.Descendants())
             {
                 var name = descendant.Name.ToString();
                 var value = descendant.Value;
@@ -63,7 +62,7 @@ namespace WebGrease.Configuration
 
 
         /// <summary>Gets or sets the name of the configuration.</summary>
-        internal string Name { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the set should be validated.

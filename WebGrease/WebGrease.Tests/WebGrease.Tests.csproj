@@ -983,10 +983,26 @@
       <CompileStyle>Nested</CompileStyle>
       <DebugInfo>False</DebugInfo>
     </Content>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\configsource.webgrease.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\Settings\css3.config" />
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\Settings\global3.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\Settings\global2.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\Settings\css1.config" />
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\Settings\js1.config" />
     <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\sample1.webgrease.config">
       <SubType>Designer</SubType>
     </None>
     <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\Input\Debug\Configuration\withDefaults.webgrease.config" />
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\Settings\global1.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\Settings\css2.config" />
     <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\stylesheet2.css" />
     <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\base.scss">
       <Compile>False</Compile>
