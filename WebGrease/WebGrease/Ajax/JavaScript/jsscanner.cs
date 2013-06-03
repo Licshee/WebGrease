@@ -84,6 +84,8 @@ namespace Microsoft.Ajax.Utilities
 
         public bool StripDebugCommentBlocks { get; set; }
 
+        public bool SuppressErrors { get; set; }
+
         internal string Identifier
         {
             get
@@ -1258,6 +1260,19 @@ namespace Microsoft.Ajax.Utilities
                         c = GetChar(++m_currentPosition);
                     }
 
+                    // bad octal?
+                    if (char.IsDigit(c) && '7' < c)
+                    {
+                        // bad octal. Skip any other digits, throw an error, mark it has having issues
+                        m_literalIssues = true;
+                        while ('0' <= c && c <= '9')
+                        {
+                            c = GetChar(++m_currentPosition);
+                        }
+
+                        HandleError(JSError.BadNumericLiteral);
+                    }
+
                     // return the integer token with issues, which should cause it to be output
                     // as-is and not combined with other literals or anything.
                     m_literalIssues = true;
@@ -1297,7 +1312,7 @@ namespace Microsoft.Ajax.Utilities
                             break;
                         }
 
-                        exponent = true;
+                        exponent = noMoreDot = true;
                         token = JSToken.NumericLiteral;
                     }
                     else if ('+' == c || '-' == c)
@@ -1317,16 +1332,27 @@ namespace Microsoft.Ajax.Utilities
                 m_currentPosition++;
             }
 
+            // get the last character of the number
             c = GetChar(m_currentPosition - 1);
             if ('+' == c || '-' == c)
             {
+                // if it's a + or -, then it's not part of the number; back it up one
                 m_currentPosition--;
                 c = GetChar(m_currentPosition - 1);
             }
 
             if ('e' == c || 'E' == c)
             {
+                // if it's an e, it's not part of the number; back it up one
                 m_currentPosition--;
+                c = GetChar(m_currentPosition - 1);
+            }
+
+            if (token == JSToken.NumericLiteral && c == '.')
+            {
+                // if we thought this was a numeric value and not an integer, but the last
+                // value was the decimal point, treat it as an integer.
+                token = JSToken.IntegerLiteral;
             }
 
             // it is invalid for a numeric literal to be immediately followed by another
@@ -3006,7 +3032,11 @@ namespace Microsoft.Ajax.Utilities
             m_currentToken.EndPosition = m_currentPosition;
             m_currentToken.EndLinePosition = m_startLinePosition;
             m_currentToken.EndLineNumber = m_currentLine;
-            m_currentToken.HandleError(error);
+
+            if (!this.SuppressErrors)
+            {
+                m_currentToken.HandleError(error);
+            }
         }
 
         /// <summary>

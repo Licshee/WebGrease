@@ -97,11 +97,28 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
+                // if we don't have one yet, create a new one
                 if (m_globalScope == null)
                 {
                     m_globalScope = new GlobalScope(m_settings);
                 }
+
                 return m_globalScope;
+            }
+            set
+            {
+                // if we are setting the global scope, we are using a shared global scope.
+                m_globalScope = value;
+
+                // mark all existing child scopes as existing so we don't go through
+                // them again and re-optimize
+                if (m_globalScope != null)
+                {
+                    foreach (var childScope in m_globalScope.ChildScopes)
+                    {
+                        childScope.Existing = true;
+                    }
+                }
             }
         }
         private GlobalScope m_globalScope;
@@ -528,7 +545,7 @@ namespace Microsoft.Ajax.Utilities
 
                 // analyze the scope chain (also needed for hypercrunch)
                 // root to leaf (top down)
-                m_globalScope.AnalyzeScope();
+                GlobalScope.AnalyzeScope();
 
                 // if we want to crunch any names....
                 if (m_settings.LocalRenaming != LocalRenaming.KeepAll
@@ -537,7 +554,7 @@ namespace Microsoft.Ajax.Utilities
                     // then do a top-down traversal of the scope tree. For each field that had not
                     // already been crunched (globals and outers will already be crunched), crunch
                     // the name with a crunch iterator that does not use any names in the verboten set.
-                    m_globalScope.AutoRenameFields();
+                    GlobalScope.AutoRenameFields();
                 }
 
                 // if we want to evaluate literal expressions, do so now
@@ -558,7 +575,7 @@ namespace Microsoft.Ajax.Utilities
                 // we want to walk all the scopes to make sure that any generated
                 // variables that haven't been crunched have been assigned valid
                 // variable names that don't collide with any existing variables.
-                m_globalScope.ValidateGeneratedNames();
+                GlobalScope.ValidateGeneratedNames();
             }
 
             if (returnBlock.Parent != null)
@@ -884,17 +901,7 @@ namespace Microsoft.Ajax.Utilities
                         try
                         {
                             bool bAssign;
-                            // if this statement starts with a function within parens, we want to know now
-                            bool parenFunction = (m_currentToken.Token == JSToken.LeftParenthesis && PeekToken() == JSToken.Function);
                             statement = ParseUnaryExpression(out bAssign, false);
-                            if (statement != null && parenFunction)
-                            {
-                                FunctionObject functionObject = statement.LeftHandSide as FunctionObject;
-                                if (functionObject != null)
-                                {
-                                    functionObject.LeftHandFunctionExpression = true;
-                                }
-                            }
 
                             // look for labels
                             if (statement is Lookup && JSToken.Colon == m_currentToken.Token)
@@ -4413,9 +4420,12 @@ namespace Microsoft.Ajax.Utilities
                         }
                         else
                         {
-                            // check to see if we went overflow
+                            // if we went overflow or are not a number, then we will use the "Other"
+                            // primitive type so we don't try doing any numeric calcs with it. 
                             if (double.IsInfinity(doubleValue))
                             {
+                                // overflow
+                                // and if we ARE an overflow, report it
                                 ReportError(JSError.NumericOverflow, numericContext, true);
                             }
 
@@ -5467,8 +5477,9 @@ namespace Microsoft.Ajax.Utilities
 
         private JSToken PeekToken()
         {
-            // clone the scanner and get the next token
+            // clone the scanner, turn off any error reporting, and get the next token
             var clonedScanner = m_scanner.Clone();
+            clonedScanner.SuppressErrors = true;
             var peekToken = clonedScanner.ScanNextToken(false);
 
             // there are some tokens we really don't care about when we peek

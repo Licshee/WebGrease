@@ -35,6 +35,7 @@ namespace Microsoft.Ajax.Utilities.Configuration
         private const string PathAttributeName = "path";
         private const string EncodingAttributeName = "encoding";
         private const string TypeAttributeName = "type";
+        private const string OriginAttributeName = "origin";
         private const string MapPathAttributeName = "mappath";
         private const string SourceRootAttributeName = "sourceRoot";
         private const string SafeAttributeName = "safe";
@@ -346,6 +347,13 @@ namespace Microsoft.Ajax.Utilities.Configuration
                                     inputNode.Optional = optional;
                                 }
                                 break;
+
+                            case OriginAttributeName:
+                                // only supported value is "external" -- all others default to project
+                                inputNode.Origin = string.CompareOrdinal(reader.Value.ToUpperInvariant(), "EXTERNAL") == 0
+                                    ? SourceOrigin.External
+                                    : SourceOrigin.Project;
+                                break;
                         }
                     }
 
@@ -454,12 +462,36 @@ namespace Microsoft.Ajax.Utilities.Configuration
         public string Path { get; set; }
         public string EncodingName { get; set; }
         public bool Optional { get; set; }
+        public SourceOrigin Origin { get; set; }
     }
 
+    /// <summary>
+    /// Type of code to process
+    /// </summary>
     public enum CodeType
     {
+        /// <summary>Unknown - cannot tell from output, input, or hint</summary>
         Unknown = 0,
+
+        /// <summary>JavaScript source code</summary>
         JavaScript,
+
+        /// <summary>CSS Stylesheet source code</summary>
         StyleSheet,
+
+        /// <summary>A mix of input types; error condition</summary>
+        Mix,
+    }
+
+    /// <summary>
+    /// Source origin for the input file
+    /// </summary>
+    public enum SourceOrigin
+    {
+        /// <summary>Source file owned by the project</summary>
+        Project = 0,
+
+        /// <summary>Source file is external to the project</summary>
+        External,
     }
 }

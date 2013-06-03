@@ -16,6 +16,7 @@
 
 using System;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -172,6 +173,16 @@ namespace Microsoft.Ajax.Utilities
                     isSpecialNumeric = (double.IsNaN(doubleValue) || double.IsInfinity(doubleValue));
                 }
                 return isSpecialNumeric;
+            }
+        }
+
+        public bool IsOtherDecimal
+        {
+            get
+            {
+                return PrimitiveType == PrimitiveType.Other
+                    && Value != null
+                    && IsOnlyDecimalDigits(Value.ToString());
             }
         }
 
@@ -730,6 +741,14 @@ namespace Microsoft.Ajax.Utilities
 
             // otherwise this must be a string
             return Value.ToString();
+        }
+
+        private static bool IsOnlyDecimalDigits(string text)
+        {
+            // if text is null, return false. 
+            // Otherwise return true if ALL the characters are decimal digits, 
+            // or false is ANY ONE character isn't.
+            return text.IfNotNull(s => !s.Any(c => !char.IsDigit(c)));
         }
     }
 
