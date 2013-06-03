@@ -98,6 +98,8 @@ namespace WebGrease.Activities
                         .RestoreFromCacheAction(this.RestoreBundleFromCache)
                         .Execute(fileSetCacheSection =>
                         {
+                            fileSet.LoadedConfigurationFiles.ForEach(fileSetCacheSection.AddSourceDependency);
+
                             if (Path.GetExtension(outputFile).IsNullOrWhitespace())
                             {
                                 Console.WriteLine(ResourceStrings.InvalidBundlingOutputFile, outputFile);
@@ -109,6 +111,7 @@ namespace WebGrease.Activities
                             assembler.Inputs.Clear();
                             assembler.PreprocessingConfig = preprocessingConfig;
                             assembler.Inputs.AddRange(fileSet.InputSpecs);
+                            assembler.MinimalOutput = bundleConfig.MinimalOutput;
                             var contentItem = assembler.Execute();
                             fileSetCacheSection.AddResult(contentItem, CacheFileCategories.AssemblerResult, true);
 

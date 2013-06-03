@@ -49,7 +49,11 @@ namespace WebGrease.Configuration
 
             this.Name = (string)element.Attribute("config") ?? string.Empty;
 
-            var preProcessors = (string)element.Element("Engines") ?? (string)element.Attribute("Engines");
+            var preProcessors = 
+                (string)element.Element("Engines") 
+                ?? (string)element.Attribute("Engines")
+                ?? (string)element.Attribute("engines");
+
             if (!string.IsNullOrWhiteSpace(preProcessors))
             {
                 foreach (var preProcessor in preProcessors.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))

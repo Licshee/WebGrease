@@ -11,7 +11,6 @@ namespace WebGrease
     using System.Linq;
 
     using WebGrease.Configuration;
-    using WebGrease.Css.Extensions;
     using WebGrease.Extensions;
 
     /// <summary>The cache manager.</summary>
@@ -80,6 +79,7 @@ namespace WebGrease
             }
         }
 
+        /// <summary>Gets the loaded cache sections.</summary>
         public IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections
         {
             get
@@ -96,31 +96,27 @@ namespace WebGrease
         /// <param name="category">The category.</param>
         /// <param name="contentItem">The result file.</param>
         /// <param name="settings">The settings.</param>
-        /// <param name="cacheVarByFileSet">The cache Var By File Set.</param>
-        /// <param name="cacheIsSkipable">The cache Is Skipable.</param>
+        /// <param name="cacheVaryByFileSet">The cache Var By File Set.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVarByFileSet = null, bool cacheIsSkipable = false)
+        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVaryByFileSet = null)
         {
             return this.currentCacheSection = CacheSection.Begin(
                 this.context, 
                 category, 
                 cs =>
                     {
-                        bool hasOverridables = false;
                         if (contentItem != null)
                         {
                             cs.VaryByContentItem(contentItem);
                             cs.VaryBySettings(contentItem.Pivots);
-                            hasOverridables |= contentItem.Pivots != null && contentItem.Pivots.Any();
                         }
 
-                        if (cacheVarByFileSet != null)
+                        if (cacheVaryByFileSet != null)
                         {
-                            cs.VaryBySettings(cacheVarByFileSet);
-                            hasOverridables = true;
+                            cs.VaryBySettings(cacheVaryByFileSet);
                         }
 
-                        if (hasOverridables && context.Configuration.Overrides != null)
+                        if (context.Configuration.Overrides != null)
                         {
                             cs.VaryBySettings(context.Configuration.Overrides.UniqueKey);
                         }

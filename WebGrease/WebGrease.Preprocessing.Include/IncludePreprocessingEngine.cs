@@ -96,11 +96,13 @@ namespace WebGrease.Preprocessing.Include
         /// </summary>
         /// <param name="contentItem">The content of the file.</param>
         /// <param name="preprocessingConfig">The pre processing configuration</param>
+        /// <param name="minimalOutput">Is the goal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The processed contents or null of an error occurred.</returns>
-        public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig)
+        public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig, bool minimalOutput)
         {
+            var settingsMinimalOutput = preprocessingConfig != null && preprocessingConfig.Element != null && (bool?)preprocessingConfig.Element.Attribute("minimalOutput") == true;
             this.context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude")
-            .CanBeCached(contentItem, false)
+            .CanBeCached(contentItem, new { minimalOutput })
             .Execute(wgincludeCacheImportsSection =>
             {
                 var workingFolder = this.context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);
@@ -110,7 +112,7 @@ namespace WebGrease.Preprocessing.Include
                     return true;
                 }
 
-                content = IncludeRegex.Replace(content, match => ReplaceInputs(match, workingFolder, wgincludeCacheImportsSection));
+                content = IncludeRegex.Replace(content, match => ReplaceInputs(match, workingFolder, wgincludeCacheImportsSection, minimalOutput || settingsMinimalOutput));
                 contentItem = ContentItem.FromContent(content, contentItem);
                 return true;
             });
@@ -122,8 +124,9 @@ namespace WebGrease.Preprocessing.Include
         /// <param name="match">The regex match</param>
         /// <param name="workingFolder">The working folder from which to determine relative path's in the include.</param>
         /// <param name="cacheSection">The cache Section.</param>
+        /// <param name="minimalOutput">Is the goal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The contents of the file to replace, with a /* WGINCLUDE [fullFilePath] */ header on top.</returns>
-        private static string ReplaceInputs(Match match, string workingFolder, ICacheSection cacheSection)
+        private static string ReplaceInputs(Match match, string workingFolder, ICacheSection cacheSection, bool minimalOutput)
         {
             var fileOrPath = Path.Combine(workingFolder, match.Groups["fileOrPath"].Value.Trim());
             var inputSpec = new InputSpec { IsOptional = true, Path = fileOrPath };
@@ -137,7 +140,11 @@ namespace WebGrease.Preprocessing.Include
             var result = string.Empty;
             foreach (var file in inputSpec.GetFiles())
             {
-                result += "/* WGINCLUDE: {0} */\r\n".InvariantFormat(file);
+                if (!minimalOutput)
+                {
+                    result += "/* WGINCLUDE: {0} */\r\n".InvariantFormat(file);
+                }
+
                 result += File.ReadAllText(file) + "\r\n";
             }
 

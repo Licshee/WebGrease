@@ -31,6 +31,127 @@ namespace Microsoft.WebGrease.Tests
 
         [TestMethod]
         [TestCategory(TestCategories.Caching)]
+        [TestCategory(TestCategories.Hashing)]
+        [TestCategory(TestCategories.WebGreaseTask)]
+        [TestCategory(TestCategories.EverythingActivity)]
+        public void CacheImageHashing()
+        {
+            var testRoot = GetTestRoot(@"WebGrease.Tests\PerformanceTests\TmxSdk");
+            const string ConfigType = "Release";
+            const string TaskName = "EVERYTHING";
+
+            var allPreExecute = new Action<WebGreaseTask, string>((wgt, output) =>
+            {
+                wgt.Measure = true;
+                wgt.RootOutputPath = Path.Combine(wgt.ApplicationRootPath, output);
+                wgt.CacheRootPath = Path.Combine(wgt.ApplicationRootPath, "cache_ih");
+                wgt.CacheEnabled = true;
+                wgt.ConfigurationPath = Path.Combine(wgt.ApplicationRootPath, "Config_imageHashing");
+            });
+
+            var lastImgPath = string.Empty;
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt)=>allPreExecute(wgt, "output_ih1"),
+                buildTask =>
+                {
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.ImageHash));
+
+                    var imgPath = lastImgPath = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Blue.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNotNull(imgPath);
+                    Assert.IsTrue(File.Exists(imgPath));
+
+                    var imgPath2 = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Green.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNotNull(imgPath2);
+                    Assert.IsTrue(File.Exists(imgPath2));
+                    Assert.IsTrue(imgPath2.EndsWith(".gif"));
+                    Assert.AreEqual(WebGreaseContext.ComputeFileHash(imgPath2), WebGreaseContext.ComputeFileHash(Path.Combine(buildTask.RootInputPath, "Images/Core/msnLogo/MSN_Green.gif")));
+
+                    var imgPathNo = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_SomeOtherColor.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNull(imgPathNo);
+                });
+            
+            // new output path
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih2"),
+                buildTask =>
+                {
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.ImageHash));
+                    var imgPath = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Blue.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNotNull(imgPath);
+                    Assert.IsTrue(File.Exists(imgPath));
+                    Assert.AreEqual(WebGreaseContext.ComputeFileHash(imgPath), WebGreaseContext.ComputeFileHash(lastImgPath));
+
+
+                    lastImgPath = imgPath;
+                });
+
+            // delete log file
+            File.Delete(Path.Combine(testRoot, "output_ih2\\statics\\images_log.xml"));
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih2"),
+                buildTask =>
+                {
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.ImageHash));
+                    var imgPath = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Blue.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNotNull(imgPath);
+                    Assert.IsTrue(File.Exists(imgPath));
+                    Assert.AreEqual(WebGreaseContext.ComputeFileHash(imgPath), WebGreaseContext.ComputeFileHash(lastImgPath));
+                });
+
+            // delete image file
+            File.Delete(lastImgPath);
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih2"),
+                buildTask =>
+                {
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.ImageHash));
+                    var imgPath = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Blue.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNotNull(imgPath);
+                    Assert.IsTrue(File.Exists(imgPath));
+                    Assert.AreEqual(WebGreaseContext.ComputeFileHash(imgPath), WebGreaseContext.ComputeFileHash(lastImgPath));
+                });
+
+            // Delete image source
+            File.Delete(Path.Combine(testRoot, "input\\images\\core\\msnlogo\\MSN_Blue.gif"));
+            
+            // Delete the static log as well, needs to because the build it is set to incremental.
+            File.Delete(Path.Combine(testRoot, "output_ih2\\statics\\images_log.xml"));
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih2"),
+                buildTask =>
+                {
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.ImageHash));
+                    var imgPath = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Blue.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNull(imgPath);
+                    
+                    var imgPath2 = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Green.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNotNull(imgPath2);
+                    Assert.IsTrue(File.Exists(imgPath2));
+                });
+
+            // Add another image as deleted one.
+            File.Copy(Path.Combine(testRoot, "input\\images\\PhotoGalleryIcon_2x.png"), Path.Combine(testRoot, "input\\images\\core\\msnlogo\\MSN_Blue.gif"), true);
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih2"),
+                buildTask =>
+                {
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.ImageHash));
+                    var imgPath = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Blue.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNotNull(imgPath);
+                    Assert.AreNotEqual(imgPath, lastImgPath);
+
+                    lastImgPath = imgPath;
+                });
+
+            // Change the image
+            File.Copy(Path.Combine(testRoot, "input\\images\\PhotoGalleryIcon_1x.png"), Path.Combine(testRoot, "input\\images\\core\\msnlogo\\MSN_Blue.gif"), true);
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih2"),
+                buildTask =>
+                {
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.ImageHash));
+                    var imgPath = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Blue.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
+                    Assert.IsNotNull(imgPath);
+                    Assert.AreNotEqual(imgPath, lastImgPath);
+                });
+
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.Caching)]
         [TestCategory(TestCategories.WebGreaseTask)]
         [TestCategory(TestCategories.EverythingActivity)]
         public void CacheUpdateTest()
@@ -73,13 +194,6 @@ namespace Microsoft.WebGrease.Tests
             // First clean run, everything should be hit and everything should output.
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
                     {
-                        var dgmlFiles = Directory.GetFiles(buildTask.RootOutputPath, "*.dgml");
-                        foreach (string dgmlFile in dgmlFiles)
-                        {
-                            var fi = new FileInfo(dgmlFile);
-                            File.Copy(dgmlFile, new DirectoryInfo(buildTask.RootOutputPath + "..\\..\\..\\..\\..\\..\\..\\").FullName + fi.Name, true);
-                        }
-
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should be run");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Pre-cache run should be spriting");
                         Assert.IsTrue(HasExecuted(buildTask, 1, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly), "Pre-cache run should only be assembling once, since the image are the same for all themes/locales.");
@@ -87,7 +201,7 @@ namespace Microsoft.WebGrease.Tests
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Pre-cache  run should have css filesets");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Pre-cache  run should have js filesets");
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly), "Should be doing sprite assembling");
-                        
+
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity));
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Parse));
 
@@ -123,6 +237,15 @@ namespace Microsoft.WebGrease.Tests
                         Assert.IsTrue(outputjs1.Contains("function test1b()"));
                         Assert.IsTrue(outputjs1.Contains("function test1ainclude()"));
                         Assert.IsTrue(outputjs1.Contains("function include1()"));
+
+                        Assert.IsNotNull(GetOutputFile(buildTask, "js", "test2", "generic-generic"));
+                        Assert.IsNotNull(GetOutputFile(buildTask, "js", "test3", "generic-generic"));
+
+                        Assert.IsNotNull(GetOutputFile(buildTask, "css", "test2", "generic-generic", "Theme1"));
+                        Assert.IsNotNull(GetOutputFile(buildTask, "css", "test3", "generic-generic", "Theme1"));
+
+                        Assert.IsNotNull(GetOutputFile(buildTask, "css", "test2", "generic-generic", "Theme2"));
+                        Assert.IsNotNull(GetOutputFile(buildTask, "css", "test3", "generic-generic", "Theme2"));
                     });
 
             // ----------------------------------------------------------------------------------------
@@ -150,14 +273,21 @@ namespace Microsoft.WebGrease.Tests
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Process));
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Parse));
 
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet));
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet));
                 var outputscss2 = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 var outputjs2 = GetOutputContent(buildTask, "js", "test1", "generic-generic");
 
                 // Verify outputs are the same after doing an incremental build.
                 Assert.AreEqual(outputscss1, outputscss2);
                 Assert.AreEqual(outputjs1, outputjs2);
+
+                Assert.IsNotNull(GetOutputFile(buildTask, "js", "test2", "generic-generic"));
+                Assert.IsNotNull(GetOutputFile(buildTask, "js", "test3", "generic-generic"));
+
+                Assert.IsNotNull(GetOutputFile(buildTask, "css", "test2", "generic-generic", "Theme1"));
+                Assert.IsNotNull(GetOutputFile(buildTask, "css", "test3", "generic-generic", "Theme1"));
+
+                Assert.IsNotNull(GetOutputFile(buildTask, "css", "test2", "generic-generic", "Theme2"));
+                Assert.IsNotNull(GetOutputFile(buildTask, "css", "test3", "generic-generic", "Theme2"));
             });
 
             Func<string, string> logFileChange = logFileContent => logFileContent.Replace("/output2/", "/output/");
@@ -353,10 +483,14 @@ namespace Microsoft.WebGrease.Tests
 
         private static string GetOutputContent(WebGreaseTask postExecuteBuildTask, string type, string name, string locale, string theme = null)
         {
-            return File.ReadAllText(GetOutputFile(postExecuteBuildTask, type, name, locale, theme));
+            var outputFile = GetOutputFile(postExecuteBuildTask, type, name, locale, theme);
+            return
+                outputFile == null
+                    ? null
+                    : File.ReadAllText(outputFile);
         }
 
-        private static string GetOutputFile(WebGreaseTask postExecuteBuildTask, string type, string name, string locale, string theme)
+        private static string GetOutputFile(WebGreaseTask postExecuteBuildTask, string type, string name, string locale, string theme = null)
         {
             var file = "/" + locale + "/" + type + "/";
             if (theme != null)
@@ -378,12 +512,14 @@ namespace Microsoft.WebGrease.Tests
         private static string GetHashedFile(WebGreaseTask postExecuteBuildTask, string type, string file, string relativePath = null)
         {
             var doc = XDocument.Load(Path.Combine(postExecuteBuildTask.RootOutputPath, "statics", type + "_log.xml"));
-            var fileElement = doc.Root.Elements("File").FirstOrDefault(e => e.Elements("Input").Any(i => ((string)i).Equals(file, StringComparison.OrdinalIgnoreCase)));
+            var output = doc.Root.Elements("File")
+                .Where(e => e.Elements("Input").Any(i => ((string)i).Equals(file, StringComparison.OrdinalIgnoreCase)))
+                .Select(e => ((string)e.Element("Output")).Trim('/').NormalizeUrl())
+                .FirstOrDefault();
 
-            var normalizeUrl = ((string)fileElement.Element("Output")).Trim('/').NormalizeUrl();
-
-            var hashedFile = Path.Combine(relativePath ?? postExecuteBuildTask.ApplicationRootPath, normalizeUrl);
-            return hashedFile;
+            return output.IsNullOrWhitespace()
+                ? null
+                : Path.GetFullPath(Path.Combine(relativePath ?? postExecuteBuildTask.ApplicationRootPath, output));
         }
 
         private static bool HasExecuted(WebGreaseTask postExecuteBuildTask, params string[] idParts)
@@ -414,27 +550,27 @@ namespace Microsoft.WebGrease.Tests
 
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
-                    {
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
-                    });
+                {
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
+                });
 
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
-                    {
-                        Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should not be minifying js");
-                        Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should not have a jsfileset");
-                    });
+                {
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should not be minifying js");
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should not have a jsfileset");
+                });
 
             ExecuteBuildTask("CLEANDESTINATION", testRoot, "Release", preExecute, task => { });
             ExecuteBuildTask("CLEANCACHE", testRoot, "Release", preExecute, task => { });
 
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
-                    {
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
-                    });
+                {
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
+                });
         }
 
         [TestMethod]
@@ -455,25 +591,24 @@ namespace Microsoft.WebGrease.Tests
 
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
-                    {
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
-                    });
+                {
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
+                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
+                });
 
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
-                    {
-                        Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should not be minifying js");
-                        Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should not have a jsfileset");
-                    });
+                {
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should not be minifying js");
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should not have a jsfileset");
+                });
 
             ExecuteBuildTask("CLEANDESTINATION", testRoot, "Release", preExecute, task => { });
             ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
                 buildTask =>
-                    {
-                        Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should have a jsfileset");
-                    });
+                {
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
+                });
         }
 
         [TestMethod]
@@ -493,15 +628,8 @@ namespace Microsoft.WebGrease.Tests
             double measure2 = int.MaxValue / 2;
             double measure3 = int.MaxValue;
 
-            var commonPreBuildTask = new Action<WebGreaseTask>((buildTask) =>
-                {
-                    buildTask.OverrideLocales = "";
-                    buildTask.OverrideThemes = "";
-                });
-
             Action<WebGreaseTask> preExecute1 = buildTask =>
                 {
-                    commonPreBuildTask(buildTask);
                     buildTask.RootOutputPath = Path.Combine(buildTask.ApplicationRootPath, "output1");
                     buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp1");
                     buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache");
@@ -517,6 +645,14 @@ namespace Microsoft.WebGrease.Tests
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Pre-cache  run should have any css filesets");
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Pre-cache  run should have any js filesets");
                     measure1 = buildTask.MeasureResults.Sum(m => m.Duration);
+
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c2", "generic-generic"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c", "generic-generic"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c3", "generic-generic"));
+
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage3.core", "generic-generic", "Resolution1X"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage2.core", "generic-generic", "Resolution1X"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage.core", "generic-generic", "Resolution1X"));
                 });
 
             Execute(testRoot, perfRoot, "incremental", "Release",
@@ -536,28 +672,40 @@ namespace Microsoft.WebGrease.Tests
                 {
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Post-cache run should not be spriting");
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Post-cache run should not be optimizing");
-                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Post-cache  run should have any css filesets");
-                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Post-cache  run should have any js filesets");
                     measure2 = buildTask.MeasureResults.Sum(m => m.Duration);
+
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c2", "generic-generic"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c", "generic-generic"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c3", "generic-generic"));
+
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage3.core", "generic-generic", "Resolution1X"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage2.core", "generic-generic", "Resolution1X"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage.core", "generic-generic", "Resolution1X"));
                 });
 
             Action<WebGreaseTask> preExecute2 = buildTask =>
                 {
-                    commonPreBuildTask(buildTask);
                     buildTask.RootOutputPath = Path.Combine(buildTask.ApplicationRootPath, "output2");
                     buildTask.ToolsTempPath = Path.Combine(buildTask.ApplicationRootPath, "temp2");
                     buildTask.CacheRootPath = Path.Combine(buildTask.ApplicationRootPath, "cache");
                     buildTask.CacheEnabled = true;
                 };
+
             Execute(testRoot, perfRoot, "postcache2", "Release",
                 preExecute2,
                 buildTask =>
                 {
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Post-cache run should not be spriting");
-                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize), "Post-cache run should not be optimizing");
-                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Post-cache  run should have any css filesets");
-                    Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Post-cache  run should have any js filesets");
+                    Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Optimize), "Post-cache run should not be optimizing");
                     measure2 = buildTask.MeasureResults.Sum(m => m.Duration);
+
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c2", "generic-generic"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c", "generic-generic"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "js", "channelHomepage.classic.pc.w3c3", "generic-generic"));
+
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage3.core", "generic-generic", "Resolution1X"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage2.core", "generic-generic", "Resolution1X"));
+                    Assert.IsNotNull(GetOutputFile(buildTask, "css", "landingpage.core", "generic-generic", "Resolution1X"));
                 });
 
             Execute(testRoot, perfRoot, "incremental2", "Release",
@@ -599,7 +747,7 @@ namespace Microsoft.WebGrease.Tests
                     var logFile1 = logFileChange(File.ReadAllText(file1));
                     var logFile2 = logFileChange(File.ReadAllText(file2));
                     Assert.AreEqual(
-                        WebGreaseContext.ComputeContentHash(logFile1), 
+                        WebGreaseContext.ComputeContentHash(logFile1),
                         WebGreaseContext.ComputeContentHash(logFile2),
                         "Log files do not match: {0} and {1}".InvariantFormat(file1, file2));
                 }

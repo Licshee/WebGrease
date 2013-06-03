@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebGrease>
+  <Settings>
+    <ImageDirectories>Images</ImageDirectories>
+    <ImageDirectoriesToHash>Images\core\msnlogo</ImageDirectoriesToHash>
+    <ImageExtensions>*.png;*.jpg;*.jpeg;*.gif;*.ico;*.svg</ImageExtensions>
+    <TokensDirectory>Shared</TokensDirectory>
+    <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
+    <!-- these settings apply to each file set defined in this config -->
+    <Locales>generic-generic;ja-jp;en-us;en-ca;en-au;en-in;es-ar;es-cl;es-co;de-de;nl-nl;</Locales>
+    <Themes>Resolution1x;Resolution15x;Resolution2x;Resolution14x;Resolution18x;Resolution24x</Themes>
+    <CssMinification config="Debug">
+      <Minify>False</Minify>
+      <ValidateLowerCase>True</ValidateLowerCase>
+    </CssMinification>
+    <CssMinification config="Release">
+      <Minify>True</Minify>
+      <ValidateLowerCase>True</ValidateLowerCase>
+    </CssMinification>
+  </Settings>
+</WebGrease>

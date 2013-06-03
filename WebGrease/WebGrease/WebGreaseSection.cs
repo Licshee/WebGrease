@@ -104,16 +104,6 @@ namespace WebGrease
 
         /// <summary>Makes the section cachable.</summary>
         /// <param name="varByContentItem">The content item to vary by.</param>
-        /// <param name="isSkipable">Determines if the cache is skipable.</param>
-        /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
-        public ICachableWebGreaseSection CanBeCached(ContentItem varByContentItem, bool isSkipable = false)
-        {
-            this.CanBeCached(varByContentItem, null, isSkipable);
-            return this;
-        }
-
-        /// <summary>Makes the section cachable.</summary>
-        /// <param name="varByContentItem">The content item to vary by.</param>
         /// <param name="varBySettings">The settings to var by.</param>
         /// <param name="isSkipable">Determines if the cache is skipable.</param>
         /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
@@ -166,10 +156,14 @@ namespace WebGrease
         {
             var id = WebGreaseContext.ToStringId(this.idParts);
 
-            var cacheSection = this.context.Cache.BeginSection(id, this.cacheVarByContentItem, this.cacheVarBySetting, this.cacheVarByFileSet, this.cacheIsSkipable);
+            var errorHasOccurred = false;
+            EventHandler logOnErrorOccurred = delegate { errorHasOccurred = true; };
+
+            var cacheSection = this.context.Cache.BeginSection(id, this.cacheVarByContentItem, this.cacheVarBySetting, this.cacheVarByFileSet);
+            this.context.Log.ErrorOccurred += logOnErrorOccurred;
             try
             {
-                if (this.context.TemporaryIgnore(this.cacheVarByFileSet, this.cacheVarByContentItem))
+                if (this.context.TemporaryIgnore(this.cacheVarByFileSet, this.cacheVarByContentItem) && !errorHasOccurred)
                 {
                     cacheSection.Save();
                     return true;
@@ -182,12 +176,15 @@ namespace WebGrease
                         this.whenSkippedAction(cacheSection);
                     }
 
-                    return true;
+                    if (!errorHasOccurred)
+                    {
+                        return true;
+                    }
                 }
 
                 if (this.restoreFromCacheAction != null && cacheSection.CanBeRestoredFromCache())
                 {
-                    if (this.restoreFromCacheAction(cacheSection))
+                    if (this.restoreFromCacheAction(cacheSection) && !errorHasOccurred)
                     {
                         return true;
                     }
@@ -196,7 +193,7 @@ namespace WebGrease
                 this.context.Measure.Start(this.isGroup, this.idParts);
                 try
                 {
-                    if (!cachableSectionAction(cacheSection))
+                    if (!cachableSectionAction(cacheSection) || errorHasOccurred)
                     {
                         return false;
                     }
@@ -211,6 +208,7 @@ namespace WebGrease
             }
             finally
             {
+                this.context.Log.ErrorOccurred -= logOnErrorOccurred;
                 cacheSection.EndSection();
             }
         }

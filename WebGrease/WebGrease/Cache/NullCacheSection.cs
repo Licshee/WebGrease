@@ -130,6 +130,17 @@ namespace WebGrease
         {
         }
 
+        /// <summary>The get cached content item.</summary>
+        /// <param name="fileCategory">The file category.</param>
+        /// <param name="relativeDestinationFile">The relative destination file.</param>
+        /// <param name="relativeHashedDestinationFile">The relative hashed destination file.</param>
+        /// <param name="contentPivots">The content pivots.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public ContentItem GetCachedContentItem(string fileCategory, string relativeDestinationFile = null, string relativeHashedDestinationFile = null, IEnumerable<ContentPivot> contentPivots = null)
+        {
+            return null;
+        }
+
         /// <summary>Varys the section by file.</summary>
         /// <param name="contentItem">The result file.</param>
         public void VaryByContentItem(ContentItem contentItem)

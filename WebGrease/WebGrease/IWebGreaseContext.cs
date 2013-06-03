@@ -52,20 +52,17 @@ namespace WebGrease
         /// <summary>The clean destination.</summary>
         void CleanDestination();
 
-        /// <summary>The clean tools temp.</summary>
-        void CleanToolsTemp();
-
         /// <summary>Gets the available files.</summary>
         /// <param name="rootDirectory">The root directory.</param>
         /// <param name="directories">The directories.</param>
         /// <param name="extensions">The extensions.</param>
         /// <param name="fileType">The file type.</param>
         /// <returns>The available files</returns>
-        IDictionary<string, string> GetAvailableFiles(string rootDirectory, IList<string> directories, IList<string> extensions, FileTypes fileType);
+        IDictionary<string, string> GetAvailableFiles(string rootDirectory, IEnumerable<string> directories, IEnumerable<string> extensions, FileTypes fileType);
 
-        /// <summary>The get content hash.</summary>
-        /// <param name="value">The content.</param>
-        /// <returns>The <see cref="string"/>.</returns>
+        /// <summary>Gets the unique hash for the provided string value.</summary>
+        /// <param name="value">The string value.</param>
+        /// <returns>The hash for the string value..</returns>
         string GetValueHash(string value);
 
         /// <summary>The get content hash.</summary>
@@ -80,9 +77,8 @@ namespace WebGrease
 
         /// <summary>The make relative.</summary>
         /// <param name="absolutePath">The absolute path.</param>
-        /// <param name="relativePath">The relative path.</param>
         /// <returns>The <see cref="string"/>.</returns>
-        string MakeRelative(string absolutePath, string relativePath = null);
+        string MakeRelativeToApplicationRoot(string absolutePath);
 
         /// <summary>Make a path absolute to source directory.</summary>
         /// <param name="relativePath">The relative path.</param>
@@ -105,15 +101,21 @@ namespace WebGrease
         /// <returns>The <see cref="IWebGreaseSection"/>.</returns>
         IWebGreaseSection SectionedActionGroup(params string[] idParts);
 
-        /// <summary>The temporary ignore.</summary>
+        /// <summary>Returns if the code should temporary ignore and do no heavy processing for this execution run for this fileset and/or content item.</summary>
         /// <param name="fileSet">The file set.</param>
         /// <param name="contentItem">The content item.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         bool TemporaryIgnore(IFileSet fileSet, ContentItem contentItem);
 
-        /// <summary>The temporary ignore.</summary>
+        /// <summary>Returns if the code should temporary ignore and do no heavy processing for this execution run for this content pivot.</summary>
         /// <param name="contentPivot">The content Pivot.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         bool TemporaryIgnore(ContentPivot contentPivot);
+
+        /// <summary>Ensures the file exists so it can be reported with an error.</summary>
+        /// <param name="sourceFile">The source file.</param>
+        /// <param name="sourceContentItem">The input file.</param>
+        /// <returns>The error file path.</returns>
+        string EnsureErrorFileOnDisk(string sourceFile, ContentItem sourceContentItem);
     }
 }

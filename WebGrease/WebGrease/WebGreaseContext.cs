@@ -67,6 +67,12 @@ namespace WebGrease
         {
             var configuration = new WebGreaseConfiguration(parentContext.Configuration, configFile);
             configuration.Validate();
+            
+            if (configuration.Global.TreatWarningsAsErrors != null && parentContext.Log != null)
+            {
+                parentContext.Log.TreatWarningsAsErrors = configuration.Global.TreatWarningsAsErrors == true;
+            }
+
             this.Initialize(
                 configuration,
                 parentContext.Log,
@@ -98,7 +104,7 @@ namespace WebGrease
         /// <param name="logError">The log error.</param>
         /// <param name="logExtendedError">The log extended error.</param>
         public WebGreaseContext(WebGreaseConfiguration configuration, Action<string, MessageImportance> logInformation = null, Action<string> logWarning = null, LogExtendedError logExtendedWarning = null, Action<string> logErrorMessage = null, LogError logError = null, LogExtendedError logExtendedError = null)
-            : this(configuration, new LogManager(logInformation, logWarning, logExtendedWarning, logErrorMessage, logError, logExtendedError))
+            : this(configuration, new LogManager(logInformation, logWarning, logExtendedWarning, logErrorMessage, logError, logExtendedError, configuration.Global.TreatWarningsAsErrors))
         {
         }
 
@@ -164,7 +170,7 @@ namespace WebGrease
             return
                 this.Configuration != null
                 && this.Configuration.Overrides != null
-                && (this.Configuration.Overrides.ShouldIgnore(contentPivot));
+                && this.Configuration.Overrides.ShouldIgnore(contentPivot);
         }
 
         /// <summary>The clean cache.</summary>
@@ -193,7 +199,7 @@ namespace WebGrease
         /// <param name="fileType">The file type.</param>
         /// <returns>The available files.</returns>
         [SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Need lowercase")]
-        public IDictionary<string, string> GetAvailableFiles(string rootDirectory, IList<string> directories, IList<string> extensions, FileTypes fileType)
+        public IDictionary<string, string> GetAvailableFiles(string rootDirectory, IEnumerable<string> directories, IEnumerable<string> extensions, FileTypes fileType)
         {
             var key = new { rootDirectory, directories, extensions, fileType }.ToJson();
             IDictionary<string, string> availableFileCollection;
@@ -227,12 +233,7 @@ namespace WebGrease
         /// <returns>The <see cref="string"/>.</returns>
         public string GetValueHash(string value)
         {
-            if (value == null)
-            {
-                value = string.Empty;
-            }
-
-            return this.SectionedAction(SectionIdParts.ContentHash).Execute(() => ComputeContentHash(value));
+            return this.SectionedAction(SectionIdParts.ContentHash).Execute(() => ComputeContentHash(value ?? string.Empty));
         }
 
         /// <summary>Gets the md5 hash for the content file.</summary>
@@ -283,15 +284,12 @@ namespace WebGrease
             }
         }
 
-        /// <summary>The make relative.</summary>
+        /// <summary>Makes the path relative to the application root.</summary>
         /// <param name="absolutePath">The absolute path.</param>
-        /// <param name="relativePath">The relative path.</param>
-        /// <returns>The <see cref="string"/>.</returns>
-        public string MakeRelative(string absolutePath, string relativePath = null)
+        /// <returns>The givcen path relative to the application root.</returns>
+        public string MakeRelativeToApplicationRoot(string absolutePath)
         {
-            return string.IsNullOrWhiteSpace(relativePath)
-                ? absolutePath
-                : absolutePath.MakeRelativeTo(this.Configuration.ApplicationRootDirectory);
+            return absolutePath.MakeRelativeTo(this.Configuration.ApplicationRootDirectory);
         }
 
         /// <summary>The make absolute to source directory.</summary>
@@ -321,6 +319,54 @@ namespace WebGrease
             catch (Exception)
             {
             }
+        }
+
+        /// <summary>Ensures the file exists so it can be reported with an error.</summary>
+        /// <param name="sourceFile">The source file.</param>
+        /// <param name="sourceContentItem">The input file.</param>
+        /// <returns>The error file path.</returns>
+        public string EnsureErrorFileOnDisk(string sourceFile, ContentItem sourceContentItem)
+        {
+            if (sourceContentItem == null)
+            {
+                return sourceFile;
+            }
+
+            if (sourceFile.IsNullOrWhitespace() || !File.Exists(sourceFile))
+            {
+                sourceFile = sourceContentItem.RelativeContentPath;
+                if (sourceFile.IsNullOrWhitespace())
+                {
+                    sourceFile = Guid.NewGuid().ToString().Replace("-", string.Empty);
+                }
+
+                if (sourceContentItem.Pivots != null)
+                {
+                    var firstPivot = sourceContentItem.Pivots.FirstOrDefault();
+                    if (firstPivot != null)
+                    {
+                        var extension = Path.GetExtension(sourceFile);
+                        if (!firstPivot.Locale.IsNullOrWhitespace())
+                        {
+                            sourceFile = Path.ChangeExtension(sourceFile, "." + firstPivot.Locale + extension);
+                        }
+
+                        if (!firstPivot.Theme.IsNullOrWhitespace())
+                        {
+                            sourceFile = Path.ChangeExtension(sourceFile, "." + firstPivot.Theme + extension);
+                        }
+                    }
+                }
+            }
+
+            sourceFile = sourceFile.NormalizeUrl();
+            if (!Path.IsPathRooted(sourceFile))
+            {
+                sourceFile = Path.Combine(this.Configuration.IntermediateErrorDirectory, sourceFile);
+            }
+
+            sourceContentItem.WriteTo(sourceFile);
+            return sourceFile;
         }
 
         #endregion
@@ -409,6 +455,11 @@ namespace WebGrease
             if (configuration == null)
             {
                 throw new ArgumentNullException("configuration");
+            }
+
+            if (configuration.Global.TreatWarningsAsErrors != null)
+            {
+                logManager.TreatWarningsAsErrors = configuration.Global.TreatWarningsAsErrors == true;
             }
 
             // Note: Configuration needs to be set before the other ones.

@@ -44,6 +44,9 @@ namespace WebGrease.Activities
         /// </summary>
         internal PreprocessingConfig PreprocessingConfig { private get; set; }
 
+        /// <summary>Gets or sets the value that determines if there should be minimal output.</summary>
+        internal bool MinimalOutput { get; set; }
+
         #endregion
 
         #region Methods
@@ -69,7 +72,7 @@ namespace WebGrease.Activities
 
                 var contentItem = ContentItem.FromFile(file, file.MakeRelativeToDirectory(sourceDirectory));
 
-                contentItem = this.context.Preprocessing.Process(contentItem, this.PreprocessingConfig);
+                contentItem = this.context.Preprocessing.Process(contentItem, this.PreprocessingConfig, this.MinimalOutput);
                 if (contentItem == null)
                 {
                     throw new WorkflowException("An error occurred while processing the file: " + file);

@@ -8,11 +8,18 @@ namespace WebGrease
     using System.Collections.Generic;
     using System.IO;
 
-    /// <summary>The content item.</summary>
+    /// <summary>
+    /// The content item is the class that is used for all the intermediate states of the webgrease processing pipeline.
+    /// It is an abstraction for files on disk/in mrmory/in cache, and allows the seperate parts of the pipeline to not have to care about where the content is.
+    /// TODO: Will in a future release allow the addition of sourceMap property to add source maps.
+    /// </summary>
     public class ContentItem
     {
         /// <summary>The content hash.</summary>
         private string contentHash;
+
+        /// <summary>The content of the filoe on disk, used to store the conten after reading for reuse.</summary>
+        private string content;
 
         #region Constructors and Destructors
 
@@ -41,7 +48,7 @@ namespace WebGrease
             get
             {
                 return this.ContentItemType == ContentItemType.Path
-                    ? File.ReadAllText(this.AbsoluteContentPath)
+                    ? this.ContentFromDisk()
                     : this.ContentValue;
             }
         }
@@ -89,6 +96,24 @@ namespace WebGrease
                            AbsoluteContentPath = cacheResult.CachedFilePath,
                            RelativeContentPath = cacheResult.RelativeContentPath,
                            RelativeHashedContentPath = cacheResult.RelativeHashedContentPath,
+                           Pivots = pivots,
+                       };
+        }
+
+        /// <summary>Creates a content item from a cache result.</summary>
+        /// <param name="cacheResult">The cache result.</param>
+        /// <param name="relativeContentPath">The relative Content Path.</param>
+        /// <param name="relativeHashedContentPath">The relative Hashed Content Path.</param>
+        /// <param name="pivots">The pivots.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public static ContentItem FromCacheResult(CacheResult cacheResult, string relativeContentPath = null, string relativeHashedContentPath = null, params ContentPivot[] pivots)
+        {
+            return new ContentItem
+                       {
+                           ContentItemType = ContentItemType.Path,
+                           AbsoluteContentPath = cacheResult.CachedFilePath,
+                           RelativeContentPath = relativeContentPath ?? cacheResult.RelativeContentPath,
+                           RelativeHashedContentPath = relativeHashedContentPath ?? cacheResult.RelativeHashedContentPath,
                            Pivots = pivots,
                        };
         }
@@ -234,6 +259,13 @@ namespace WebGrease
                     File.WriteAllText(absolutePath.FullName, this.Content);
                 }
             }
+        }
+
+        /// <summary>Reads the content from disk, uses File.ReadAll, caches the result in a private field.</summary>
+        /// <returns>The content of the file as a string..</returns>
+        private string ContentFromDisk()
+        {
+            return this.content ?? (this.content = File.ReadAllText(this.AbsoluteContentPath));
         }
     }
 }

@@ -14,7 +14,7 @@ namespace WebGrease.Configuration
     using System.Diagnostics.Contracts;
     using System.Linq;
     using System.Xml.Linq;
-    using WebGrease;
+
     using WebGrease.Extensions;
 
     /// <summary>
@@ -28,7 +28,7 @@ namespace WebGrease.Configuration
         /// and this flag is false, we are going to clear anything we picked up from
         /// the global settings, thereby completely replacing the list of locales.
         /// </summary>
-        private bool usingFileSetLocales;
+        private readonly bool usingFileSetLocales;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="JSFileSet"/> class.
@@ -42,6 +42,7 @@ namespace WebGrease.Configuration
             this.Bundling = new Dictionary<string, BundlingConfig>(StringComparer.OrdinalIgnoreCase);
             this.Validation = new Dictionary<string, JSValidationConfig>(StringComparer.OrdinalIgnoreCase);
             this.Preprocessing = new Dictionary<string, PreprocessingConfig>(StringComparer.OrdinalIgnoreCase);
+            this.LoadedConfigurationFiles = new List<string>();
         }
 
         /// <summary>
@@ -50,7 +51,8 @@ namespace WebGrease.Configuration
         /// <param name="defaultLocales">The default set of locales.</param>
         /// <param name="defaultMinification">The default set of minification configs.</param>
         /// <param name="defaultPreProcessing">The default pre processing config. </param>
-        internal JSFileSet(IList<string> defaultLocales, IDictionary<string, JsMinificationConfig> defaultMinification, IDictionary<string, PreprocessingConfig> defaultPreProcessing)
+        /// <param name="defaultBundling">The default bundling configuration</param>
+        internal JSFileSet(IList<string> defaultLocales, IDictionary<string, JsMinificationConfig> defaultMinification, IDictionary<string, PreprocessingConfig> defaultPreProcessing, IDictionary<string, BundlingConfig> defaultBundling)
             : this()
         {
             // if we were given a default set of locales, add then to the list now
@@ -79,30 +81,47 @@ namespace WebGrease.Configuration
                     this.Preprocessing[configuration] = defaultPreProcessing[configuration];
                 }
             }
+
+            // Set the default bundling
+            if (defaultBundling != null && defaultBundling.Count > 0)
+            {
+                foreach (var configuration in defaultBundling.Keys)
+                {
+                    this.Bundling[configuration] = defaultBundling[configuration];
+                }
+            }
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="JSFileSet"/> class.
-        /// </summary>
+        /// <summary>Initializes a new instance of the <see cref="JSFileSet"/> class.</summary>
         /// <param name="jsFileSetElement">config element containing info for a set of js files</param>
         /// <param name="sourceDirectory">The base directory.</param>
         /// <param name="defaultLocales">The default set of locales.</param>
         /// <param name="defaultMinification">The default set of minification configs.</param>
         /// <param name="defaultPreProcessing">The default pre processing config. </param>
-        /// <param name="configurationFile"></param>
+        /// <param name="defaultBundling">The default Bundling.</param>
+        /// <param name="globalConfig">The global Config.</param>
+        /// <param name="configurationFile">The configuration File.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Is not excessive")]
-        internal JSFileSet(XElement jsFileSetElement, string sourceDirectory, IList<string> defaultLocales, IDictionary<string, JsMinificationConfig> defaultMinification, IDictionary<string, PreprocessingConfig> defaultPreProcessing, string configurationFile)
-            : this(defaultLocales, defaultMinification, defaultPreProcessing)
+        internal JSFileSet(XElement jsFileSetElement, string sourceDirectory, IList<string> defaultLocales, IDictionary<string, JsMinificationConfig> defaultMinification, IDictionary<string, PreprocessingConfig> defaultPreProcessing, IDictionary<string, BundlingConfig> defaultBundling, GlobalConfig globalConfig, string configurationFile)
+            : this(defaultLocales, defaultMinification, defaultPreProcessing, defaultBundling)
         {
             Contract.Requires(jsFileSetElement != null);
             Contract.Requires(!string.IsNullOrWhiteSpace(sourceDirectory));
 
             var outputAttribute = jsFileSetElement.Attribute("output");
             this.Output = outputAttribute != null ? outputAttribute.Value : string.Empty;
+            
+            this.GlobalConfig = globalConfig;
 
             var fileSetElements = jsFileSetElement.Descendants().ToList();
-            WebGreaseConfiguration.ForEachConfigSourceElement(jsFileSetElement, configurationFile, (element, s) => fileSetElements.AddRange(element.Descendants()));
-
+            WebGreaseConfiguration.ForEachConfigSourceElement(
+                jsFileSetElement, 
+                configurationFile,
+                (element, s) =>
+                {
+                    LoadedConfigurationFiles.Add(s);
+                    fileSetElements.AddRange(element.Descendants());
+                });
 
             foreach (var element in fileSetElements)
             {
@@ -148,6 +167,9 @@ namespace WebGrease.Configuration
             }
         }
 
+        /// <summary>Gets the external files.</summary>
+        public IList<string> LoadedConfigurationFiles { get; private set; }
+
         /// <summary>Gets the output specified.</summary>
         public string Output { get; set; }
 
@@ -169,6 +191,9 @@ namespace WebGrease.Configuration
 
         /// <summary>Gets the list of <see cref="InputSpec"/> items specified.</summary>
         public IList<InputSpec> InputSpecs { get; private set; }
+
+        /// <summary>Gets the global config.</summary>
+        internal GlobalConfig GlobalConfig { get; private set; }
 
         /// <summary>
         /// Gets the validation settings

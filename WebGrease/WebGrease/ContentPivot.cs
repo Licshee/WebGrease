@@ -9,7 +9,10 @@ namespace WebGrease
 
     using WebGrease.Extensions;
 
-    /// <summary>The content pivot.</summary>
+    /// <summary>
+    /// The content pivot class is used for pivots on locales/theme to use in with resources for each content item.
+    /// In the future this class will also support other pivots needed than locale/theme.
+    /// </summary>
     public class ContentPivot
     {
         /// <summary>Initializes a new instance of the <see cref="ContentPivot"/> class.</summary>

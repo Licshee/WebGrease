@@ -19,7 +19,7 @@ namespace WebGrease
         #region Fields
 
         /// <summary>The cache section file version key.</summary>
-        private const string CacheSectionFileVersionKey = "1.0.1";
+        private const string CacheSectionFileVersionKey = "1.0.4";
 
         /// <summary>The cache results.</summary>
         private readonly List<CacheResult> cacheResults = new List<CacheResult>();
@@ -198,9 +198,7 @@ namespace WebGrease
         public void AddResult(ContentItem contentItem, string id, bool isEndResult)
         {
             this.isUnsaved = true;
-            this.context.SectionedAction(SectionIdParts.Cache, SectionIdParts.AddResultFile)
-                .Execute(() =>
-                    this.cacheResults.Add(CacheResult.FromContentFile(this.context, this.cacheCategory, isEndResult, id, contentItem)));
+            this.cacheResults.Add(CacheResult.FromContentFile(this.context, this.cacheCategory, isEndResult, id, contentItem));
         }
 
         /// <summary>Add a source dependency from a file.</summary>
@@ -234,25 +232,21 @@ namespace WebGrease
         public void AddSourceDependency(InputSpec inputSpec)
         {
             this.isUnsaved = true;
-            this.context.SectionedAction(SectionIdParts.Cache, SectionIdParts.AddSourceDependency)
-                .Execute(() =>
-                {
-                    var key = inputSpec.ToJson(true);
-                    if (!this.sourceDependencies.ContainsKey(key))
-                    {
-                        this.sourceDependencies.Add(
-                            key,
-                            CacheSourceDependency.Create(
-                                this.context,
-                                new InputSpec
-                                {
-                                    IsOptional = inputSpec.IsOptional,
-                                    Path = inputSpec.Path,
-                                    SearchOption = inputSpec.SearchOption,
-                                    SearchPattern = inputSpec.SearchPattern
-                                }));
-                    }
-                });
+            var key = inputSpec.ToJson(true);
+            if (!this.sourceDependencies.ContainsKey(key))
+            {
+                this.sourceDependencies.Add(
+                    key,
+                    CacheSourceDependency.Create(
+                        this.context,
+                        new InputSpec
+                        {
+                            IsOptional = inputSpec.IsOptional,
+                            Path = inputSpec.Path,
+                            SearchOption = inputSpec.SearchOption,
+                            SearchPattern = inputSpec.SearchPattern
+                        }));
+            }
         }
 
         /// <summary>If all the cache files are valid and all results could be restored from content.</summary>
@@ -292,7 +286,22 @@ namespace WebGrease
         /// <returns>The <see cref="ContentItem"/>.</returns>
         public ContentItem GetCachedContentItem(string fileCategory)
         {
-            return ContentItem.FromCacheResult(this.GetCacheResults(fileCategory).First());
+            var cacheResult = this.GetCacheResults(fileCategory).FirstOrDefault();
+            return 
+                cacheResult != null
+                ? ContentItem.FromCacheResult(cacheResult)
+                : null;
+        }
+
+        /// <summary>Gets the cached content item.</summary>
+        /// <param name="fileCategory">The file category.</param>
+        /// <param name="relativeDestinationFile">The relative Destination File.</param>
+        /// <param name="relativeHashedDestinationFile">The relative hashed Destination File.</param>
+        /// <param name="contentPivots">The content Pivots.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public ContentItem GetCachedContentItem(string fileCategory, string relativeDestinationFile, string relativeHashedDestinationFile = null, IEnumerable<ContentPivot> contentPivots = null)
+        {
+            return ContentItem.FromCacheResult(this.GetCacheResults(fileCategory).FirstOrDefault(), relativeDestinationFile, relativeHashedDestinationFile, contentPivots != null ? contentPivots.ToArray() : null);
         }
 
         /// <summary>Gets the cached content items.</summary>

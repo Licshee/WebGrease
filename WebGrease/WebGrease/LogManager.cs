@@ -34,6 +34,9 @@ namespace WebGrease
         /// <summary>Gets the extended error.</summary>
         private readonly LogExtendedError extendedError;
 
+        /// <summary>The error happened event handler.</summary>
+        public event EventHandler ErrorOccurred;
+
         /// <summary>Initializes a new instance of the <see cref="LogManager"/> class.</summary>
         /// <param name="logInformation">The log information.</param>
         /// <param name="logWarning">The log warning.</param>
@@ -41,8 +44,17 @@ namespace WebGrease
         /// <param name="logErrorMessage">The log Error Message.</param>
         /// <param name="logError">The log error.</param>
         /// <param name="logExtendedError">The log extended error.</param>
-        public LogManager(Action<string, MessageImportance> logInformation, Action<string> logWarning, LogExtendedError logExtendedWarning, Action<string> logErrorMessage, LogError logError, LogExtendedError logExtendedError)
+        /// <param name="treatWarningsAsErrors">If it should treat warnings as errors.</param>
+        public LogManager(Action<string, MessageImportance> logInformation, Action<string> logWarning, LogExtendedError logExtendedWarning, Action<string> logErrorMessage, LogError logError, LogExtendedError logExtendedError, bool? treatWarningsAsErrors = false)
         {
+            // Treat this as default, as this is how it worked before.
+            this.TreatWarningsAsErrors = true;
+
+            if (treatWarningsAsErrors != null)
+            {
+                this.TreatWarningsAsErrors = treatWarningsAsErrors == true;
+            }
+
             // settings default values to prevent legacy code from throwing null exceptions.
             this.information = logInformation;
 
@@ -56,6 +68,9 @@ namespace WebGrease
             // setting the Has* properties so that some consumers can check if null values were passed.
             this.HasExtendedErrorHandler = logExtendedError != null;
         }
+
+        /// <summary>Gets or sets a value indicating whether treat warnings as errors.</summary>
+        public bool TreatWarningsAsErrors { get; set; }
 
         /// <summary>Gets a value indicating whether has extended error.</summary>
         public bool HasExtendedErrorHandler { get; set; }
@@ -75,7 +90,11 @@ namespace WebGrease
         /// <param name="message">The message.</param>
         public void Warning(string message)
         {
-            if (this.warning != null)
+            if (this.TreatWarningsAsErrors)
+            {
+                this.Error(message);
+            }
+            else if (this.warning != null)
             {
                 this.warning(message);
             }
@@ -93,7 +112,11 @@ namespace WebGrease
         /// <param name="message">The message.</param>
         public void Warning(string subcategory, string errorCode, string helpKeyword, string file, int? lineNumber, int? columnNumber, int? endLineNumber, int? endColumnNumber, string message)
         {
-            if (this.extendedWarning != null)
+            if (this.TreatWarningsAsErrors)
+            {
+                this.Error(subcategory, errorCode, helpKeyword, file, lineNumber, columnNumber, endLineNumber, endColumnNumber, message);
+            }
+            else if (this.extendedWarning != null)
             {
                 this.extendedWarning(subcategory, errorCode, helpKeyword, file, lineNumber, columnNumber, endLineNumber, endColumnNumber, message);
             }
@@ -103,6 +126,7 @@ namespace WebGrease
         /// <param name="message">The message.</param>
         public void Error(string message)
         {
+            this.ErrorHasOccurred();
             if (this.errorMessage != null)
             {
                 this.errorMessage(message);
@@ -115,7 +139,22 @@ namespace WebGrease
         /// <param name="file">The file.</param>
         public void Error(Exception exception, string customMessage = null, string file = null)
         {
-            if (this.error != null)
+            this.ErrorHasOccurred();
+            var bwe = exception as BuildWorkflowException;
+            if (bwe != null && this.extendedError != null)
+            {
+                this.extendedError(
+                    bwe.Subcategory,
+                    bwe.ErrorCode,
+                    bwe.HelpKeyword,
+                    bwe.File,
+                    bwe.LineNumber,
+                    bwe.ColumnNumber,
+                    bwe.EndLineNumber,
+                    bwe.EndColumnNumber,
+                    bwe.Message);
+            }
+            else if (this.error != null)
             {
                 this.error(exception, customMessage, file);
             }
@@ -135,10 +174,18 @@ namespace WebGrease
         {
             if (this.extendedError != null)
             {
+                this.ErrorHasOccurred();
                 this.extendedError(subcategory, errorCode, helpKeyword, file, lineNumber, columnNumber, endLineNumber, endColumnNumber, message);
             }
         }
 
-
+        /// <summary>The error has occurred.</summary>
+        private void ErrorHasOccurred()
+        {
+            if (this.ErrorOccurred != null)
+            {
+                this.ErrorOccurred.Invoke(this, EventArgs.Empty);
+            }
+        }
     }
 }

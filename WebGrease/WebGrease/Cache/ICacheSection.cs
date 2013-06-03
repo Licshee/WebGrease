@@ -84,5 +84,13 @@ namespace WebGrease
         /// <param name="obj">The data object.</param>
         /// <typeparam name="T">The typeof object</typeparam>
         void SetCacheData<T>(string id, T obj) where T : new();
+
+        /// <summary>Gets the cached content item.</summary>
+        /// <param name="fileCategory">The file category.</param>
+        /// <param name="relativeDestinationFile">The relative Destination File.</param>
+        /// <param name="relativeHashedDestinationFile">The relative hashed Destination File.</param>
+        /// <param name="contentPivots">The content Pivots.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        ContentItem GetCachedContentItem(string fileCategory, string relativeDestinationFile, string relativeHashedDestinationFile = null, IEnumerable<ContentPivot> contentPivots = null);
     }
 }

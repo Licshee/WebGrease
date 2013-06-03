@@ -45,20 +45,12 @@ namespace WebGrease
         }
 
         /// <summary>Initializes a new instance of the <see cref="TemporaryOverrides"/> class.</summary>
-        /// <param name="overrideLocales">The override locales.</param>
-        /// <param name="overrideThemes">The override themes.</param>
-        /// <param name="overrideOutputs">The override outputs.</param>
-        /// <param name="overrideOutputExtensions">The file Type Overrides.</param>
         /// <param name="overrideFile">The override file.</param>
         /// <returns>The <see cref="TemporaryOverrides"/>.</returns>
-        public static TemporaryOverrides Create(string overrideLocales, string overrideThemes, string overrideOutputs, string overrideOutputExtensions, string overrideFile)
+        public static TemporaryOverrides Create(string overrideFile)
         {
             var to = new TemporaryOverrides();
             to.LoadFromFile(overrideFile);
-            to.locales.AddRange(GetItems(overrideLocales));
-            to.themes.AddRange(GetItems(overrideThemes));
-            to.outputs.AddRange(GetItems(overrideOutputs));
-            to.outputExtensions.AddRange(GetItems(overrideOutputExtensions));
             to.uniqueKey = to.ToJson(true);
 
             // Only return when there are any values to override

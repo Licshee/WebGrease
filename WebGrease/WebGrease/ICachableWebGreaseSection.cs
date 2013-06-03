@@ -7,7 +7,9 @@ namespace WebGrease
 {
     using System;
 
-    /// <summary>The CachableSection interface.</summary>
+    /// <summary>
+    /// The CachableSection interface provides the method used by a cachable section, this is returned by using isCachable in a "normal web grease section.
+    /// </summary>
     public interface ICachableWebGreaseSection
     {
         /// <summary>

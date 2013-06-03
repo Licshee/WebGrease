@@ -29,10 +29,9 @@ namespace WebGrease
         /// <param name="category">The category.</param>
         /// <param name="contentItem">The result file.</param>
         /// <param name="settings">The settings.</param>
-        /// <param name="cacheVarByFileSet">The cache Var By File Set.</param>
-        /// <param name="cacheIsSkipable">The cache Is Skipable.</param>
+        /// <param name="cacheVaryByFileSet">The cache Var By File Set.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVarByFileSet = null, bool cacheIsSkipable = false);
+        ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVaryByFileSet = null);
 
         /// <summary>Cleans up all the cache files that we don't need anymore.</summary>
         void CleanUp();

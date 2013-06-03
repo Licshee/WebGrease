@@ -145,10 +145,12 @@ namespace WebGrease.Preprocessing.Sass
         /// <summary>The main method for Preprocessing, this is where it gets passed the full content, parses it and returns the parsed content.</summary>
         /// <param name="contentItem">Content of the file to parse.</param>
         /// <param name="preprocessingConfig">The configuration.</param>
+        /// <param name="minimalOutput">Is the goal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The processed content.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Is meant to catch all, if delete fails it is not important, it is in the temp folder.")]
-        public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig)
+        public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig, bool minimalOutput)
         {
+            var settingsMinimalOutput = preprocessingConfig != null && preprocessingConfig.Element != null && (bool?)preprocessingConfig.Element.Attribute("minimalOutput") == true;
             var relativeContentPath = contentItem.RelativeContentPath;
             this.context.Log.Information("Sass: Processing contents for file {0}".InvariantFormat(relativeContentPath));
 
@@ -166,7 +168,7 @@ namespace WebGrease.Preprocessing.Sass
                                                        ? Path.GetDirectoryName(relativeContentPath)
                                                        : this.context.GetWorkingSourceDirectory(relativeContentPath);
 
-                            var content = ParseImports(contentItem.Content, workingDirectory, sassCacheImportsSection);
+                            var content = ParseImports(contentItem.Content, workingDirectory, sassCacheImportsSection, minimalOutput || settingsMinimalOutput);
 
                             var currentContentHash = context.GetValueHash(content);
 
@@ -227,10 +229,11 @@ namespace WebGrease.Preprocessing.Sass
         /// <param name="fileContent">The content</param>
         /// <param name="workingFolder">The workingFolder</param>
         /// <param name="cacheSection">The cache section</param>
+        /// <param name="minimalOutput">Is the goal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The parses less content.</returns>
-        private static string ParseImports(string fileContent, string workingFolder, ICacheSection cacheSection)
+        private static string ParseImports(string fileContent, string workingFolder, ICacheSection cacheSection, bool minimalOutput)
         {
-            var withImports = ImportsPattern.Replace(fileContent, match => ReplaceImports(match, workingFolder.EnsureEndSeparator(), cacheSection));
+            var withImports = ImportsPattern.Replace(fileContent, match => ReplaceImports(match, workingFolder.EnsureEndSeparator(), cacheSection, minimalOutput));
             SetImportSourceDependencies(fileContent, workingFolder, cacheSection);
             return withImports;
         }
@@ -258,8 +261,9 @@ namespace WebGrease.Preprocessing.Sass
         /// <param name="match">The match.</param>
         /// <param name="workingFolder">The working folder.</param>
         /// <param name="cacheSection">The cache Section.</param>
+        /// <param name="minimalOutput">Is the goal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The replaced imports.</returns>
-        private static string ReplaceImports(Match match, string workingFolder, ICacheSection cacheSection)
+        private static string ReplaceImports(Match match, string workingFolder, ICacheSection cacheSection, bool minimalOutput)
         {
             var path = match.Groups["path"].Value;
             string pattern = null;
@@ -285,14 +289,16 @@ namespace WebGrease.Preprocessing.Sass
                             : Directory.GetFiles(pathInfo.FullName);
 
             return
-                GetImportsComment(path, string.Empty)
+                (minimalOutput ? string.Empty : GetImportsComment(path, string.Empty))
                 + string.Join(
                     " ",
                     files
                         .Select(file => MakeRelativePath(workingFolder, file))
-                        .Select(relativeFile => "\r\n{0}\r\n@import \"{1}\";".InvariantFormat(GetImportsComment(path, Path.GetFileName(relativeFile)), relativeFile.Replace("\\", "/"))));
+                        .Select(relativeFile => "{0}\r\n@import \"{1}\";".InvariantFormat(
+                            minimalOutput ? string.Empty : "\r\n"+GetImportsComment(path, Path.GetFileName(relativeFile)), 
+                            relativeFile.Replace("\\", "/"))));
         }
-
+        
         /// <summary>Gets the imports comment.</summary>
         /// <param name="path">The path.</param>
         /// <param name="file">The file.</param>

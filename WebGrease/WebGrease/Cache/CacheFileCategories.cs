@@ -19,11 +19,20 @@ namespace WebGrease
         /// <summary>The hashed sprite image.</summary>
         internal const string HashedSpriteImage = "HashedSpriteImage";
 
+        /// <summary>The hashed minified js result.</summary>
+        internal const string HashedMinifiedJsResult = "HashedMinifiedJsResult";
+
+        /// <summary>The hashed minified css result.</summary>
+        internal const string HashedMinifiedCssResult = "HashedMinifiedCssResult";
+
         /// <summary>The minified css result.</summary>
         internal const string MinifiedCssResult = "MinifyCssResult";
 
+        /// <summary>The relative file names.</summary>
+        internal const string RelativeFileNames = "RelativeFileNames";
+
         /// <summary>The minify js result.</summary>
-        internal const string MinifyJsResult = "MinifyJsResult";
+        internal const string MinifiedJsResult = "MinifiedJsResult";
 
         /// <summary>The preprocessing result.</summary>
         internal const string PreprocessingResult = "PreprocessingResult";

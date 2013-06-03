@@ -153,6 +153,9 @@
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\lazy2.jpg" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\media.gif" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\SpriteTest.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Test2.xml">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\test1.include.css" />
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\include\include1.css" />
     <None Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\test1.import.scss">
@@ -193,6 +196,9 @@
       <SubType>Designer</SubType>
     </Content>
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\ChannelHomepageJs.xml" />
+    <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Config_imageHashing\ChannelHomepage.xml">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\Images\AdChoices\AdChoices_DA_14x.png" />
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\Images\AdChoices\AdChoices_DA_15x.png" />
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\TmxSdk\Input\Images\AdChoices\AdChoices_DA_18x.png" />

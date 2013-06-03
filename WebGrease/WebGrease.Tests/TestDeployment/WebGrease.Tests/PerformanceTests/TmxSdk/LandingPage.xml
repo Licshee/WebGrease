@@ -167,4 +167,10 @@
       <Input>metrosdk\css\landingpage.core.css</Input>
     </Inputs>
   </CssFileSet>
+  <CssFileSet output="landingpage2.core.css">
+    <Inputs>
+      <!-- Core SDK Files -->
+      <Input>metrosdk\css\landingpage.core.css</Input>
+    </Inputs>
+  </CssFileSet>
 </WebGrease>

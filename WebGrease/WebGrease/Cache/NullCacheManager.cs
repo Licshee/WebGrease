@@ -30,6 +30,7 @@ namespace WebGrease
             }
         }
 
+        /// <summary>Gets the loaded cache sections.</summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Justification = "Null code")]
         public IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections { get; private set; }
 
@@ -41,10 +42,9 @@ namespace WebGrease
         /// <param name="category">The category.</param>
         /// <param name="contentItem">The result file.</param>
         /// <param name="settings">The settings.</param>
-        /// <param name="cacheVarByFileSet"></param>
-        /// <param name="cacheIsSkipable"></param>
+        /// <param name="cacheVaryByFileSet">The cache Vary By File Set.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVarByFileSet = null, bool cacheIsSkipable = false)
+        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVaryByFileSet = null)
         {
             return EmptyCacheSection;
         }

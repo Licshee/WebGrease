@@ -29,11 +29,17 @@ namespace WebGrease.Configuration
         /// <summary>The minimum cache timeout.</summary>
         private static readonly TimeSpan MinimumCacheTimeout = TimeSpan.FromHours(1);
 
+        /// <summary>Gets or sets the global.</summary>
+        private readonly Dictionary<string, GlobalConfig> global = new Dictionary<string, GlobalConfig>();
+
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
         internal WebGreaseConfiguration()
         {
+            this.global = new Dictionary<string, GlobalConfig>();
+            this.Global = new GlobalConfig();
             this.ImageExtensions = new List<string>();
             this.ImageDirectories = new List<string>();
+            this.ImageDirectoriesToHash = new List<string>();
             this.CssFileSets = new List<CssFileSet>();
             this.JSFileSets = new List<JSFileSet>();
             this.DefaultLocales = new List<string>();
@@ -42,6 +48,8 @@ namespace WebGrease.Configuration
             this.DefaultJSMinification = new Dictionary<string, JsMinificationConfig>();
             this.DefaultSpriting = new Dictionary<string, CssSpritingConfig>();
             this.DefaultCssMinification = new Dictionary<string, CssMinificationConfig>();
+            this.DefaultBundling = new Dictionary<string, BundlingConfig>();
+            this.LoadedConfigurationFiles = new List<string>();
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
@@ -113,14 +121,31 @@ namespace WebGrease.Configuration
             this.ToolsTempDirectory = toolsTempDirectory;
             this.ApplicationRootDirectory = appRootDirectory ?? Environment.CurrentDirectory;
 
+            this.IntermediateErrorDirectory = Path.Combine(this.ApplicationRootDirectory, "IntermediateErrorFiles");
+
             Directory.CreateDirectory(destinationDirectory);
             Directory.CreateDirectory(logsDirectory);
         }
 
         /// <summary>
-        /// The source directory for all paths in configuration.
+        /// Gets or sets the source directory for all paths in configuration.
         /// </summary>
         public string SourceDirectory { get; set; }
+
+        /// <summary>Gets the all dependent files.</summary>
+        internal IEnumerable<string> AllLoadedConfigurationFiles
+        {
+            get
+            {
+                return this.LoadedConfigurationFiles.Concat(
+                    this.CssFileSets.SelectMany(cfs => cfs.LoadedConfigurationFiles).Concat(
+                    this.JSFileSets.SelectMany(cfs => cfs.LoadedConfigurationFiles)))
+                    .Distinct();
+            }
+        }
+
+        /// <summary>Gets the global configuration for the configuration type.</summary>
+        internal GlobalConfig Global { get; private set; }
 
         /// <summary>
         /// The configuration type
@@ -170,6 +195,9 @@ namespace WebGrease.Configuration
         /// <summary>Gets the image directories to be used.</summary>
         internal IList<string> ImageDirectories { get; private set; }
 
+        /// <summary>Gets the image directories to be hashed.</summary>
+        internal IList<string> ImageDirectoriesToHash { get; private set; }
+
         /// <summary>Gets the image extensions to be used.</summary>
         internal IList<string> ImageExtensions { get; set; }
 
@@ -178,6 +206,9 @@ namespace WebGrease.Configuration
 
         /// <summary>Gets the javascript file sets to be used.</summary>
         internal IList<JSFileSet> JSFileSets { get; private set; }
+
+        /// <summary>Gets the external files.</summary>
+        internal IList<string> LoadedConfigurationFiles { get; private set; }
 
         /// <summary>Gets or sets the value that determines if webgrease measures it tasks.</summary>
         internal bool Measure { get; set; }
@@ -204,6 +235,9 @@ namespace WebGrease.Configuration
         /// </summary>
         internal TimeSpan CacheTimeout { get; set; }
 
+        /// <summary>Gets or sets the intermediate error directory.</summary>
+        internal string IntermediateErrorDirectory { get; set; }
+
         /// <summary>Gets or sets the overrides.</summary>
         internal TemporaryOverrides Overrides { get; set; }
 
@@ -218,6 +252,9 @@ namespace WebGrease.Configuration
 
         /// <summary>Gets or sets the default CSS minification configuration</summary>
         private IDictionary<string, CssMinificationConfig> DefaultCssMinification { get; set; }
+
+        /// <summary>Gets or sets the default bundling configuration</summary>
+        private IDictionary<string, BundlingConfig> DefaultBundling { get; set; }
 
         /// <summary>Gets or sets the default spriting configuration</summary>
         private IDictionary<string, CssSpritingConfig> DefaultSpriting { get; set; }
@@ -338,6 +375,7 @@ namespace WebGrease.Configuration
         private void Parse(XElement element, string configurationFile)
         {
             this.ParseSettings(element.Descendants("Settings"), configurationFile);
+            this.Global = this.global.GetNamedConfig(this.ConfigType);
 
             foreach (var cssFileSetElement in element.Descendants("CssFileSet"))
             {
@@ -350,6 +388,8 @@ namespace WebGrease.Configuration
                         this.DefaultSpriting,
                         this.DefaultThemes,
                         this.DefaultPreprocessing,
+                        this.DefaultBundling,
+                        this.Global,
                         configurationFile));
             }
 
@@ -362,6 +402,8 @@ namespace WebGrease.Configuration
                         this.DefaultLocales,
                         this.DefaultJSMinification,
                         this.DefaultPreprocessing,
+                        this.DefaultBundling,
+                        this.Global,
                         configurationFile));
             }
         }
@@ -387,7 +429,15 @@ namespace WebGrease.Configuration
                 throw new ArgumentNullException("settingsElement");
             }
 
-            ForEachConfigSourceElement(settingsElement, configurationFile, this.ParseSettings);
+            ForEachConfigSourceElement(
+                settingsElement, 
+                configurationFile, 
+                (element, s) =>
+                {
+                    this.ParseSettings(element, s); 
+                    LoadedConfigurationFiles.Add(s);
+                });
+
             foreach (var settingElement in settingsElement.Descendants())
             {
                 var settingName = settingElement.Name.ToString();
@@ -396,6 +446,10 @@ namespace WebGrease.Configuration
                 {
                     case "ImageDirectories":
                         AddSeperatedValues(this.ImageDirectories, settingValue, value => Path.GetFullPath(Path.Combine(this.SourceDirectory, value)));
+                        break;
+
+                    case "ImageDirectoriesToHash":
+                        AddSeperatedValues(this.ImageDirectoriesToHash, settingValue, value => Path.GetFullPath(Path.Combine(this.SourceDirectory, value)));
                         break;
 
                     case "ImageExtensions":
@@ -418,6 +472,16 @@ namespace WebGrease.Configuration
                     case "Themes":
                         // get the default set of locales
                         AddSeperatedValues(this.DefaultThemes, settingValue);
+                        break;
+
+                    case "Bundling":
+                        // get and the default CSS minification configuration
+                        this.DefaultBundling.AddNamedConfig(new BundlingConfig(settingElement));
+                        break;
+
+                    case "Global":
+                        // get and the default CSS minification configuration
+                        this.global.AddNamedConfig(new GlobalConfig(settingElement));
                         break;
 
                     case "CssMinification":

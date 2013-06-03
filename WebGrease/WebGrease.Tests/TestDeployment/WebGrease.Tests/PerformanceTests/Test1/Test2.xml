@@ -17,25 +17,13 @@
       <ImagesToIgnore>/images/nosprite3.png,/images/nosprite4.png</ImagesToIgnore>
     </Spriting>
   </Settings>
-  <CssFileSet output="Test1.css">
+  <CssFileSet output="Test2.css">
     <Inputs>
       <Input>css\test1.css</Input>
       <Input optional="true">css\test1.scss</Input>
     </Inputs>
   </CssFileSet>
-  <JsFileSet output="Test1.js">
-    <Inputs>
-      <Input>js\test1a.js</Input>
-      <Input>js\test1b.js</Input>
-    </Inputs>
-  </JsFileSet>
-  <CssFileSet output="Test3.css">
-    <Inputs>
-      <Input>css\test1.css</Input>
-      <Input optional="true">css\test1.scss</Input>
-    </Inputs>
-  </CssFileSet>
-  <JsFileSet output="Test3.js">
+  <JsFileSet output="Test2.js">
     <Inputs>
       <Input>js\test1a.js</Input>
       <Input>js\test1b.js</Input>

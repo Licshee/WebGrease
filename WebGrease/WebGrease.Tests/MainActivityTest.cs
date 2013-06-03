@@ -18,6 +18,7 @@ namespace WebGrease.Tests
     using Configuration;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WebGrease.Tests;
+    using WebGrease.Extensions;
 
     /// <summary>The web grease configuration root test.</summary>
     [TestClass]
@@ -42,13 +43,33 @@ namespace WebGrease.Tests
             var logsDirectory = Path.Combine(testSourceDirectory, @"Output\Integration\Debug\logs");
 
             var webGreaseConfigurationRoot = new WebGreaseConfiguration(new FileInfo(configurationFile), "Debug", sourceDirectory, destinationDirectory, logsDirectory);
-            var context = new WebGreaseContext(webGreaseConfigurationRoot, logInformation: null, logExtendedWarning: null, logError: (e, m, f) => Console.WriteLine("File: {0},Message:{1}\r\nException:{2}", f, m, e.InnerException.Message));
-            
+            var context = new WebGreaseContext(webGreaseConfigurationRoot, logInformation: null, logExtendedWarning: null, logError: LogError, logExtendedError: LogExtendedError);
+
             var mainActivity = new EverythingActivity(context);
             var success = mainActivity.Execute();
 
             Assert.IsTrue(success);
             VerifyStatics(destinationDirectory, logsDirectory);
+        }
+
+        private void LogExtendedError(string subcategory, string errorcode, string helpkeyword, string file, int? linenumber, int? columnnumber, int? endlinenumber, int? endcolumnnumber, string message)
+        {
+            Console.WriteLine("Error:" + new { subcategory, errorcode, helpkeyword, file, linenumber, columnnumber, endlinenumber, endcolumnnumber, message }.ToJson());
+        }
+
+        private static void LogError(Exception e, string m, string f)
+        {
+            Console.WriteLine(
+                "File: {0},Message:{1}\r\nException:{2}\r\nInnerException:{3}",
+                f,
+                m,
+                e != null
+                    ? e.ToString()
+                    : string.Empty,
+                e != null && e.InnerException != null
+                    ? e.InnerException.ToString()
+                    : string.Empty
+                );
         }
 
         /// <summary>The verify statics.</summary>

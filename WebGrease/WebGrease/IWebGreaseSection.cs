@@ -30,12 +30,6 @@ namespace WebGrease
 
         /// <summary>Makes the section cachable.</summary>
         /// <param name="varByContentItem">The content item to vary by.</param>
-        /// <param name="isSkipable">Determines if the cache is skipable.</param>
-        /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
-        ICachableWebGreaseSection CanBeCached(ContentItem varByContentItem, bool isSkipable = false);
-
-        /// <summary>Makes the section cachable.</summary>
-        /// <param name="varByContentItem">The content item to vary by.</param>
         /// <param name="varBySettings">The settings to var by.</param>
         /// <param name="isSkipable">Determines if the cache is skipable.</param>
         /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>

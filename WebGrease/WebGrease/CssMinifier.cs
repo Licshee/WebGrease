@@ -1,5 +1,5 @@
 ﻿// -----------------------------------------------------------------------
-// <copyright file="Minifier.cs" company="Microsoft">
+// <copyright file="CssMinifier.cs" company="Microsoft">
 // Copyright Microsoft Corporation, all rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
@@ -8,7 +8,7 @@ namespace WebGrease
 {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
+
     using Css;
     using WebGrease.Activities;
 
@@ -18,15 +18,26 @@ namespace WebGrease
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Minifier", Justification = "Spelt as desired")]
     public class CssMinifier
     {
-        /// <summary>
-        /// Gets or sets the activity to use.
-        /// </summary>
-        private MinifyCssActivity CssActivity { get; set; }
+        /// <summary>Initializes a new instance of the <see cref="CssMinifier"/> class with default settings.</summary>
+        /// <param name="context">The context.</param>
+        public CssMinifier(IWebGreaseContext context)
+        {
+            this.CssActivity = new MinifyCssActivity(context)
+                                   {
+                                       ShouldMinify = true,
+                                       ShouldOptimize = true,
+                                       ShouldValidateForLowerCase = false,
+                                       ShouldExcludeProperties = false,
+                                       ShouldAssembleBackgroundImages = false
+                                   };
+            this.ShouldMinify = true;
+            this.Errors = new List<string>();
+        }
 
         /// <summary>
         /// List of errors causing the minification to fail, if any.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists", Justification="This is not performance critical, and needed for the AddRange method.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists", Justification = "This is not performance critical, and needed for the AddRange method.")]
         public List<string> Errors { get; private set; }
 
         /// <summary>
@@ -35,20 +46,10 @@ namespace WebGrease
         /// </summary>
         public bool ShouldMinify { get; set; }
 
-        /// <summary>Initializes a new instance of the <see cref="CssMinifier"/> class with default settings.</summary>
-        /// <param name="context">The context.</param>
-        public CssMinifier(IWebGreaseContext context)
-        {
-            this.CssActivity = new MinifyCssActivity(context) {
-                ShouldMinify = true, 
-                ShouldOptimize = true,
-                ShouldValidateForLowerCase = false,
-                ShouldExcludeProperties = false,
-                ShouldAssembleBackgroundImages = false
-            };
-            this.ShouldMinify = true;
-            this.Errors = new List<string>();
-        }
+        /// <summary>
+        /// Gets or sets the activity to use.
+        /// </summary>
+        private MinifyCssActivity CssActivity { get; set; }
 
         /// <summary>
         /// Minifies the given css content.
@@ -58,21 +59,32 @@ namespace WebGrease
         public string Minify(string cssContent)
         {
             this.CssActivity.ShouldMinify = this.ShouldMinify;
-            var cssOutput = this.CssActivity.Execute(cssContent, false);
+            MinifyCssResult cssMinifyResult = null;
+            Exception minifyException = null;
+            try
+            {
+                cssMinifyResult = this.CssActivity.Process(ContentItem.FromContent(cssContent));
+            }
+            catch (Exception ex)
+            {
+                minifyException = ex;
+            }
 
             // we only expect this if the CssParser bombed on the css, and it should always throw an AggregateEx with it's errors inside
-            var ex = this.CssActivity.ParserException;
-            if (ex != null)
+            if (minifyException != null)
             {
                 // try to take the friendliest bits of the errors
-                var aggEx = ex as AggregateException;
+                var aggEx = minifyException as AggregateException;
                 if (aggEx != null)
                 {
-                   this.Errors.AddRange(ErrorHelper.DedupeCSSErrors(aggEx));
+                    this.Errors.AddRange(ErrorHelper.DedupeCSSErrors(aggEx));
                 }
             }
 
-            return cssOutput;
+            return
+                cssMinifyResult != null && cssMinifyResult.Css != null
+                ? cssMinifyResult.Css.Content
+                : null;
         }
     }
 }

@@ -36,8 +36,9 @@ namespace WebGrease.Preprocessing
         /// </summary>
         /// <param name="contentItem">Content of the file to parse.</param>
         /// <param name="preprocessingConfig">The configuration.</param>
+        /// <param name="minimalOutput">Is the goal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The processed content.</returns>
-        ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig);
+        ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig, bool minimalOutput);
 
         #endregion
 

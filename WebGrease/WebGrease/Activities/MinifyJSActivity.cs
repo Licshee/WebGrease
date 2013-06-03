@@ -10,10 +10,11 @@
 namespace WebGrease.Activities
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Text;
-    using Common;
+
     using Microsoft.Ajax.Utilities;
 
     using WebGrease.Extensions;
@@ -53,9 +54,6 @@ namespace WebGrease.Activities
         /// <value>True if the files should be minified.</value>
         internal bool ShouldMinify { private get; set; }
 
-        /// <summary>Gets or sets the file hasher.</summary>
-        internal FileHasherActivity FileHasher { private get; set; }
-
         /// <summary>When overridden in a derived class, executes the task.</summary>
         /// <param name="contentItem">The result File.</param>
         internal void Execute(ContentItem contentItem = null)
@@ -74,89 +72,76 @@ namespace WebGrease.Activities
 
             if (contentItem == null)
             {
-                contentItem = ContentItem.FromFile(this.SourceFile, Path.IsPathRooted(this.SourceFile) ? this.SourceFile.MakeRelativeToDirectory(destinationDirectory) : this.SourceFile);
+                contentItem = ContentItem.FromFile(
+                    this.SourceFile, Path.IsPathRooted(this.SourceFile) ? this.SourceFile.MakeRelativeToDirectory(destinationDirectory) : this.SourceFile);
             }
 
-            var relativeDestinationFiles = this.DestinationFile
-                                            .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-                                            .Select(f => Path.IsPathRooted(f)
-                                                                            ? f.MakeRelativeToDirectory(this.context.Configuration.DestinationDirectory)
-                                                                            : f);
+            var minifiedContentItem = this.Minify(contentItem);
 
+            if (minifiedContentItem != null)
+            {
+                minifiedContentItem.WriteTo(this.DestinationFile);
+            }
+        }
+
+        /// <summary>The minify.</summary>
+        /// <param name="sourceContentItem">The content item.</param>
+        /// <returns>The minified content item, or null if it failed.</returns>
+        internal ContentItem Minify(ContentItem sourceContentItem)
+        {
+            ContentItem minifiedJsContentItem = null;
             this.context.SectionedAction(SectionIdParts.MinifyJsActivity)
-                .CanBeCached(contentItem, new { this.ShouldAnalyze, this.ShouldMinify, this.AnalyzeArgs })
+                .CanBeCached(sourceContentItem, new { this.ShouldAnalyze, this.ShouldMinify, this.AnalyzeArgs, this.context.Configuration.Global.TreatWarningsAsErrors })
                 .RestoreFromCacheAction(cacheSection =>
                 {
-                    var jsContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.MinifyJsResult).FirstOrDefault();
-                    if (jsContentItem == null)
-                    {
-                        return false;
-                    }
-
-                    if (this.FileHasher != null)
-                    {
-                        jsContentItem.WriteToRelativeHashedPath(destinationDirectory);
-                        this.FileHasher.AppendToWorkLog(jsContentItem, relativeDestinationFiles);
-                    }
-                    else
-                    {
-                        foreach (var relativeDestinationFile in relativeDestinationFiles)
-                        {
-                            // Restore js output
-                            jsContentItem.WriteTo(Path.Combine(destinationDirectory, relativeDestinationFile));
-                        }
-                    }
-
-                    return true;
+                    minifiedJsContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.MinifiedJsResult, sourceContentItem.RelativeContentPath, null, sourceContentItem.Pivots);
+                    return minifiedJsContentItem != null;
                 }).Execute(cacheSection =>
                 {
-                    var minifier = new Minifier { FileName = SourceFile };
+                    var minifier = new Minifier { FileName = this.SourceFile };
                     var minifierSettings = this.GetMinifierSettings(minifier);
-                    var js = minifier.MinifyJavaScript(contentItem.Content, minifierSettings.JSSettings);
-                    this.HandleMinifierErrors(minifier);
+                    
+                    var js = minifier.MinifyJavaScript(sourceContentItem.Content, minifierSettings.JSSettings);
 
-                    if (this.FileHasher != null)
+                    // TODO: RTUIT: Store warnings in cache so that they can be reported even when coming from cache.
+                    this.HandleMinifierErrors(sourceContentItem, minifier.ErrorList);
+
+                    if (js != null)
                     {
-                        // Write the result to disk using hashing.
-                        var hashResults = this.FileHasher.Hash(js, relativeDestinationFiles);
-                        foreach (var hashResult in hashResults)
-                        {
-                            cacheSection.AddResult(hashResult, CacheFileCategories.MinifyJsResult, true);
-                        }
-                    }
-                    else
-                    {
-                        foreach (var destinationFile in relativeDestinationFiles)
-                        {
-                            // Write to the destination file on disk.
-                            FileHelper.WriteFile(destinationFile, js);
-                            cacheSection.AddResult(ContentItem.FromFile(destinationFile, destinationFile.MakeRelativeTo(destinationDirectory)), CacheFileCategories.MinifyJsResult, true);
-                        }
+                        minifiedJsContentItem = ContentItem.FromContent(js, sourceContentItem.RelativeContentPath, null, sourceContentItem.Pivots == null ? null : sourceContentItem.Pivots.ToArray());
+                        cacheSection.AddResult(minifiedJsContentItem, CacheFileCategories.MinifiedJsResult);
                     }
 
-                    return true;
+                    return minifiedJsContentItem != null && !minifier.ErrorList.Any();
                 });
+
+            return minifiedJsContentItem;
         }
 
         /// <summary>Handles the minifier errors.</summary>
-        /// <param name="minifier">The minifier.</param>
-        private void HandleMinifierErrors(Minifier minifier)
+        /// <param name="contentItem">The content item</param>
+        /// <param name="errorsAndWarnings">The errors And Warnings.</param>
+        private void HandleMinifierErrors(ContentItem contentItem, ICollection<ContextError> errorsAndWarnings)
         {
             // throw if this file has errors, but show all that are found
-            if (minifier.ErrorList != null && minifier.ErrorList.Count > 0)
+            if (errorsAndWarnings != null && errorsAndWarnings.Count > 0)
             {
+                var hasErrors = false;
                 string exceptionMessage;
                 if (this.context.Log.HasExtendedErrorHandler)
                 {
                     // log each message individually so we can click through into the source
-                    foreach (var errorMessage in minifier.ErrorList)
+                    foreach (var errorMessage in errorsAndWarnings)
                     {
+                        var sourceFile = this.context.EnsureErrorFileOnDisk(errorMessage.File, contentItem);
+                        hasErrors |= this.context.Log.TreatWarningsAsErrors || errorMessage.IsError;
+
                         var errorHandler = errorMessage.IsError ? (LogExtendedError)this.context.Log.Error : this.context.Log.Warning;
                         errorHandler(
                             errorMessage.Subcategory,
                             errorMessage.ErrorCode,
                             errorMessage.HelpKeyword,
-                            errorMessage.File,
+                            sourceFile,
                             errorMessage.StartLine,
                             errorMessage.StartColumn,
                             errorMessage.EndLine,
@@ -170,8 +155,9 @@ namespace WebGrease.Activities
                 {
                     // no logging method passed to us -- combine it all into one big ugly string
                     // and throw it in the exception.
+                    hasErrors = true;
                     var errorMessageForException = new StringBuilder();
-                    foreach (var errorMessage in minifier.ErrorList)
+                    foreach (var errorMessage in errorsAndWarnings)
                     {
                         errorMessageForException.AppendLine(errorMessage.ToString());
                     }
@@ -179,8 +165,12 @@ namespace WebGrease.Activities
                     exceptionMessage = errorMessageForException.ToString();
                 }
 
-                throw new BuildWorkflowException(
-                    exceptionMessage, "MinifyJSActivity", ErrorCode.Default, null, this.SourceFile, 0, 0, 0, 0, null);
+                if (hasErrors)
+                {
+                    var activitySourceFile = this.context.EnsureErrorFileOnDisk(this.SourceFile ?? contentItem.RelativeContentPath, contentItem);
+                    throw new BuildWorkflowException(
+                        exceptionMessage, "MinifyJSActivity", ErrorCode.Default, null, activitySourceFile, 0, 0, 0, 0, null);
+                }
             }
         }
 

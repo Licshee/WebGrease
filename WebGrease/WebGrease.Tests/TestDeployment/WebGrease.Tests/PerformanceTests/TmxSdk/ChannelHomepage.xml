@@ -81,4 +81,10 @@
       <Input optional="true">shared\css\classic\common</Input>
     </Inputs>
   </CssFileSet>
+  <CssFileSet output="landingpage3.core.css">
+    <Inputs>
+      <!-- Core SDK Files -->
+      <Input>metrosdk\css\landingpage.core.css</Input>
+    </Inputs>
+  </CssFileSet>
 </WebGrease>

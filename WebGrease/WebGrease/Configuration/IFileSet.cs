@@ -29,5 +29,8 @@ namespace WebGrease.Configuration
 
         /// <summary>Gets the list of <see cref="InputSpec"/> items specified.</summary>
         IList<InputSpec> InputSpecs { get; }
+
+        /// <summary>Gets the external files.</summary>
+        IList<string> LoadedConfigurationFiles { get; }
     }
 }

@@ -106,4 +106,13 @@
       <!-- mobile.app -->
     </Inputs>
   </JsFileSet>
+  <JsFileSet output="channelHomepage.classic.pc.w3c3.js">
+    <Inputs>
+      <!-- TMX SDK Files -->
+      <Input>metrosdk\Js\channelHomepage.classic.pc.w3c.js</Input>
+      <!-- common -->
+      <Input optional="true">shared\js\classic\common</Input>
+      <Input optional="true">shared\js\classic\w3c</Input>
+    </Inputs>
+  </JsFileSet>
 </WebGrease>

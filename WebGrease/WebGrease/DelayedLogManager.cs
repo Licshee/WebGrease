@@ -12,17 +12,20 @@ namespace WebGrease
     using WebGrease.Extensions;
 
     /// <summary>The delayed log manager, will send out all it's message on dispose, except for errors they are also outputted immediately.</summary>
-    public class DelayedLogManager
+    internal class DelayedLogManager
     {
+        private const string MessageFormat = "{0} {1:HH:mm:ss.ff} {2}";
+
         /// <summary>The log name.</summary>
         private readonly string messagePrefix;
 
         /// <summary>The actions.</summary>
         private readonly IList<Tuple<string, Action<string>>> actions = new List<Tuple<string, Action<string>>>();
 
-        /// <summary>The flush lock.</summary>
-        private readonly object FlushLock = new object();
+        /// <summary>The flush lock object.</summary>
+        private readonly object flushLock = new object();
 
+        /// <summary>If the log is flushed.</summary>
         private bool isFlushed;
 
         /// <summary>Initializes a new instance of the <see cref="DelayedLogManager"/> class.</summary>
@@ -51,7 +54,7 @@ namespace WebGrease
         {
             if (!this.isFlushed)
             {
-                lock (this.FlushLock)
+                lock (this.flushLock)
                 {
                     if (!this.isFlushed)
                     {
@@ -68,8 +71,8 @@ namespace WebGrease
         /// <param name="action">The action.</param>
         private void AddTimedAction(string message, Action<string> action)
         {
-            var formattedMessage = "{0} {1:HH:mm:ss.ff} {2}".InvariantFormat(this.messagePrefix, DateTime.Now, message);
-            lock (this.FlushLock)
+            var formattedMessage = MessageFormat.InvariantFormat(this.messagePrefix, DateTime.Now, message);
+            lock (this.flushLock)
             {
                 if (this.isFlushed)
                 {

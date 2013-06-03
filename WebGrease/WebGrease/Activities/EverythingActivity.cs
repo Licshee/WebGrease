@@ -81,13 +81,15 @@ namespace WebGrease.Activities
         /// <returns>If it is successfull.</returns>
         internal bool Execute()
         {
+            this.ExecuteHashImages();
             return this.Execute(this.context.Configuration.CssFileSets.OfType<IFileSet>().Concat(this.context.Configuration.JSFileSets));
         }
 
         /// <summary>The main execution point, executes for all given file sets.</summary>
         /// <param name="fileSets">The file Types.</param>
+        /// <param name="fileType">The file type</param>
         /// <returns>If it failed or succeeded.</returns>
-        internal bool Execute(IEnumerable<IFileSet> fileSets)
+        internal bool Execute(IEnumerable<IFileSet> fileSets, FileTypes fileType = FileTypes.All)
         {
             var success = true;
 
@@ -113,7 +115,23 @@ namespace WebGrease.Activities
                     this.context.Configuration.ImageExtensions);
             }
 
+            if (fileType.HasFlag(FileTypes.Image))
+            {
+                this.ExecuteHashImages();
+            }
+
             return success;
+        }
+
+        /// <summary>Hashes images defined in the configuration as to be hashed.</summary>
+        internal void ExecuteHashImages()
+        {
+            if (this.context.Configuration.ImageDirectoriesToHash.Any())
+            {
+                var imageHasher = this.GetImageFileHasher(this.context.Configuration.DestinationDirectory, this.context.Configuration.ImageExtensions);
+                HashImages(this.context, imageHasher, this.context.Configuration.ImageDirectoriesToHash, this.context.Configuration.ImageExtensions);
+                imageHasher.Save();
+            }
         }
 
         /// <summary>Hashes a selection of files in the input path, and copies them to the output folder.</summary>
@@ -198,42 +216,8 @@ namespace WebGrease.Activities
         /// <param name="cacheSection">The cache section.</param>
         private static void EnsureCssLogFile(FileHasherActivity cssHasher, FileHasherActivity imageHasher, ICacheSection cacheSection)
         {
-            cssHasher.AppendToWorkLog(cacheSection.GetCachedContentItems(CacheFileCategories.MinifiedCssResult));
-            imageHasher.AppendToWorkLog(cacheSection.GetCachedContentItems(CacheFileCategories.HashedImage));
-        }
-
-        /// <summary>The ensure js log file.</summary>
-        /// <param name="jsHasher">The js hasher.</param>
-        /// <param name="cacheSection">The cache section.</param>
-        private static void EnsureJsLogFile(FileHasherActivity jsHasher, ICacheSection cacheSection)
-        {
-            jsHasher.AppendToWorkLog(cacheSection.GetCachedContentItems(CacheFileCategories.MinifyJsResult));
-        }
-
-        /// <summary>Gets the destination file paths.</summary>
-        /// <param name="inputFile">The input file.</param>
-        /// <param name="destinationDirectoryName">The destination directory name.</param>
-        /// <param name="destinationExtension">The destination Extension.</param>
-        /// <returns>The destination files as a colon seperated list.</returns>
-        private string GetDestinationFilePaths(ContentItem inputFile, string destinationDirectoryName, string destinationExtension)
-        {
-            if (inputFile.Pivots == null || !inputFile.Pivots.Any())
-            {
-                return GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension);
-            }
-
-            var fileNames = new List<string>();
-            foreach (var contentPivot in inputFile.Pivots)
-            {
-                if (this.context.TemporaryIgnore(contentPivot))
-                {
-                    continue;
-                }
-
-                fileNames.Add(GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension, contentPivot));
-            }
-
-            return string.Join("|", fileNames);
+            EnsureLogFile(cssHasher, cacheSection.GetCachedContentItems(CacheFileCategories.HashedMinifiedCssResult));
+            EnsureLogFile(imageHasher, cacheSection.GetCachedContentItems(CacheFileCategories.HashedImage));
         }
 
         /// <summary>The get content pivot destination file path.</summary>
@@ -257,6 +241,83 @@ namespace WebGrease.Activities
             return fileName;
         }
 
+        /// <summary>The ensure js log file.</summary>
+        /// <param name="jsHasher">The js hasher.</param>
+        /// <param name="cacheSection">The cache section.</param>
+        private static void EnsureJsLogFile(FileHasherActivity jsHasher, ICacheSection cacheSection)
+        {
+            EnsureLogFile(jsHasher, cacheSection.GetCachedContentItems(CacheFileCategories.HashedMinifiedJsResult));
+        }
+
+        /// <summary>The ensure log file.</summary>
+        /// <param name="hasher">The hasher.</param>
+        /// <param name="contentItems">The content items.</param>
+        private static void EnsureLogFile(FileHasherActivity hasher, IEnumerable<ContentItem> contentItems)
+        {
+            hasher.AppendToWorkLog(contentItems);
+        }
+
+        /// <summary>The hash images.</summary>
+        /// <param name="context">The context.</param>
+        /// <param name="imageHasher">The image hasher.</param>
+        /// <param name="imageDirectoriesToHash">The image directories to hash.</param>
+        /// <param name="imageExtensions">The image extensions.</param>
+        private static void HashImages(IWebGreaseContext context, FileHasherActivity imageHasher, IEnumerable<string> imageDirectoriesToHash, IEnumerable<string> imageExtensions)
+        {
+            context
+                .SectionedAction(SectionIdParts.ImageHash)
+                .CanBeCached(new { imageDirectoriesToHash, imageExtensions })
+                .RestoreFromCacheAction(cacheSection =>
+                {
+                    var contentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedImage);
+                    contentItems.ForEach(ci => ci.WriteToRelativeHashedPath(context.Configuration.DestinationDirectory));
+                    EnsureLogFile(imageHasher, contentItems);
+                    return true;
+                })
+                .WhenSkipped(cacheSection => EnsureLogFile(imageHasher, cacheSection.GetCachedContentItems(CacheFileCategories.HashedImage)))
+                .Execute(cacheSection =>
+                {
+                    var directoryInputSpecs = imageDirectoriesToHash.Select(imageDirectoryToHash => new InputSpec { Path = imageDirectoryToHash, IsOptional = true, SearchPattern = "*.*", SearchOption = SearchOption.AllDirectories });
+                    directoryInputSpecs.ForEach(cacheSection.AddSourceDependency);
+
+                    var imagesToHash = context.GetAvailableFiles(context.Configuration.SourceDirectory, imageDirectoriesToHash, imageExtensions, FileTypes.Image);
+                    foreach (var imageToHash in imagesToHash)
+                    {
+                        var imageContentItem = ContentItem.FromFile(imageToHash.Value, imageToHash.Key);
+                        var hashedContentItem = imageHasher.Hash(imageContentItem);
+                        cacheSection.AddResult(hashedContentItem, CacheFileCategories.HashedImage, true);
+                    }
+
+                    return true;
+                });
+        }
+
+        /// <summary>Gets the destination file paths.</summary>
+        /// <param name="inputFile">The input file.</param>
+        /// <param name="destinationDirectoryName">The destination directory name.</param>
+        /// <param name="destinationExtension">The destination Extension.</param>
+        /// <returns>The destination files as a colon seperated list.</returns>
+        private IEnumerable<string> GetDestinationFilePaths(ContentItem inputFile, string destinationDirectoryName, string destinationExtension)
+        {
+            if (inputFile.Pivots == null || !inputFile.Pivots.Any())
+            {
+                return new[] { GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension) };
+            }
+
+            var fileNames = new List<string>();
+            foreach (var contentPivot in inputFile.Pivots)
+            {
+                if (this.context.TemporaryIgnore(contentPivot))
+                {
+                    continue;
+                }
+
+                fileNames.Add(GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension, contentPivot));
+            }
+
+            return fileNames;
+        }
+
         /// <summary>Execute the css pipeline.</summary>
         /// <param name="cssFileSets">The css File Sets.</param>
         /// <param name="sourceDirectory">The source Directory.</param>
@@ -276,15 +337,7 @@ namespace WebGrease.Activities
                 return true;
             }
 
-            var imageHasher = GetFileHasher(
-                    this.context,
-                    Path.Combine(destinationDirectory, ImagesDestinationDirectoryName),
-                    this.imagesLogFile,
-                    FileTypes.Image,
-                    destinationDirectory,
-                    "../../", // The hashed image path relative to the css path.
-                    imageExtensions);
-
+            var imageHasher = this.GetImageFileHasher(destinationDirectory, imageExtensions);
             var cssHasher = GetFileHasher(this.context, cssHashedOutputPath, cssLogPath, FileTypes.CSS, this.context.Configuration.ApplicationRootDirectory);
 
             var totalSuccess = this.context.SectionedAction(SectionIdParts.EverythingActivity, SectionIdParts.Css)
@@ -311,6 +364,18 @@ namespace WebGrease.Activities
             return totalSuccess;
         }
 
+        private FileHasherActivity GetImageFileHasher(string destinationDirectory, IList<string> imageExtensions)
+        {
+            return GetFileHasher(
+                this.context,
+                Path.Combine(destinationDirectory, ImagesDestinationDirectoryName),
+                this.imagesLogFile,
+                FileTypes.Image,
+                destinationDirectory,
+                "../../", // The hashed image path relative to the css path.
+                imageExtensions);
+        }
+
         /// <summary>The execute css file set.</summary>
         /// <param name="configType">The config type.</param>
         /// <param name="imageDirectories">The image directories.</param>
@@ -326,53 +391,74 @@ namespace WebGrease.Activities
                 .SectionedAction(SectionIdParts.CssFileSet)
                 .CanBeCached(cssFileSet, new { configType }, true)
                 .WhenSkipped(cacheSection => EnsureCssLogFile(cssHasher, imageHasher, cacheSection))
+                .RestoreFromCacheAction(cacheSection =>
+                {
+                    cssFileSet.LoadedConfigurationFiles.ForEach(cacheSection.AddSourceDependency);
+
+                    var hashedContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedMinifiedCssResult);
+                    hashedContentItems.ForEach(ci => ci.WriteToRelativeHashedPath(this.context.Configuration.DestinationDirectory));
+                    EnsureLogFile(cssHasher, hashedContentItems);
+
+                    var hashedImages = cacheSection.GetCachedContentItems(CacheFileCategories.HashedImage);
+                    hashedImages.ForEach(ci => ci.WriteToRelativeHashedPath(this.context.Configuration.DestinationDirectory));
+                    EnsureLogFile(imageHasher, hashedImages);
+
+                    var hashedSprites = cacheSection.GetCachedContentItems(CacheFileCategories.HashedSpriteImage);
+                    hashedSprites.ForEach(ci => ci.WriteToContentPath(this.context.Configuration.DestinationDirectory));
+
+                    return hashedContentItems.Any();
+                })
                 .Execute(cacheSection =>
+                {
+                    var cssMinifier = this.CreateCssMinifier(cssFileSet, imageHasher, imageExtensions, imageDirectories, imagesDestinationDirectory);
+                    var outputFile = Path.Combine(this.staticAssemblerDirectory, cssFileSet.Output);
+                    var inputFiles = this.Bundle(cssFileSet, outputFile, FileTypes.CSS, configType, cssMinifier.ShouldMinify);
+                    if (inputFiles == null)
                     {
-                        var cssMinifier = this.CreateCssMinifier(cssFileSet, cssHasher, imageHasher, imageExtensions, imageDirectories, imagesDestinationDirectory);
-                        var outputFile = Path.Combine(this.staticAssemblerDirectory, cssFileSet.Output);
-                        var inputFiles = this.Bundle(cssFileSet, outputFile, FileTypes.CSS, configType);
-                        if (inputFiles == null)
-                        {
-                            return false;
-                        }
+                        return false;
+                    }
 
-                        // localization
-                        this.context.Log.Information("Resolving tokens and performing localization.");
+                    // localization
+                    this.context.Log.Information("Resolving tokens and performing localization.");
 
-                        // Resolve resources
-                        var localeResources = GetLocaleResources(cssFileSet, this.context, FileTypes.CSS);
-                        var themeResources = GetThemeResources(cssFileSet, this.context, FileTypes.CSS);
+                    // Resolve resources
+                    var localeResources = GetLocaleResources(cssFileSet, this.context, FileTypes.CSS);
+                    var themeResources = GetThemeResources(cssFileSet, this.context, FileTypes.CSS);
 
-                        // Localize the css
-                        var localizedAndThemedCssItems = this.LocalizeAndThemeCss(
-                            inputFiles,
-                            localeResources,
-                            themeResources,
-                            cssMinifier.ShouldMinify);
+                    // Localize the css
+                    var localizedAndThemedCssItems = this.LocalizeAndThemeCss(
+                        inputFiles,
+                        localeResources,
+                        themeResources,
+                        cssMinifier.ShouldMinify);
 
-                        this.context.Log.Information("Minifying css files, and spriting background images.");
-                        var localizeSuccess = localizedAndThemedCssItems.All(l => l != null);
+                    this.context.Log.Information("Minifying css files, and spriting background images.");
+                    var localizeSuccess = localizedAndThemedCssItems.All(l => l != null);
 
-                        if (!localizeSuccess)
-                        {
-                            // localization failed for this batch
-                            this.context.Log.Error(null, "There were errors while minifying the css files.");
-                        }
-                        
-                        var minifySuccess = true;
-                        foreach (var localizedAndThemedCssItem in localizedAndThemedCssItems)
-                        {
-                            minifySuccess &= this.MinifyCss(localizedAndThemedCssItem, cssMinifier);
-                        }
+                    if (!localizeSuccess)
+                    {
+                        // localization failed for this batch
+                        this.context.Log.Error(null, "There were errors while minifying the css files.");
+                        return false;
+                    }
 
-                        if (!minifySuccess)
-                        {
-                            // localization failed for this batch
-                            this.context.Log.Error(null, "There were errors while minifying the css files.");
-                        }
+                    var minifiedCssItems = this.MinifyCss(localizedAndThemedCssItems, cssMinifier, imageHasher);
 
-                        return minifySuccess && localizeSuccess;
-                    });
+                    if (minifiedCssItems.Any(i => i == null))
+                    {
+                        // localization failed for this batch
+                        this.context.Log.Error(null, "There were errors while minifying the css files.");
+                        return false;
+                    }
+
+                    var hashedCssItems = this.HashContentItems(cssHasher, minifiedCssItems.Select(i => i.Css), CssDestinationDirectoryName, Strings.Css);
+                    hashedCssItems.ForEach(hi => cacheSection.AddResult(hi, CacheFileCategories.HashedMinifiedCssResult));
+
+                    var hashedImageItems = minifiedCssItems.SelectMany(mci => mci.HashedImages);
+                    hashedImageItems.ForEach(hi => cacheSection.AddResult(hi, CacheFileCategories.HashedImage));
+
+                    return true;
+                });
         }
 
         /// <summary>Execute the javascript pipeline.</summary>
@@ -427,13 +513,22 @@ namespace WebGrease.Activities
         {
             return this.context.SectionedAction(SectionIdParts.JsFileSet)
                 .CanBeCached(jsFileSet, new { configType }, true)
+                .RestoreFromCacheAction(cacheSection =>
+                {
+                    var hashedContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedMinifiedJsResult);
+                    hashedContentItems.ForEach(ci => ci.WriteToRelativeHashedPath(this.context.Configuration.DestinationDirectory));
+                    EnsureLogFile(jsHasher, hashedContentItems);
+                    return hashedContentItems.Any();
+                })
                 .WhenSkipped(cacheSection => EnsureJsLogFile(jsHasher, cacheSection))
-                .Execute(jsFileSetCacheSection =>
+                .Execute(cacheSection =>
                     {
+                        jsFileSet.LoadedConfigurationFiles.ForEach(cacheSection.AddSourceDependency);
+                        var jsMinificationConfig = jsFileSet.Minification.GetNamedConfig(configType);
                         var outputFile = Path.Combine(this.staticAssemblerDirectory, jsFileSet.Output);
 
                         // bundling
-                        var bundledFiles = this.Bundle(jsFileSet, outputFile, FileTypes.JS, configType);
+                        var bundledFiles = this.Bundle(jsFileSet, outputFile, FileTypes.JS, configType, jsMinificationConfig.ShouldMinify);
 
                         if (bundledFiles == null)
                         {
@@ -454,13 +549,12 @@ namespace WebGrease.Activities
 
                         this.context.Log.Information("Minimizing javascript files");
 
-                        var jsFileSetResults = this.MinifyJs(
+                        var minifiedContentItems = this.MinifyJs(
                             localizedJsFiles,
-                            jsFileSet.Minification.GetNamedConfig(configType),
-                            jsFileSet.Validation.GetNamedConfig(configType),
-                            jsHasher);
+                            jsMinificationConfig,
+                            jsFileSet.Validation.GetNamedConfig(configType));
 
-                        if (!jsFileSetResults)
+                        if (minifiedContentItems.Any(ci => ci == null))
                         {
                             this.context.Log.Error(
                                 null, "There were errors encountered while minimizing javascript files.");
@@ -468,8 +562,29 @@ namespace WebGrease.Activities
                             return false;
                         }
 
+                        var hashedContentItems = this.HashContentItems(jsHasher, minifiedContentItems, JsDestinationDirectoryName, Strings.JS);
+                        hashedContentItems.ForEach(ci => cacheSection.AddResult(ci, CacheFileCategories.HashedMinifiedJsResult, true));
+
                         return true;
                     });
+        }
+
+        /// <summary>The hash content items.</summary>
+        /// <param name="hasher">The hasher.</param>
+        /// <param name="contentItems">The content items.</param>
+        /// <param name="destinationDirectoryName">The destination directory name.</param>
+        /// <param name="destinationExtension">The destination extension.</param>
+        /// <returns>The hashed content items</returns>
+        private IEnumerable<ContentItem> HashContentItems(FileHasherActivity hasher, IEnumerable<ContentItem> contentItems, string destinationDirectoryName, string destinationExtension)
+        {
+            var hashedFiles = new List<ContentItem>();
+            foreach (var contentItem in contentItems)
+            {
+                var destinationFilePaths = this.GetDestinationFilePaths(contentItem, destinationDirectoryName, destinationExtension);
+                hashedFiles.AddRange(hasher.Hash(contentItem, destinationFilePaths));
+            }
+
+            return hashedFiles;
         }
 
         /// <summary>Executes bundling.</summary>
@@ -477,8 +592,9 @@ namespace WebGrease.Activities
         /// <param name="outputFile">The output file.</param>
         /// <param name="fileType">The file type.</param>
         /// <param name="configType">The config type.</param>
+        /// <param name="minimalOutput">Is the ggoal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The resulting files.</returns>
-        private IEnumerable<ContentItem> Bundle(IFileSet fileSet, string outputFile, FileTypes fileType, string configType)
+        private IEnumerable<ContentItem> Bundle(IFileSet fileSet, string outputFile, FileTypes fileType, string configType, bool minimalOutput)
         {
             var bundleConfig = fileSet.Bundling.GetNamedConfig(configType);
             var preprocessingConfig = fileSet.Preprocessing.GetNamedConfig(this.context.Configuration.ConfigType);
@@ -486,7 +602,7 @@ namespace WebGrease.Activities
             if (bundleConfig.ShouldBundleFiles)
             {
                 this.context.Log.Information("Bundling files.");
-                var resultFile = this.BundleFiles(fileSet.InputSpecs, outputFile, preprocessingConfig, fileType);
+                var resultFile = this.BundleFiles(fileSet.InputSpecs, outputFile, preprocessingConfig, fileType, minimalOutput || bundleConfig.MinimalOutput);
                 if (resultFile == null)
                 {
                     // bundling failed
@@ -512,13 +628,12 @@ namespace WebGrease.Activities
 
         /// <summary>The create css minifier.</summary>
         /// <param name="cssFileSet">The css fileset.</param>
-        /// <param name="cssHasher">The css hasher.</param>
         /// <param name="imageHasher">The image hasher.</param>
         /// <param name="imageExtensions">The image Extensions.</param>
         /// <param name="imageDirectories">The image Directories.</param>
         /// <param name="imagesDestinationDirectory">The images Destination Directory.</param>
         /// <returns>The <see cref="MinifyCssActivity"/>.</returns>
-        private MinifyCssActivity CreateCssMinifier(CssFileSet cssFileSet, FileHasherActivity cssHasher, FileHasherActivity imageHasher, IList<string> imageExtensions, IList<string> imageDirectories, string imagesDestinationDirectory)
+        private MinifyCssActivity CreateCssMinifier(CssFileSet cssFileSet, FileHasherActivity imageHasher, IList<string> imageExtensions, IList<string> imageDirectories, string imagesDestinationDirectory)
         {
             var cssConfig = cssFileSet.Minification.GetNamedConfig(this.context.Configuration.ConfigType);
             var spritingConfig = cssFileSet.ImageSpriting.GetNamedConfig(this.context.Configuration.ConfigType);
@@ -529,10 +644,8 @@ namespace WebGrease.Activities
                                       ShouldOptimize = cssConfig.ShouldMinify,
                                       ShouldValidateForLowerCase = cssConfig.ShouldValidateLowerCase,
                                       ShouldExcludeProperties = cssConfig.ShouldExcludeProperties,
-                                      ShouldHashImages = true,
                                       ImageExtensions = imageExtensions,
                                       ImageDirectories = imageDirectories,
-                                      ImageHasher = imageHasher,
                                       BannedSelectors = new HashSet<string>(cssConfig.RemoveSelectors.ToArray()),
                                       HackSelectors = new HashSet<string>(cssConfig.ForbiddenSelectors.ToArray()),
                                       ImageAssembleReferencesToIgnore = new HashSet<string>(spritingConfig.ImagesToIgnore.ToArray()),
@@ -540,7 +653,8 @@ namespace WebGrease.Activities
                                       OutputUnitFactor = spritingConfig.OutputUnitFactor,
                                       ImagesOutputDirectory = imagesDestinationDirectory,
                                       IgnoreImagesWithNonDefaultBackgroundSize = spritingConfig.IgnoreImagesWithNonDefaultBackgroundSize,
-                                      CssHasher = cssHasher,
+                                      ImageBasePrefixToRemoveFromOutputPathInLog = imageHasher != null ? imageHasher.BasePrefixToRemoveFromOutputPathInLog : null,
+                                      ImageBasePrefixToAddToOutputPath = imageHasher != null ? imageHasher.BasePrefixToAddToOutputPath : null,
                                   };
             return cssMinifier;
         }
@@ -565,67 +679,69 @@ namespace WebGrease.Activities
         }
 
         /// <summary>Minifies css files.</summary>
-        /// <param name="inputFile">The css content item.</param>
+        /// <param name="inputCssItems">The css content input item.</param>
         /// <param name="minifier">The css minifier</param>
+        /// <param name="imageHasher">The image Hasher.</param>
         /// <returns>True is successfull false if not.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private bool MinifyCss(ContentItem inputFile, MinifyCssActivity minifier)
+        private IEnumerable<MinifyCssResult> MinifyCss(IEnumerable<ContentItem> inputCssItems, MinifyCssActivity minifier, FileHasherActivity imageHasher)
         {
-            var successful = true;
-
-            var sourceFile = inputFile.RelativeContentPath;
-            var destinationFiles = this.GetDestinationFilePaths(inputFile, CssDestinationDirectoryName, Strings.Css);
-
-            if (!destinationFiles.IsNullOrWhitespace())
+            var results = new List<MinifyCssResult>();
+            foreach (var inputFile in inputCssItems)
             {
-                this.context.Log.Information("Css Minify start: " + destinationFiles + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
+                var sourceFile = inputFile.RelativeContentPath;
+                var destinationFile = inputFile.RelativeContentPath;
+
+                this.context.Log.Information("Css Minify start: " + destinationFile + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
 
                 minifier.SourceFile = sourceFile;
-                minifier.DestinationFile = destinationFiles;
+                minifier.DestinationFile = destinationFile;
 
                 try
                 {
                     // execute the minifier on the css.
-                    minifier.Execute(inputFile);
+                    results.Add(minifier.Process(inputFile, imageHasher));
                 }
                 catch (Exception ex)
                 {
-                    successful = false;
+                    results.Add(null);
                     AggregateException aggEx;
 
                     if ((aggEx = ex as AggregateException) != null || ((ex.InnerException != null) && (aggEx = ex.InnerException as AggregateException) != null))
                     {
                         // antlr can throw a blob of errors, so they need to be deduped to get the real set of errors
-                        // TODO: RTUIT: Save the actual content in a temp folder and point to it for errors.
                         var errors = aggEx.CreateBuildErrors(sourceFile);
                         foreach (var error in errors)
                         {
-                            this.HandleError(error);
+                            this.HandleError(inputFile, error, sourceFile);
                         }
                     }
                     else
                     {
                         // Catch, record and display error
-                        // TODO: RTUIT: Save the actual content in a temp folder and point to it for errors.
-                        this.HandleError(ex, sourceFile);
+                        this.HandleError(inputFile, ex, sourceFile);
                     }
                 }
             }
 
-            return successful;
+            return results;
         }
 
         /// <summary>Minify js activity</summary>
         /// <param name="inputFiles">path to localized js files to be minified</param>
         /// <param name="jsConfig">The js Config.</param>
         /// <param name="jsValidateConfig">The js Validate Config.</param>
-        /// <param name="jsHasher">The javascript hasher.</param>
         /// <returns>True if successfull false if not.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private bool MinifyJs(IEnumerable<ContentItem> inputFiles, JsMinificationConfig jsConfig, JSValidationConfig jsValidateConfig, FileHasherActivity jsHasher)
+        private IEnumerable<ContentItem> MinifyJs(IEnumerable<ContentItem> inputFiles, JsMinificationConfig jsConfig, JSValidationConfig jsValidateConfig)
         {
-            var success = true;
-            var minifier = new MinifyJSActivity(this.context) { FileHasher = jsHasher };
+            var results = new List<ContentItem>();
+            var minifier = new MinifyJSActivity(this.context)
+            {
+                ShouldMinify = jsConfig.ShouldMinify,
+                ShouldAnalyze = jsValidateConfig.ShouldAnalyze,
+                AnalyzeArgs = jsValidateConfig.AnalyzeArguments
+            };
 
             // if we specified some globals to ignore, format them on the command line with the
             // other minification arguments
@@ -638,33 +754,25 @@ namespace WebGrease.Activities
                 minifier.MinifyArgs = jsConfig.MinificationArugments;
             }
 
-            minifier.ShouldMinify = jsConfig.ShouldMinify;
-            minifier.ShouldAnalyze = jsValidateConfig.ShouldAnalyze;
-            minifier.AnalyzeArgs = jsValidateConfig.AnalyzeArguments;
-
             foreach (var inputFile in inputFiles)
             {
                 var sourceFile = inputFile.RelativeContentPath;
-                var destinationFiles = this.GetDestinationFilePaths(inputFile, JsDestinationDirectoryName, Strings.JS);
-                if (!destinationFiles.IsNullOrWhitespace())
+                if (!inputFile.Pivots.All(this.context.TemporaryIgnore))
                 {
-
-                    minifier.DestinationFile = destinationFiles;
-
                     this.context.Log.Information("Js Minify start: " + sourceFile + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
                     try
                     {
-                        minifier.Execute(inputFile);
+                        results.Add(minifier.Minify(inputFile));
                     }
                     catch (Exception ex)
                     {
-                        this.HandleError(ex, sourceFile);
-                        success = false;
+                        results.Add(null);
+                        this.HandleError(inputFile, ex, sourceFile);
                     }
                 }
             }
 
-            return success;
+            return results;
         }
 
         /// <summary>Localize the js files based on the expanded resource tokens for locales</summary>
@@ -695,7 +803,7 @@ namespace WebGrease.Activities
                 }
                 catch (Exception ex)
                 {
-                    this.HandleError(ex, jsFile.RelativeContentPath);
+                    this.HandleError(jsFile, ex, jsFile.RelativeContentPath);
                 }
             }
 
@@ -726,7 +834,7 @@ namespace WebGrease.Activities
                 }
                 catch (Exception ex)
                 {
-                    this.HandleError(ex, cssInputItem.RelativeContentPath);
+                    this.HandleError(cssInputItem, ex, cssInputItem.RelativeContentPath);
                     results.Add(null);
                 }
             }
@@ -739,16 +847,18 @@ namespace WebGrease.Activities
         /// <param name="outputFile">name of the output file</param>
         /// <param name="preprocessing">The preprocessing.</param>
         /// <param name="fileType">JavaScript of Stylesheets</param>
+        /// <param name="minimalOutput">Is the ggoal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>a value indicating whether the operation was successful</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private ContentItem BundleFiles(IEnumerable<InputSpec> inputSpecs, string outputFile, PreprocessingConfig preprocessing, FileTypes fileType)
+        private ContentItem BundleFiles(IEnumerable<InputSpec> inputSpecs, string outputFile, PreprocessingConfig preprocessing, FileTypes fileType, bool minimalOutput)
         {
             // now we have the input prepared, so use Assembler activity to create the one file to use as input (if we were't assembling, we'd need to grab all) 
             // we are bundling either JS or CSS files -- for JS files we want to append semicolons between them and use single-line comments; for CSS file we don't.
             var assemblerActivity = new AssemblerActivity(this.context)
                 {
                     PreprocessingConfig = preprocessing,
-                    AddSemicolons = fileType == FileTypes.JS
+                    AddSemicolons = fileType == FileTypes.JS,
+                    MinimalOutput = minimalOutput
                 };
 
             foreach (var inputSpec in inputSpecs)
@@ -765,7 +875,7 @@ namespace WebGrease.Activities
             catch (Exception ex)
             {
                 // catch/record/display error.
-                this.HandleError(ex);
+                this.HandleError(null, ex);
             }
 
             return null;
@@ -774,17 +884,25 @@ namespace WebGrease.Activities
         /// <summary>
         /// general handler for errors
         /// </summary>
+        /// <param name="contentItem">The content item.</param>
         /// <param name="ex">exception caught</param>
         /// <param name="file">File being processed that caused the error.</param>
         /// <param name="message">message to be shown (instead of Exception.Message)</param>
-        private void HandleError(Exception ex, string file = null, string message = null)
+        private void HandleError(ContentItem contentItem, Exception ex, string file = null, string message = null)
         {
             if (ex.InnerException is BuildWorkflowException)
             {
                 ex = ex.InnerException;
             }
 
-            if (!string.IsNullOrWhiteSpace(file))
+            var bwe = ex as BuildWorkflowException;
+            if (contentItem != null && bwe != null)
+            {
+                bwe.File = this.context.EnsureErrorFileOnDisk(bwe.File, contentItem);
+                ex = bwe;
+            }
+
+            if (!string.IsNullOrWhiteSpace(file) && (bwe == null || bwe.File.IsNullOrWhitespace()))
             {
                 this.context.Log.Error(null, string.Format(CultureInfo.InvariantCulture, ResourceStrings.ErrorsInFileFormat, file), file);
             }

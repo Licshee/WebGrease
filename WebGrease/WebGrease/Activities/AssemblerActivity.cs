@@ -52,6 +52,9 @@ namespace WebGrease.Activities
         /// <summary>Gets or sets a flag indicating whether to append semicolons between bundled files that don't already end in them</summary>
         internal bool AddSemicolons { private get; set; }
 
+        /// <summary>Gets or sets the value that determines if there should be minimal output.</summary>
+        internal bool MinimalOutput { get; set; }
+
         /// <summary>The execute method for the activity under question.</summary>
         /// <param name="resultContentItemType">The result Content Type.</param>
         /// <returns>The <see cref="ContentItem"/> or null if it failed.</returns>
@@ -73,7 +76,15 @@ namespace WebGrease.Activities
                 .CanBeCached(new { this.Inputs, this.PreprocessingConfig, this.AddSemicolons, output = resultContentItemType == ContentItemType.Path ? this.OutputFile : null })
                 .RestoreFromCacheAction(cacheSection =>
                     {
-                        contentItem = cacheSection.GetCachedContentItem(CacheFileCategories.AssemblerResult);
+                        var cachedContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.AssemblerResult);
+                        if (cachedContentItem == null)
+                        {
+                            return false;
+                        }
+
+                        contentItem = ContentItem.FromContentItem(
+                                        cachedContentItem,
+                                        Path.GetFileName(this.OutputFile));
                         return true;
                     })
                 .Execute(cacheSection =>
@@ -164,15 +175,18 @@ namespace WebGrease.Activities
                 ? filePath.MakeRelativeTo(sourceDirectory)
                 : filePath;
 
-            writer.WriteLine("/* {0} {1} */".InvariantFormat(relativeFilePath, filePath != relativeFilePath ? "(" + filePath + ")" : string.Empty));
-            writer.WriteLine();
+            if (!this.MinimalOutput)
+            {
+                writer.WriteLine("/* {0} {1} */".InvariantFormat(relativeFilePath, filePath != relativeFilePath ? "(" + filePath + ")" : string.Empty));
+                writer.WriteLine();
+            }
 
             var contentItem = ContentItem.FromFile(filePath, relativeFilePath);
 
             // Executing any applicable preprocessors from the list of configured preprocessors on the file content
             if (preprocessingConfig != null && preprocessingConfig.Enabled)
             {
-                contentItem = this.context.Preprocessing.Process(contentItem, preprocessingConfig);
+                contentItem = this.context.Preprocessing.Process(contentItem, preprocessingConfig, this.MinimalOutput);
                 if (contentItem == null)
                 {
                     throw new WorkflowException("Could not assembly the file {0} because one of the preprocessors threw an error.".InvariantFormat(filePath));

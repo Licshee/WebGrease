@@ -81,9 +81,10 @@ namespace WebGrease.Preprocessing
         /// The plugins themselves will report the detailed error through the logError and logExtendedError actions.</summary>
         /// <param name="contentItem">The content Item.</param>
         /// <param name="preprocessConfig">The preprocessing config.</param>
+        /// <param name="minimalOutput"></param>
         /// <returns>If no preprocessors are found, the passed in file contents.
         /// Or the result of the pre processors, or null if there was an error while calling the preprocessors.</returns>
-        internal ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessConfig)
+        internal ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessConfig, bool minimalOutput = false)
         {
             // Select all the registered preprocessors that are named in the configguration in the order in which they appear in the config and are valid for this file type.
             this.context.Log.Information("Registered preprocessors to use: {0}".InvariantFormat(string.Join(";", preprocessConfig.PreprocessingEngines)));
@@ -109,7 +110,7 @@ namespace WebGrease.Preprocessing
                      this.context.Log.Information("preprocessing with: {0}".InvariantFormat(preprocessingEngine.Name));
 
                      // Get the new content
-                     contentItem = preprocessingEngine.Process(contentItem, preprocessConfig);
+                     contentItem = preprocessingEngine.Process(contentItem, preprocessConfig, minimalOutput);
 
                      if (contentItem == null)
                      {

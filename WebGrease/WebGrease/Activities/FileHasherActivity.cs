@@ -196,6 +196,22 @@ namespace WebGrease.Activities
             return hashedFiles;
         }
 
+        internal IEnumerable<ContentItem> Hash(ContentItem contentItem, IEnumerable<string> originalFiles)
+        {
+            var hashedFiles = new List<ContentItem>();
+
+            if (originalFiles.Any())
+            {
+                var firstOriginalFile = originalFiles.FirstOrDefault();
+                var hashedContentItem = this.Hash(ContentItem.FromContentItem(contentItem, firstOriginalFile));
+                hashedFiles.Add(hashedContentItem);
+
+                hashedFiles.AddRange(this.AppendToWorkLog(hashedContentItem, originalFiles.Skip(1)));
+            }
+
+            return hashedFiles;
+        }
+
         /// <summary>The append to work log.</summary>
         /// <param name="hashedContentItem">The hashed content item.</param>
         /// <param name="originalFiles">The original files.</param>
