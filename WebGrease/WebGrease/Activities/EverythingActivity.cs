@@ -266,7 +266,7 @@ namespace WebGrease.Activities
         {
             context
                 .SectionedAction(SectionIdParts.ImageHash)
-                .CanBeCached(new { imageDirectoriesToHash, imageExtensions })
+                .MakeCachable(new { imageDirectoriesToHash, imageExtensions })
                 .RestoreFromCacheAction(cacheSection =>
                 {
                     var contentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedImage);
@@ -341,7 +341,7 @@ namespace WebGrease.Activities
             var cssHasher = GetFileHasher(this.context, cssHashedOutputPath, cssLogPath, FileTypes.CSS, this.context.Configuration.ApplicationRootDirectory);
 
             var totalSuccess = this.context.SectionedAction(SectionIdParts.EverythingActivity, SectionIdParts.Css)
-                .CanBeCached(new { cssFileSets, sourceDirectory, destinationDirectory, configType, imageExtensions, imageDirectories }, true)
+                .MakeCachable(new { cssFileSets, sourceDirectory, destinationDirectory, configType, imageExtensions, imageDirectories }, true)
                 .WhenSkipped(cacheSection => EnsureCssLogFile(cssHasher, imageHasher, cacheSection))
                 .Execute(cacheSection =>
                 {
@@ -389,7 +389,7 @@ namespace WebGrease.Activities
         {
             return this.context
                 .SectionedAction(SectionIdParts.CssFileSet)
-                .CanBeCached(cssFileSet, new { configType }, true)
+                .MakeCachable(cssFileSet, new { configType }, true)
                 .WhenSkipped(cacheSection => EnsureCssLogFile(cssHasher, imageHasher, cacheSection))
                 .RestoreFromCacheAction(cacheSection =>
                 {
@@ -480,7 +480,7 @@ namespace WebGrease.Activities
             var jsHasher = GetFileHasher(this.context, jsHashedOutputPath, jsLogPath, FileTypes.JS, this.context.Configuration.ApplicationRootDirectory);
             var varBySettings = new { jsFileSets, configType, sourceDirectory, destinationDirectory };
             var totalSuccess = this.context.SectionedAction(SectionIdParts.EverythingActivity, SectionIdParts.Js)
-                .CanBeCached(varBySettings, true)
+                .MakeCachable(varBySettings, true)
                 .WhenSkipped(cacheSection => EnsureJsLogFile(jsHasher, cacheSection))
                 .Execute(cacheSection =>
                 {
@@ -512,7 +512,7 @@ namespace WebGrease.Activities
         private bool ExecuteJSFileSet(JSFileSet jsFileSet, FileHasherActivity jsHasher, string configType)
         {
             return this.context.SectionedAction(SectionIdParts.JsFileSet)
-                .CanBeCached(jsFileSet, new { configType }, true)
+                .MakeCachable(jsFileSet, new { configType }, true)
                 .RestoreFromCacheAction(cacheSection =>
                 {
                     var hashedContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedMinifiedJsResult);

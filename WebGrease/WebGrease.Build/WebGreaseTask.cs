@@ -251,7 +251,7 @@ namespace WebGrease.Build
                 var configFileContentItem = ContentItem.FromFile(configFileInfo.FullName);
                 configFileSuccess = sessionContext
                     .SectionedActionGroup(SectionIdParts.WebGreaseBuildTask, SectionIdParts.ConfigurationFile)
-                    .CanBeCached(configFileContentItem, new { activity, fileContext.Configuration }, activity == ActivityName.Bundle) // Cached action can only be skipped when it is the bundle activity, otherwise don't.
+                    .MakeCachable(configFileContentItem, new { activity, fileContext.Configuration }, activity == ActivityName.Bundle) // Cached action can only be skipped when it is the bundle activity, otherwise don't.
                     .Execute(configFileCacheSection =>
                         {
                             fileContext.Configuration.AllLoadedConfigurationFiles.ForEach(configFileCacheSection.AddSourceDependency);
@@ -319,7 +319,7 @@ namespace WebGrease.Build
 
             var sessionSuccess = sessionContext
                 .SectionedAction(SectionIdParts.WebGreaseBuildTaskSession)
-                .CanBeCached(new { fullPathToConfigFiles, activity })
+                .MakeCachable(new { fullPathToConfigFiles, activity })
                 .Execute(sessionCacheSection =>
                 {
                     var sessionCacheData = sessionCacheSection.GetCacheData<SessionCacheData>(CacheFileCategories.SolutionCacheConfig);
@@ -327,7 +327,7 @@ namespace WebGrease.Build
                     var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = SearchOption.TopDirectoryOnly }.GetFiles();
                     var contentTypeSuccess = sessionContext
                         .SectionedAction(contentTypeSectionId)
-                        .CanBeCached(new { activity, inputFiles, sessionContext.Configuration }, activity == ActivityName.Bundle)
+                        .MakeCachable(new { activity, inputFiles, sessionContext.Configuration }, activity == ActivityName.Bundle)
                         .Execute(contentTypeCacheSection =>
                             {
                                 var success = true;

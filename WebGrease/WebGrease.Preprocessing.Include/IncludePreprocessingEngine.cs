@@ -102,7 +102,7 @@ namespace WebGrease.Preprocessing.Include
         {
             var settingsMinimalOutput = preprocessingConfig != null && preprocessingConfig.Element != null && (bool?)preprocessingConfig.Element.Attribute("minimalOutput") == true;
             this.context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude")
-            .CanBeCached(contentItem, new { minimalOutput })
+            .MakeCachable(contentItem, new { minimalOutput })
             .Execute(wgincludeCacheImportsSection =>
             {
                 var workingFolder = this.context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);

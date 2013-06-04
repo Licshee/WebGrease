@@ -161,7 +161,7 @@ namespace WebGrease.Preprocessing.Sass
                         var sassCacheImportsSection = context.Cache.CurrentCacheSection;
 
                         string fileToProcess = null;
-                        bool isTemp = false;
+                        var isTemp = false;
                         try
                         {
                             var workingDirectory = Path.IsPathRooted(relativeContentPath)
@@ -234,7 +234,7 @@ namespace WebGrease.Preprocessing.Sass
         private static string ParseImports(string fileContent, string workingFolder, ICacheSection cacheSection, bool minimalOutput)
         {
             var withImports = ImportsPattern.Replace(fileContent, match => ReplaceImports(match, workingFolder.EnsureEndSeparator(), cacheSection, minimalOutput));
-            SetImportSourceDependencies(fileContent, workingFolder, cacheSection);
+            SetImportSourceDependencies(withImports, workingFolder, cacheSection);
             return withImports;
         }
 

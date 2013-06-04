@@ -158,6 +158,8 @@
     </Content>
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\test1.include.css" />
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\include\include1.css" />
+    <None Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\imports3.scss" />
+    <None Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\imports2.scss" />
     <None Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Input\Css\test1.import.scss">
       <Compile>False</Compile>
       <Minify>False</Minify>

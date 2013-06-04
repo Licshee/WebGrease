@@ -142,7 +142,7 @@ namespace WebGrease.Activities
             var spritedImageContentItems = new List<ContentItem>();
             this.context
                 .SectionedAction(SectionIdParts.MinifyCssActivity)
-                .CanBeCached(contentItem, this.GetVarBySettings(imageHasher))
+                .MakeCachable(contentItem, this.GetVarBySettings(imageHasher))
                 .RestoreFromCacheAction(cacheSection =>
                 {
                     minifiedContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.MinifiedCssResult, this.DestinationFile, null, contentItem.Pivots);
@@ -453,7 +453,7 @@ namespace WebGrease.Activities
             var results = new List<ContentItem>();
 
             var success = this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly)
-                .CanBeCached(this.GetRelativeSpriteCacheKey(imageReferencesToAssemble))
+                .MakeCachable(this.GetRelativeSpriteCacheKey(imageReferencesToAssemble))
                 .RestoreFromCacheAction(cacheSection =>
                 {
                     // restore log file, is required by next step in applying sprites to the css.

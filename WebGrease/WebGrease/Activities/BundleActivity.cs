@@ -52,9 +52,9 @@ namespace WebGrease.Activities
         {
             if (fileSets.Any())
             {
-                var varBySettings = new { fileSets, fileType, this.context.Configuration.ConfigType, this.context.Configuration.SourceDirectory, this.context.Configuration.DestinationDirectory };
+                var varBySettings = new { fileSets, fileType, this.context.Configuration };
                 this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString())
-                    .CanBeCached(varBySettings)
+                    .MakeCachable(varBySettings, true)
                     .RestoreFromCacheAction(this.RestoreBundleFromCache)
                     .Execute(cacheSection =>
                     {
@@ -92,9 +92,10 @@ namespace WebGrease.Activities
                     // for each file set (that isn't empty of inputs)
                     // bundle the files, however this can only be done on filesets that have an output value of a file (ie: has an extension)
                     var outputFile = Path.Combine(this.context.Configuration.DestinationDirectory, fileSet.Output);
+                    var preprocessingConfig = fileSet.Preprocessing.GetNamedConfig(configType);
 
                     this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString(), SectionIdParts.Process)
-                        .CanBeCached(fileSet, bundleConfig, true)
+                        .MakeCachable(fileSet, new { bundleConfig, preprocessingConfig }, true)
                         .RestoreFromCacheAction(this.RestoreBundleFromCache)
                         .Execute(fileSetCacheSection =>
                         {
@@ -106,7 +107,6 @@ namespace WebGrease.Activities
                                 return true;
                             }
 
-                            var preprocessingConfig = fileSet.Preprocessing.GetNamedConfig(configType);
                             assembler.OutputFile = outputFile;
                             assembler.Inputs.Clear();
                             assembler.PreprocessingConfig = preprocessingConfig;

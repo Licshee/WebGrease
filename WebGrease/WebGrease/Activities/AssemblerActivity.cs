@@ -73,7 +73,7 @@ namespace WebGrease.Activities
 
             ContentItem contentItem = null;
             this.context.SectionedAction(SectionIdParts.AssemblerActivity, assembleType)
-                .CanBeCached(new { this.Inputs, this.PreprocessingConfig, this.AddSemicolons, output = resultContentItemType == ContentItemType.Path ? this.OutputFile : null })
+                .MakeCachable(new { this.Inputs, this.PreprocessingConfig, this.AddSemicolons, output = resultContentItemType == ContentItemType.Path ? this.OutputFile : null })
                 .RestoreFromCacheAction(cacheSection =>
                     {
                         var cachedContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.AssemblerResult);

@@ -91,7 +91,7 @@ namespace WebGrease.Activities
         {
             ContentItem minifiedJsContentItem = null;
             this.context.SectionedAction(SectionIdParts.MinifyJsActivity)
-                .CanBeCached(sourceContentItem, new { this.ShouldAnalyze, this.ShouldMinify, this.AnalyzeArgs, this.context.Configuration.Global.TreatWarningsAsErrors })
+                .MakeCachable(sourceContentItem, new { this.ShouldAnalyze, this.ShouldMinify, this.AnalyzeArgs, this.context.Configuration.Global.TreatWarningsAsErrors })
                 .RestoreFromCacheAction(cacheSection =>
                 {
                     minifiedJsContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.MinifiedJsResult, sourceContentItem.RelativeContentPath, null, sourceContentItem.Pivots);

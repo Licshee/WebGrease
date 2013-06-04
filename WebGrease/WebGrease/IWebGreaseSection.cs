@@ -26,20 +26,20 @@ namespace WebGrease
         /// <param name="varBySettings">The settings to var by.</param>
         /// <param name="isSkipable">Determines if the cache is skipable.</param>
         /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
-        ICachableWebGreaseSection CanBeCached(object varBySettings, bool isSkipable = false);
+        ICachableWebGreaseSection MakeCachable(object varBySettings, bool isSkipable = false);
 
         /// <summary>Makes the section cachable.</summary>
         /// <param name="varByContentItem">The content item to vary by.</param>
         /// <param name="varBySettings">The settings to var by.</param>
         /// <param name="isSkipable">Determines if the cache is skipable.</param>
         /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
-        ICachableWebGreaseSection CanBeCached(ContentItem varByContentItem, object varBySettings = null, bool isSkipable = false);
+        ICachableWebGreaseSection MakeCachable(ContentItem varByContentItem, object varBySettings = null, bool isSkipable = false);
 
         /// <summary>Makes the section cachable.</summary>
         /// <param name="varByFileSet">The var By File Set.</param>
         /// <param name="varBySettings">The settings to var by.</param>
         /// <param name="isSkipable">Determines if the cache is skipable.</param>
         /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
-        ICachableWebGreaseSection CanBeCached(IFileSet varByFileSet, object varBySettings = null, bool isSkipable = false);
+        ICachableWebGreaseSection MakeCachable(IFileSet varByFileSet, object varBySettings = null, bool isSkipable = false);
     }
 }

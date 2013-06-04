@@ -395,6 +395,18 @@ namespace Microsoft.WebGrease.Tests
             });
 
             // ----------------------------------------------------------------------------------------
+            // Add something to a indirectly included file using sass import and verify it updates
+            var test2Scssfile = Path.Combine(inputCssRoot, "imports3.scss");
+            File.WriteAllText(test2Scssfile, File.ReadAllText(test2Scssfile) + "\r\n.addedimports3{ color: green; }");
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
+            {
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should run");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be running minifycss again for changed sass.");
+                var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
+                Assert.IsTrue(outputscss.Contains(".addedimports3"));
+            });
+
+            // ----------------------------------------------------------------------------------------
             // Remove a indirectly included file using sass import and verify it updates
             /* Currently unsupported scenario, re-add when we enable multiple "library" paths for sass.
             File.Delete(test1Scssfile);
