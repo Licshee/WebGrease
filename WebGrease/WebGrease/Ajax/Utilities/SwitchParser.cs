@@ -667,6 +667,18 @@ namespace Microsoft.Ajax.Utilities
                                 }
                                 break;
 
+                            case "ESC":
+                                if (BooleanSwitch(paramPartUpper, true, out parameterFlag))
+                                {
+                                    JSSettings.AlwaysEscapeNonAscii = parameterFlag;
+                                }
+                                else
+                                {
+                                    OnInvalidSwitch(switchPart, paramPart);
+                                }
+                                OnJSOnlyParameter();
+                                break;
+
                             case "EVALS":
                                 // three options: ignore, make immediate scope safe, or make all scopes safe
                                 if (paramPartUpper == "IGNORE")

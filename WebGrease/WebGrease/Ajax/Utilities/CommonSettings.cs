@@ -179,6 +179,17 @@ namespace Microsoft.Ajax.Utilities
             set;
         }
 
+        /// <summary>
+        /// Gets an appropriate line-terminator string given the output mode
+        /// </summary>
+        public string LineTerminator
+        {
+            get
+            {
+                return OutputMode == Utilities.OutputMode.MultipleLines ? "\r\n" : "\n";
+            }
+        }
+
         #endregion
 
         #region Indent methods

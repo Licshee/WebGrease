@@ -31,6 +31,16 @@ namespace Microsoft.Ajax.Utilities
 
         #endregion
 
+        #region internal properties
+
+        /// <summary>
+        /// Gets or sets a boolean value for whether this is an existing scope or a new one
+        /// generated during the current run.
+        /// </summary>
+        internal bool Existing { get; set; }
+
+        #endregion
+
         #region public properties
 
         public bool UseStrict
@@ -246,14 +256,10 @@ namespace Microsoft.Ajax.Utilities
 
         #region AnalyzeScope functionality
 
-        internal void AnalyzeScope()
+        internal virtual void AnalyzeScope()
         {
-            // check for unused local fields or arguments if this isn't the global scope.
-            // also remove unused lexical function declaration in with-scopes.
-            if (!(this is GlobalScope))
-            {
-                AnalyzeNonGlobalScope();
-            }
+            // global scopes override this and don't call the next
+            AnalyzeNonGlobalScope();
 
             // rename fields if we need to
             ManualRenameFields();
@@ -575,7 +581,7 @@ namespace Microsoft.Ajax.Utilities
             return null;
         }
 
-        private void ManualRenameFields()
+        protected void ManualRenameFields()
         {
             // if the local-renaming kill switch is on, we won't be renaming ANYTHING, so we'll have nothing to do.
             if (m_settings.IsModificationAllowed(TreeModifications.LocalRenaming))
@@ -643,7 +649,7 @@ namespace Microsoft.Ajax.Utilities
 
         #region crunching methods
 
-        internal virtual void ValidateGeneratedNames()
+        internal void ValidateGeneratedNames()
         {
             // check all the variables defined within this scope.
             // we're looking for uncrunched generated fields.
@@ -672,7 +678,10 @@ namespace Microsoft.Ajax.Utilities
             // recursively traverse through our children
             foreach (ActivationObject scope in ChildScopes)
             {
-                scope.ValidateGeneratedNames();
+                if (!scope.Existing)
+                {
+                    scope.ValidateGeneratedNames();
+                }
             }
         }
 

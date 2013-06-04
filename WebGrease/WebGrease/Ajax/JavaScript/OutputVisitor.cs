@@ -1697,13 +1697,15 @@ namespace Microsoft.Ajax.Utilities
                 if (node.Root != null)
                 {
                     var constantWrapper = node.Root as ConstantWrapper;
-                    if (constantWrapper != null && constantWrapper.IsFiniteNumericLiteral)
+                    if (constantWrapper != null 
+                        && (constantWrapper.IsFiniteNumericLiteral || constantWrapper.IsOtherDecimal))
                     {
-                        // numeric constant wrapper that isn't NaN or Infinity - get the formatted text version
+                        // numeric constant wrapper that isn't NaN or Infinity - get the formatted text version.
+                        // if the number has issues, then don't format it and just use the source.
                         string numericText;
                         if (constantWrapper.Context == null
                             || !constantWrapper.Context.HasCode
-                            || Settings.IsModificationAllowed(TreeModifications.MinifyNumericLiterals))
+                            || (Settings.IsModificationAllowed(TreeModifications.MinifyNumericLiterals) && !constantWrapper.MayHaveIssues))
                         {
                             // apply minification to the literal to get it as small as possible
                             numericText = NormalizeNumber(constantWrapper.ToNumber(), constantWrapper.Context);
@@ -1715,15 +1717,54 @@ namespace Microsoft.Ajax.Utilities
                             numericText = constantWrapper.Context.Code;
                         }
 
-                        // if there is no decimal point in the number, we need to add one at the end
-                        // so the member-dot operator doesn't get mistaken for the decimal point and
-                        // generate a syntax error
-                        Output(numericText);
-                        if (numericText.IndexOf('.') < 0
-                            && !numericText.StartsWith("(", StringComparison.Ordinal))
+                        // if the value is negative, we're going to need to wrap it in parens
+                        if (numericText.StartsWith("-", StringComparison.Ordinal))
                         {
-                            // no decimal point - make sure to add one
-                            Output('.');
+                            Output('(');
+                            Output(numericText);
+                            Output(')');
+                        }
+                        else
+                        {
+                            // if there is no decimal point in the number and no exponent, then we may need to add 
+                            // a decimal point to the end of the number so the member-dot operator doesn't get mistaken 
+                            // for the decimal point and generate a syntax error.
+                            Output(numericText);
+                            if (numericText.IndexOf('.') < 0
+                                && numericText.IndexOf("e", StringComparison.OrdinalIgnoreCase) < 0)
+                            {
+                                // HOWEVER... octal literals don't need the dot. So if this number starts with zero and
+                                // has more than one digit, we need to check for octal literals and 0xd+ 0bd+ and 0od+ literals,
+                                // because THOSE don't need the extra dot, either. 
+                                bool addDecimalPoint = !numericText.StartsWith("0", StringComparison.Ordinal) || numericText.Length == 1;
+                                if (!addDecimalPoint)
+                                {
+                                    // But we might also have a number that just starts with zero and is a regular decimal (like 0009).
+                                    // if the second "digit" isn't a number, then we have 0x or 0b or 0o, so we don't have to do
+                                    // any further tests -- we know we don't need the extra decimal point. Otherwise we need to
+                                    // make sure this
+                                    if (char.IsDigit(numericText[1]))
+                                    {
+                                        // the second character is a digit, so we know we aren't 0x, 0b, or 0o. But we start with
+                                        // a zero -- so we need to test to see if this is an octal literal, because they do NOT need
+                                        // the extra decimal point. But if it isn't an octal literal, we DO need it after all.
+                                        for (var ndx = 1; ndx < numericText.Length; ++ndx)
+                                        {
+                                            if ('7' < numericText[ndx])
+                                            {
+                                                // NOT octal; we need the extra dot
+                                                addDecimalPoint = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (addDecimalPoint)
+                                {
+                                    Output('.');
+                                }
+                            }
                         }
                     }
                     else
@@ -2460,8 +2501,7 @@ namespace Microsoft.Ajax.Utilities
                 m_segmentStartLine = m_lineCount;
                 m_segmentStartColumn = m_lineLength;
 
-                m_outputStream.Write(text);
-                m_lineLength += text.Length;
+                m_lineLength += WriteToStream(text);
                 m_noLineBreaks = false;
 
                 // if it ends in a newline, we're still on a newline
@@ -2481,8 +2521,7 @@ namespace Microsoft.Ajax.Utilities
             m_segmentStartLine = m_lineCount;
             m_segmentStartColumn = m_lineLength;
 
-            m_outputStream.Write(ch);
-            ++m_lineLength;
+            m_lineLength += WriteToStream(ch);
             m_noLineBreaks = false;
 
             // determine if this was a newline character
@@ -2496,9 +2535,11 @@ namespace Microsoft.Ajax.Utilities
         {
             if (m_noLineBreaks)
             {
+                // don't bother going through the WriteToStream method, since
+                // we KNOW a space won't be expanded to \u0020.
                 m_outputStream.Write(' ');
-                m_lastCharacter = ' ';
                 ++m_lineLength;
+                m_lastCharacter = ' ';
             }
             else
             {
@@ -2675,9 +2716,8 @@ namespace Microsoft.Ajax.Utilities
                 // if we aren't on a new line, then output our space character
                 if (!m_onNewLine)
                 {
-                    m_outputStream.Write(ch);
+                    m_lineLength += WriteToStream(ch);
                     m_lastCharacter = ch;
-                    ++m_lineLength;
                 }
             }
             else
@@ -2690,10 +2730,9 @@ namespace Microsoft.Ajax.Utilities
                 m_segmentStartLine = m_lineCount;
                 m_segmentStartColumn = m_lineLength;
                 
-                m_outputStream.Write(ch);
+                m_lineLength += WriteToStream(ch);
                 m_onNewLine = false;
                 m_lastCharacter = ch;
-                ++m_lineLength;
 
                 // break the line if it's too long, but don't force it
                 BreakLine(false);
@@ -2713,10 +2752,12 @@ namespace Microsoft.Ajax.Utilities
                 m_segmentStartColumn = m_lineLength;
 
                 // output the semicolon
+                // don't bother going through the WriteToStream method, since we
+                // KNOW a semicolon won't be expanded to \u003b
                 m_outputStream.Write(';');
+                ++m_lineLength;
                 m_onNewLine = false;
                 m_lastCharacter = ';';
-                ++m_lineLength;
                 outputSemicolon = true;
             }
 
@@ -2736,6 +2777,8 @@ namespace Microsoft.Ajax.Utilities
                 else
                 {
                     // terminate the line and start a new one
+                    // don't bother going through the WriteToStream method, since we
+                    // KNOW a \n character won't be expanded to \u000a
                     m_outputStream.Write('\n');
                     m_lineCount++;
 
@@ -2751,13 +2794,16 @@ namespace Microsoft.Ajax.Utilities
         {
             if (Settings.OutputMode == OutputMode.MultipleLines && !m_onNewLine)
             {
-                // output the newline character
+                // output the newline character -- don't go through WriteToStream
+                // since we KNOW it won't get expanded to \uXXXX formats.
                 m_outputStream.WriteLine();
                 m_lineCount++;
 
                 // if the indent level is greater than zero, output the indent spaces
                 if (m_indentLevel > 0)
                 {
+                    // the spaces won't get expanded to \u0020, so don't bother going
+                    // through the WriteToStream method.
                     var numSpaces = m_indentLevel * Settings.IndentSize;
                     m_lineLength = numSpaces;
                     while (numSpaces-- > 0)
@@ -2775,6 +2821,78 @@ namespace Microsoft.Ajax.Utilities
 
                 // we just output a newline
                 m_onNewLine = true;
+            }
+        }
+
+        // write a text string to the output stream, optionally expanding any single characters
+        // to \uXXXX format if outside the ASCII range. Return the actual number of characters written
+        // after any expansion.
+        private int WriteToStream(string text)
+        {
+            // if we always want to encode non-ascii characters, then we need
+            // to look at each one and see if we need to encode anything!
+            if (Settings.AlwaysEscapeNonAscii)
+            {
+                StringBuilder sb = null;
+                var runStart = 0;
+                for (var ndx = 0; ndx < text.Length; ++ndx)
+                {
+                    // if the character is over the ASCII range, we'll need to escape it
+                    if (text[ndx] > '\u007f')
+                    {
+                        // if we haven't yet created the builder, create it now
+                        if (sb == null)
+                        {
+                            sb = new StringBuilder();
+                        }
+
+                        // if there's a run of unescaped characters waiting to be
+                        // output, output it now
+                        if (ndx > runStart)
+                        {
+                            sb.Append(text, runStart, ndx - runStart);
+                        }
+
+                        // format the current character in \uXXXX, and start the next
+                        // run at the NEXT character.
+                        sb.AppendFormat(CultureInfo.InvariantCulture, "\\u{0:x4}".FormatInvariant((int)text[ndx]));
+                        runStart = ndx + 1;
+                    }
+                }
+
+                // if nothing needed escaping, the builder will still be null and we
+                // have nothing else to do (just use the string as-is)
+                if (sb != null)
+                {
+                    // if there is an unescaped run at the end still left, add it now
+                    if (runStart < text.Length)
+                    {
+                        sb.Append(text, runStart, text.Length - runStart);
+                    }
+
+                    // and use the fully-escaped string going forward.
+                    text = sb.ToString();
+                }
+            }
+
+            m_outputStream.Write(text);
+            return text.Length;
+        }
+
+        // write a single character to the stream, optionally expanding it to a \uXXXX sequence
+        // if needed. Return the number of characters sent to the stream (1 or 6)
+        private int WriteToStream(char ch)
+        {
+            if (Settings.AlwaysEscapeNonAscii && ch > '\u007f')
+            {
+                // expand it to the \uXXXX format, which is six characters
+                m_outputStream.Write("\\u{0:x4}", (int)ch);
+                return 6;
+            }
+            else
+            {
+                m_outputStream.Write(ch);
+                return 1;
             }
         }
 

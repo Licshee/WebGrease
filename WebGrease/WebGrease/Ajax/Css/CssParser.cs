@@ -378,6 +378,7 @@ namespace Microsoft.Ajax.Utilities
                                     break;
 
                                 case CssType.DeclarationList:
+                                    SkipIfSpace();
                                     ParseDeclarationList(false);
                                     break;
 
@@ -3655,12 +3656,12 @@ namespace Microsoft.Ajax.Utilities
 
         private static bool NeedsSpaceBefore(string text)
         {
-            return !("{}()[],;".Contains(text));
+            return text.IfNotNull(t => !("{}()[],;".Contains(t)));
         }
 
         private static bool NeedsSpaceAfter(string text)
         {
-            return !("{}()[],;:".Contains(text));
+            return text.IfNotNull(t => !("{}()[],;:".Contains(t)));
         }
 
         #endregion

@@ -154,6 +154,7 @@ namespace Microsoft.Ajax.Utilities
                 m_minify = this.m_minify,
 
                 AllowEmbeddedAspNetBlocks = this.AllowEmbeddedAspNetBlocks,
+                AlwaysEscapeNonAscii = this.AlwaysEscapeNonAscii,
                 CollapseToLiteral = this.CollapseToLiteral,
                 ConstStatementsMozilla = this.ConstStatementsMozilla,
                 DebugLookupList = this.DebugLookupList,
@@ -649,6 +650,17 @@ namespace Microsoft.Ajax.Utilities
         #endregion
 
         #region properties
+
+        /// <summary>
+        /// Gets or sets a flag indicating whether to always escape non-ASCII characters as \uXXXX
+        /// or to let the output encoding object handle that via the JsEncoderFallback object for the
+        /// specified output encoding format. Default is false (let the Encoding object handle it).
+        /// </summary>
+        public bool AlwaysEscapeNonAscii
+        {
+            get;
+            set;
+        }
 
         /// <summary>
         /// collapse new Array() to [] and new Object() to {} [true]

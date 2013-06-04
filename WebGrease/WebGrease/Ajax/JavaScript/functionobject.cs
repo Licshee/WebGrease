@@ -63,19 +63,6 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        private bool m_leftHandFunction;// = false;
-        public bool LeftHandFunctionExpression
-        {
-            get
-            {
-                return (FunctionType == FunctionType.Expression && m_leftHandFunction);
-            }
-            set
-            {
-                m_leftHandFunction = value;
-            }
-        }
-
         public string Name
         {
             get;

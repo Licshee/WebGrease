@@ -94,6 +94,22 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        internal override void AnalyzeScope()
+        {
+            // rename fields if we need to
+            ManualRenameFields();
+
+            // recurse 
+            foreach (var activationObject in ChildScopes)
+            {
+                // but not for existing child scopes
+                if (!activationObject.Existing)
+                {
+                    activationObject.AnalyzeScope();
+                }
+            }
+        }
+
         internal override void AutoRenameFields()
         {
             // don't crunch global values -- they might be referenced in other scripts
@@ -102,7 +118,11 @@ namespace Microsoft.Ajax.Utilities
             // traverse through our children scopes
             foreach (ActivationObject scope in ChildScopes)
             {
-                scope.AutoRenameFields();
+                // don't recurse existing child scopes
+                if (!scope.Existing)
+                {
+                    scope.AutoRenameFields();
+                }
             }
         }
 

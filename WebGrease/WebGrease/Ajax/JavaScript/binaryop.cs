@@ -258,7 +258,22 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                // the operand1 is on the left
+                if (OperatorToken == JSToken.Comma)
+                {
+                    // for comma-operators, the leftmost item is the leftmost item of the
+                    // rightmost operand. And the operand2 might be a list.
+                    var list = Operand2 as AstNodeList;
+                    if (list != null && list.Count > 0)
+                    {
+                        // the right-hand side is a list, so we want the LAST item
+                        return list[list.Count - 1].LeftHandSide;
+                    }
+
+                    // not a list, just ask the right-hand operand what its leftmost node is
+                    return Operand2.LeftHandSide;
+                }
+
+                // not a comma, so operand1 is on the left
                 return Operand1.LeftHandSide;
             }
         }
