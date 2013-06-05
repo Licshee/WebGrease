@@ -120,7 +120,7 @@ namespace WebGrease.Activities
         internal HashSet<string> ImageAssembleReferencesToIgnore { get; set; }
 
         /// <summary>Gets or sets the image assembly padding.</summary>
-        internal string ImageAssemblyPadding { private get; set; }
+        internal int? ImageAssemblyPadding { private get; set; }
 
         /// <summary>Gets the exception, if any, returned from a parsing attempt.</summary>
         internal Exception ParserException { get; private set; }
@@ -453,7 +453,7 @@ namespace WebGrease.Activities
             var results = new List<ContentItem>();
 
             var success = this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly)
-                .MakeCachable(this.GetRelativeSpriteCacheKey(imageReferencesToAssemble))
+                .MakeCachable(new { imageMap = this.GetRelativeSpriteCacheKey(imageReferencesToAssemble), this.ImageAssemblyPadding })
                 .RestoreFromCacheAction(cacheSection =>
                 {
                     // restore log file, is required by next step in applying sprites to the css.
@@ -496,7 +496,8 @@ namespace WebGrease.Activities
                         this.ImagesOutputDirectory,
                         string.Empty,
                         true,
-                        this.context);
+                        this.context,
+                        this.ImageAssemblyPadding);
 
                     if (imageMap == null || imageMap.Document == null)
                     {

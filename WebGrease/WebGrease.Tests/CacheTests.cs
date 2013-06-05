@@ -395,7 +395,7 @@ namespace Microsoft.WebGrease.Tests
             });
 
             // ----------------------------------------------------------------------------------------
-            // Add something to a indirectly included file using sass import and verify it updates
+            // Add something to a multi-level included (@imports-->@import-->@import) file and verify it updates
             var test2Scssfile = Path.Combine(inputCssRoot, "imports3.scss");
             File.WriteAllText(test2Scssfile, File.ReadAllText(test2Scssfile) + "\r\n.addedimports3{ color: green; }");
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>

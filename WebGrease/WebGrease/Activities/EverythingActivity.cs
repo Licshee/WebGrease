@@ -387,9 +387,21 @@ namespace WebGrease.Activities
         /// <returns>The <see cref="bool"/>.</returns>
         private bool ExecuteCssFileSet(string configType, IList<string> imageDirectories, IList<string> imageExtensions, CssFileSet cssFileSet, FileHasherActivity cssHasher, FileHasherActivity imageHasher, string imagesDestinationDirectory)
         {
+            var cssFileSetVarBySettings = new
+            {
+                configType,
+                ImageSpriting = cssFileSet.ImageSpriting.GetNamedConfig(configType),
+                Global = cssFileSet.GlobalConfig,
+                Bundling = cssFileSet.Bundling.GetNamedConfig(configType),
+                Minification = cssFileSet.Minification.GetNamedConfig(configType),
+                Preprocessing = cssFileSet.Preprocessing.GetNamedConfig(configType),
+                cssFileSet.Locales,
+                cssFileSet.Themes
+            };
+
             return this.context
                 .SectionedAction(SectionIdParts.CssFileSet)
-                .MakeCachable(cssFileSet, new { configType }, true)
+                .MakeCachable(cssFileSet, cssFileSetVarBySettings, true)
                 .WhenSkipped(cacheSection => EnsureCssLogFile(cssHasher, imageHasher, cacheSection))
                 .RestoreFromCacheAction(cacheSection =>
                 {
@@ -649,6 +661,7 @@ namespace WebGrease.Activities
                                       BannedSelectors = new HashSet<string>(cssConfig.RemoveSelectors.ToArray()),
                                       HackSelectors = new HashSet<string>(cssConfig.ForbiddenSelectors.ToArray()),
                                       ImageAssembleReferencesToIgnore = new HashSet<string>(spritingConfig.ImagesToIgnore.ToArray()),
+                                      ImageAssemblyPadding = spritingConfig.ImagePadding,
                                       OutputUnit = spritingConfig.OutputUnit,
                                       OutputUnitFactor = spritingConfig.OutputUnitFactor,
                                       ImagesOutputDirectory = imagesDestinationDirectory,

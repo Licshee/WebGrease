@@ -100,7 +100,7 @@ namespace WebGrease
                     var directoryName = string.IsNullOrWhiteSpace(Path.GetExtension(outputPath)) ? outputPath : Path.GetDirectoryName(outputPath);
 
                     spriter.ShouldAssembleBackgroundImages = spriteConfig.ShouldAutoSprite;
-                    spriter.ImageAssemblyPadding = spriteConfig.ImagePadding.ToString(CultureInfo.InvariantCulture);
+                    spriter.ImageAssemblyPadding = spriteConfig.ImagePadding;
                     spriter.ImageAssembleReferencesToIgnore.Clear();
                     foreach (var image in spriteConfig.ImagesToIgnore)
                     {

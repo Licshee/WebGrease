@@ -36,7 +36,8 @@ namespace WebGrease.ImageAssemble
         /// <param name="pngOptimizerToolCommand">PNG Optimizer tool command</param>
         /// <param name="dedup">Remove duplicate images</param>
         /// <param name="context">The webgrease context</param>
-        internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context)
+        /// <param name="imagePadding">The image padding</param>
+        internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context, int? imagePadding = null)
         {
             // deduping is optional.  CssPipelineTask already has deduping built into it, so it skips deduping in ImageAssembleTool.
             var inputImagesDeduped = dedup ? DedupImages(inputImages, context) : inputImages;
@@ -54,7 +55,7 @@ namespace WebGrease.ImageAssemble
             }
 #endif
 
-            var padding = ArgumentParser.DefaultPadding;
+            var padding = imagePadding ?? ArgumentParser.DefaultPadding;
             var xmlMap = new ImageMap(string.Empty);
             var registeredAssemblers = RegisterAvailableAssemblers(context);
             Dictionary<InputImage, Bitmap> separatedList = null;
