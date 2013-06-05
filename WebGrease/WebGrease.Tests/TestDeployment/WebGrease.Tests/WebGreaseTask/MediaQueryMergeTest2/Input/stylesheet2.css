@@ -1,0 +1,3344 @@
+﻿
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDKApp\bin\Content\metrosdk\Css\articlePage.pc.css */
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDK\Content\Source\css\pages\articlePage\articlePage.pc.scss */
+
+/* media queries sizes */
+/* Left & Right */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* All */
+@media screen {
+  .ad {
+    max-width: 30rem;
+    overflow: hidden; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    text-size-adjust: none; }
+
+  html {
+    font-size: 14px; }
+
+  body {
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    line-height: 2.2rem;
+    -ms-content-zooming: none;
+    -ms-content-zoom: none; }
+
+  a {
+    text-decoration: none; }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    line-height: 2.2rem;
+    text-transform: lowercase; }
+
+  h1 {
+    font-family: "segoe ui light";
+    font-size: 4.8rem;
+    font-weight: normal;
+    line-height: 5.8rem;
+    text-transform: none; }
+
+  img {
+    border: 0;
+    max-width: 100%; }
+
+  input {
+    border-radius: 0; }
+
+  ul.inline, ul.inline li {
+    list-style: none; }
+
+  /* theme colors 
+  ---------------------------------------------------*/
+  .bg.slate,
+  #toc .heading.slate,
+  #toc .heading.slate a {
+    background-color: #636363;
+    color: #fff; }
+
+  .fg.slate,
+  .fg.slate:visited,
+  .heading.fg.slatea,
+  .related .heading.slate {
+    background-color: #fff;
+    color: #636363; }
+
+  .bg.indigo,
+  #toc .heading.indigo,
+  #toc .heading.indigo a {
+    background-color: #3c1b85;
+    color: #fff; }
+
+  .fg.indigo,
+  .fg.indigo:visited,
+  .heading.fg.indigo a,
+  .related .heading.indigo {
+    background-color: #fff;
+    color: #3c1b85; }
+
+  .bg.msnblue,
+  #toc .heading.msnblue,
+  #toc .heading.msnblue a {
+    background-color: #007eb0;
+    color: #fff; }
+
+  .fg.msnblue,
+  .fg.msnblue:visited
+  .heading.fg.msnblue a,
+  .related .heading.msnblue {
+    background-color: #fff;
+    color: #007eb0; }
+
+  .bg.blue,
+  #toc .heading.blue,
+  #toc .heading.blue a {
+    background-color: #006092;
+    color: #fff; }
+
+  .fg.blue,
+  .fg.blue:visited
+  .heading.fg.blue a,
+  .related .heading.blue {
+    background-color: #fff;
+    color: #006092; }
+
+  .bg.aquamarine,
+  #toc .heading.aquamarine,
+  #toc .heading.aquamarine a {
+    background-color: #008580;
+    color: #fff; }
+
+  .fg.aquamarine,
+  .fg.aquamarine:visited,
+  .heading.fg.aquamarine a,
+  .related .heading.aquamarine {
+    background-color: #fff;
+    color: #008580; }
+
+  .bg.green,
+  #toc .heading.green,
+  #toc .heading.green a {
+    background-color: #048444;
+    color: #fff; }
+
+  .fg.green,
+  .fg.green:visited,
+  .heading.fg.green a,
+  .related .heading.green {
+    background-color: #fff;
+    color: #048444; }
+
+  .bg.orange,
+  #toc .heading.orange,
+  #toc .heading.orange a {
+    background-color: #d24400;
+    color: #fff; }
+
+  .fg.orange,
+  .fg.orange:visited,
+  .heading.fg.orange a,
+  .related .heading.orange {
+    background-color: #fff;
+    color: #d24400; }
+
+  .bg.pink,
+  #toc .heading.pink,
+  #toc .heading.pink a {
+    background-color: #ca1c5e;
+    color: #fff; }
+
+  .fg.pink,
+  .fg.pink:visited,
+  .heading.fg.pink a,
+  .related .heading.pink {
+    background-color: #fff;
+    color: #ca1c5e; }
+
+  .heading.bg a {
+    color: #fff; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  footer[role=contentinfo] {
+    clear: both; }
+
+  footer[role=contentinfo] a {
+    display: inline-block; }
+
+  footer[role=contentinfo] a:after {
+    content: "|";
+    margin: 0 .5rem 0 1rem; }
+
+  footer[role=contentinfo] a:last-child:after {
+    content: ""; }
+
+  footer[role=contentinfo] a,
+  footer[role=contentinfo] a:link,
+  footer[role=contentinfo] a:visited,
+  footer[role=contentinfo] a:hover,
+  footer[role=contentinfo] a:active,
+  footer[role=contentinfo] span {
+    color: #757575;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem; }
+
+  body {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto auto; }
+
+  body > div.head {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+
+  body > div.content {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 2; }
+
+  body > div.foot {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 3; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  header[role=banner] span {
+    font-family: "segoe ui light";
+    font-size: 4.2rem;
+    font-weight: normal;
+    line-height: 4.4rem;
+    text-transform: lowercase; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] li {
+    display: inline-block;
+    list-style-type: none; }
+
+  nav[role=navigation] li a {
+    color: #333;
+    display: inline-block;
+    text-transform: lowercase; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body.landing aside[role=complementary],
+  body.landing #toc {
+    display: none;
+    /* hack */ }
+
+  /*Float all the boxes in the main section around the ad floated to the right.*/
+  body.landing section[role=main] > * {
+    float: left;
+    display: block; }
+
+  body.landing section[role=main] div.ad {
+    float: right; }
+
+  /*Needed for snapped view*/
+  body.landing section[role=main] {
+    width: 32rem; }
+
+  /*Hide the featured tiles from snapped views.*/
+  body.landing section[role=main] .featured {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* base view */
+  section[role=search] {
+    border: solid .2rem #bebebe;
+    height: 4rem;
+    margin: 3.8rem 1rem 0 0;
+    position: relative;
+    width: 4rem; }
+
+  section[role=search] label {
+    display: none; }
+
+  section[role=search] input[type=text] {
+ 
+    background-size: 56px 34px;
+    border: none;
+    display: none;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0 5.6rem 0 0.5rem;
+    position: absolute;
+    left: 0;
+    top: 0; }
+
+  section[role=search] input[type=submit].image {
+    background-size: 34px 34px;
+    border: solid 0.1rem #fff;
+    color: #fff;
+    display: inline;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 3.6rem; }
+
+  section[role=search] input[type=submit].text {
+    background-color: #e66400;
+    border: solid 0.1rem #fff;
+    color: #fff;
+    display: none;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0 1.5rem;
+    position: absolute;
+    right: 0;
+    top: 0; }
+
+  @-ms-viewport {
+    width: 100%; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  .related .heading {
+    font-family: "segoe ui light";
+    font-size: 3rem;
+    font-weight: normal;
+    line-height: 3.7rem;
+    margin: 0 0 1.25rem 0;
+    text-transform: lowercase; }
+
+  .related ul li {
+ 
+    background-size: 10px 10px;
+    display: block;
+    list-style-type: none;
+    margin: 0 1rem 1.2rem 0;
+    padding-left: 1.2rem; }
+
+  .related ul li a,
+  .related ul li a:link,
+  .related ul li a:visited,
+  .related ul li a:hover,
+  .related ul li a:active {
+    color: #000; }
+
+  #toc {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  article figure {
+    /*
+    display: table-cell;
+    float: left;
+    margin-right: 2.2rem; 
+    */
+    margin-bottom: 2.5rem; }
+
+  article figure > div {
+    position: relative; }
+
+  article figure > div .attribution {
+    color: #fff;
+    bottom: 0;
+    position: absolute;
+    left: 0; }
+
+  article footer {
+    color: #757575;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem; }
+
+  article footer time {
+    display: inline-block; }
+
+  article footer time:after {
+    content: "|";
+    padding: 0 1rem; }
+
+  article header p {
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem; }
+
+  article section div,
+  article section p {
+    margin: 1.5rem 0; }
+
+  article section ol {
+    list-style-type: decimal;
+    margin: 0 0 0 2.2rem; }
+
+  article section ol li {
+    margin: 0 0 1.2rem 0;
+    padding: 0; }
+
+  article section ul li {
+ 
+    background-size: 10px 10px;
+    display: block;
+    list-style-type: none;
+    margin: 0 0 1.2rem 0;
+    padding-left: 1.2rem; } }
+/* fill */
+@media screen and (min-width: 896px) and (max-width: 1791px) {
+  body > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1; }
+
+  section[role=search] {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+
+  nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 2; }
+
+  #toc {
+    display: none; }
+
+  section[role=main] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 3; }
+
+  aside[role=complementary] {
+    -ms-grid-column: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3; }
+
+  footer[role=contentinfo] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 4; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body > div {
+    margin: 0 auto;
+    width: 93rem; }
+
+  /*weight needed for overridding the display: block;*/
+  body.landing section[role=main] div.ad {
+    margin: 1rem 0.8rem 0 0;
+    height: 27.5rem; }
+
+  body.landing section[role=main] {
+    width: 93rem; }
+
+  /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+  For Fill, this is the 3rd child element inside the section[role=main], 
+  which is actually the first .featured element.*/
+  body.landing section[role=main] > *:nth-child(3) {
+    clear: both; }
+
+  /*Show the featured tiles in fill view but not in snapped views.*/
+  body.landing section[role=main] .featured {
+    display: block; }
+
+  /* fill view */
+  section[role=search] input[type=text] {
+    display: inline-block; }
+
+  section[role=search].default {
+    width: 40.4rem; }
+
+  section[role=search].default input[type=text] {
+    width: 36.4rem;
+    /* 40px less due to spyglass button */ }
+
+  section[role=search].default input[type=submit].image {
+    display: inline; }
+
+  section[role=search].default input[type=submit].text {
+    display: none; }
+
+  section[role=search].long {
+    width: 57.4rem; }
+
+  section[role=search].long input[type=text] {
+    width: 45rem;
+    /* 124 px less due to web search button */ }
+
+  section[role=search].long input[type=submit].image {
+    display: none; }
+
+  section[role=search].long input[type=submit].text {
+    display: inline; }
+
+  article {
+    margin-right: 3rem; } }
+/* full */
+@media screen and (min-width: 1792px) {
+  body > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1; }
+
+  section[role=search] {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+
+  nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 2; }
+
+  #toc {
+    -ms-grid-column: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 2; }
+
+  section[role=main] {
+    -ms-grid-column: 2;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 1; }
+
+  aside[role=complementary] {
+    -ms-grid-column: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 1; }
+
+  footer[role=contentinfo] {
+    -ms-grid-column: 2;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 4; }
+
+  body.landing > div {
+    display: -ms-grid;
+    -ms-grid-columns: 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  body.landing header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 1; }
+
+  body.landing section[role=search] {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+
+  body.landing nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 2; }
+
+  body.landing section[role=main] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 3; }
+
+  body.landing footer[role=contentinfo] {
+    -ms-grid-row: 4;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body > div {
+    margin: 0 auto;
+    width: 124rem; }
+
+  body.landing aside[role=complementary],
+  body.landing #toc {
+    display: none; }
+
+  body.landing section[role=main] div.ad {
+    margin: 1rem 0.8rem 0 0;
+    height: 27.4rem; }
+
+  /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+  For Full, this is the 4rd child element inside the section[role=main], which is actually 
+  the second .featured element.*/
+  body.landing section[role=main] > *:nth-child(4) {
+    clear: both; }
+
+  body.landing section[role=main] {
+    width: 124rem; }
+
+  /*Show the featured tiles in full view but not in snapped views.*/
+  body.landing section[role=main] .featured {
+    display: block; }
+
+  /* full view */
+  section[role=search] input[type=submit].image {
+    display: none; }
+
+  section[role=search] input[type=submit].text {
+    display: inline; }
+
+  section[role=search] input[type=text] {
+    display: inline-block; }
+
+  section[role=search].default {
+    width: 64.4rem; }
+
+  section[role=search].default input[type=text] {
+    width: 52rem;
+    /* 124 px less due to web search button */ }
+
+  section[role=search].long {
+    width: 77.4rem; }
+
+  section[role=search].long input[type=text] {
+    width: 65rem;
+    /* 124 px less due to web search button */ }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  #toc {
+    display: block;
+    margin-right: 5rem;
+    width: 23.6rem; }
+
+  #toc .heading {
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem;
+    padding: 0.4rem 0 0.5rem 1rem;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase; }
+
+  #toc li {
+    background-color: #f2f2f2;
+    color: #000;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem;
+    list-style-type: none;
+    margin: 0.5rem 0 0 0;
+    min-height: 6.9rem;
+    /* hack */
+    padding: 0; }
+
+  #toc li.current {
+    background-color: #e1e1e1; }
+
+  #toc li a {
+    color: #000;
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr;
+    -ms-grid-rows: auto; }
+
+  #toc li a img {
+    display: -ms-grid;
+    -ms-grid-column: 1;
+    -ms-grid-row: 1;
+    max-width: 8rem;
+    max-height: 6.9rem; }
+
+  #toc li a span {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    margin: 1rem 1.2rem; }
+
+  article {
+    margin-right: 3rem; } }
+/* No snap (Fill+Full) */
+@media screen and (min-width: 896px) {
+  aside[role=complementary] {
+    width: 30rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  body.bgimage.slate {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.indigo {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.msnblue {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.blue {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.aquamarine {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.green {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.orange {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.pink {
+ 
+    background-size: 192rem 80rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] {
+    margin-top: 1.5rem; }
+
+  nav[role=navigation] ul {
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem; }
+
+  nav[role=navigation] li.current a {
+    font-family: "segoe ui"; }
+
+  nav[role=navigation] li a {
+    padding: 0 2rem 2.7rem 0; }
+
+  header[role=banner] > div > a, header[role=banner] > div > a:link, header[role=banner] > div > a:visited, header[role=banner] > div > a:hover, header[role=banner] > div > a:active {
+    margin-top: 2rem; } }
+@media screen and (max-width: 895px) {
+  body > div.head {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    display: -ms-grid;
+    -ms-grid-rows: auto auto;
+    -ms-grid-columns: 1fr 1fr; }
+
+  body > div.content {
+    -ms-grid-rows: auto auto; }
+
+  header[role=banner] > div {
+    -ms-grid-column: 1;
+    margin-left: 0.2rem; }
+    header[role=banner] > div > a, header[role=banner] > div > a:link, header[role=banner] > div > a:visited, header[role=banner] > div > a:hover, header[role=banner] > div > a:active {
+      margin-top: 0.2rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] {
+    margin-top: 0;
+    -ms-grid-row: 2;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2; }
+
+  nav[role=navigation] ul {
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem;
+    height: 4.6rem;
+    white-space: nowrap; }
+
+  nav[role=navigation] li.current a {
+    font-family: "segoe ui"; }
+
+  nav[role=navigation] li a {
+    padding: 0.4rem 0.4rem 0.6rem 0rem; }
+
+  .ad {
+    display: none; }
+
+  section[role=search] {
+    -ms-grid-column: 2;
+    -ms-grid-column-align: end;
+    margin: 0px;
+    margin-right: 1rem;
+    margin-top: 1rem; }
+
+  aside {
+    -ms-grid-row: 2; } }
+
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDKApp\bin\Content\metrosdk\Css\articlePage.pc.app.css */
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDK\Content\Source\css\pages\articlePage\articlePage.pc.app.scss */
+
+/* media queries sizes */
+/* Left & Right */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* All */
+@media screen {
+  .ad {
+    max-width: 30rem;
+    overflow: hidden; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    text-size-adjust: none; }
+
+  html {
+    font-size: 14px; }
+
+  body {
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    line-height: 2.2rem;
+    -ms-content-zooming: none;
+    -ms-content-zoom: none; }
+
+  a {
+    text-decoration: none; }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    line-height: 2.2rem;
+    text-transform: lowercase; }
+
+  h1 {
+    font-family: "segoe ui light";
+    font-size: 4.8rem;
+    font-weight: normal;
+    line-height: 5.8rem;
+    text-transform: none; }
+
+  img {
+    border: 0;
+    max-width: 100%; }
+
+  input {
+    border-radius: 0; }
+
+  ul.inline, ul.inline li {
+    list-style: none; }
+
+  /* theme colors 
+  ---------------------------------------------------*/
+  .bg.slate,
+  #toc .heading.slate,
+  #toc .heading.slate a {
+    background-color: #636363;
+    color: #fff; }
+
+  .fg.slate,
+  .fg.slate:visited,
+  .heading.fg.slatea,
+  .related .heading.slate {
+    background-color: #fff;
+    color: #636363; }
+
+  .bg.indigo,
+  #toc .heading.indigo,
+  #toc .heading.indigo a {
+    background-color: #3c1b85;
+    color: #fff; }
+
+  .fg.indigo,
+  .fg.indigo:visited,
+  .heading.fg.indigo a,
+  .related .heading.indigo {
+    background-color: #fff;
+    color: #3c1b85; }
+
+  .bg.msnblue,
+  #toc .heading.msnblue,
+  #toc .heading.msnblue a {
+    background-color: #007eb0;
+    color: #fff; }
+
+  .fg.msnblue,
+  .fg.msnblue:visited
+  .heading.fg.msnblue a,
+  .related .heading.msnblue {
+    background-color: #fff;
+    color: #007eb0; }
+
+  .bg.blue,
+  #toc .heading.blue,
+  #toc .heading.blue a {
+    background-color: #006092;
+    color: #fff; }
+
+  .fg.blue,
+  .fg.blue:visited
+  .heading.fg.blue a,
+  .related .heading.blue {
+    background-color: #fff;
+    color: #006092; }
+
+  .bg.aquamarine,
+  #toc .heading.aquamarine,
+  #toc .heading.aquamarine a {
+    background-color: #008580;
+    color: #fff; }
+
+  .fg.aquamarine,
+  .fg.aquamarine:visited,
+  .heading.fg.aquamarine a,
+  .related .heading.aquamarine {
+    background-color: #fff;
+    color: #008580; }
+
+  .bg.green,
+  #toc .heading.green,
+  #toc .heading.green a {
+    background-color: #048444;
+    color: #fff; }
+
+  .fg.green,
+  .fg.green:visited,
+  .heading.fg.green a,
+  .related .heading.green {
+    background-color: #fff;
+    color: #048444; }
+
+  .bg.orange,
+  #toc .heading.orange,
+  #toc .heading.orange a {
+    background-color: #d24400;
+    color: #fff; }
+
+  .fg.orange,
+  .fg.orange:visited,
+  .heading.fg.orange a,
+  .related .heading.orange {
+    background-color: #fff;
+    color: #d24400; }
+
+  .bg.pink,
+  #toc .heading.pink,
+  #toc .heading.pink a {
+    background-color: #ca1c5e;
+    color: #fff; }
+
+  .fg.pink,
+  .fg.pink:visited,
+  .heading.fg.pink a,
+  .related .heading.pink {
+    background-color: #fff;
+    color: #ca1c5e; }
+
+  .heading.bg a {
+    color: #fff; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  footer[role=contentinfo] {
+    clear: both; }
+
+  footer[role=contentinfo] a {
+    display: inline-block; }
+
+  footer[role=contentinfo] a:after {
+    content: "|";
+    margin: 0 .5rem 0 1rem; }
+
+  footer[role=contentinfo] a:last-child:after {
+    content: ""; }
+
+  footer[role=contentinfo] a,
+  footer[role=contentinfo] a:link,
+  footer[role=contentinfo] a:visited,
+  footer[role=contentinfo] a:hover,
+  footer[role=contentinfo] a:active,
+  footer[role=contentinfo] span {
+    color: #757575;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem; }
+
+  body {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto auto; }
+
+  body > div.head {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+
+  body > div.content {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 2; }
+
+  body > div.foot {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 3; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  header[role=banner] span {
+    font-family: "segoe ui light";
+    font-size: 4.2rem;
+    font-weight: normal;
+    line-height: 4.4rem;
+    text-transform: lowercase; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] li {
+    display: inline-block;
+    list-style-type: none; }
+
+  nav[role=navigation] li a {
+    color: #333;
+    display: inline-block;
+    text-transform: lowercase; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body.landing aside[role=complementary],
+  body.landing #toc {
+    display: none;
+    /* hack */ }
+
+  /*Float all the boxes in the main section around the ad floated to the right.*/
+  body.landing section[role=main] > * {
+    float: left;
+    display: block; }
+
+  body.landing section[role=main] div.ad {
+    float: right; }
+
+  /*Needed for snapped view*/
+  body.landing section[role=main] {
+    width: 32rem; }
+
+  /*Hide the featured tiles from snapped views.*/
+  body.landing section[role=main] .featured {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* base view */
+  section[role=search] {
+    border: solid .2rem #bebebe;
+    height: 4rem;
+    margin: 3.8rem 1rem 0 0;
+    position: relative;
+    width: 4rem; }
+
+  section[role=search] label {
+    display: none; }
+
+  section[role=search] input[type=text] {
+ 
+    background-size: 56px 34px;
+    border: none;
+    display: none;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0 5.6rem 0 0.5rem;
+    position: absolute;
+    left: 0;
+    top: 0; }
+
+  section[role=search] input[type=submit].image {
+    background-size: 34px 34px;
+    border: solid 0.1rem #fff;
+    color: #fff;
+    display: inline;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 3.6rem; }
+
+  section[role=search] input[type=submit].text {
+    background-color: #e66400;
+    border: solid 0.1rem #fff;
+    color: #fff;
+    display: none;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0 1.5rem;
+    position: absolute;
+    right: 0;
+    top: 0; }
+
+  @-ms-viewport {
+    width: 100%; }
+
+  /* app view */
+  section[role=search] {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  .related .heading {
+    font-family: "segoe ui light";
+    font-size: 3rem;
+    font-weight: normal;
+    line-height: 3.7rem;
+    margin: 0 0 1.25rem 0;
+    text-transform: lowercase; }
+
+  .related ul li {
+ 
+    background-size: 10px 10px;
+    display: block;
+    list-style-type: none;
+    margin: 0 1rem 1.2rem 0;
+    padding-left: 1.2rem; }
+
+  .related ul li a,
+  .related ul li a:link,
+  .related ul li a:visited,
+  .related ul li a:hover,
+  .related ul li a:active {
+    color: #000; }
+
+  #toc {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  article figure {
+    /*
+    display: table-cell;
+    float: left;
+    margin-right: 2.2rem; 
+    */
+    margin-bottom: 2.5rem; }
+
+  article figure > div {
+    position: relative; }
+
+  article figure > div .attribution {
+    color: #fff;
+    bottom: 0;
+    position: absolute;
+    left: 0; }
+
+  article footer {
+    color: #757575;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem; }
+
+  article footer time {
+    display: inline-block; }
+
+  article footer time:after {
+    content: "|";
+    padding: 0 1rem; }
+
+  article header p {
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem; }
+
+  article section div,
+  article section p {
+    margin: 1.5rem 0; }
+
+  article section ol {
+    list-style-type: decimal;
+    margin: 0 0 0 2.2rem; }
+
+  article section ol li {
+    margin: 0 0 1.2rem 0;
+    padding: 0; }
+
+  article section ul li {
+ 
+    background-size: 10px 10px;
+    display: block;
+    list-style-type: none;
+    margin: 0 0 1.2rem 0;
+    padding-left: 1.2rem; } }
+/* fill */
+@media screen and (min-width: 896px) and (max-width: 1791px) {
+  body > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1; }
+
+  section[role=search] {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+
+  nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 2; }
+
+  #toc {
+    display: none; }
+
+  section[role=main] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 3; }
+
+  aside[role=complementary] {
+    -ms-grid-column: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3; }
+
+  footer[role=contentinfo] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 4; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body > div {
+    margin: 0 auto;
+    width: 93rem; }
+
+  /*weight needed for overridding the display: block;*/
+  body.landing section[role=main] div.ad {
+    margin: 1rem 0.8rem 0 0;
+    height: 27.5rem; }
+
+  body.landing section[role=main] {
+    width: 93rem; }
+
+  /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+  For Fill, this is the 3rd child element inside the section[role=main], 
+  which is actually the first .featured element.*/
+  body.landing section[role=main] > *:nth-child(3) {
+    clear: both; }
+
+  /*Show the featured tiles in fill view but not in snapped views.*/
+  body.landing section[role=main] .featured {
+    display: block; }
+
+  /* fill view */
+  section[role=search] input[type=text] {
+    display: inline-block; }
+
+  section[role=search].default {
+    width: 40.4rem; }
+
+  section[role=search].default input[type=text] {
+    width: 36.4rem;
+    /* 40px less due to spyglass button */ }
+
+  section[role=search].default input[type=submit].image {
+    display: inline; }
+
+  section[role=search].default input[type=submit].text {
+    display: none; }
+
+  section[role=search].long {
+    width: 57.4rem; }
+
+  section[role=search].long input[type=text] {
+    width: 45rem;
+    /* 124 px less due to web search button */ }
+
+  section[role=search].long input[type=submit].image {
+    display: none; }
+
+  section[role=search].long input[type=submit].text {
+    display: inline; }
+
+  article {
+    margin-right: 3rem; } }
+/* full */
+@media screen and (min-width: 1792px) {
+  body > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1; }
+
+  section[role=search] {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+
+  nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 2; }
+
+  #toc {
+    -ms-grid-column: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 2; }
+
+  section[role=main] {
+    -ms-grid-column: 2;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 1; }
+
+  aside[role=complementary] {
+    -ms-grid-column: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 1; }
+
+  footer[role=contentinfo] {
+    -ms-grid-column: 2;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 4; }
+
+  body.landing > div {
+    display: -ms-grid;
+    -ms-grid-columns: 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  body.landing header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 1; }
+
+  body.landing section[role=search] {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+
+  body.landing nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 2; }
+
+  body.landing section[role=main] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 3; }
+
+  body.landing footer[role=contentinfo] {
+    -ms-grid-row: 4;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body > div {
+    margin: 0 auto;
+    width: 124rem; }
+
+  body.landing aside[role=complementary],
+  body.landing #toc {
+    display: none; }
+
+  body.landing section[role=main] div.ad {
+    margin: 1rem 0.8rem 0 0;
+    height: 27.4rem; }
+
+  /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+  For Full, this is the 4rd child element inside the section[role=main], which is actually 
+  the second .featured element.*/
+  body.landing section[role=main] > *:nth-child(4) {
+    clear: both; }
+
+  body.landing section[role=main] {
+    width: 124rem; }
+
+  /*Show the featured tiles in full view but not in snapped views.*/
+  body.landing section[role=main] .featured {
+    display: block; }
+
+  /* full view */
+  section[role=search] input[type=submit].image {
+    display: none; }
+
+  section[role=search] input[type=submit].text {
+    display: inline; }
+
+  section[role=search] input[type=text] {
+    display: inline-block; }
+
+  section[role=search].default {
+    width: 64.4rem; }
+
+  section[role=search].default input[type=text] {
+    width: 52rem;
+    /* 124 px less due to web search button */ }
+
+  section[role=search].long {
+    width: 77.4rem; }
+
+  section[role=search].long input[type=text] {
+    width: 65rem;
+    /* 124 px less due to web search button */ }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  #toc {
+    display: block;
+    margin-right: 5rem;
+    width: 23.6rem; }
+
+  #toc .heading {
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem;
+    padding: 0.4rem 0 0.5rem 1rem;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase; }
+
+  #toc li {
+    background-color: #f2f2f2;
+    color: #000;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem;
+    list-style-type: none;
+    margin: 0.5rem 0 0 0;
+    min-height: 6.9rem;
+    /* hack */
+    padding: 0; }
+
+  #toc li.current {
+    background-color: #e1e1e1; }
+
+  #toc li a {
+    color: #000;
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr;
+    -ms-grid-rows: auto; }
+
+  #toc li a img {
+    display: -ms-grid;
+    -ms-grid-column: 1;
+    -ms-grid-row: 1;
+    max-width: 8rem;
+    max-height: 6.9rem; }
+
+  #toc li a span {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    margin: 1rem 1.2rem; }
+
+  article {
+    margin-right: 3rem; } }
+/* No snap (Fill+Full) */
+@media screen and (min-width: 896px) {
+  aside[role=complementary] {
+    width: 30rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  body.bgimage.slate {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.indigo {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.msnblue {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.blue {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.aquamarine {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.green {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.orange {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.pink {
+ 
+    background-size: 192rem 80rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] {
+    margin-top: 1.5rem; }
+
+  nav[role=navigation] ul {
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem; }
+
+  nav[role=navigation] li.current a {
+    font-family: "segoe ui"; }
+
+  nav[role=navigation] li a {
+    padding: 0 2rem 2.7rem 0; }
+
+  header[role=banner] > div > a, header[role=banner] > div > a:link, header[role=banner] > div > a:visited, header[role=banner] > div > a:hover, header[role=banner] > div > a:active {
+    margin-top: 2rem; } }
+@media screen and (max-width: 895px) {
+  body > div.head {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    display: -ms-grid;
+    -ms-grid-rows: auto auto;
+    -ms-grid-columns: 1fr 1fr; }
+
+  body > div.content {
+    -ms-grid-rows: auto auto; }
+
+  header[role=banner] > div {
+    -ms-grid-column: 1;
+    margin-left: 0.2rem; }
+    header[role=banner] > div > a, header[role=banner] > div > a:link, header[role=banner] > div > a:visited, header[role=banner] > div > a:hover, header[role=banner] > div > a:active {
+      margin-top: 0.2rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] {
+    margin-top: 0;
+    -ms-grid-row: 2;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2; }
+
+  nav[role=navigation] ul {
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem;
+    height: 4.6rem;
+    white-space: nowrap; }
+
+  nav[role=navigation] li.current a {
+    font-family: "segoe ui"; }
+
+  nav[role=navigation] li a {
+    padding: 0.4rem 0.4rem 0.6rem 0rem; }
+
+  .ad {
+    display: none; }
+
+  section[role=search] {
+    -ms-grid-column: 2;
+    -ms-grid-column-align: end;
+    margin: 0px;
+    margin-right: 1rem;
+    margin-top: 1rem; }
+
+  aside {
+    -ms-grid-row: 2; } }
+
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDKApp\bin\Content\metrosdk\Css\articlePage.pc.classic.css */
+
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDKApp\bin\Content\metrosdk\Css\articlePage.mobile.css */
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDK\Content\Source\css\pages\articlePage\articlePage.pc.scss */
+
+/* media queries sizes */
+/* Left & Right */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* All */
+@media screen {
+  .ad {
+    max-width: 30rem;
+    overflow: hidden; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    text-size-adjust: none; }
+
+  html {
+    font-size: 14px; }
+
+  body {
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    line-height: 2.2rem;
+    -ms-content-zooming: none;
+    -ms-content-zoom: none; }
+
+  a {
+    text-decoration: none; }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    line-height: 2.2rem;
+    text-transform: lowercase; }
+
+  h1 {
+    font-family: "segoe ui light";
+    font-size: 4.8rem;
+    font-weight: normal;
+    line-height: 5.8rem;
+    text-transform: none; }
+
+  img {
+    border: 0;
+    max-width: 100%; }
+
+  input {
+    border-radius: 0; }
+
+  ul.inline, ul.inline li {
+    list-style: none; }
+
+  /* theme colors 
+  ---------------------------------------------------*/
+  .bg.slate,
+  #toc .heading.slate,
+  #toc .heading.slate a {
+    background-color: #636363;
+    color: #fff; }
+
+  .fg.slate,
+  .fg.slate:visited,
+  .heading.fg.slatea,
+  .related .heading.slate {
+    background-color: #fff;
+    color: #636363; }
+
+  .bg.indigo,
+  #toc .heading.indigo,
+  #toc .heading.indigo a {
+    background-color: #3c1b85;
+    color: #fff; }
+
+  .fg.indigo,
+  .fg.indigo:visited,
+  .heading.fg.indigo a,
+  .related .heading.indigo {
+    background-color: #fff;
+    color: #3c1b85; }
+
+  .bg.msnblue,
+  #toc .heading.msnblue,
+  #toc .heading.msnblue a {
+    background-color: #007eb0;
+    color: #fff; }
+
+  .fg.msnblue,
+  .fg.msnblue:visited
+  .heading.fg.msnblue a,
+  .related .heading.msnblue {
+    background-color: #fff;
+    color: #007eb0; }
+
+  .bg.blue,
+  #toc .heading.blue,
+  #toc .heading.blue a {
+    background-color: #006092;
+    color: #fff; }
+
+  .fg.blue,
+  .fg.blue:visited
+  .heading.fg.blue a,
+  .related .heading.blue {
+    background-color: #fff;
+    color: #006092; }
+
+  .bg.aquamarine,
+  #toc .heading.aquamarine,
+  #toc .heading.aquamarine a {
+    background-color: #008580;
+    color: #fff; }
+
+  .fg.aquamarine,
+  .fg.aquamarine:visited,
+  .heading.fg.aquamarine a,
+  .related .heading.aquamarine {
+    background-color: #fff;
+    color: #008580; }
+
+  .bg.green,
+  #toc .heading.green,
+  #toc .heading.green a {
+    background-color: #048444;
+    color: #fff; }
+
+  .fg.green,
+  .fg.green:visited,
+  .heading.fg.green a,
+  .related .heading.green {
+    background-color: #fff;
+    color: #048444; }
+
+  .bg.orange,
+  #toc .heading.orange,
+  #toc .heading.orange a {
+    background-color: #d24400;
+    color: #fff; }
+
+  .fg.orange,
+  .fg.orange:visited,
+  .heading.fg.orange a,
+  .related .heading.orange {
+    background-color: #fff;
+    color: #d24400; }
+
+  .bg.pink,
+  #toc .heading.pink,
+  #toc .heading.pink a {
+    background-color: #ca1c5e;
+    color: #fff; }
+
+  .fg.pink,
+  .fg.pink:visited,
+  .heading.fg.pink a,
+  .related .heading.pink {
+    background-color: #fff;
+    color: #ca1c5e; }
+
+  .heading.bg a {
+    color: #fff; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  footer[role=contentinfo] {
+    clear: both; }
+
+  footer[role=contentinfo] a {
+    display: inline-block; }
+
+  footer[role=contentinfo] a:after {
+    content: "|";
+    margin: 0 .5rem 0 1rem; }
+
+  footer[role=contentinfo] a:last-child:after {
+    content: ""; }
+
+  footer[role=contentinfo] a,
+  footer[role=contentinfo] a:link,
+  footer[role=contentinfo] a:visited,
+  footer[role=contentinfo] a:hover,
+  footer[role=contentinfo] a:active,
+  footer[role=contentinfo] span {
+    color: #757575;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem; }
+
+  body {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto auto; }
+
+  body > div.head {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+
+  body > div.content {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 2; }
+
+  body > div.foot {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 3; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  header[role=banner] span {
+    font-family: "segoe ui light";
+    font-size: 4.2rem;
+    font-weight: normal;
+    line-height: 4.4rem;
+    text-transform: lowercase; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] li {
+    display: inline-block;
+    list-style-type: none; }
+
+  nav[role=navigation] li a {
+    color: #333;
+    display: inline-block;
+    text-transform: lowercase; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body.landing aside[role=complementary],
+  body.landing #toc {
+    display: none;
+    /* hack */ }
+
+  /*Float all the boxes in the main section around the ad floated to the right.*/
+  body.landing section[role=main] > * {
+    float: left;
+    display: block; }
+
+  body.landing section[role=main] div.ad {
+    float: right; }
+
+  /*Needed for snapped view*/
+  body.landing section[role=main] {
+    width: 32rem; }
+
+  /*Hide the featured tiles from snapped views.*/
+  body.landing section[role=main] .featured {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* base view */
+  section[role=search] {
+    border: solid .2rem #bebebe;
+    height: 4rem;
+    margin: 3.8rem 1rem 0 0;
+    position: relative;
+    width: 4rem; }
+
+  section[role=search] label {
+    display: none; }
+
+  section[role=search] input[type=text] {
+ 
+    background-size: 56px 34px;
+    border: none;
+    display: none;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0 5.6rem 0 0.5rem;
+    position: absolute;
+    left: 0;
+    top: 0; }
+
+  section[role=search] input[type=submit].image {
+    background-size: 34px 34px;
+    border: solid 0.1rem #fff;
+    color: #fff;
+    display: inline;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 3.6rem; }
+
+  section[role=search] input[type=submit].text {
+    background-color: #e66400;
+    border: solid 0.1rem #fff;
+    color: #fff;
+    display: none;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0 1.5rem;
+    position: absolute;
+    right: 0;
+    top: 0; }
+
+  @-ms-viewport {
+    width: 100%; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  .related .heading {
+    font-family: "segoe ui light";
+    font-size: 3rem;
+    font-weight: normal;
+    line-height: 3.7rem;
+    margin: 0 0 1.25rem 0;
+    text-transform: lowercase; }
+
+  .related ul li {
+ 
+    background-size: 10px 10px;
+    display: block;
+    list-style-type: none;
+    margin: 0 1rem 1.2rem 0;
+    padding-left: 1.2rem; }
+
+  .related ul li a,
+  .related ul li a:link,
+  .related ul li a:visited,
+  .related ul li a:hover,
+  .related ul li a:active {
+    color: #000; }
+
+  #toc {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  article figure {
+    /*
+    display: table-cell;
+    float: left;
+    margin-right: 2.2rem; 
+    */
+    margin-bottom: 2.5rem; }
+
+  article figure > div {
+    position: relative; }
+
+  article figure > div .attribution {
+    color: #fff;
+    bottom: 0;
+    position: absolute;
+    left: 0; }
+
+  article footer {
+    color: #757575;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem; }
+
+  article footer time {
+    display: inline-block; }
+
+  article footer time:after {
+    content: "|";
+    padding: 0 1rem; }
+
+  article header p {
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem; }
+
+  article section div,
+  article section p {
+    margin: 1.5rem 0; }
+
+  article section ol {
+    list-style-type: decimal;
+    margin: 0 0 0 2.2rem; }
+
+  article section ol li {
+    margin: 0 0 1.2rem 0;
+    padding: 0; }
+
+  article section ul li {
+ 
+    background-size: 10px 10px;
+    display: block;
+    list-style-type: none;
+    margin: 0 0 1.2rem 0;
+    padding-left: 1.2rem; } }
+/* fill */
+@media screen and (min-width: 896px) and (max-width: 1791px) {
+  body > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1; }
+
+  section[role=search] {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+
+  nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 2; }
+
+  #toc {
+    display: none; }
+
+  section[role=main] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 3; }
+
+  aside[role=complementary] {
+    -ms-grid-column: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3; }
+
+  footer[role=contentinfo] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 4; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body > div {
+    margin: 0 auto;
+    width: 93rem; }
+
+  /*weight needed for overridding the display: block;*/
+  body.landing section[role=main] div.ad {
+    margin: 1rem 0.8rem 0 0;
+    height: 27.5rem; }
+
+  body.landing section[role=main] {
+    width: 93rem; }
+
+  /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+  For Fill, this is the 3rd child element inside the section[role=main], 
+  which is actually the first .featured element.*/
+  body.landing section[role=main] > *:nth-child(3) {
+    clear: both; }
+
+  /*Show the featured tiles in fill view but not in snapped views.*/
+  body.landing section[role=main] .featured {
+    display: block; }
+
+  /* fill view */
+  section[role=search] input[type=text] {
+    display: inline-block; }
+
+  section[role=search].default {
+    width: 40.4rem; }
+
+  section[role=search].default input[type=text] {
+    width: 36.4rem;
+    /* 40px less due to spyglass button */ }
+
+  section[role=search].default input[type=submit].image {
+    display: inline; }
+
+  section[role=search].default input[type=submit].text {
+    display: none; }
+
+  section[role=search].long {
+    width: 57.4rem; }
+
+  section[role=search].long input[type=text] {
+    width: 45rem;
+    /* 124 px less due to web search button */ }
+
+  section[role=search].long input[type=submit].image {
+    display: none; }
+
+  section[role=search].long input[type=submit].text {
+    display: inline; }
+
+  article {
+    margin-right: 3rem; } }
+/* full */
+@media screen and (min-width: 1792px) {
+  body > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1; }
+
+  section[role=search] {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+
+  nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 2; }
+
+  #toc {
+    -ms-grid-column: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 2; }
+
+  section[role=main] {
+    -ms-grid-column: 2;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 1; }
+
+  aside[role=complementary] {
+    -ms-grid-column: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 1; }
+
+  footer[role=contentinfo] {
+    -ms-grid-column: 2;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 4; }
+
+  body.landing > div {
+    display: -ms-grid;
+    -ms-grid-columns: 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  body.landing header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 1; }
+
+  body.landing section[role=search] {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+
+  body.landing nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 2; }
+
+  body.landing section[role=main] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 3; }
+
+  body.landing footer[role=contentinfo] {
+    -ms-grid-row: 4;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body > div {
+    margin: 0 auto;
+    width: 124rem; }
+
+  body.landing aside[role=complementary],
+  body.landing #toc {
+    display: none; }
+
+  body.landing section[role=main] div.ad {
+    margin: 1rem 0.8rem 0 0;
+    height: 27.4rem; }
+
+  /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+  For Full, this is the 4rd child element inside the section[role=main], which is actually 
+  the second .featured element.*/
+  body.landing section[role=main] > *:nth-child(4) {
+    clear: both; }
+
+  body.landing section[role=main] {
+    width: 124rem; }
+
+  /*Show the featured tiles in full view but not in snapped views.*/
+  body.landing section[role=main] .featured {
+    display: block; }
+
+  /* full view */
+  section[role=search] input[type=submit].image {
+    display: none; }
+
+  section[role=search] input[type=submit].text {
+    display: inline; }
+
+  section[role=search] input[type=text] {
+    display: inline-block; }
+
+  section[role=search].default {
+    width: 64.4rem; }
+
+  section[role=search].default input[type=text] {
+    width: 52rem;
+    /* 124 px less due to web search button */ }
+
+  section[role=search].long {
+    width: 77.4rem; }
+
+  section[role=search].long input[type=text] {
+    width: 65rem;
+    /* 124 px less due to web search button */ }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  #toc {
+    display: block;
+    margin-right: 5rem;
+    width: 23.6rem; }
+
+  #toc .heading {
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem;
+    padding: 0.4rem 0 0.5rem 1rem;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase; }
+
+  #toc li {
+    background-color: #f2f2f2;
+    color: #000;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem;
+    list-style-type: none;
+    margin: 0.5rem 0 0 0;
+    min-height: 6.9rem;
+    /* hack */
+    padding: 0; }
+
+  #toc li.current {
+    background-color: #e1e1e1; }
+
+  #toc li a {
+    color: #000;
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr;
+    -ms-grid-rows: auto; }
+
+  #toc li a img {
+    display: -ms-grid;
+    -ms-grid-column: 1;
+    -ms-grid-row: 1;
+    max-width: 8rem;
+    max-height: 6.9rem; }
+
+  #toc li a span {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    margin: 1rem 1.2rem; }
+
+  article {
+    margin-right: 3rem; } }
+/* No snap (Fill+Full) */
+@media screen and (min-width: 896px) {
+  aside[role=complementary] {
+    width: 30rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  body.bgimage.slate {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.indigo {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.msnblue {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.blue {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.aquamarine {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.green {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.orange {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.pink {
+ 
+    background-size: 192rem 80rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] {
+    margin-top: 1.5rem; }
+
+  nav[role=navigation] ul {
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem; }
+
+  nav[role=navigation] li.current a {
+    font-family: "segoe ui"; }
+
+  nav[role=navigation] li a {
+    padding: 0 2rem 2.7rem 0; }
+
+  header[role=banner] > div > a, header[role=banner] > div > a:link, header[role=banner] > div > a:visited, header[role=banner] > div > a:hover, header[role=banner] > div > a:active {
+    margin-top: 2rem; } }
+@media screen and (max-width: 895px) {
+  body > div.head {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    display: -ms-grid;
+    -ms-grid-rows: auto auto;
+    -ms-grid-columns: 1fr 1fr; }
+
+  body > div.content {
+    -ms-grid-rows: auto auto; }
+
+  header[role=banner] > div {
+    -ms-grid-column: 1;
+    margin-left: 0.2rem; }
+    header[role=banner] > div > a, header[role=banner] > div > a:link, header[role=banner] > div > a:visited, header[role=banner] > div > a:hover, header[role=banner] > div > a:active {
+      margin-top: 0.2rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] {
+    margin-top: 0;
+    -ms-grid-row: 2;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2; }
+
+  nav[role=navigation] ul {
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem;
+    height: 4.6rem;
+    white-space: nowrap; }
+
+  nav[role=navigation] li.current a {
+    font-family: "segoe ui"; }
+
+  nav[role=navigation] li a {
+    padding: 0.4rem 0.4rem 0.6rem 0rem; }
+
+  .ad {
+    display: none; }
+
+  section[role=search] {
+    -ms-grid-column: 2;
+    -ms-grid-column-align: end;
+    margin: 0px;
+    margin-right: 1rem;
+    margin-top: 1rem; }
+
+  aside {
+    -ms-grid-row: 2; } }
+
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDKApp\bin\Content\metrosdk\Css\articlePage.mobile.app.css */
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDK\Content\Source\css\pages\articlePage\articlePage.pc.app.scss */
+
+/* media queries sizes */
+/* Left & Right */
+/* theme colors */
+/* shades of gray */
+/* common interface colors */
+/* All */
+@media screen {
+  .ad {
+    max-width: 30rem;
+    overflow: hidden; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    text-size-adjust: none; }
+
+  html {
+    font-size: 14px; }
+
+  body {
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    line-height: 2.2rem;
+    -ms-content-zooming: none;
+    -ms-content-zoom: none; }
+
+  a {
+    text-decoration: none; }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    line-height: 2.2rem;
+    text-transform: lowercase; }
+
+  h1 {
+    font-family: "segoe ui light";
+    font-size: 4.8rem;
+    font-weight: normal;
+    line-height: 5.8rem;
+    text-transform: none; }
+
+  img {
+    border: 0;
+    max-width: 100%; }
+
+  input {
+    border-radius: 0; }
+
+  ul.inline, ul.inline li {
+    list-style: none; }
+
+  /* theme colors 
+  ---------------------------------------------------*/
+  .bg.slate,
+  #toc .heading.slate,
+  #toc .heading.slate a {
+    background-color: #636363;
+    color: #fff; }
+
+  .fg.slate,
+  .fg.slate:visited,
+  .heading.fg.slatea,
+  .related .heading.slate {
+    background-color: #fff;
+    color: #636363; }
+
+  .bg.indigo,
+  #toc .heading.indigo,
+  #toc .heading.indigo a {
+    background-color: #3c1b85;
+    color: #fff; }
+
+  .fg.indigo,
+  .fg.indigo:visited,
+  .heading.fg.indigo a,
+  .related .heading.indigo {
+    background-color: #fff;
+    color: #3c1b85; }
+
+  .bg.msnblue,
+  #toc .heading.msnblue,
+  #toc .heading.msnblue a {
+    background-color: #007eb0;
+    color: #fff; }
+
+  .fg.msnblue,
+  .fg.msnblue:visited
+  .heading.fg.msnblue a,
+  .related .heading.msnblue {
+    background-color: #fff;
+    color: #007eb0; }
+
+  .bg.blue,
+  #toc .heading.blue,
+  #toc .heading.blue a {
+    background-color: #006092;
+    color: #fff; }
+
+  .fg.blue,
+  .fg.blue:visited
+  .heading.fg.blue a,
+  .related .heading.blue {
+    background-color: #fff;
+    color: #006092; }
+
+  .bg.aquamarine,
+  #toc .heading.aquamarine,
+  #toc .heading.aquamarine a {
+    background-color: #008580;
+    color: #fff; }
+
+  .fg.aquamarine,
+  .fg.aquamarine:visited,
+  .heading.fg.aquamarine a,
+  .related .heading.aquamarine {
+    background-color: #fff;
+    color: #008580; }
+
+  .bg.green,
+  #toc .heading.green,
+  #toc .heading.green a {
+    background-color: #048444;
+    color: #fff; }
+
+  .fg.green,
+  .fg.green:visited,
+  .heading.fg.green a,
+  .related .heading.green {
+    background-color: #fff;
+    color: #048444; }
+
+  .bg.orange,
+  #toc .heading.orange,
+  #toc .heading.orange a {
+    background-color: #d24400;
+    color: #fff; }
+
+  .fg.orange,
+  .fg.orange:visited,
+  .heading.fg.orange a,
+  .related .heading.orange {
+    background-color: #fff;
+    color: #d24400; }
+
+  .bg.pink,
+  #toc .heading.pink,
+  #toc .heading.pink a {
+    background-color: #ca1c5e;
+    color: #fff; }
+
+  .fg.pink,
+  .fg.pink:visited,
+  .heading.fg.pink a,
+  .related .heading.pink {
+    background-color: #fff;
+    color: #ca1c5e; }
+
+  .heading.bg a {
+    color: #fff; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  footer[role=contentinfo] {
+    clear: both; }
+
+  footer[role=contentinfo] a {
+    display: inline-block; }
+
+  footer[role=contentinfo] a:after {
+    content: "|";
+    margin: 0 .5rem 0 1rem; }
+
+  footer[role=contentinfo] a:last-child:after {
+    content: ""; }
+
+  footer[role=contentinfo] a,
+  footer[role=contentinfo] a:link,
+  footer[role=contentinfo] a:visited,
+  footer[role=contentinfo] a:hover,
+  footer[role=contentinfo] a:active,
+  footer[role=contentinfo] span {
+    color: #757575;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem; }
+
+  body {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto auto; }
+
+  body > div.head {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+
+  body > div.content {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 2; }
+
+  body > div.foot {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 3; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  header[role=banner] span {
+    font-family: "segoe ui light";
+    font-size: 4.2rem;
+    font-weight: normal;
+    line-height: 4.4rem;
+    text-transform: lowercase; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] li {
+    display: inline-block;
+    list-style-type: none; }
+
+  nav[role=navigation] li a {
+    color: #333;
+    display: inline-block;
+    text-transform: lowercase; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body.landing aside[role=complementary],
+  body.landing #toc {
+    display: none;
+    /* hack */ }
+
+  /*Float all the boxes in the main section around the ad floated to the right.*/
+  body.landing section[role=main] > * {
+    float: left;
+    display: block; }
+
+  body.landing section[role=main] div.ad {
+    float: right; }
+
+  /*Needed for snapped view*/
+  body.landing section[role=main] {
+    width: 32rem; }
+
+  /*Hide the featured tiles from snapped views.*/
+  body.landing section[role=main] .featured {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  /* base view */
+  section[role=search] {
+    border: solid .2rem #bebebe;
+    height: 4rem;
+    margin: 3.8rem 1rem 0 0;
+    position: relative;
+    width: 4rem; }
+
+  section[role=search] label {
+    display: none; }
+
+  section[role=search] input[type=text] {
+ 
+    background-size: 56px 34px;
+    border: none;
+    display: none;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0 5.6rem 0 0.5rem;
+    position: absolute;
+    left: 0;
+    top: 0; }
+
+  section[role=search] input[type=submit].image {
+    background-size: 34px 34px;
+    border: solid 0.1rem #fff;
+    color: #fff;
+    display: inline;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 3.6rem; }
+
+  section[role=search] input[type=submit].text {
+    background-color: #e66400;
+    border: solid 0.1rem #fff;
+    color: #fff;
+    display: none;
+    font-family: "segoe ui";
+    font-size: 1.8rem;
+    font-weight: normal;
+    height: 3.6rem;
+    line-height: 2.2rem;
+    padding: 0 1.5rem;
+    position: absolute;
+    right: 0;
+    top: 0; }
+
+  @-ms-viewport {
+    width: 100%; }
+
+  /* app view */
+  section[role=search] {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  .related .heading {
+    font-family: "segoe ui light";
+    font-size: 3rem;
+    font-weight: normal;
+    line-height: 3.7rem;
+    margin: 0 0 1.25rem 0;
+    text-transform: lowercase; }
+
+  .related ul li {
+ 
+    background-size: 10px 10px;
+    display: block;
+    list-style-type: none;
+    margin: 0 1rem 1.2rem 0;
+    padding-left: 1.2rem; }
+
+  .related ul li a,
+  .related ul li a:link,
+  .related ul li a:visited,
+  .related ul li a:hover,
+  .related ul li a:active {
+    color: #000; }
+
+  #toc {
+    display: none; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  article figure {
+    /*
+    display: table-cell;
+    float: left;
+    margin-right: 2.2rem; 
+    */
+    margin-bottom: 2.5rem; }
+
+  article figure > div {
+    position: relative; }
+
+  article figure > div .attribution {
+    color: #fff;
+    bottom: 0;
+    position: absolute;
+    left: 0; }
+
+  article footer {
+    color: #757575;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem; }
+
+  article footer time {
+    display: inline-block; }
+
+  article footer time:after {
+    content: "|";
+    padding: 0 1rem; }
+
+  article header p {
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem; }
+
+  article section div,
+  article section p {
+    margin: 1.5rem 0; }
+
+  article section ol {
+    list-style-type: decimal;
+    margin: 0 0 0 2.2rem; }
+
+  article section ol li {
+    margin: 0 0 1.2rem 0;
+    padding: 0; }
+
+  article section ul li {
+ 
+    background-size: 10px 10px;
+    display: block;
+    list-style-type: none;
+    margin: 0 0 1.2rem 0;
+    padding-left: 1.2rem; } }
+/* fill */
+@media screen and (min-width: 896px) and (max-width: 1791px) {
+  body > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1; }
+
+  section[role=search] {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+
+  nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 2; }
+
+  #toc {
+    display: none; }
+
+  section[role=main] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 3; }
+
+  aside[role=complementary] {
+    -ms-grid-column: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3; }
+
+  footer[role=contentinfo] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 4; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body > div {
+    margin: 0 auto;
+    width: 93rem; }
+
+  /*weight needed for overridding the display: block;*/
+  body.landing section[role=main] div.ad {
+    margin: 1rem 0.8rem 0 0;
+    height: 27.5rem; }
+
+  body.landing section[role=main] {
+    width: 93rem; }
+
+  /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+  For Fill, this is the 3rd child element inside the section[role=main], 
+  which is actually the first .featured element.*/
+  body.landing section[role=main] > *:nth-child(3) {
+    clear: both; }
+
+  /*Show the featured tiles in fill view but not in snapped views.*/
+  body.landing section[role=main] .featured {
+    display: block; }
+
+  /* fill view */
+  section[role=search] input[type=text] {
+    display: inline-block; }
+
+  section[role=search].default {
+    width: 40.4rem; }
+
+  section[role=search].default input[type=text] {
+    width: 36.4rem;
+    /* 40px less due to spyglass button */ }
+
+  section[role=search].default input[type=submit].image {
+    display: inline; }
+
+  section[role=search].default input[type=submit].text {
+    display: none; }
+
+  section[role=search].long {
+    width: 57.4rem; }
+
+  section[role=search].long input[type=text] {
+    width: 45rem;
+    /* 124 px less due to web search button */ }
+
+  section[role=search].long input[type=submit].image {
+    display: none; }
+
+  section[role=search].long input[type=submit].text {
+    display: inline; }
+
+  article {
+    margin-right: 3rem; } }
+/* full */
+@media screen and (min-width: 1792px) {
+  body > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1; }
+
+  section[role=search] {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+
+  nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 2; }
+
+  #toc {
+    -ms-grid-column: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 2; }
+
+  section[role=main] {
+    -ms-grid-column: 2;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 1; }
+
+  aside[role=complementary] {
+    -ms-grid-column: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 1; }
+
+  footer[role=contentinfo] {
+    -ms-grid-column: 2;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 4; }
+
+  body.landing > div {
+    display: -ms-grid;
+    -ms-grid-columns: 1fr auto;
+    -ms-grid-rows: auto auto 1fr auto; }
+
+  body.landing header[role=banner] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 1;
+    -ms-grid-row: 1; }
+
+  body.landing section[role=search] {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+
+  body.landing nav[role=navigation] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 2; }
+
+  body.landing section[role=main] {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 3; }
+
+  body.landing footer[role=contentinfo] {
+    -ms-grid-row: 4;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2; }
+
+  body {
+    margin: 0 0.5rem 2rem;
+    /* hack */ }
+
+  body > div {
+    margin: 0 auto;
+    width: 124rem; }
+
+  body.landing aside[role=complementary],
+  body.landing #toc {
+    display: none; }
+
+  body.landing section[role=main] div.ad {
+    margin: 1rem 0.8rem 0 0;
+    height: 27.4rem; }
+
+  /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+  For Full, this is the 4rd child element inside the section[role=main], which is actually 
+  the second .featured element.*/
+  body.landing section[role=main] > *:nth-child(4) {
+    clear: both; }
+
+  body.landing section[role=main] {
+    width: 124rem; }
+
+  /*Show the featured tiles in full view but not in snapped views.*/
+  body.landing section[role=main] .featured {
+    display: block; }
+
+  /* full view */
+  section[role=search] input[type=submit].image {
+    display: none; }
+
+  section[role=search] input[type=submit].text {
+    display: inline; }
+
+  section[role=search] input[type=text] {
+    display: inline-block; }
+
+  section[role=search].default {
+    width: 64.4rem; }
+
+  section[role=search].default input[type=text] {
+    width: 52rem;
+    /* 124 px less due to web search button */ }
+
+  section[role=search].long {
+    width: 77.4rem; }
+
+  section[role=search].long input[type=text] {
+    width: 65rem;
+    /* 124 px less due to web search button */ }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  #toc {
+    display: block;
+    margin-right: 5rem;
+    width: 23.6rem; }
+
+  #toc .heading {
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem;
+    padding: 0.4rem 0 0.5rem 1rem;
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase; }
+
+  #toc li {
+    background-color: #f2f2f2;
+    color: #000;
+    font-family: "segoe ui";
+    font-size: 1.4rem;
+    font-weight: normal;
+    line-height: 1.7rem;
+    list-style-type: none;
+    margin: 0.5rem 0 0 0;
+    min-height: 6.9rem;
+    /* hack */
+    padding: 0; }
+
+  #toc li.current {
+    background-color: #e1e1e1; }
+
+  #toc li a {
+    color: #000;
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr;
+    -ms-grid-rows: auto; }
+
+  #toc li a img {
+    display: -ms-grid;
+    -ms-grid-column: 1;
+    -ms-grid-row: 1;
+    max-width: 8rem;
+    max-height: 6.9rem; }
+
+  #toc li a span {
+    display: -ms-grid;
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    margin: 1rem 1.2rem; }
+
+  article {
+    margin-right: 3rem; } }
+/* No snap (Fill+Full) */
+@media screen and (min-width: 896px) {
+  aside[role=complementary] {
+    width: 30rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  body.bgimage.slate {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.indigo {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.msnblue {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.blue {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.aquamarine {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.green {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.orange {
+ 
+    background-size: 192rem 80rem; }
+  body.bgimage.pink {
+ 
+    background-size: 192rem 80rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] {
+    margin-top: 1.5rem; }
+
+  nav[role=navigation] ul {
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem; }
+
+  nav[role=navigation] li.current a {
+    font-family: "segoe ui"; }
+
+  nav[role=navigation] li a {
+    padding: 0 2rem 2.7rem 0; }
+
+  header[role=banner] > div > a, header[role=banner] > div > a:link, header[role=banner] > div > a:visited, header[role=banner] > div > a:hover, header[role=banner] > div > a:active {
+    margin-top: 2rem; } }
+@media screen and (max-width: 895px) {
+  body > div.head {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    display: -ms-grid;
+    -ms-grid-rows: auto auto;
+    -ms-grid-columns: 1fr 1fr; }
+
+  body > div.content {
+    -ms-grid-rows: auto auto; }
+
+  header[role=banner] > div {
+    -ms-grid-column: 1;
+    margin-left: 0.2rem; }
+    header[role=banner] > div > a, header[role=banner] > div > a:link, header[role=banner] > div > a:visited, header[role=banner] > div > a:hover, header[role=banner] > div > a:active {
+      margin-top: 0.2rem; }
+
+  /* media queries sizes */
+  /* Left & Right */
+  /* theme colors */
+  /* shades of gray */
+  /* common interface colors */
+  nav[role=navigation] {
+    margin-top: 0;
+    -ms-grid-row: 2;
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2; }
+
+  nav[role=navigation] ul {
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    font-family: "segoe ui light";
+    font-size: 2.4rem;
+    font-weight: normal;
+    line-height: 2.6rem;
+    height: 4.6rem;
+    white-space: nowrap; }
+
+  nav[role=navigation] li.current a {
+    font-family: "segoe ui"; }
+
+  nav[role=navigation] li a {
+    padding: 0.4rem 0.4rem 0.6rem 0rem; }
+
+  .ad {
+    display: none; }
+
+  section[role=search] {
+    -ms-grid-column: 2;
+    -ms-grid-column-align: end;
+    margin: 0px;
+    margin-right: 1rem;
+    margin-top: 1rem; }
+
+  aside {
+    -ms-grid-row: 2; } }
+
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDKApp\bin\Content\metrosdk\Css\articlePage.mobile.classic.css */
+
+
+
+/* D:\Projects\MsnMetro\Main\MetroSDK\MetroSDKApp\bin\Content\shared\Css\Global\Common\header.css */
+
+header[role=banner] a.network 
+{
+ 
+    background-size: 100%;
+    display: inline-block;
+    height: 5rem;
+    width: 15rem;
+}
+
+header[role=banner] a.network span 
+{
+    display: none;
+}

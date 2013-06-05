@@ -47,7 +47,8 @@ namespace WebGrease
         #region Public Methods and Operators
 
         /// <summary>The clean cache.</summary>
-        void CleanCache();
+        /// <param name="logManager">The log manager</param>
+        void CleanCache(LogManager logManager = null);
 
         /// <summary>The clean destination.</summary>
         void CleanDestination();

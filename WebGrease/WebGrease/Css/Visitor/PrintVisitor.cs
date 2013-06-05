@@ -550,7 +550,8 @@ namespace WebGrease.Css.Visitor
         {
             // Exclude what would have been a comment.
             var isComment = declarationNode.Property.StartsWith("/", StringComparison.OrdinalIgnoreCase);
-            if (!_printerFormatter.PrettyPrint && isComment)
+            var isWebGreaseDirectiveProperty = declarationNode.Property.StartsWith("-wg-", StringComparison.OrdinalIgnoreCase);
+            if (!_printerFormatter.PrettyPrint && (isComment || isWebGreaseDirectiveProperty))
             {
                 return null;
             }

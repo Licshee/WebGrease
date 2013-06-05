@@ -13,11 +13,5 @@ namespace WebGrease.Build
 
         /// <summary>The everything activity.</summary>
         Everything, 
-
-        /// <summary>The clean destination activity.</summary>
-        CleanDestination,
-
-        /// <summary>The clean cache activity.</summary>
-        CleanCache
     }
 }

@@ -600,6 +600,9 @@ namespace WebGrease.Activities
             }
         }
 
+        /// <summary>Gets the log root for the log file.</summary>
+        /// <param name="logFileName">The log file name.</param>
+        /// <returns>The <see cref="XElement"/>.</returns>
         private static XElement GetLogRoot(string logFileName)
         {
             var doc = XDocument.Load(logFileName);
@@ -607,9 +610,13 @@ namespace WebGrease.Activities
             return rootElement;
         }
 
+        /// <summary>Gets the config file name for the config type.</summary>
+        /// <param name="logFileName">The log file name.</param>
+        /// <param name="configType">The config type.</param>
+        /// <returns>The <see cref="string"/>.</returns>
         private static string GetConfigTypeLogFile(string logFileName, string configType)
         {
-            return Path.Combine(Path.GetDirectoryName(logFileName), Path.GetFileNameWithoutExtension(logFileName) + "." + configType + Path.GetExtension(logFileName));
+            return Path.Combine(Path.GetDirectoryName(logFileName), Path.GetFileNameWithoutExtension(logFileName) + (string.IsNullOrWhiteSpace(configType) ? string.Empty : "." + configType)) + Path.GetExtension(logFileName);
         }
     }
 }

@@ -34,6 +34,14 @@ namespace WebGrease
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Justification = "Null code")]
         public IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections { get; private set; }
 
+        public string RootPath
+        {
+            get
+            {
+                return null;
+            }
+        }
+
         #endregion
 
         #region Public Methods and Operators

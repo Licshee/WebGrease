@@ -12,6 +12,7 @@ namespace WebGrease.Tests
 {
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.IO;
     using System.Linq;
     using System.Text.RegularExpressions;
@@ -24,6 +25,11 @@ namespace WebGrease.Tests
     using Moq;
 
     using WebGrease.Build;
+    using WebGrease.Extensions;
+    using WebGrease.Css;
+    using WebGrease.Css.Ast;
+    using WebGrease.Css.Ast.MediaQuery;
+    using WebGrease.Css.Extensions;
 
     /// <summary>
     /// This is a test class for AssemblerActivityTest and is intended
@@ -32,11 +38,52 @@ namespace WebGrease.Tests
     [TestClass]
     public class WebGreaseTaskTests
     {
-        /// <summary>
-        /// Gets or sets the test context which provides
-        /// information about and functionality for the current test run.
-        /// </summary>
-        public TestContext TestContext { get; set; }
+        /// <summary>A test for the everything build task.</summary>
+        [TestMethod]
+        [TestCategory(TestCategories.WebGreaseTask)]
+        [TestCategory(TestCategories.EverythingActivity)]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        [TestCategory(TestCategories.MediaQueryMerge)]
+        public void MsBuildTaskMergeMediaQueriesTest1()
+        {
+            var outputs = ExecuteEverythingBuildTask("MediaQueryMergeTest1");
+            Assert.AreEqual(2, outputs.Values.Count);
+
+            var negativeOutput = GetOutput(outputs, "mediaquerymergetest1negative.css");
+            Assert.AreEqual(3, CountOccurences(negativeOutput, "@media screen{"));
+
+            var output = GetOutput(outputs, "mediaquerymergetest1.css");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(output));
+
+            Assert.AreEqual(1, CountOccurences(output, "@media screen{"));
+            Assert.AreEqual(1, CountOccurences(output, "@media screen and (max-width:500px){"));
+            Assert.AreEqual(1, CountOccurences(output, ".someclass{"));
+            Assert.AreEqual(1, CountOccurences(output, ".someclass{color:blue}"));
+        }
+
+        private static string GetOutput(IDictionary<string, string> outputs, string outputName)
+        {
+            return outputs.Where(o => o.Key.EndsWith(outputName, StringComparison.OrdinalIgnoreCase)).Select(k => k.Value).FirstOrDefault();
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.WebGreaseTask)]
+        [TestCategory(TestCategories.EverythingActivity)]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        [TestCategory(TestCategories.MediaQueryMerge)]
+        public void MsBuildTaskMergeMediaQueriesTest2()
+        {
+            var outputs = ExecuteEverythingBuildTask("MediaQueryMergeTest2");
+            Assert.AreEqual(1, outputs.Values.Count);
+            var output = outputs.Values.FirstOrDefault();
+            Assert.IsFalse(string.IsNullOrWhiteSpace(output));
+
+            Assert.AreEqual(1, CountOccurences(output, "@media screen{"));
+            Assert.AreEqual(1, CountOccurences(output, "@media screen and (min-width:896px) and (max-width:1791px){"));
+            Assert.AreEqual(1, CountOccurences(output, "@media screen and (min-width:1792px){"));
+            Assert.AreEqual(1, CountOccurences(output, "@media screen and (min-width:896px){"));
+            Assert.AreEqual(1, CountOccurences(output, "@media screen and (max-width:895px){"));
+        }
 
         /// <summary>A test for the everything build task.</summary>
         [TestMethod]
@@ -125,16 +172,79 @@ namespace WebGrease.Tests
         /// <param name="testName">The test name.</param>
         /// <param name="errorEventArgs">The error event args.</param>
         /// <returns>The resulting css files.</returns>
-        private static Dictionary<string, string> ExecuteEverythingBuildTask(string testName, List<BuildErrorEventArgs> errorEventArgs = null)
+        private static IDictionary<string, string> ExecuteEverythingBuildTask(string testName, List<BuildErrorEventArgs> errorEventArgs = null, string addedConfigName = null)
         {
             errorEventArgs = errorEventArgs ?? new List<BuildErrorEventArgs>();
             var testRootPath = @"WebGrease.Tests\WebGreaseTask\" + testName + @"\";
             ExecuteBuildTask("Everything", testRootPath, errorEventArgs.Add);
+
+
             Assert.AreEqual(0, errorEventArgs.Count);
 
             var log = XDocument.Load(testRootPath + @"Log\css_log.xml");
-            var outputs = log.Descendants("Output");
-            return outputs.Select(o => (string)o).ToDictionary(o => o, o => File.ReadAllText(testRootPath + o));
+            var results = log.Descendants("File")
+               .SelectMany(f => f.Elements("Input").ToDictionary(i => (string)i, i => File.ReadAllText(testRootPath + (string)f.Element("Output"))));
+
+            var expectedOutputFile = testRootPath + "expectedOutput\\" + testName + ".css";
+            if (File.Exists(expectedOutputFile))
+            {
+                var expectedOutput = File.ReadAllText(expectedOutputFile);
+                var actualOutput = results.Where(r => r.Key.EndsWith(testName + ".css", StringComparison.OrdinalIgnoreCase)).Select(r => r.Value).FirstOrDefault();
+                Assert.IsNotNull(actualOutput);
+
+                var actualCss = CssParser.Parse(actualOutput);
+                var expectedCss = CssParser.Parse(expectedOutput);
+
+                EnsureExpectedCssResult(expectedCss.StyleSheetRules, actualCss);
+            }
+
+            return results.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        }
+
+        private static void EnsureExpectedCssResult(IEnumerable<StyleSheetRuleNode> styleSheetRuleNodes, StyleSheetNode actualCss, MediaNode mediaQueryNode = null)
+        {
+            foreach (var styleSheetRuleNode in styleSheetRuleNodes)
+            {
+                if (styleSheetRuleNode is MediaNode)
+                {
+                    var mediaNode = styleSheetRuleNode as MediaNode;
+                    EnsureExpectedCssResult(mediaNode.Rulesets, actualCss, mediaNode);
+                }
+                else if (styleSheetRuleNode is RulesetNode)
+                {
+                    var ruleSetNode = styleSheetRuleNode as RulesetNode;
+                    foreach (var declarationNode in ruleSetNode.Declarations)
+                    {
+                        EnsureDeclarationNode(declarationNode, ruleSetNode, mediaQueryNode, actualCss);
+                    }
+                }
+            }
+        }
+
+        private static void EnsureDeclarationNode(DeclarationNode declarationNode, RulesetNode ruleSetNode, MediaNode mediaQueryNode, StyleSheetNode actualCss)
+        {
+            var rules = actualCss.StyleSheetRules.ToArray();
+            var expectedMediaQuery = string.Empty;
+            if (mediaQueryNode != null)
+            {
+                expectedMediaQuery = mediaQueryNode.PrintSelector();
+                rules = rules.OfType<MediaNode>().Where(r => r.PrintSelector().Equals(expectedMediaQuery)).SelectMany(mq => mq.Rulesets).ToArray();
+            }
+
+            var expectedRule = ruleSetNode.PrintSelector();
+            var declarations = rules
+                .OfType<RulesetNode>()
+                .Where(rsn => rsn.PrintSelector().Equals(expectedRule))
+                .SelectMany(r => r.Declarations).ToArray();
+
+            var expectedproperty = declarationNode.Property;
+            var declarationValues = declarations.Where(d => d.Property.Equals(expectedproperty)).ToArray();
+
+            var expectedValue = declarationNode.ExprNode.TermNode.MinifyPrint();
+            if (!declarationValues.Any(d => d.ExprNode.TermNode.MinifyPrint().Equals(expectedValue)))
+            {
+                Assert.Fail("Could not find [{0}] --> [{1}] --> {2}: {3}; ".InvariantFormat(expectedMediaQuery, expectedRule, expectedproperty, expectedValue));
+            }
         }
 
         /// <summary>The execute build task.</summary>
@@ -233,6 +343,19 @@ namespace WebGrease.Tests
         private static void LogErrorEvent(BuildErrorEventArgs e)
         {
             Console.WriteLine("Error :" + e.Message);
+        }
+
+        private static int CountOccurences(string haystack, string needle)
+        {
+            if (haystack == null)
+            {
+                throw new ArgumentNullException("haystack");
+            }
+            if (needle == null)
+            {
+                throw new ArgumentNullException("needle");
+            }
+            return (haystack.Length - haystack.Replace(needle, "").Length) / needle.Length;
         }
     }
 }

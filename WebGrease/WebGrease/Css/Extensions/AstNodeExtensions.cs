@@ -9,9 +9,12 @@
 
 namespace WebGrease.Css.Extensions
 {
+    using System.Linq;
     using System.Text;
     using Ast;
     using Visitor;
+
+    using WebGrease.Css.Ast.MediaQuery;
 
     /// <summary>AstNodeExtensions Class - Provides the extension on AstNode types</summary>
     public static class AstNodeExtensions
@@ -30,6 +33,16 @@ namespace WebGrease.Css.Extensions
         public static string MinifyPrint(this AstNode node)
         {
             return node == null ? string.Empty : PrintVisitor.Print(node, false);
+        }
+
+        /// <summary>
+        /// Prints the @media selector for the media node.
+        /// </summary>
+        /// <param name="node">The media node</param>
+        /// <returns>The @media .... string.</returns>
+        public static string PrintSelector(this MediaNode node)
+        {
+            return CssConstants.Media + string.Join(",", node.MediaQueries.Select(mq => mq.MinifyPrint()));
         }
 
         /// <summary>Computes the selectors hash from a ruleset</summary>

@@ -19,7 +19,7 @@ namespace WebGrease
         #region Fields
 
         /// <summary>The cache section file version key.</summary>
-        private const string CacheSectionFileVersionKey = "1.0.6";
+        private const string CacheSectionFileVersionKey = "1.0.8";
 
         /// <summary>The cache results.</summary>
         private readonly List<CacheResult> cacheResults = new List<CacheResult>();

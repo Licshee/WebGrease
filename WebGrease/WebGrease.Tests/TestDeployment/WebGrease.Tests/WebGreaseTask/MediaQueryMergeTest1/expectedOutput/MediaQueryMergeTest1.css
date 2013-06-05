@@ -1,0 +1,36 @@
+﻿.vendordisplay
+{
+    display: block;
+    display: -ms-grid;
+    display: -webkit-box;
+    display: -moz-box;
+}
+
+.someclass {
+    color: blue;
+}
+
+@media screen {
+    body{
+        font-size: 10px;
+        color:green;
+        right: 10rem !important;
+        top: 2rem !important;
+    }
+}
+
+@media screen and (max-width:500px)
+{
+    body
+    {
+        color: red;
+        left: 10px;
+        font-size: 10px !important;
+        font-size: -wg-somefontsize;
+    }
+}
+
+*
+{
+    padding: 10px;
+}

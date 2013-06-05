@@ -88,6 +88,15 @@ namespace WebGrease
             }
         }
 
+        /// <summary>Gets the root cache path for this caching session.</summary>
+        public string RootPath
+        {
+            get
+            {
+                return this.cacheRootPath;
+            }
+        }
+
         #endregion
 
         #region Public Methods and Operators
@@ -101,28 +110,28 @@ namespace WebGrease
         public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVaryByFileSet = null)
         {
             return this.currentCacheSection = CacheSection.Begin(
-                this.context, 
-                category, 
+                this.context,
+                category,
                 cs =>
+                {
+                    if (contentItem != null)
                     {
-                        if (contentItem != null)
-                        {
-                            cs.VaryByContentItem(contentItem);
-                            cs.VaryBySettings(contentItem.Pivots);
-                        }
+                        cs.VaryByContentItem(contentItem);
+                        cs.VaryBySettings(contentItem.Pivots);
+                    }
 
-                        if (cacheVaryByFileSet != null)
-                        {
-                            cs.VaryBySettings(cacheVaryByFileSet);
-                        }
+                    if (cacheVaryByFileSet != null)
+                    {
+                        cs.VaryBySettings(cacheVaryByFileSet);
+                    }
 
-                        if (context.Configuration.Overrides != null)
-                        {
-                            cs.VaryBySettings(context.Configuration.Overrides.UniqueKey);
-                        }
+                    if (context.Configuration.Overrides != null)
+                    {
+                        cs.VaryBySettings(context.Configuration.Overrides.UniqueKey);
+                    }
 
-                        cs.VaryBySettings(settings, true);
-                    }, 
+                    cs.VaryBySettings(settings, true);
+                },
                 this.CurrentCacheSection);
         }
 

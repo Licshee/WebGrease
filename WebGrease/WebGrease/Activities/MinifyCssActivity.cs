@@ -11,6 +11,7 @@ namespace WebGrease.Activities
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Linq;
@@ -96,6 +97,9 @@ namespace WebGrease.Activities
 
         /// <summary>Gets or sets a value indicating whether css should be optimized for colors, float, duplicate selectors etc.</summary>
         internal bool ShouldOptimize { private get; set; }
+
+        /// <summary>Gets or sets a value indicating whether the activity should merge media queries, only gets used when ShouldOptimize is set to true.</summary>
+        internal bool ShouldMergeMediaQueries { private get; set; }
 
         /// <summary>Gets or sets whether to assemble CSS background Images and update the coordinates.</summary>
         internal bool ShouldAssembleBackgroundImages { private get; set; }
@@ -322,6 +326,7 @@ namespace WebGrease.Activities
             {
                 this.ShouldExcludeProperties,
                 this.ShouldValidateForLowerCase,
+                this.ShouldMergeMediaQueries,
                 this.ShouldOptimize,
                 this.ShouldAssembleBackgroundImages,
                 this.ShouldMinify,
@@ -375,7 +380,7 @@ namespace WebGrease.Activities
             {
                 this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize).Execute(() =>
                 {
-                    stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor());
+                    stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor { ShouldMergeMediaQueries = ShouldMergeMediaQueries });
                     stylesheetNode = stylesheetNode.Accept(new ColorOptimizationVisitor());
                     stylesheetNode = stylesheetNode.Accept(new FloatOptimizationVisitor());
                 });

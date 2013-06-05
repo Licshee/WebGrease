@@ -35,6 +35,11 @@ namespace WebGrease.Extensions
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all for invalid input paths.")]
         internal static string GetFullPathWithLowercase(this string originalPath)
         {
+            if (string.IsNullOrWhiteSpace(originalPath))
+            {
+                return originalPath;
+            }
+
             try
             {
                 return string.IsNullOrWhiteSpace(originalPath) ? originalPath : Path.GetFullPath(originalPath).ToLower(CultureInfo.CurrentUICulture);

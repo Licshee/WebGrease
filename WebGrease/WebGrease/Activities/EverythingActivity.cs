@@ -653,7 +653,8 @@ namespace WebGrease.Activities
                                   {
                                       ShouldAssembleBackgroundImages = spritingConfig.ShouldAutoSprite,
                                       ShouldMinify = cssConfig.ShouldMinify,
-                                      ShouldOptimize = cssConfig.ShouldMinify,
+                                      ShouldMergeMediaQueries = cssConfig.ShouldMergeMediaQueries,
+                                      ShouldOptimize = cssConfig.ShouldMinify || cssConfig.ShouldOptimize,
                                       ShouldValidateForLowerCase = cssConfig.ShouldValidateLowerCase,
                                       ShouldExcludeProperties = cssConfig.ShouldExcludeProperties,
                                       ImageExtensions = imageExtensions,

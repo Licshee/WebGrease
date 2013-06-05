@@ -67,7 +67,7 @@ namespace WebGrease
         {
             var configuration = new WebGreaseConfiguration(parentContext.Configuration, configFile);
             configuration.Validate();
-            
+
             if (configuration.Global.TreatWarningsAsErrors != null && parentContext.Log != null)
             {
                 parentContext.Log.TreatWarningsAsErrors = configuration.Global.TreatWarningsAsErrors == true;
@@ -174,22 +174,24 @@ namespace WebGrease
         }
 
         /// <summary>The clean cache.</summary>
-        public void CleanCache()
+        /// <param name="logManager">The log manager</param>
+        public void CleanCache(LogManager logManager)
         {
-            CleanDirectory(this.Configuration.CacheRootPath);
+            var cachePath = this.Cache.RootPath;
+            (logManager ?? this.Log).Information("Cleaning Cache: {0}".InvariantFormat(cachePath, MessageImportance.High));
+            this.CleanDirectory(cachePath);
         }
 
         /// <summary>The clean destination.</summary>
         public void CleanDestination()
         {
-            CleanDirectory(this.Configuration.DestinationDirectory);
-            CleanDirectory(this.Configuration.LogsDirectory);
-        }
+            var destinationDirectory = this.Configuration.DestinationDirectory;
+            this.Log.Information("Cleaning Destination: {0}".InvariantFormat(destinationDirectory, MessageImportance.High));
+            this.CleanDirectory(destinationDirectory);
 
-        /// <summary>The clean tools temp.</summary>
-        public void CleanToolsTemp()
-        {
-            CleanDirectory(this.Configuration.CacheRootPath);
+            var logsDirectory = this.Configuration.LogsDirectory;
+            this.Log.Information("Cleaning Destination: {0}".InvariantFormat(logsDirectory, MessageImportance.High));
+            this.CleanDirectory(logsDirectory);
         }
 
         /// <summary>Gets the available files, only gets them once per session/context.</summary>
@@ -427,14 +429,22 @@ namespace WebGrease
 
         /// <summary>The clean directory.</summary>
         /// <param name="directory">The directory.</param>
-        private static void CleanDirectory(string directory)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all on purpose, hide any file system exceptions, make sure they don't stop the webgrease run.")]
+        private void CleanDirectory(string directory)
         {
-            if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
+            try
             {
-                Directory.Delete(directory, true);
-            }
+                if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, true);
+                }
 
-            Directory.CreateDirectory(directory);
+                Directory.CreateDirectory(directory);
+            }
+            catch (Exception ex)
+            {
+                this.Log.Warning("Error while cleaning {0}: {1}".InvariantFormat(directory, ex.Message));
+            }
         }
 
         /// <summary>The initialize.</summary>

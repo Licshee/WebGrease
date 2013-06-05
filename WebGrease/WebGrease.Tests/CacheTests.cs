@@ -22,15 +22,6 @@ namespace Microsoft.WebGrease.Tests
     {
         [TestMethod]
         [TestCategory(TestCategories.Caching)]
-        [TestCategory(TestCategories.WebGreaseTask)]
-        [TestCategory(TestCategories.EverythingActivity)]
-        public void CacheCleanUpTest()
-        {
-            // TODO: Cache clean up tests.
-        }
-
-        [TestMethod]
-        [TestCategory(TestCategories.Caching)]
         [TestCategory(TestCategories.Hashing)]
         [TestCategory(TestCategories.WebGreaseTask)]
         [TestCategory(TestCategories.EverythingActivity)]
@@ -147,7 +138,6 @@ namespace Microsoft.WebGrease.Tests
                     Assert.IsNotNull(imgPath);
                     Assert.AreNotEqual(imgPath, lastImgPath);
                 });
-
         }
 
         [TestMethod]
@@ -574,10 +564,7 @@ namespace Microsoft.WebGrease.Tests
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should not have a jsfileset");
                 });
 
-            ExecuteBuildTask("CLEANDESTINATION", testRoot, "Release", preExecute, task => { });
-            ExecuteBuildTask("CLEANCACHE", testRoot, "Release", preExecute, task => { });
-
-            ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
+            ExecuteBuildTask("EVERYTHING", testRoot, "Release", bt => { preExecute(bt); bt.CleanDestination = true; bt.CleanCache = true; },
                 buildTask =>
                 {
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
@@ -615,8 +602,7 @@ namespace Microsoft.WebGrease.Tests
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Should not have a jsfileset");
                 });
 
-            ExecuteBuildTask("CLEANDESTINATION", testRoot, "Release", preExecute, task => { });
-            ExecuteBuildTask("EVERYTHING", testRoot, "Release", preExecute,
+            ExecuteBuildTask("EVERYTHING", testRoot, "Release", bt => { preExecute(bt); bt.CleanDestination = true; },
                 buildTask =>
                 {
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity), "Should be minifying js");
@@ -677,9 +663,7 @@ namespace Microsoft.WebGrease.Tests
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Incremental.1 run should not have any js filesets");
                 });
 
-            Execute(testRoot, perfRoot, null, "Release", preExecute1, null, "CLEANDESTINATION");
-            Execute(testRoot, perfRoot, "postcache", "Release",
-                preExecute1,
+            Execute(testRoot, perfRoot, "postcache", "Release", bt => { preExecute1(bt); bt.CleanDestination = true; },
                 buildTask =>
                 {
                     Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting), "Post-cache run should not be spriting");

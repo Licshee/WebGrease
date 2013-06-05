@@ -84,6 +84,12 @@ namespace WebGrease.Build
         /// <summary>Gets or sets the value that determines to use cache.</summary>
         public bool CacheEnabled { get; set; }
 
+        /// <summary>Gets or sets the value that determines if the the task cleans the destinations before running the activity.</summary>
+        public bool CleanDestination { get; set; }
+
+        /// <summary>Gets or sets the value that determines if the the task cleans the cache before running the activity.</summary>
+        public bool CleanCache { get; set; }
+
         /// <summary>Gets or sets the value that has the temporary override file path.</summary>
         public string OverrideFile { get; set; }
 
@@ -132,10 +138,29 @@ namespace WebGrease.Build
                 return true;
             }
 
-            // If action was a Clean* activity, will execute and return true.
-            if (this.CleanActivity(activity))
+            if (this.CleanDestination)
             {
-                return true;
+                globalContext.CleanDestination();
+            }
+
+            var fileTypesToExecuteParalel = this.FileType == FileTypes.All ? new[] { FileTypes.JS, FileTypes.CSS | FileTypes.Image } : new[] { this.FileType };
+
+            if (this.CleanCache)
+            {
+                globalContext.CleanCache();
+            }
+
+            var parallelSessions = new List<Tuple<IWebGreaseContext, FileTypes, DelayedLogManager>>();
+            foreach (var fileType in fileTypesToExecuteParalel)
+            {
+                var delayedLogManager = new DelayedLogManager(logManager, fileType.ToString());
+                var sessionContext = this.CreateSessionContext(delayedLogManager.LogManager, fileType, activity);
+                if (this.CleanCache)
+                {
+                    sessionContext.CleanCache(logManager);
+                }
+
+                parallelSessions.Add(Tuple.Create(sessionContext, fileType, delayedLogManager));
             }
 
             if (Directory.Exists(globalContext.Configuration.IntermediateErrorDirectory))
@@ -149,34 +174,31 @@ namespace WebGrease.Build
 
             var activityResults = new Dictionary<FileTypes, Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration>>();
 
-            var delayedLogManagers = new List<DelayedLogManager>();
             logManager.Information("WebGrease starting");
             Parallel.ForEach(
-                this.FileType == FileTypes.All
-                ? new[] { FileTypes.JS, FileTypes.CSS | FileTypes.Image }
-                : new[] { this.FileType },
-                fileType =>
+                parallelSessions,
+                parallelSession =>
                 {
-                    logManager.Information("Starting WebGrease thread for " + fileType);
-                    var delayedLogManager = new DelayedLogManager(logManager, fileType.ToString());
+                    logManager.Information("Starting WebGrease thread for " + parallelSession.Item2);
                     try
                     {
-                        delayedLogManagers.Add(delayedLogManager);
-
-                        var fileTypeResult = this.Execute(delayedLogManager.LogManager, fileType, activity.Value, this.ConfigurationPath);
+                        var fileTypeResult = this.Execute(parallelSession.Item2, activity.Value, this.ConfigurationPath, parallelSession.Item1);
                         totalSuccess &= fileTypeResult != null && fileTypeResult.Item1;
                         if (totalSuccess)
                         {
                             lock (localLock)
                             {
-                                activityResults.Add(fileType, fileTypeResult);
+                                activityResults.Add(parallelSession.Item2, fileTypeResult);
                             }
                         }
                     }
                     finally
                     {
-                        delayedLogManager.Flush();
-                        delayedLogManagers.ForEach(dlm => dlm.Flush());
+                        lock (localLock)
+                        {
+                            parallelSession.Item3.Flush();
+                            parallelSessions.ForEach(dlm => dlm.Item3.Flush());
+                        }
                     }
                 });
 
@@ -184,29 +206,6 @@ namespace WebGrease.Build
 
             logManager.Information("WebGrease done");
             return totalSuccess && !this.hasErrors;
-        }
-
-        /// <summary>Finalizes the measure values, stores thejm on disk if configured that way.</summary>
-        /// <param name="success">If the activity was successfull.</param>
-        /// <param name="activityResults">The activity results.</param>
-        /// <param name="logManager">The log manager.</param>
-        /// <param name="start">The start time of the current run..</param>
-        /// <param name="activity">The current activity name.</param>
-        private void FinalizeMeasure(bool success, ICollection<KeyValuePair<FileTypes, Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration>>> activityResults, LogManager logManager, DateTimeOffset start, ActivityName? activity)
-        {
-            if (this.Measure && success && activityResults.Count > 0)
-            {
-                var configuration = activityResults.Select(ar => ar.Value.Item3).FirstOrDefault(ar => ar != null);
-                if (configuration != null)
-                {
-                    var reportFileBase = Path.Combine(configuration.MeasureReportPath, new DirectoryInfo(this.ConfigurationPath).Name);
-                    logManager.Information("Writing overal report file to:".InvariantFormat(reportFileBase));
-                    TimeMeasure.WriteResults(
-                        reportFileBase, activityResults.ToDictionary(k => k.Key, v => v.Value.Item2), this.ConfigurationPath, start, activity.ToString());
-                }
-
-                this.MeasureResults = activityResults.SelectMany(ar => ar.Value.Item2).ToArray();
-            }
         }
 
         /// <summary>The get file sets.</summary>
@@ -286,6 +285,29 @@ namespace WebGrease.Build
             return Tuple.Create(configFileSuccess, fileSets.Length);
         }
 
+        /// <summary>Finalizes the measure values, stores thejm on disk if configured that way.</summary>
+        /// <param name="success">If the activity was successfull.</param>
+        /// <param name="activityResults">The activity results.</param>
+        /// <param name="logManager">The log manager.</param>
+        /// <param name="start">The start time of the current run..</param>
+        /// <param name="activity">The current activity name.</param>
+        private void FinalizeMeasure(bool success, ICollection<KeyValuePair<FileTypes, Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration>>> activityResults, LogManager logManager, DateTimeOffset start, ActivityName? activity)
+        {
+            if (this.Measure && success && activityResults.Count > 0)
+            {
+                var configuration = activityResults.Select(ar => ar.Value.Item3).FirstOrDefault(ar => ar != null);
+                if (configuration != null)
+                {
+                    var reportFileBase = Path.Combine(configuration.MeasureReportPath, new DirectoryInfo(this.ConfigurationPath).Name);
+                    logManager.Information("Writing overal report file to:".InvariantFormat(reportFileBase));
+                    TimeMeasure.WriteResults(
+                        reportFileBase, activityResults.ToDictionary(k => k.Key, v => v.Value.Item2), this.ConfigurationPath, start, activity.ToString());
+                }
+
+                this.MeasureResults = activityResults.SelectMany(ar => ar.Value.Item2).ToArray();
+            }
+        }
+
         /// <summary>Create the log manager for the current msbuild context.</summary>
         /// <returns>The <see cref="LogManager"/>.</returns>
         private LogManager CreateLogManager()
@@ -301,17 +323,14 @@ namespace WebGrease.Build
         }
 
         /// <summary>The execute.</summary>
-        /// <param name="logManager">The log Manager.</param>
         /// <param name="fileType">The file type.</param>
         /// <param name="activity">The activity.</param>
         /// <param name="configurationPath">The configuration path</param>
+        /// <param name="sessionContext">The session context</param>
         /// <returns>The <see cref="Tuple"/>.</returns>
-        private Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration> Execute(LogManager logManager, FileTypes fileType, ActivityName activity, string configurationPath)
+        private Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration> Execute(FileTypes fileType, ActivityName activity, string configurationPath, IWebGreaseContext sessionContext)
         {
             var availableFileSetsForFileType = 0;
-
-            // Creates the context specific to the session
-            var sessionContext = this.CreateSessionContext(logManager, fileType, activity);
 
             var fullPathToConfigFiles = Path.GetFullPath(configurationPath);
 
@@ -400,31 +419,6 @@ namespace WebGrease.Build
                     otherContentTypeCacheSection.Save();
                 }
             }
-        }
-
-        /// <summary>Executes the clean activity if the given activity is a clean one.</summary>
-        /// <param name="activity">The activity.</param>
-        /// <returns>If it was a valid clean activity.</returns>
-        private bool CleanActivity(ActivityName? activity)
-        {
-            var logManager = this.CreateLogManager();
-
-            switch (activity)
-            {
-                case ActivityName.CleanDestination:
-                    this.CreateSessionContext(logManager).CleanDestination();
-                    return true;
-                case ActivityName.CleanCache:
-                    this.CreateSessionContext(logManager, FileTypes.All, ActivityName.Bundle).CleanCache();
-                    this.CreateSessionContext(logManager, FileTypes.CSS, ActivityName.Bundle).CleanCache();
-                    this.CreateSessionContext(logManager, FileTypes.JS, ActivityName.Bundle).CleanCache();
-                    this.CreateSessionContext(logManager, FileTypes.All, ActivityName.Everything).CleanCache();
-                    this.CreateSessionContext(logManager, FileTypes.JS, ActivityName.Everything).CleanCache();
-                    this.CreateSessionContext(logManager, FileTypes.CSS, ActivityName.Everything).CleanCache();
-                    return true;
-            }
-
-            return false;
         }
 
         /// <summary>Creates a new session context base on the current settings.</summary>

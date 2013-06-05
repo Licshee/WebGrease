@@ -1011,6 +1011,10 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="TestDeployment\WebGrease.Tests\WebGreaseConfigurationRootTest\ConfigSource\Settings\css2.config" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\MediaQueryMergeTest1\expectedOutput\MediaQueryMergeTest1.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\MediaQueryMergeTest2\Input\stylesheet2.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\MediaQueryMergeTest2\Input\stylesheet.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\MediaQueryMergeTest1\Input\stylesheet.css" />
     <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test2\input\stylesheet2.css" />
     <Content Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test1\input\base.scss">
       <Compile>False</Compile>
@@ -1079,6 +1083,9 @@
       <CompileStyle>Nested</CompileStyle>
       <DebugInfo>False</DebugInfo>
     </Content>
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseTask\MediaQueryMergeTest1\MediaQueryMergeTest1Negative.config" />
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseTask\MediaQueryMergeTest2\MediaQueryMergeTest2.config" />
+    <None Include="TestDeployment\WebGrease.Tests\WebGreaseTask\MediaQueryMergeTest1\MediaQueryMergeTest1.config" />
     <None Include="TestDeployment\WebGrease.Tests\WebGreaseTask\Test3\test3.webgrease.config">
       <SubType>Designer</SubType>
     </None>

@@ -55,6 +55,9 @@ namespace Microsoft.WebGrease.Tests
         /// <summary>The minify css activity.</summary>
         public const string MinifyCssActivity = "MinifyCssActivity";
 
+        /// <summary>The media query merge.</summary>
+        public const string MediaQueryMerge = "MediaQueryMerge";
+
         /// <summary>The minify js activity.</summary>
         public const string MinifyJSActivity = "MinifyJSActivity";
 

@@ -5,9 +5,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 namespace WebGrease
 {
-    using System;
     using System.Collections.Generic;
-    using System.IO;
 
     using WebGrease.Configuration;
 
@@ -19,7 +17,11 @@ namespace WebGrease
         /// <summary>Gets the current cache section.</summary>
         ICacheSection CurrentCacheSection { get; }
 
+        /// <summary>Gets the loaded cache sections.</summary>
         IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections { get; }
+
+        /// <summary>Gets the root cache path for this caching session.</summary>
+        string RootPath { get; }
 
         #endregion
 

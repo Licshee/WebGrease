@@ -49,6 +49,12 @@ namespace WebGrease.Configuration
 
                 switch (name)
                 {
+                    case "MergeMediaQueries":
+                        this.ShouldMergeMediaQueries = value.TryParseBool();
+                        break;
+                    case "Optimize":
+                        this.ShouldOptimize = value.TryParseBool();
+                        break;
                     case "Minify":
                         this.ShouldMinify = value.TryParseBool();
                         break;
@@ -75,8 +81,14 @@ namespace WebGrease.Configuration
         /// </summary>
         public string Name { get; set; }
 
-        /// <summary>Gets or sets a value indicating whether the set should be minified.</summary>
+        /// <summary>Gets or sets a value indicating whether the set should be minified, also force enabled optimize.</summary>
         internal bool ShouldMinify { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether webgrease should optimize the css.</summary>
+        internal bool ShouldOptimize { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether the minification should merge media queries, only used when optimize is true.</summary>
+        internal bool ShouldMergeMediaQueries { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating wheter to validate selectores and properties to be all lower case.

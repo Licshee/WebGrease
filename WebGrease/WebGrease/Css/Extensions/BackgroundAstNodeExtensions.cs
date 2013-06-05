@@ -12,6 +12,8 @@ namespace WebGrease.Css.Extensions
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
+
     using Ast;
     using ImageAssemblyAnalysis;
     using ImageAssemblyAnalysis.LogModel;
@@ -72,6 +74,7 @@ namespace WebGrease.Css.Extensions
         /// <param name="outputUnitFactor">The output unit factor.</param>
         /// <param name="ignoreImagesWithNonDefaultBackgroundSize">Determines whether to ignore images that have a non-default background image set.</param>
         /// <returns>The declaration node which matches the criteria</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Needs refactoring in a later release.")]
         internal static bool TryGetBackgroundDeclaration(this IEnumerable<DeclarationNode> declarationAstNodes, AstNode parentAstNode, out Background backgroundNode, out BackgroundImage backgroundImageNode, out BackgroundPosition backgroundPositionNode, out DeclarationNode backgroundSize, out DeclarationNode webGreaseBackgroundDpi, List<string> imageReferencesInInvalidDeclarations, HashSet<string> imageReferencesToIgnore, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, string outputUnit, double outputUnitFactor, bool ignoreImagesWithNonDefaultBackgroundSize = false)
         {
             // Initialize the nodes to null
@@ -84,6 +87,12 @@ namespace WebGrease.Css.Extensions
             // With CSS3 multiple urls can be present in a single rule, this is not yet supported
             // background: url(flower.png), url(ball.png), url(grass.png) no-repeat;
             if (BackgroundImage.HasMultipleUrls(parentAstNode.MinifyPrint()))
+            {
+                return false;
+            }
+
+            var webGreaseSpritingProperty = declarationAstNodes.FirstOrDefault(d => d.Property == "-wg-spriting");
+            if (webGreaseSpritingProperty != null && webGreaseSpritingProperty.ExprNode.TermNode.StringBasedValue == "ignore")
             {
                 return false;
             }
@@ -112,6 +121,7 @@ namespace WebGrease.Css.Extensions
                 // background-repeat:no-repeat
                 // }
                 // By design, we are not computing cascade here.
+                // TODO: RTUIT: Add support to override some of these with extra values depending on the order, or use optimization to do this when merging styles.
                 if (declarationProperties.ContainsKey(ImageAssembleConstants.BackgroundRepeat) ||
                     declarationProperties.ContainsKey(ImageAssembleConstants.BackgroundImage) ||
                     declarationProperties.ContainsKey(ImageAssembleConstants.BackgroundPosition))
@@ -203,7 +213,7 @@ namespace WebGrease.Css.Extensions
                     {
                         imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
                         {
-                            AstNode = parentAstNode, 
+                            AstNode = parentAstNode,
                             FailureReason = FailureReason.NoRepeat
                         });
                     }
@@ -412,18 +422,20 @@ namespace WebGrease.Css.Extensions
         private static Dictionary<string, DeclarationNode> ValidateAndLoadDeclarationDictionary(this IEnumerable<DeclarationNode> declarationNodes)
         {
             // Lower case is not considered since it should be handler by a separate visitor
-            var declarationPropertyNames = new Dictionary<string, DeclarationNode>(StringComparer.OrdinalIgnoreCase);
-
+            var declarationPropertyNames = new Dictionary<string, List<DeclarationNode>>(StringComparer.OrdinalIgnoreCase);
             declarationNodes.ForEach(declarationNode =>
             {
-                if (declarationPropertyNames.ContainsKey(declarationNode.Property))
+                List<DeclarationNode> otherProperties;
+                var propertyName = declarationNode.Property;
+                if (!declarationPropertyNames.TryGetValue(propertyName, out otherProperties))
                 {
-                    throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.RepeatedPropertyNameError, declarationNode.Property));
+                    declarationPropertyNames[propertyName] = otherProperties = new List<DeclarationNode>();
                 }
 
-                declarationPropertyNames.Add(declarationNode.Property, declarationNode);
+                otherProperties.Add(declarationNode);
             });
-            return declarationPropertyNames;
+
+            return declarationPropertyNames.ToDictionary(d => d.Key, d => d.Value.LastOrDefault());
         }
     }
 }
