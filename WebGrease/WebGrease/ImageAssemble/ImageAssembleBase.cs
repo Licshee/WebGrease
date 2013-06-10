@@ -167,7 +167,7 @@ namespace WebGrease.ImageAssemble
                         this.ImageXmlMap.UpdateSize(this.AssembleFileName, newImage.Width, newImage.Height);
 
                         // Hash the saved file using MD5 hashing algorithm
-                        this.HashImage();
+                        this.AssembleFileName = this.HashImage();
                     }
                 }
                 else if (inputImages.Count == 1)
@@ -179,7 +179,7 @@ namespace WebGrease.ImageAssemble
                     this.ImageXmlMap.UpdateSize(this.AssembleFileName, image.Width, image.Height);
 
                     // Hash the saved file using MD5 hashing algorithm
-                    this.HashImage();
+                    this.AssembleFileName = this.HashImage();
                 }
             }
             catch (OutOfMemoryException ex)
@@ -238,11 +238,11 @@ namespace WebGrease.ImageAssemble
         /// <param name="inputImage">InputImage for image to pass through</param>
         protected virtual void PassThroughImage(Bitmap image, InputImage inputImage)
         {
-            this.ImageXmlMap.AppendToXml(inputImage.ImagePath, this.AssembleFileName, image.Width, image.Height, 0, 0, "passthrough", true, inputImage.Position);
+            this.ImageXmlMap.AppendToXml(inputImage.AbsoluteImagePath, this.AssembleFileName, image.Width, image.Height, 0, 0, "passthrough", true, inputImage.Position);
 
             if (!File.Exists(this.AssembleFileName))
             {
-                File.Copy(inputImage.ImagePath, this.AssembleFileName); 
+                File.Copy(inputImage.AbsoluteImagePath, this.AssembleFileName); 
             }
         }
 
@@ -282,7 +282,7 @@ namespace WebGrease.ImageAssemble
         }
 
         /// <summary>Hashes the Assembled Image using MD5 hash algorithm</summary>
-        protected void HashImage()
+        protected string HashImage()
         {
             var fileInfo = new FileInfo(this.AssembleFileName);
 
@@ -315,6 +315,7 @@ namespace WebGrease.ImageAssemble
                 throw new ImageAssembleException(null, this.AssembleFileName, "Operation failed while replacing assembled image name: '" + this.AssembleFileName + "' with hashed name.");
             }
 
+            return destinationFilePath;
         }
 
         /// <summary>Packs images in rectangle in Horizontal orientation and makes an entry in Xml Map file.</summary>
@@ -364,7 +365,7 @@ namespace WebGrease.ImageAssemble
                     // Log to XmlMap if logging enabled
                     if (useLogging)
                     {
-                        this.ImageXmlMap.AppendToXml(entry.Key.ImagePath, this.AssembleFileName, image.Width, image.Height, xpoint * -1, 0, null, addOutputNode, entry.Key.Position);
+                        this.ImageXmlMap.AppendToXml(entry.Key.AbsoluteImagePath, this.AssembleFileName, image.Width, image.Height, xpoint * -1, 0, null, addOutputNode, entry.Key.Position);
                         addOutputNode = false;
                         foreach (var duplicateImagePath in entry.Key.DuplicateImagePaths)
                         {
@@ -455,7 +456,7 @@ namespace WebGrease.ImageAssemble
                     // Log to XmlMap if logging enabled
                     if (useLogging)
                     {
-                        this.ImageXmlMap.AppendToXml(entry.Key.ImagePath, this.AssembleFileName, currentImage.Width, currentImage.Height, xpoint * -1, ypoint * -1, null, addOutputNode, entry.Key.Position);
+                        this.ImageXmlMap.AppendToXml(entry.Key.AbsoluteImagePath, this.AssembleFileName, currentImage.Width, currentImage.Height, xpoint * -1, ypoint * -1, null, addOutputNode, entry.Key.Position);
                         addOutputNode = false;
                         foreach (var duplicateImagePath in entry.Key.DuplicateImagePaths)
                         {

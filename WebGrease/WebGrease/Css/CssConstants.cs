@@ -59,15 +59,8 @@ namespace WebGrease.Css
         /// </summary>
         public const string Page = "@page";
 
-        /// <summary>
-        /// Single Quote
-        /// </summary>
-        public const string SingleQuote = "\'";
-
-        /// <summary>
-        /// Double Quote
-        /// </summary>
-        public const string Quote = "\"";
+        /// <summary>The important priority text.</summary>
+        public const string Important = "!important";
 
         /// <summary>
         /// Url symbol

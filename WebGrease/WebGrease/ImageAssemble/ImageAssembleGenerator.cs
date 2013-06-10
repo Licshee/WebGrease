@@ -13,17 +13,17 @@ namespace WebGrease.ImageAssemble
     using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
+    using System.Diagnostics.CodeAnalysis;
     using System.Drawing;
     using System.Drawing.Imaging;
     using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Text;
-    using System.Xml.Linq;
 
     using Css.ImageAssemblyAnalysis;
 
-    using WebGrease.Css.Extensions;
+    using WebGrease.Css.ImageAssemblyAnalysis.LogModel;
 
     /// <summary>Factory class that invokes appropriate Assemble type to assemble images.</summary>
     internal static class ImageAssembleGenerator
@@ -37,11 +37,14 @@ namespace WebGrease.ImageAssemble
         /// <param name="dedup">Remove duplicate images</param>
         /// <param name="context">The webgrease context</param>
         /// <param name="imagePadding">The image padding</param>
-        internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context, int? imagePadding = null)
+        /// <param name="imageAssemblyAnalysisLog">The image Assembly Analysis Log.</param>
+        /// <param name="forcedImageType">The forced image type to override detection.</param>
+        /// <returns>The <see cref="ImageMap"/>.</returns>
+        internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context, int? imagePadding, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, ImageType? forcedImageType)
         {
             // deduping is optional.  CssPipelineTask already has deduping built into it, so it skips deduping in ImageAssembleTool.
             var inputImagesDeduped = dedup ? DedupImages(inputImages, context) : inputImages;
-            var separatedLists = SeparateByImageType(inputImagesDeduped);
+            var separatedLists = SeparateByImageType(inputImagesDeduped, forcedImageType);
 
 #if DEBUG
             foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))
@@ -55,7 +58,7 @@ namespace WebGrease.ImageAssemble
             }
 #endif
 
-            var padding = imagePadding ?? ArgumentParser.DefaultPadding;
+            var padding = imagePadding ?? DefaultPadding;
             var xmlMap = new ImageMap(string.Empty);
             var registeredAssemblers = RegisterAvailableAssemblers(context);
             Dictionary<InputImage, Bitmap> separatedList = null;
@@ -69,12 +72,6 @@ namespace WebGrease.ImageAssemble
                     // Set Xml Image Xml Map 
                     registeredAssembler.ImageXmlMap = xmlMap;
 
-                    // Set Padding between images
-                    if (ArgumentParser.ArgumentValueData != null && ArgumentParser.ArgumentValueData.Count > 0 && !string.IsNullOrEmpty(ArgumentParser.ArgumentValueData[ArgumentParser.Padding]) && !int.TryParse(ArgumentParser.ArgumentValueData[ArgumentParser.Padding], out padding))
-                    {
-                        padding = ArgumentParser.DefaultPadding;
-                    }
-
                     xmlMap.AppendPadding(padding.ToString(CultureInfo.InvariantCulture));
                     registeredAssembler.PaddingBetweenImages = padding;
 
@@ -83,11 +80,10 @@ namespace WebGrease.ImageAssemble
 
                     // Assemble images of this type
                     separatedList = separatedLists[registeredAssembler.Type];
-
+                    
                     // Set Assembled Image Name
                     registeredAssembler.AssembleFileName = GenerateAssembleFileName(separatedList.Keys, assembleFileFolder) + registeredAssembler.DefaultExtension;
 
-                    separatedList.ForEach(i => context.Cache.CurrentCacheSection.AddSourceDependency(i.Key.ImagePath));
                     registeredAssembler.Assemble(separatedList);
                 }
                 finally
@@ -98,6 +94,8 @@ namespace WebGrease.ImageAssemble
                         {
                             if (entry.Value != null)
                             {
+                                context.Cache.CurrentCacheSection.AddSourceDependency(entry.Key.AbsoluteImagePath);
+                                imageAssemblyAnalysisLog.UpdateSpritedImage(registeredAssembler.Type, entry.Key.OriginalImagePath, registeredAssembler.AssembleFileName);
                                 entry.Value.Dispose();
                             }
                         }
@@ -123,24 +121,10 @@ namespace WebGrease.ImageAssemble
             return xmlMap;
         }
 
-        /// <summary>
-        /// Generates a custom file name for the sprite assembly file, based off of the images being used to make the sprite.
-        /// </summary>
-        /// <param name="inputImages">collection of images to be sprited</param>
-        /// <param name="targetFolder">folder path the filename should be in.</param>
-        /// <returns>the name of the file, without extention</returns>
-        private static string GenerateAssembleFileName(IEnumerable<InputImage> inputImages, string targetFolder)
-        {
-            var uniqueKey = WebGreaseContext.ComputeContentHash(string.Join("|", inputImages.Select(i => i.ImagePath)));
-
-            // the filename is the hash code of the joined file names (to prevent a large sprite from going over the 260 limit of paths).
-            return Path.GetFullPath(Path.Combine(targetFolder, uniqueKey));
-        }
-
         /// <summary>Registers available Image Assemblers.</summary>
         /// <param name="context">The global web grease context.</param>
         /// <returns>Dictionary of registered image assembler for file extension</returns>
-        internal static IEnumerable<ImageAssembleBase> RegisterAvailableAssemblers(IWebGreaseContext context)
+        private static IEnumerable<ImageAssembleBase> RegisterAvailableAssemblers(IWebGreaseContext context)
         {
             var registeredAssemblers = new List<ImageAssembleBase>();
 
@@ -157,6 +141,20 @@ namespace WebGrease.ImageAssemble
             registeredAssemblers.Add(nonphotoIndexedAssemble);
 
             return registeredAssemblers;
+        }
+
+        /// <summary>
+        /// Generates a custom file name for the sprite assembly file, based off of the images being used to make the sprite.
+        /// </summary>
+        /// <param name="inputImages">collection of images to be sprited</param>
+        /// <param name="targetFolder">folder path the filename should be in.</param>
+        /// <returns>the name of the file, without extention</returns>
+        private static string GenerateAssembleFileName(IEnumerable<InputImage> inputImages, string targetFolder)
+        {
+            var uniqueKey = WebGreaseContext.ComputeContentHash(string.Join("|", inputImages.Select(i => i.AbsoluteImagePath)));
+
+            // the filename is the hash code of the joined file names (to prevent a large sprite from going over the 260 limit of paths).
+            return Path.GetFullPath(Path.Combine(targetFolder, uniqueKey));
         }
 
         /// <summary>Returns whether or not the given bitmap is a photo.</summary>
@@ -280,12 +278,13 @@ namespace WebGrease.ImageAssemble
         /// "nonphoto, indexed" list.
         /// The remaining bitmaps go into the "nonphoto, nonindexed" list.</summary>
         /// <param name="inputImages">list of input images to separate</param>
+        /// <param name="forcedImageType">The forced image type to override detection.</param>
         /// <returns>separate lists per image type</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Legacy Code")]
-        internal static Dictionary<ImageType, Dictionary<InputImage, Bitmap>> SeparateByImageType(ReadOnlyCollection<InputImage> inputImages)
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Legacy Code")]
+        internal static Dictionary<ImageType, Dictionary<InputImage, Bitmap>> SeparateByImageType(ReadOnlyCollection<InputImage> inputImages, ImageType? forcedImageType)
         {
             var separatedLists = new Dictionary<ImageType, Dictionary<InputImage, Bitmap>>();
-            foreach (ImageType imageType in System.Enum.GetValues(typeof(ImageType)))
+            foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))
             {
                 separatedLists[imageType] = new Dictionary<InputImage, Bitmap>();
             }
@@ -298,7 +297,7 @@ namespace WebGrease.ImageAssemble
 #endif
                 try
                 {
-                    bitmap = (Bitmap)Image.FromFile(inputImage.ImagePath);
+                    bitmap = (Bitmap)Image.FromFile(inputImage.AbsoluteImagePath);
                 }
                 catch
                 {
@@ -308,6 +307,10 @@ namespace WebGrease.ImageAssemble
                 if (bitmap == null)
                 {
                     separatedLists[ImageType.NotSupported].Add(inputImage, bitmap);
+                }
+                else if (forcedImageType != null)
+                {
+                    separatedLists[forcedImageType.Value].Add(inputImage, bitmap);
                 }
                 else if (IsPhoto(bitmap))
                 {
@@ -343,11 +346,11 @@ namespace WebGrease.ImageAssemble
             var imageHashDictionary = new Dictionary<string, InputImage>();
             foreach (var inputImage in inputImages)
             {
-                var imageHashString = context.GetFileHash(inputImage.ImagePath) + "." + inputImage.Position;
+                var imageHashString = context.GetFileHash(inputImage.AbsoluteImagePath) + "." + inputImage.Position;
                 if (imageHashDictionary.ContainsKey(imageHashString))
                 {
                     var matchingImage = imageHashDictionary[imageHashString];
-                    matchingImage.DuplicateImagePaths.Add(inputImage.ImagePath);
+                    matchingImage.DuplicateImagePaths.Add(inputImage.AbsoluteImagePath);
 #if DEBUG
                     Console.WriteLine(ResourceStrings.DuplicateFoundFormat, matchingImage.ImagePath, inputImage.ImagePath, inputImage.Position);
 #endif
@@ -362,7 +365,10 @@ namespace WebGrease.ImageAssemble
             return inputImagesDeduped.AsReadOnly();
         }
 
-
+        /// <summary>
+        /// Default Padding value
+        /// </summary>
+        internal const int DefaultPadding = 50;
     }
 
     /// <summary>Type of image</summary>

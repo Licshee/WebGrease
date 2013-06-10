@@ -175,10 +175,10 @@ namespace WebGrease
 
         /// <summary>The clean cache.</summary>
         /// <param name="logManager">The log manager</param>
-        public void CleanCache(LogManager logManager)
+        public void CleanCache(LogManager logManager = null)
         {
             var cachePath = this.Cache.RootPath;
-            (logManager ?? this.Log).Information("Cleaning Cache: {0}".InvariantFormat(cachePath, MessageImportance.High));
+            (logManager ?? this.Log).Information("Cleaning Cache: {0}".InvariantFormat(cachePath), MessageImportance.High);
             this.CleanDirectory(cachePath);
         }
 
@@ -429,7 +429,7 @@ namespace WebGrease
 
         /// <summary>The clean directory.</summary>
         /// <param name="directory">The directory.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all on purpose, hide any file system exceptions, make sure they don't stop the webgrease run.")]
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all on purpose, hide any file system exceptions, make sure they don't stop the webgrease run.")]
         private void CleanDirectory(string directory)
         {
             try

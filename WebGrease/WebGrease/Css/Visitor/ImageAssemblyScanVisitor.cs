@@ -264,7 +264,7 @@ namespace WebGrease.Css.Visitor
 
                         // Throw an exception if image has passed the criteria in past and now
                         // now fails the criteria
-                        if (_imageAssemblyScanOutputs.Any(imageAssemblyScanOutput => imageAssemblyScanOutput.ImageReferencesToAssemble.Where(imageReference => imageReference.ImagePath == url).Any()))
+                        if (_imageAssemblyScanOutputs.Any(imageAssemblyScanOutput => imageAssemblyScanOutput.ImageReferencesToAssemble.Where(imageReference => imageReference.AbsoluteImagePath == url).Any()))
                         {
                             throw new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, CssStrings.DuplicateImageReferenceWithDifferentRulesError, url));
                         }
@@ -309,6 +309,7 @@ namespace WebGrease.Css.Visitor
         /// <param name="backgroundPosition">THe background position</param>
         private void AddImageReference(string url, BackgroundPosition backgroundPosition)
         {
+            var originalUrl = url;
             var relativeUrl = url.NormalizeUrl();
             if (this._availableImageSources != null)
             {
@@ -356,12 +357,12 @@ namespace WebGrease.Css.Visitor
                 }
 
                 // Make sure that image don't exist already in list
-                if (imageAssemblyScanOutput.ImageReferencesToAssemble.Any(inputImage => inputImage.ImagePath == url && inputImage.Position == imagePosition))
+                if (imageAssemblyScanOutput.ImageReferencesToAssemble.Any(inputImage => inputImage.AbsoluteImagePath == url && inputImage.Position == imagePosition))
                 {
                     continue;
                 }
 
-                imageAssemblyScanOutput.ImageReferencesToAssemble.Add(new InputImage { ImagePath = url, Position = imagePosition });
+                imageAssemblyScanOutput.ImageReferencesToAssemble.Add(new InputImage { AbsoluteImagePath = url, Position = imagePosition, OriginalImagePath = originalUrl });
                 added = true;
             }
 
@@ -373,12 +374,12 @@ namespace WebGrease.Css.Visitor
             ////
             //// Add the image in the default scan output
             ////
-            if (this._defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Any(inputImage => inputImage.ImagePath == url && inputImage.Position == imagePosition))
+            if (this._defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Any(inputImage => inputImage.AbsoluteImagePath == url && inputImage.Position == imagePosition))
             {
                 return;
             }
 
-            this._defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Add(new InputImage { ImagePath = url, Position = imagePosition });
+            this._defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Add(new InputImage { AbsoluteImagePath = url, Position = imagePosition, OriginalImagePath = originalUrl });
         }
     }
 }

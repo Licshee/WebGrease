@@ -444,7 +444,6 @@
     <Compile Include="Css\ErrorHelper.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="ImageAssemble\ArgumentParser.cs" />
     <Compile Include="ImageAssemble\ColorQuantizer.cs" />
     <Compile Include="ImageAssemble\ImageAssembleBase.cs" />
     <Compile Include="ImageAssemble\ImageAssembleGenerator.cs" />

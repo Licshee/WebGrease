@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="ResourceType.cs" company="Microsoft">
+// <copyright file="CssSpritingConfig.cs" company="Microsoft">
 //   Copyright Microsoft Corporation, all rights reserved
 // </copyright>
 // -----------------------------------------------------------------------
@@ -13,15 +13,15 @@ namespace WebGrease.Configuration
     using System.Xml.Linq;
     using Extensions;
 
+    using WebGrease.ImageAssemble;
+
     /// <summary>
     /// Configuration object for image spriting.
     /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spriting", Justification="Despite FxCop, this is spelled correctly.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Spriting", Justification = "Despite FxCop, this is spelled correctly.")]
     public class CssSpritingConfig : INamedConfig
     {
-        /// <summary>
-        /// Creates a new instance of the CssSpritingConfig class.
-        /// </summary>
+        /// <summary>Initializes a new instance of the <see cref="CssSpritingConfig"/> class.</summary>
         public CssSpritingConfig()
         {
             this.ShouldAutoSprite = true;
@@ -32,9 +32,8 @@ namespace WebGrease.Configuration
             this.OutputUnitFactor = 1d;
         }
 
-        /// <summary>
-        /// Creates a new instance of the CssSpritingConfig class.
-        /// </summary>
+        /// <summary>Initializes a new instance of the <see cref="CssSpritingConfig"/> class.</summary>
+        /// <param name="element">The element.</param>
         public CssSpritingConfig(XElement element)
             : this()
         {
@@ -59,6 +58,9 @@ namespace WebGrease.Configuration
 
                 switch (name)
                 {
+                    case "ForceImageType":
+                        this.ForceImageType = value.TryParseToEnum<ImageType>();
+                        break;
                     case "ImagePadding":
                         this.ImagePadding = value.TryParseInt32();
                         break;
@@ -71,6 +73,12 @@ namespace WebGrease.Configuration
                     case "SpriteImages":
                         this.ShouldAutoSprite = value.TryParseBool();
                         break;
+                    case "WriteLogFile":
+                        this.WriteLogFile = value.TryParseBool();
+                        break;
+                    case "ErrorOnInvalidSprite":
+                        this.ErrorOnInvalidSprite = value.TryParseBool();
+                        break;
                     case "OutputUnit":
                         this.OutputUnit = value;
                         break;
@@ -80,6 +88,7 @@ namespace WebGrease.Configuration
                         {
                             this.OutputUnitFactor = outputUnitFactor;
                         }
+
                         break;
                     case "IgnoreImagesWithNonDefaultBackgroundSize":
                         this.IgnoreImagesWithNonDefaultBackgroundSize = value.TryParseBool();
@@ -128,5 +137,16 @@ namespace WebGrease.Configuration
         /// Gets or sets a value indicating whether to ignore images that have a background-size property set to non-default ('auto' or 'auto auto').
         /// </summary>
         internal bool IgnoreImagesWithNonDefaultBackgroundSize { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to output a log file for each spriting action in the reports path.
+        /// </summary>
+        internal bool WriteLogFile { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether to throw an error for each unignored sprite.</summary>
+        internal bool ErrorOnInvalidSprite { get; set; }
+
+        /// <summary>Gets or sets the forced image type, valid values: Photo, NonphotoNonindexed, NonphotoIndexed.</summary>
+        internal ImageType? ForceImageType { get; set; }
     }
 }

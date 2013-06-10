@@ -771,7 +771,7 @@ namespace Microsoft.WebGrease.Tests
                 {
                     var time = DateTime.Now.ToString("yyMMdd_HHmmss");
 
-                    File.Copy(Path.Combine(pb.MeasureReportPath, "TmxSdk.Everything.measure.txt"), Path.Combine(perfRoot, "TmxSdk.Everything.measure." + time + "." + measureName + ".txt"));
+                    File.Copy(Path.Combine(pb.ReportPath, "TmxSdk.Everything.measure.txt"), Path.Combine(perfRoot, "TmxSdk.Everything.measure." + time + "." + measureName + ".txt"));
                     if (postExecute != null)
                     {
                         postExecute(pb);
@@ -830,7 +830,7 @@ namespace Microsoft.WebGrease.Tests
             }
 
             buildTask.LogFolderPath = Path.Combine(buildTask.RootOutputPath, "statics");
-            buildTask.MeasureReportPath = Path.Combine(buildTask.RootOutputPath, "reports");
+            buildTask.ReportPath = Path.Combine(buildTask.RootOutputPath, "reports");
 
             var result = buildTask.Execute();
 

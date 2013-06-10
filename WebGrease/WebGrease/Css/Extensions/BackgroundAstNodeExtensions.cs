@@ -88,18 +88,20 @@ namespace WebGrease.Css.Extensions
             // background: url(flower.png), url(ball.png), url(grass.png) no-repeat;
             if (BackgroundImage.HasMultipleUrls(parentAstNode.MinifyPrint()))
             {
+                imageAssemblyAnalysisLog.SafeAdd(parentAstNode, null, FailureReason.MultipleUrls);
                 return false;
             }
 
             var webGreaseSpritingProperty = declarationAstNodes.FirstOrDefault(d => d.Property == "-wg-spriting");
             if (webGreaseSpritingProperty != null && webGreaseSpritingProperty.ExprNode.TermNode.StringBasedValue == "ignore")
             {
+                imageAssemblyAnalysisLog.SafeAdd(parentAstNode, null, FailureReason.SpritingIgnore);
                 return false;
             }
 
             // The list of declarations should not have the duplicate declaration
             // properties. Validate and get the dictionary of declarations.
-            var declarationProperties = declarationAstNodes.ValidateAndLoadDeclarationDictionary();
+            var declarationProperties = declarationAstNodes.LoadDeclarationPropertiesDictionary();
 
             // The selector design is inefficient if the shorthand notation and long name is defined
             // in a scope of ruleset declaration, media ruleset declaration or page declaration. This
@@ -145,8 +147,9 @@ namespace WebGrease.Css.Extensions
                 ////
                 //// The "no-repeat" term should be explicitly configured on the "background" declaration
                 ////
-                if (!parsedBackground.BackgroundRepeat.VerifyBackgroundNoRepeat(parentAstNode, imageAssemblyAnalysisLog))
+                if (!parsedBackground.BackgroundRepeat.VerifyBackgroundNoRepeat())
                 {
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackground.Url, FailureReason.BackgroundRepeatInvalid);
                     UpdateFailedUrlsList(parsedBackground.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
@@ -154,8 +157,9 @@ namespace WebGrease.Css.Extensions
                 ////
                 //// The background position should only be empty, x = any value and y = 0, top or px
                 ////
-                if (!parsedBackground.BackgroundPosition.IsVerticalSpriteCandidate(parentAstNode, imageAssemblyAnalysisLog))
+                if (!parsedBackground.BackgroundPosition.IsVerticalSpriteCandidate())
                 {
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackground.Url, FailureReason.IncorrectPosition);
                     UpdateFailedUrlsList(parsedBackground.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
@@ -163,6 +167,7 @@ namespace WebGrease.Css.Extensions
                 //// Try to get the background dpi, returns false if the the found value is invalid.
                 if (!TryGetBackgroundDpi(declarationProperties, out webGreaseBackgroundDpi))
                 {
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackground.Url, FailureReason.InvalidDpi);
                     UpdateFailedUrlsList(parsedBackground.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
@@ -170,18 +175,13 @@ namespace WebGrease.Css.Extensions
                 //// Try to get the background size, returns false if we want to ignore images with background sizes and the background size is set to a non-default value.
                 if (!TryGetBackgroundSize(ignoreImagesWithNonDefaultBackgroundSize, declarationProperties, out backgroundSize))
                 {
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackground.Url, FailureReason.BackgroundSizeIsSetToNonDefaultValue);
                     UpdateFailedUrlsList(parsedBackground.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
 
                 backgroundNode = parsedBackground;
-                if (imageAssemblyAnalysisLog != null)
-                {
-                    imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
-                    {
-                        AstNode = parentAstNode
-                    });
-                }
+                imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackground.Url);
 
                 //// SUCCESS - This is the candidate!
                 return true;
@@ -209,15 +209,7 @@ namespace WebGrease.Css.Extensions
                 DeclarationNode backgroundRepeat;
                 if (!declarationProperties.TryGetValue(ImageAssembleConstants.BackgroundRepeat, out backgroundRepeat))
                 {
-                    if (imageAssemblyAnalysisLog != null)
-                    {
-                        imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
-                        {
-                            AstNode = parentAstNode,
-                            FailureReason = FailureReason.NoRepeat
-                        });
-                    }
-
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackgroundImage.Url, FailureReason.NoRepeat);
                     UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
@@ -225,8 +217,9 @@ namespace WebGrease.Css.Extensions
                 ////
                 //// Now make sure that "background-repeat" is "no-repeat"
                 ////
-                if (!new BackgroundRepeat(backgroundRepeat).VerifyBackgroundNoRepeat(parentAstNode, imageAssemblyAnalysisLog))
+                if (!new BackgroundRepeat(backgroundRepeat).VerifyBackgroundNoRepeat())
                 {
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackgroundImage.Url, FailureReason.BackgroundRepeatInvalid);
                     UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
@@ -234,6 +227,7 @@ namespace WebGrease.Css.Extensions
                 //// Try to get the background dpi, returns false if the the found value is invalid.
                 if (!TryGetBackgroundDpi(declarationProperties, out webGreaseBackgroundDpi))
                 {
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackgroundImage.Url, FailureReason.InvalidDpi);
                     UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
@@ -241,6 +235,7 @@ namespace WebGrease.Css.Extensions
                 //// Try to get the background size, returns false if we want to ignore images with background sizes and the background size is set to a non-default value.
                 if (!TryGetBackgroundSize(ignoreImagesWithNonDefaultBackgroundSize, declarationProperties, out backgroundSize))
                 {
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackgroundImage.Url, FailureReason.BackgroundSizeIsSetToNonDefaultValue);
                     UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
@@ -255,34 +250,23 @@ namespace WebGrease.Css.Extensions
                     // it should only be empty, px or left/top or right/px
                     var parsedBackgroundPosition = new BackgroundPosition(backgroundPosition, outputUnit, outputUnitFactor);
 
-                    if (!parsedBackgroundPosition.IsVerticalSpriteCandidate(parentAstNode, imageAssemblyAnalysisLog))
+                    if (!parsedBackgroundPosition.IsVerticalSpriteCandidate())
                     {
+                        imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackgroundImage.Url, FailureReason.IncorrectPosition);
                         UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
                         return false;
                     }
 
                     backgroundImageNode = parsedBackgroundImage;
                     backgroundPositionNode = parsedBackgroundPosition;
-                    if (imageAssemblyAnalysisLog != null)
-                    {
-                        imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
-                        {
-                            AstNode = parentAstNode
-                        });
-                    }
+                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackgroundImage.Url);
 
                     //// SUCCESS - This is the candidate!
                     return true;
                 }
 
                 backgroundImageNode = parsedBackgroundImage;
-                if (imageAssemblyAnalysisLog != null)
-                {
-                    imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
-                    {
-                        AstNode = parentAstNode
-                    });
-                }
+                imageAssemblyAnalysisLog.SafeAdd(parentAstNode, backgroundImageNode.Url);
 
                 //// SUCCESS - This is the candidate!
                 return true;
@@ -291,55 +275,17 @@ namespace WebGrease.Css.Extensions
             return false;
         }
 
-        /// <summary>
-        /// Get the background-size declaration for this rule, if there is one
-        /// </summary>
-        /// <param name="ignoreImagesWithNonDefaultBackgroundSize">if true, ignore background-size declarations where the size value is auto</param>
-        /// <param name="declarationProperties">collection of declarations</param>
-        /// <param name="backgroundSize">background-size declaration to return</param>
-        /// <returns>true if successful; false otherwise (or if ignored)</returns>
-        private static bool TryGetBackgroundSize(bool ignoreImagesWithNonDefaultBackgroundSize, IDictionary<string, DeclarationNode> declarationProperties, out DeclarationNode backgroundSize)
+        /// <summary>The add to analysis log.</summary>
+        /// <param name="imageAssemblyAnalysisLog">The image assembly analysis log.</param>
+        /// <param name="parentAstNode">The parent ast node.</param>
+        /// <param name="image">The image.</param>
+        /// <param name="failureReason">The failure reason.</param>
+        internal static void SafeAdd(this ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, AstNode parentAstNode, string image = null, FailureReason? failureReason = null)
         {
-            ////
-            //// The background size should only be empty, auto or auto auto.
-            //// Only ignores them when IgnoreWhenBackgroundSizeIsSet setting is set to true.
-            ////
-            if (declarationProperties.TryGetValue(ImageAssembleConstants.BackgroundSize, out backgroundSize))
+            if (imageAssemblyAnalysisLog != null)
             {
-                if (ignoreImagesWithNonDefaultBackgroundSize)
-                {
-                    var sizeValue = backgroundSize.ExprNode.MinifyPrint();
-                    if (!sizeValue.Equals("auto") && !sizeValue.Equals("auto auto"))
-                    {
-                        return false;
-                    }
-                }
+                imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis { AstNode = parentAstNode, Image = image, FailureReason = failureReason });
             }
-            return true;
-        }
-
-        /// <summary>
-        /// Return the -wg-background-dpi declaration from the rule, if there is one
-        /// </summary>
-        /// <param name="declarationProperties">collection of declarations</param>
-        /// <param name="webGreaseBackgroundDpi">declaration to return</param>
-        /// <returns>true if found; false otherwise</returns>
-        private static bool TryGetBackgroundDpi(IDictionary<string, DeclarationNode> declarationProperties, out DeclarationNode webGreaseBackgroundDpi)
-        {
-            if (declarationProperties.TryGetValue(ImageAssembleConstants.WebGreaseBackgroundDpi, out webGreaseBackgroundDpi))
-            {
-                double webGreaseBackgroundDpiValue;
-                if (
-                    !double.TryParse(
-                        webGreaseBackgroundDpi.ExprNode.TermNode.NumberBasedValue,
-                        NumberStyles.Any,
-                        CultureInfo.InvariantCulture,
-                        out webGreaseBackgroundDpiValue))
-                {
-                    return false;
-                }
-            }
-            return true;
         }
 
         /// <summary>The enumerable for declaration node</summary>
@@ -367,7 +313,7 @@ namespace WebGrease.Css.Extensions
         /// <returns>The new term node</returns>
         internal static TermNode CopyTerm(this TermNode termNode)
         {
-            return termNode == null ? termNode : new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+            return termNode == null ? null : new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
         }
 
         /// <summary>Creates a declaration node from list of term with operator nodes</summary>
@@ -385,6 +331,59 @@ namespace WebGrease.Css.Extensions
             termWithOperatorNodes.RemoveAt(0);
 
             return new DeclarationNode(declarationNode.Property, new ExprNode(primaryTerm, termWithOperatorNodes.AsReadOnly()), declarationNode.Prio);
+        }
+
+        /// <summary>
+        /// Get the background-size declaration for this rule, if there is one
+        /// </summary>
+        /// <param name="ignoreImagesWithNonDefaultBackgroundSize">if true, ignore background-size declarations where the size value is auto</param>
+        /// <param name="declarationProperties">collection of declarations</param>
+        /// <param name="backgroundSize">background-size declaration to return</param>
+        /// <returns>true if successful; false otherwise (or if ignored)</returns>
+        private static bool TryGetBackgroundSize(bool ignoreImagesWithNonDefaultBackgroundSize, IDictionary<string, DeclarationNode> declarationProperties, out DeclarationNode backgroundSize)
+        {
+            ////
+            //// The background size should only be empty, auto or auto auto.
+            //// Only ignores them when IgnoreWhenBackgroundSizeIsSet setting is set to true.
+            ////
+            if (declarationProperties.TryGetValue(ImageAssembleConstants.BackgroundSize, out backgroundSize))
+            {
+                if (ignoreImagesWithNonDefaultBackgroundSize)
+                {
+                    var sizeValue = backgroundSize.ExprNode.MinifyPrint();
+                    if (!sizeValue.Equals("auto") && !sizeValue.Equals("auto auto"))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Return the -wg-background-dpi declaration from the rule, if there is one
+        /// </summary>
+        /// <param name="declarationProperties">collection of declarations</param>
+        /// <param name="webGreaseBackgroundDpi">declaration to return</param>
+        /// <returns>true if found; false otherwise</returns>
+        private static bool TryGetBackgroundDpi(IDictionary<string, DeclarationNode> declarationProperties, out DeclarationNode webGreaseBackgroundDpi)
+        {
+            if (declarationProperties.TryGetValue(ImageAssembleConstants.WebGreaseBackgroundDpi, out webGreaseBackgroundDpi))
+            {
+                double webGreaseBackgroundDpiValue;
+                if (
+                    !double.TryParse(
+                        webGreaseBackgroundDpi.ExprNode.TermNode.NumberBasedValue,
+                        NumberStyles.Any,
+                        CultureInfo.InvariantCulture,
+                        out webGreaseBackgroundDpiValue))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>This method updates the collection of urls which are deemed to be valid but the
@@ -419,7 +418,7 @@ namespace WebGrease.Css.Extensions
         /// }</summary>
         /// <param name="declarationNodes">The list of declaration nodes</param>
         /// <returns>The key value pairs of property name and the declaration nodes</returns>
-        private static Dictionary<string, DeclarationNode> ValidateAndLoadDeclarationDictionary(this IEnumerable<DeclarationNode> declarationNodes)
+        private static Dictionary<string, DeclarationNode> LoadDeclarationPropertiesDictionary(this IEnumerable<DeclarationNode> declarationNodes)
         {
             // Lower case is not considered since it should be handler by a separate visitor
             var declarationPropertyNames = new Dictionary<string, List<DeclarationNode>>(StringComparer.OrdinalIgnoreCase);

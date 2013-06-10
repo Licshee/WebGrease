@@ -387,13 +387,15 @@ namespace WebGrease.Activities
         /// <returns>The <see cref="bool"/>.</returns>
         private bool ExecuteCssFileSet(string configType, IList<string> imageDirectories, IList<string> imageExtensions, CssFileSet cssFileSet, FileHasherActivity cssHasher, FileHasherActivity imageHasher, string imagesDestinationDirectory)
         {
+            var cssSpritingConfig = cssFileSet.ImageSpriting.GetNamedConfig(configType);
+            var cssMinificationConfig = cssFileSet.Minification.GetNamedConfig(configType);
             var cssFileSetVarBySettings = new
             {
                 configType,
-                ImageSpriting = cssFileSet.ImageSpriting.GetNamedConfig(configType),
+                ImageSpriting = cssSpritingConfig,
                 Global = cssFileSet.GlobalConfig,
                 Bundling = cssFileSet.Bundling.GetNamedConfig(configType),
-                Minification = cssFileSet.Minification.GetNamedConfig(configType),
+                Minification = cssMinificationConfig,
                 Preprocessing = cssFileSet.Preprocessing.GetNamedConfig(configType),
                 cssFileSet.Locales,
                 cssFileSet.Themes
@@ -422,7 +424,7 @@ namespace WebGrease.Activities
                 })
                 .Execute(cacheSection =>
                 {
-                    var cssMinifier = this.CreateCssMinifier(cssFileSet, imageHasher, imageExtensions, imageDirectories, imagesDestinationDirectory);
+                    var cssMinifier = this.CreateCssMinifier(imageHasher, imageExtensions, imageDirectories, imagesDestinationDirectory, cssMinificationConfig, cssSpritingConfig);
                     var outputFile = Path.Combine(this.staticAssemblerDirectory, cssFileSet.Output);
                     var inputFiles = this.Bundle(cssFileSet, outputFile, FileTypes.CSS, configType, cssMinifier.ShouldMinify);
                     if (inputFiles == null)
@@ -454,7 +456,7 @@ namespace WebGrease.Activities
                         return false;
                     }
 
-                    var minifiedCssItems = this.MinifyCss(localizedAndThemedCssItems, cssMinifier, imageHasher);
+                    var minifiedCssItems = this.MinifyCss(localizedAndThemedCssItems, cssMinifier, imageHasher, cssSpritingConfig.WriteLogFile);
 
                     if (minifiedCssItems.Any(i => i == null))
                     {
@@ -639,36 +641,37 @@ namespace WebGrease.Activities
         }
 
         /// <summary>The create css minifier.</summary>
-        /// <param name="cssFileSet">The css fileset.</param>
         /// <param name="imageHasher">The image hasher.</param>
         /// <param name="imageExtensions">The image Extensions.</param>
         /// <param name="imageDirectories">The image Directories.</param>
         /// <param name="imagesDestinationDirectory">The images Destination Directory.</param>
+        /// <param name="minificationConfig">The minification Config.</param>
+        /// <param name="spritingConfig">The spriting Config.</param>
         /// <returns>The <see cref="MinifyCssActivity"/>.</returns>
-        private MinifyCssActivity CreateCssMinifier(CssFileSet cssFileSet, FileHasherActivity imageHasher, IList<string> imageExtensions, IList<string> imageDirectories, string imagesDestinationDirectory)
+        private MinifyCssActivity CreateCssMinifier(FileHasherActivity imageHasher, IList<string> imageExtensions, IList<string> imageDirectories, string imagesDestinationDirectory, CssMinificationConfig minificationConfig, CssSpritingConfig spritingConfig)
         {
-            var cssConfig = cssFileSet.Minification.GetNamedConfig(this.context.Configuration.ConfigType);
-            var spritingConfig = cssFileSet.ImageSpriting.GetNamedConfig(this.context.Configuration.ConfigType);
             var cssMinifier = new MinifyCssActivity(this.context)
                                   {
                                       ShouldAssembleBackgroundImages = spritingConfig.ShouldAutoSprite,
-                                      ShouldMinify = cssConfig.ShouldMinify,
-                                      ShouldMergeMediaQueries = cssConfig.ShouldMergeMediaQueries,
-                                      ShouldOptimize = cssConfig.ShouldMinify || cssConfig.ShouldOptimize,
-                                      ShouldValidateForLowerCase = cssConfig.ShouldValidateLowerCase,
-                                      ShouldExcludeProperties = cssConfig.ShouldExcludeProperties,
+                                      ShouldMinify = minificationConfig.ShouldMinify,
+                                      ShouldMergeMediaQueries = minificationConfig.ShouldMergeMediaQueries,
+                                      ShouldOptimize = minificationConfig.ShouldMinify || minificationConfig.ShouldOptimize,
+                                      ShouldValidateForLowerCase = minificationConfig.ShouldValidateLowerCase,
+                                      ShouldExcludeProperties = minificationConfig.ShouldExcludeProperties,
                                       ImageExtensions = imageExtensions,
                                       ImageDirectories = imageDirectories,
-                                      BannedSelectors = new HashSet<string>(cssConfig.RemoveSelectors.ToArray()),
-                                      HackSelectors = new HashSet<string>(cssConfig.ForbiddenSelectors.ToArray()),
+                                      BannedSelectors = new HashSet<string>(minificationConfig.RemoveSelectors.ToArray()),
+                                      HackSelectors = new HashSet<string>(minificationConfig.ForbiddenSelectors.ToArray()),
                                       ImageAssembleReferencesToIgnore = new HashSet<string>(spritingConfig.ImagesToIgnore.ToArray()),
                                       ImageAssemblyPadding = spritingConfig.ImagePadding,
+                                      ErrorOnInvalidSprite = spritingConfig.ErrorOnInvalidSprite,
                                       OutputUnit = spritingConfig.OutputUnit,
                                       OutputUnitFactor = spritingConfig.OutputUnitFactor,
                                       ImagesOutputDirectory = imagesDestinationDirectory,
                                       IgnoreImagesWithNonDefaultBackgroundSize = spritingConfig.IgnoreImagesWithNonDefaultBackgroundSize,
                                       ImageBasePrefixToRemoveFromOutputPathInLog = imageHasher != null ? imageHasher.BasePrefixToRemoveFromOutputPathInLog : null,
                                       ImageBasePrefixToAddToOutputPath = imageHasher != null ? imageHasher.BasePrefixToAddToOutputPath : null,
+                                      ForcedSpritingImageType = spritingConfig.ForceImageType
                                   };
             return cssMinifier;
         }
@@ -696,9 +699,10 @@ namespace WebGrease.Activities
         /// <param name="inputCssItems">The css content input item.</param>
         /// <param name="minifier">The css minifier</param>
         /// <param name="imageHasher">The image Hasher.</param>
+        /// <param name="writeSpriteLogFile">If set to tue, it will write a log file for each sprite.</param>
         /// <returns>True is successfull false if not.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private IEnumerable<MinifyCssResult> MinifyCss(IEnumerable<ContentItem> inputCssItems, MinifyCssActivity minifier, FileHasherActivity imageHasher)
+        private IEnumerable<MinifyCssResult> MinifyCss(IEnumerable<ContentItem> inputCssItems, MinifyCssActivity minifier, FileHasherActivity imageHasher, bool writeSpriteLogFile)
         {
             var results = new List<MinifyCssResult>();
             foreach (var inputFile in inputCssItems)
@@ -706,10 +710,23 @@ namespace WebGrease.Activities
                 var sourceFile = inputFile.RelativeContentPath;
                 var destinationFile = inputFile.RelativeContentPath;
 
-                this.context.Log.Information("Css Minify start: " + destinationFile + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
+                var pivots = inputFile.Pivots.Select(p => p.ToString());
+                var pivotFileExtensions = string.Join(".", pivots);
+                this.context.Log.Information("Css Minify start: {0} : {1}".InvariantFormat(destinationFile, pivotFileExtensions));
 
                 minifier.SourceFile = sourceFile;
                 minifier.DestinationFile = destinationFile;
+
+                if (writeSpriteLogFile)
+                {
+                    var firstPivot = pivots.FirstOrDefault();
+                    if (firstPivot != null)
+                    {
+                        firstPivot = "." + firstPivot;
+                    }
+
+                    minifier.ImageSpritingLogPath = Path.Combine(this.context.Configuration.ReportPath, destinationFile + firstPivot + ".spritingLog.xml");
+                }
 
                 try
                 {

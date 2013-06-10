@@ -74,7 +74,7 @@ namespace WebGrease.Configuration
             this.CacheUniqueKey = configuration.CacheUniqueKey;
             this.Measure = configuration.Measure;
             this.Overrides = configuration.Overrides;
-            this.MeasureReportPath = configuration.MeasureReportPath;
+            this.ReportPath = configuration.ReportPath;
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
@@ -180,7 +180,7 @@ namespace WebGrease.Configuration
         /// <summary>
         /// The report directory.
         /// </summary>
-        internal string MeasureReportPath { get; set; }
+        internal string ReportPath { get; set; }
 
         /// <summary>
         /// The tools temp directory.
@@ -321,7 +321,7 @@ namespace WebGrease.Configuration
             this.CacheRootPath = EnsureAndExpandDirectory(this.CacheRootPath, true);
             this.ToolsTempDirectory = EnsureAndExpandDirectory(this.ToolsTempDirectory, true);
 
-            this.MeasureReportPath = EnsureAndExpandDirectory(this.MeasureReportPath ?? this.LogsDirectory, true);
+            this.ReportPath = EnsureAndExpandDirectory(this.ReportPath ?? this.LogsDirectory, true);
 
             if (this.CacheTimeout > TimeSpan.Zero && this.CacheTimeout < MinimumCacheTimeout)
             {

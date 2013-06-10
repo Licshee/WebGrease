@@ -149,7 +149,9 @@ namespace WebGrease
         /// <returns>The items.</returns>
         private static IEnumerable<string> GetElementItems(IEnumerable<XElement> elements, string elementName)
         {
-            return GetItems(elements.Elements(elementName).Select(e => (string)e).FirstOrDefault());
+            return GetItems(elements.Elements(elementName).Select(e => (string)e).FirstOrDefault())
+                .Where(i => !i.IsNullOrWhitespace())
+                .Select(i => i.Trim());
         }
 
         /// <summary>The load from file.</summary>
@@ -160,7 +162,7 @@ namespace WebGrease
             {
                 var doc = XDocument.Load(overrideFile);
                 var overrideElements = doc.Elements("Overrides");
-                this.SkipAll = overrideElements.Attributes("SkipAll").Select(a => (bool?)a).FirstOrDefault() == true; 
+                this.SkipAll = overrideElements.Attributes("SkipAll").Select(a => (bool?)a).FirstOrDefault() == true;
                 this.locales.AddRange(GetElementItems(overrideElements, "Locales"));
                 this.themes.AddRange(GetElementItems(overrideElements, "Themes"));
                 this.outputs.AddRange(GetElementItems(overrideElements, "Outputs"));

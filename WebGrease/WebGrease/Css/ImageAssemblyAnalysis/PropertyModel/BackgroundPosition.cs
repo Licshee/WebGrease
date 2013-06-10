@@ -15,7 +15,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
     using Ast;
     using Extensions;
     using ImageAssemble;
-    using LogModel;
+
     using ImageAssembleException = ImageAssemblyAnalysis.ImageAssembleException;
 
     /// <summary>The units of background position</summary>
@@ -236,10 +236,8 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         }
 
         /// <summary>Verify that both the horizontal and vertical units are specified in px units</summary>
-        /// <param name="parent">The parent AST node</param>
-        /// <param name="imageAssemblyAnalysisLog">The logging object</param>
         /// <returns>True if px units are used</returns>
-        internal bool IsVerticalSpriteCandidate(AstNode parent, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog)
+        internal bool IsVerticalSpriteCandidate()
         {
             // The following scenarios are candidate for image to be part of vertical sprite:
             // ==============================================================================
@@ -255,15 +253,6 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             }
 
             // Log diagnostics
-            if (imageAssemblyAnalysisLog != null)
-            {
-                imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
-                {
-                    AstNode = parent, 
-                    FailureReason = FailureReason.IncorrectPosition
-                });
-            }
-
             return false;
         }
 
@@ -427,7 +416,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                         3);
 
                     // Create a term with new x
-                    updatedTermNode = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(outputUnit), null, null, null);
+                    updatedTermNode = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(this.outputUnit), null, null, null);
                 }
                 else
                 {
@@ -464,7 +453,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                         3);
 
                     // Create a term with new y
-                    updatedTermNode = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(outputUnit), null, null, null);
+                    updatedTermNode = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(this.outputUnit), null, null, null);
                 }
                 else
                 {
@@ -557,7 +546,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             }
 
             // Add any missing X or Y
-            AddingMissingXAndY(updatedX, updatedY, isXUpdated, isYUpdated, indexX, indexY, updatedTermsWithOperators, webGreaseBackgroundDpi);
+            this.AddingMissingXAndY(updatedX, updatedY, isXUpdated, isYUpdated, indexX, indexY, updatedTermsWithOperators, webGreaseBackgroundDpi);
 
             return this.DeclarationNode.CreateDeclarationNode(updatedTermsWithOperators);
         }

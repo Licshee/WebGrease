@@ -61,7 +61,7 @@ namespace WebGrease.ImageAssemble
         {
             foreach (var entry in inputImages)
             {
-                this.ImageXmlMap.AppendToXml(entry.Key.ImagePath, "Not supported");
+                this.ImageXmlMap.AppendToXml(entry.Key.AbsoluteImagePath, "Not supported");
             }
         }
     }

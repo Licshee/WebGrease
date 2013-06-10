@@ -70,7 +70,7 @@ namespace WebGrease.Build
         public string LogFolderPath { get; set; }
 
         /// <summary>Gets or sets the folder path used for writing report files.</summary>
-        public string MeasureReportPath { get; set; }
+        public string ReportPath { get; set; }
 
         /// <summary>Gets or sets the folder path used as temp folder.</summary>
         public string ToolsTempPath { get; set; }
@@ -143,7 +143,7 @@ namespace WebGrease.Build
                 globalContext.CleanDestination();
             }
 
-            var fileTypesToExecuteParalel = this.FileType == FileTypes.All ? new[] { FileTypes.JS, FileTypes.CSS | FileTypes.Image } : new[] { this.FileType };
+            var fileTypesToExecuteParallel = this.FileType == FileTypes.All ? new[] { FileTypes.JS, FileTypes.CSS | FileTypes.Image } : new[] { this.FileType };
 
             if (this.CleanCache)
             {
@@ -151,7 +151,7 @@ namespace WebGrease.Build
             }
 
             var parallelSessions = new List<Tuple<IWebGreaseContext, FileTypes, DelayedLogManager>>();
-            foreach (var fileType in fileTypesToExecuteParalel)
+            foreach (var fileType in fileTypesToExecuteParallel)
             {
                 var delayedLogManager = new DelayedLogManager(logManager, fileType.ToString());
                 var sessionContext = this.CreateSessionContext(delayedLogManager.LogManager, fileType, activity);
@@ -273,7 +273,7 @@ namespace WebGrease.Build
 
                             if (success && measure)
                             {
-                                var configReportFile = Path.Combine(sessionContext.Configuration.MeasureReportPath, (configFileInfo.Directory != null ? configFileInfo.Directory.Name + "." : string.Empty) + activity.ToString() + "." + fileType + "." + configFileInfo.Name + ".");
+                                var configReportFile = Path.Combine(sessionContext.Configuration.ReportPath, (configFileInfo.Directory != null ? configFileInfo.Directory.Name + "." : string.Empty) + activity.ToString() + "." + fileType + "." + configFileInfo.Name + ".");
                                 fileContext.Measure.WriteResults(configReportFile, configFileInfo.FullName, configFileStart);
                             }
 
@@ -298,7 +298,7 @@ namespace WebGrease.Build
                 var configuration = activityResults.Select(ar => ar.Value.Item3).FirstOrDefault(ar => ar != null);
                 if (configuration != null)
                 {
-                    var reportFileBase = Path.Combine(configuration.MeasureReportPath, new DirectoryInfo(this.ConfigurationPath).Name);
+                    var reportFileBase = Path.Combine(configuration.ReportPath, new DirectoryInfo(this.ConfigurationPath).Name);
                     logManager.Information("Writing overal report file to:".InvariantFormat(reportFileBase));
                     TimeMeasure.WriteResults(
                         reportFileBase, activityResults.ToDictionary(k => k.Key, v => v.Value.Item2), this.ConfigurationPath, start, activity.ToString());
@@ -452,7 +452,7 @@ namespace WebGrease.Build
                            CacheEnabled = this.CacheEnabled,
                            CacheRootPath = this.CacheRootPath,
                            CacheUniqueKey = this.CacheUniqueKey + fileTypeKey + activityKey,
-                           MeasureReportPath = this.MeasureReportPath,
+                           ReportPath = this.ReportPath,
                            CacheTimeout = !string.IsNullOrWhiteSpace(this.CacheTimeout) ? TimeSpan.Parse(this.CacheTimeout) : TimeSpan.FromHours(48),
                            Overrides = TemporaryOverrides.Create(this.OverrideFile)
                        };

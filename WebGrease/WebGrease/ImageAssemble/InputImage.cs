@@ -17,12 +17,12 @@ namespace WebGrease.ImageAssemble
         /// <summary>
         /// Left Aligned
         /// </summary>
-        Left = 0, 
+        Left = 0,
 
         /// <summary>
         /// Right Aligned
         /// </summary>
-        Right, 
+        Right,
 
         /// <summary>
         /// Center Aligned (Horizontally)
@@ -35,8 +35,10 @@ namespace WebGrease.ImageAssemble
     /// </summary>
     public class InputImage
     {
+        /// <summary>The duplicate image paths.</summary>
+        private readonly List<string> duplicateImagePaths = new List<string>();
+
         #region Constructors
-        
 
         /// <summary>
         /// Initializes a new instance of the InputImage class. The default image position used is Left.
@@ -46,42 +48,32 @@ namespace WebGrease.ImageAssemble
             this.Position = ImagePosition.Left;
         }
 
-        /// <summary>Initializes a new instance of the InputImage class with Image path provided. 
-        /// The default image position used is Left.</summary>
-        /// <param name="imagePath">Image location.</param>
-        public InputImage(string imagePath)
-        {
-            this.ImagePath = imagePath;
-            this.Position = ImagePosition.Left;
-        }
-        
         #endregion
 
         #region Properties
 
-        /// <summary>The duplicate image paths.</summary>
-        private readonly List<string> duplicateImagePaths = new List<string>();
-
         /// <summary>
         /// Gets or sets Image path for this object.
         /// </summary>
-        public string ImagePath
-        {
-            get;
-            set;
-        }
+        public string AbsoluteImagePath { get; set; }
+
+        /// <summary>Gets or sets the original image path.</summary>
+        public string OriginalImagePath { get; set; }
 
         /// <summary>
         /// Gets or sets Image Position (Left/Right) for this object.
         /// </summary>
-        public ImagePosition Position
-        {
-            get;
-            set;
-        }
+        public ImagePosition Position { get; set; }
 
         /// <summary>Gets DuplicateImagePaths.</summary>
-        public IList<string> DuplicateImagePaths { get { return this.duplicateImagePaths; } }
+        public IList<string> DuplicateImagePaths
+        {
+            get
+            {
+                return this.duplicateImagePaths;
+            }
+        }
+
         #endregion
     }
 }

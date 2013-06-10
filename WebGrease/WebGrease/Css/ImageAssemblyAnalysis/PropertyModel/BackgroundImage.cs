@@ -132,16 +132,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             shouldIgnore = false;
             if (string.IsNullOrWhiteSpace(this.Url))
             {
-                if (imageAssemblyAnalysisLog != null)
-                {
-                    // Log diagnostics
-                    imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
-                                                     {
-                                                         AstNode = parent, 
-                                                         FailureReason = FailureReason.NoUrl
-                                                     });
-                }
-                
+                imageAssemblyAnalysisLog.SafeAdd(parent, this.Url, FailureReason.NoUrl);
                 return false;
             }
 
@@ -153,17 +144,8 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 if (imageReferencesToIgnore.Contains(fullImageUrl))
                 {
                     // Log diagnostics
-                    if (imageAssemblyAnalysisLog != null)
-                    {
-                        imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
-                        {
-                            AstNode = parent, 
-                            FailureReason = FailureReason.IgnoreUrl
-                        });
-                    }
-
+                    imageAssemblyAnalysisLog.SafeAdd(parent, this.Url, FailureReason.IgnoreUrl);
                     shouldIgnore = true;
-
                     return false;
                 }
             }

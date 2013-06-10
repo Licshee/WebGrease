@@ -41,7 +41,7 @@ namespace WebGrease
         /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return "[{0}]".InvariantFormat(string.Join(",", new[] { this.Locale, this.Theme }.Where(i => !i.IsNullOrWhitespace())));
+            return "{0}".InvariantFormat(string.Join("-", new[] { this.Locale, this.Theme }.Where(i => !i.IsNullOrWhitespace())));
         }
 
         #endregion

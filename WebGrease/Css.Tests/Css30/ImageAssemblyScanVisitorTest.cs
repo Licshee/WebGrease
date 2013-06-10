@@ -88,9 +88,9 @@ namespace Css.Tests.Css30
             var imageReferencesToAssemble = visitor.DefaultImageAssemblyScanOutput.ImageReferencesToAssemble;
             Assert.IsNotNull(imageReferencesToAssemble);
             Assert.IsTrue(imageReferencesToAssemble.Count == 3);
-            Assert.IsTrue(imageReferencesToAssemble[0].ImagePath.Contains(@"\i\3.gif"));
-            Assert.IsTrue(imageReferencesToAssemble[1].ImagePath.Contains(@"\i\4.gif"));
-            Assert.IsTrue(imageReferencesToAssemble[2].ImagePath.Contains(@"\i\5.gif"));
+            Assert.IsTrue(imageReferencesToAssemble[0].AbsoluteImagePath.Contains(@"\i\3.gif"));
+            Assert.IsTrue(imageReferencesToAssemble[1].AbsoluteImagePath.Contains(@"\i\4.gif"));
+            Assert.IsTrue(imageReferencesToAssemble[2].AbsoluteImagePath.Contains(@"\i\5.gif"));
         }
 
         /// <summary>A test for background selectors which should be sprited with buckets.</summary>
@@ -123,7 +123,7 @@ namespace Css.Tests.Css30
             Assert.IsTrue(imageReferencesToAssemble.Count == 1);
             var imageReferenceToAssemble = imageReferencesToAssemble[0];
             Assert.IsNotNull(imageReferenceToAssemble);
-            Assert.IsTrue(imageReferenceToAssemble.ImagePath.Contains(@"\i\2.gif"));
+            Assert.IsTrue(imageReferenceToAssemble.AbsoluteImagePath.Contains(@"\i\2.gif"));
 
             // First bucket
             imageAssemblyScanOutput = imageAssemblyScanOutputs[1];
@@ -131,7 +131,7 @@ namespace Css.Tests.Css30
             Assert.IsTrue(imageReferencesToAssemble.Count == 1);
             imageReferenceToAssemble = imageReferencesToAssemble[0];
             Assert.IsNotNull(imageReferenceToAssemble);
-            Assert.IsTrue(imageReferenceToAssemble.ImagePath.Contains(@"\i\3.gif"));
+            Assert.IsTrue(imageReferenceToAssemble.AbsoluteImagePath.Contains(@"\i\3.gif"));
 
             // Second bucket
             imageAssemblyScanOutput = imageAssemblyScanOutputs[2];
@@ -139,10 +139,10 @@ namespace Css.Tests.Css30
             Assert.IsTrue(imageReferencesToAssemble.Count == 2);
             imageReferenceToAssemble = imageReferencesToAssemble[0];
             Assert.IsNotNull(imageReferenceToAssemble);
-            Assert.IsTrue(imageReferenceToAssemble.ImagePath.Contains(@"\i\4.gif"));
+            Assert.IsTrue(imageReferenceToAssemble.AbsoluteImagePath.Contains(@"\i\4.gif"));
             imageReferenceToAssemble = imageReferencesToAssemble[1];
             Assert.IsNotNull(imageReferenceToAssemble);
-            Assert.IsTrue(imageReferenceToAssemble.ImagePath.Contains(@"\i\5.gif"));
+            Assert.IsTrue(imageReferenceToAssemble.AbsoluteImagePath.Contains(@"\i\5.gif"));
         }
 
         /// <summary>A test for background selectors with duplicate declaration.</summary>

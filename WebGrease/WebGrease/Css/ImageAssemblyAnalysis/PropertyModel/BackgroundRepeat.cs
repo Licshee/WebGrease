@@ -12,7 +12,6 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
     using System;
     using Ast;
     using Extensions;
-    using LogModel;
 
     /// <summary>The repeat enumeration</summary>
     internal enum Repeat
@@ -73,23 +72,11 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         internal Repeat? RepeatValue { get; private set; }
 
         /// <summary>Verify that the no-repeat declaration is found</summary>
-        /// <param name="parent">The parent AST node</param>
-        /// <param name="imageAssemblyAnalysisLog">The logging object</param>
         /// <returns>True if no-repeat is used</returns>
-        internal bool VerifyBackgroundNoRepeat(AstNode parent, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog)
+        internal bool VerifyBackgroundNoRepeat()
         {
             if (this.RepeatValue != Repeat.NoRepeat)
             {
-                if (imageAssemblyAnalysisLog != null)
-                {
-                    // Log diagnostics
-                    imageAssemblyAnalysisLog.Add(new ImageAssemblyAnalysis
-                    {
-                        AstNode = parent, 
-                        FailureReason = FailureReason.NoRepeat
-                    });
-                }
-
                 return false;
             }
 
@@ -118,8 +105,6 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                     break;
                 case ImageAssembleConstants.RepeatY:
                     this.RepeatValue = Repeat.RepeatY;
-                    break;
-                default:
                     break;
             }
         }

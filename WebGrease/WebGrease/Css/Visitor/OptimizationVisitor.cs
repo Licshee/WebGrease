@@ -48,81 +48,6 @@ namespace WebGrease.Css.Visitor
                 styleSheetRuleNodes.AsSafeReadOnly());
         }
 
-        /// <summary>Gets merged node dictionary for the given stylesheet rule nodes.</summary>
-        /// <param name="styleSheetRuleNodes">The style sheet rule nodes.</param>
-        /// <returns>The <see cref="OrderedDictionary"/>.</returns>
-        private OrderedDictionary GetMergedNodeDictionary(IEnumerable<StyleSheetRuleNode> styleSheetRuleNodes)
-        {
-            // List of updated ruleset, media and page nodes
-            var ruleSetMediaPageDictionary = new OrderedDictionary();
-
-            foreach (var styleSheetRuleNode in styleSheetRuleNodes)
-            {
-                var rulesetNode = styleSheetRuleNode as RulesetNode;
-                if (rulesetNode != null)
-                {
-                    // Optimize rulesets
-                    OptimizeRulesetNode(rulesetNode, ruleSetMediaPageDictionary);
-                    continue;
-                }
-
-                if (this.ShouldMergeMediaQueries)
-                {
-                    var mediaNode = styleSheetRuleNode as MediaNode;
-                    if (mediaNode != null)
-                    {
-                        // Optimize media queries, will call this method for its rulesets and pagenodes.
-                        this.OptimizeMediaQuery(mediaNode, ruleSetMediaPageDictionary);
-                        continue;
-                    }
-                }
-
-                // Page node optimization.
-                // Full ruleset node (media or page) is a hash key here.
-                // By design, we don't optimize the ruleset inside media nodes.
-                string hashKey = styleSheetRuleNode.MinifyPrint();
-                if (!ruleSetMediaPageDictionary.Contains(hashKey))
-                {
-                    ruleSetMediaPageDictionary.Add(hashKey, styleSheetRuleNode);
-                }
-                else
-                {
-                    ruleSetMediaPageDictionary[hashKey] = styleSheetRuleNode;
-                }
-            }
-
-            return ruleSetMediaPageDictionary;
-        }
-
-        /// <summary>The optimize media query.</summary>
-        /// <param name="mediaNode">The media node.</param>
-        /// <param name="ruleSetMediaPageDictionary">The rule set media page dictionary.</param>
-        private void OptimizeMediaQuery(MediaNode mediaNode, OrderedDictionary ruleSetMediaPageDictionary)
-        {
-            var mediaNodeHashKey = mediaNode.PrintSelector();
-            var pageNodes = mediaNode.PageNodes.ToList();
-            var rulesetNodes = mediaNode.Rulesets.ToList();
-
-            if (ruleSetMediaPageDictionary.Contains(mediaNodeHashKey))
-            {
-                var previousNode = ruleSetMediaPageDictionary[mediaNodeHashKey] as MediaNode;
-                if (previousNode != null)
-                {
-                    pageNodes = previousNode.PageNodes.Concat(pageNodes).ToList();
-                    rulesetNodes = previousNode.Rulesets.Concat(rulesetNodes).ToList();
-                }
-
-                ruleSetMediaPageDictionary.Remove(mediaNodeHashKey);
-            }
-
-            ruleSetMediaPageDictionary.Add(
-                        mediaNodeHashKey,
-                         new MediaNode(
-                            mediaNode.MediaQueries,
-                            this.GetMergedNodeDictionary(rulesetNodes).Values.Cast<RulesetNode>().ToList().AsSafeReadOnly(),
-                            pageNodes.ToSafeReadOnlyCollection()));
-        }
-
         /// <summary>The optimize ruleset node.</summary>
         /// <param name="currentRuleSet">The current rule set.</param>
         /// <param name="ruleSetMediaPageDictionary">The rule set media page dictionary.</param>
@@ -242,9 +167,12 @@ namespace WebGrease.Css.Visitor
             uniqueSourceDeclarations.Add(uniquePropertyKey, newDeclaration);
         }
 
-        private static bool HasImportantFlag(DeclarationNode previousDeclarationNode)
+        /// <summary>Checks if the declaration has !important.</summary>
+        /// <param name="declarationNode">The previous declaration node.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private static bool HasImportantFlag(DeclarationNode declarationNode)
         {
-            return previousDeclarationNode.Prio.Equals("!important");
+            return declarationNode.Prio.Equals(CssConstants.Important);
         }
 
         /// <summary>Gets the unique property key taking into account both property and value vendor prefixes.</summary>
@@ -317,6 +245,81 @@ namespace WebGrease.Css.Visitor
             var dictionary = UniqueDeclarations(rulesetNode);
             var resultDeclarations = dictionary.Values.Cast<DeclarationNode>().ToList();
             return new RulesetNode(rulesetNode.SelectorsGroupNode, resultDeclarations.AsReadOnly());
+        }
+
+        /// <summary>Gets merged node dictionary for the given stylesheet rule nodes.</summary>
+        /// <param name="styleSheetRuleNodes">The style sheet rule nodes.</param>
+        /// <returns>The <see cref="OrderedDictionary"/>.</returns>
+        private OrderedDictionary GetMergedNodeDictionary(IEnumerable<StyleSheetRuleNode> styleSheetRuleNodes)
+        {
+            // List of updated ruleset, media and page nodes
+            var ruleSetMediaPageDictionary = new OrderedDictionary();
+
+            foreach (var styleSheetRuleNode in styleSheetRuleNodes)
+            {
+                var rulesetNode = styleSheetRuleNode as RulesetNode;
+                if (rulesetNode != null)
+                {
+                    // Optimize rulesets
+                    OptimizeRulesetNode(rulesetNode, ruleSetMediaPageDictionary);
+                    continue;
+                }
+
+                if (this.ShouldMergeMediaQueries)
+                {
+                    var mediaNode = styleSheetRuleNode as MediaNode;
+                    if (mediaNode != null)
+                    {
+                        // Optimize media queries, will call this method for its rulesets and pagenodes.
+                        this.OptimizeMediaQuery(mediaNode, ruleSetMediaPageDictionary);
+                        continue;
+                    }
+                }
+
+                // Page node optimization.
+                // Full ruleset node (media or page) is a hash key here.
+                // By design, we don't optimize the ruleset inside media nodes.
+                string hashKey = styleSheetRuleNode.MinifyPrint();
+                if (!ruleSetMediaPageDictionary.Contains(hashKey))
+                {
+                    ruleSetMediaPageDictionary.Add(hashKey, styleSheetRuleNode);
+                }
+                else
+                {
+                    ruleSetMediaPageDictionary[hashKey] = styleSheetRuleNode;
+                }
+            }
+
+            return ruleSetMediaPageDictionary;
+        }
+
+        /// <summary>The optimize media query.</summary>
+        /// <param name="mediaNode">The media node.</param>
+        /// <param name="ruleSetMediaPageDictionary">The rule set media page dictionary.</param>
+        private void OptimizeMediaQuery(MediaNode mediaNode, OrderedDictionary ruleSetMediaPageDictionary)
+        {
+            var mediaNodeHashKey = mediaNode.PrintSelector();
+            var pageNodes = mediaNode.PageNodes.ToList();
+            var rulesetNodes = mediaNode.Rulesets.ToList();
+
+            if (ruleSetMediaPageDictionary.Contains(mediaNodeHashKey))
+            {
+                var previousNode = ruleSetMediaPageDictionary[mediaNodeHashKey] as MediaNode;
+                if (previousNode != null)
+                {
+                    pageNodes = previousNode.PageNodes.Concat(pageNodes).ToList();
+                    rulesetNodes = previousNode.Rulesets.Concat(rulesetNodes).ToList();
+                }
+
+                ruleSetMediaPageDictionary.Remove(mediaNodeHashKey);
+            }
+
+            ruleSetMediaPageDictionary.Add(
+                mediaNodeHashKey,
+                new MediaNode(
+                    mediaNode.MediaQueries,
+                    this.GetMergedNodeDictionary(rulesetNodes).Values.Cast<RulesetNode>().ToList().AsSafeReadOnly(),
+                    pageNodes.ToSafeReadOnlyCollection()));
         }
     }
 }

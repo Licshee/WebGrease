@@ -11,7 +11,6 @@ namespace WebGrease.Activities
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Linq;
@@ -29,6 +28,7 @@ namespace WebGrease.Activities
     using WebGrease.Extensions;
 
     /// <summary>Implements the multiple steps in Css pipeline</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "Should probably be refactored at some point.")]
     internal sealed class MinifyCssActivity
     {
         /// <summary>The url hash all regex pattern.</summary>
@@ -74,6 +74,9 @@ namespace WebGrease.Activities
         /// <summary>Gets OutputUnitFactor (Default: 1, example value for 10px based REM: 0.625</summary>
         internal double OutputUnitFactor { private get; set; }
 
+        /// <summary>Gets or sets the forced spriting image type.</summary>
+        internal ImageType? ForcedSpritingImageType { get; set; }
+
         /// <summary>Gets or sets a value indicating whether to ignore images that have a background-size property set to non-default ('auto' or 'auto auto').</summary>
         internal bool IgnoreImagesWithNonDefaultBackgroundSize { private get; set; }
 
@@ -117,6 +120,9 @@ namespace WebGrease.Activities
         /// <remarks>Optional - Needed only when image spriting is needed.</remarks>
         internal string ImageAssembleScanDestinationFile { get; set; }
 
+        /// <summary>Gets or sets the image spriting log path, if set this is the location it will save the image spriting log for this pass.</summary>
+        internal string ImageSpritingLogPath { get; set; }
+
         /// <summary>Gets or sets the image output directory.</summary>
         internal string ImagesOutputDirectory { private get; set; }
 
@@ -126,8 +132,8 @@ namespace WebGrease.Activities
         /// <summary>Gets or sets the image assembly padding.</summary>
         internal int? ImageAssemblyPadding { private get; set; }
 
-        /// <summary>Gets the exception, if any, returned from a parsing attempt.</summary>
-        internal Exception ParserException { get; private set; }
+        /// <summary>Gets or sets a value indicating whether it logs an error on invalid sprites.</summary>
+        internal bool ErrorOnInvalidSprite { get; set; }
 
         /// <summary>The process.</summary>
         /// <param name="contentItem">The content item.</param>
@@ -217,35 +223,27 @@ namespace WebGrease.Activities
                 contentItem = ContentItem.FromFile(this.SourceFile, Path.IsPathRooted(this.SourceFile) ? this.SourceFile.MakeRelativeToDirectory(this.context.Configuration.SourceDirectory) : this.SourceFile);
             }
 
-            try
+            var minifyresult = this.Process(contentItem);
+
+            if (minifyresult.Css != null)
             {
-                var minifyresult = this.Process(contentItem);
+                minifyresult.Css.WriteTo(this.DestinationFile);
+            }
 
-                if (minifyresult.Css != null)
+            if (minifyresult.SpritedImages != null && minifyresult.SpritedImages.Any())
+            {
+                foreach (var spritedImage in minifyresult.SpritedImages)
                 {
-                    minifyresult.Css.WriteTo(this.DestinationFile);
-                }
-
-                if (minifyresult.SpritedImages != null && minifyresult.SpritedImages.Any())
-                {
-                    foreach (var spritedImage in minifyresult.SpritedImages)
-                    {
-                        spritedImage.WriteToContentPath(this.context.Configuration.DestinationDirectory);
-                    }
-                }
-
-                if (minifyresult.HashedImages != null && minifyresult.HashedImages.Any())
-                {
-                    foreach (var hashedImage in minifyresult.HashedImages)
-                    {
-                        hashedImage.WriteToRelativeHashedPath(this.context.Configuration.DestinationDirectory);
-                    }
+                    spritedImage.WriteToContentPath(this.context.Configuration.DestinationDirectory);
                 }
             }
-            catch (Exception exception)
+
+            if (minifyresult.HashedImages != null && minifyresult.HashedImages.Any())
             {
-                this.ParserException = exception;
-                throw;
+                foreach (var hashedImage in minifyresult.HashedImages)
+                {
+                    hashedImage.WriteToRelativeHashedPath(this.context.Configuration.DestinationDirectory);
+                }
             }
         }
 
@@ -337,7 +335,11 @@ namespace WebGrease.Activities
                 this.OutputUnit,
                 this.OutputUnitFactor,
                 this.ImageAssemblyPadding,
-                HashImages = imageHasher == null
+                HashImages = imageHasher == null,
+                this.ForcedSpritingImageType,
+                this.ErrorOnInvalidSprite,
+                this.ImageAssembleScanDestinationFile,
+                this.ImageSpritingLogPath,
             };
         }
 
@@ -422,7 +424,7 @@ namespace WebGrease.Activities
                 var count = 0;
                 foreach (var scanOutput in scanLog.ImageAssemblyScanOutputs)
                 {
-                    var spriteResult = this.SpriteImageFromLog(scanOutput, this.ImageAssembleScanDestinationFile + (count == 0 ? string.Empty : "." + count) + ".xml");
+                    var spriteResult = this.SpriteImageFromLog(scanOutput, this.ImageAssembleScanDestinationFile + (count == 0 ? string.Empty : "." + count) + ".xml", scanLog.ImageAssemblyAnalysisLog);
                     if (spriteResult != null && spriteResult.Item1 != null)
                     {
                         imageMaps.Add(spriteResult.Item1);
@@ -433,6 +435,31 @@ namespace WebGrease.Activities
                 // Step # 8 - Execute the pipeline for image assembly update
                 stylesheetNode = this.ExecuteImageAssemblyUpdate(stylesheetNode, imageMaps);
 
+                if (!string.IsNullOrWhiteSpace(this.ImageSpritingLogPath))
+                {
+                    scanLog.ImageAssemblyAnalysisLog.Save(this.ImageSpritingLogPath);
+                }
+
+                var imageAssemblyAnalysisLog = scanLog.ImageAssemblyAnalysisLog;
+                if (this.ErrorOnInvalidSprite && imageAssemblyAnalysisLog.FailedSprites.Any())
+                {
+                    foreach (var failedSprite in imageAssemblyAnalysisLog.FailedSprites)
+                    {
+                        if (!string.IsNullOrWhiteSpace(failedSprite.Image))
+                        {
+                            context.Log.Error(
+                                "Failed to sprite image {0}\r\nReason:{1}\r\nCss:{2}".InvariantFormat(
+                                    failedSprite.Image, failedSprite.FailureReason, failedSprite.AstNode.PrettyPrint()));
+                        }
+                        else
+                        {
+                            context.Log.Error(
+                                "Failed to sprite:{0}\r\nCss:{1}".InvariantFormat(
+                                    failedSprite.Image, failedSprite.FailureReason, failedSprite.AstNode.PrettyPrint()));
+                        }
+                    }
+                }
+
                 return Tuple.Create(stylesheetNode, (IEnumerable<ContentItem>)results);
             });
         }
@@ -440,8 +467,9 @@ namespace WebGrease.Activities
         /// <summary>The sprite image.</summary>
         /// <param name="scanOutput">The scan Output.</param>
         /// <param name="mapXmlFile">The map xml file</param>
+        /// <param name="imageAssemblyAnalysisLog">The image Assembly Analysis Log.</param>
         /// <returns>The <see cref="ImageLog"/>.</returns>
-        private Tuple<ImageLog, List<ContentItem>> SpriteImageFromLog(ImageAssemblyScanOutput scanOutput, string mapXmlFile)
+        private Tuple<ImageLog, List<ContentItem>> SpriteImageFromLog(ImageAssemblyScanOutput scanOutput, string mapXmlFile, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog)
         {
             if (scanOutput == null || !scanOutput.ImageReferencesToAssemble.Any())
             {
@@ -460,87 +488,111 @@ namespace WebGrease.Activities
             var success = this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly)
                 .MakeCachable(new { imageMap = this.GetRelativeSpriteCacheKey(imageReferencesToAssemble), this.ImageAssemblyPadding })
                 .RestoreFromCacheAction(cacheSection =>
-                {
-                    // restore log file, is required by next step in applying sprites to the css.
-                    var destinationDirectory = this.context.Configuration.DestinationDirectory;
-
-                    var spriteLogFileContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.SpriteLogFile).FirstOrDefault();
-                    if (spriteLogFileContentItem == null)
                     {
-                        return true;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(this.ImageAssembleScanDestinationFile))
-                    {
-                        var spriteLogFileXmlContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.SpriteLogFileXml).FirstOrDefault();
-                        if (spriteLogFileXmlContentItem != null)
-                        {
-                            spriteLogFileXmlContentItem.WriteTo(mapXmlFile);
-                        }
-                    }
-
-                    imageLog = spriteLogFileContentItem.Content.FromJson<ImageLog>(true);
-
-                    // Restore images
-                    var spritedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedSpriteImage);
-                    spritedImageContentItems.ForEach(sici => sici.WriteToContentPath(destinationDirectory));
-                    results.AddRange(spritedImageContentItems);
-
-                    return true;
-                })
+                        imageLog = this.RestoreSpritedImagesFromCache(mapXmlFile, cacheSection, results);
+                        return imageLog != null;
+                    })
                 .Execute(cacheSection =>
-                {
-                    if (!Directory.Exists(this.ImagesOutputDirectory))
                     {
-                        Directory.CreateDirectory(this.ImagesOutputDirectory);
-                    }
-
-                    var imageMap = ImageAssembleGenerator.AssembleImages(
-                        imageReferencesToAssemble.ToSafeReadOnlyCollection(),
-                        SpritePackingType.Vertical,
-                        this.ImagesOutputDirectory,
-                        string.Empty,
-                        true,
-                        this.context,
-                        this.ImageAssemblyPadding);
-
-                    if (imageMap == null || imageMap.Document == null)
-                    {
-                        return true;
-                    }
-
-                    var destinationDirectory = this.context.Configuration.DestinationDirectory;
-                    if (!string.IsNullOrWhiteSpace(this.ImageAssembleScanDestinationFile))
-                    {
-                        var scanXml = imageMap.Document.ToString();
-                        FileHelper.WriteFile(mapXmlFile, scanXml);
-                        cacheSection.AddResult(
-                            ContentItem.FromFile(mapXmlFile),
-                            CacheFileCategories.SpriteLogFileXml);
-                    }
-
-                    imageLog = new ImageLog(imageMap.Document);
-
-                    cacheSection.AddResult(
-                        ContentItem.FromContent(imageLog.ToJson(true)),
-                        CacheFileCategories.SpriteLogFile);
-
-                    foreach (var spritedFile in imageLog.InputImages.Select(il => il.OutputFilePath))
-                    {
-                        var spritedImageContentItem = ContentItem.FromFile(spritedFile, spritedFile.MakeRelativeToDirectory(destinationDirectory));
-                        results.Add(spritedImageContentItem);
-                        cacheSection.AddResult(
-                            spritedImageContentItem,
-                            CacheFileCategories.HashedSpriteImage);
-                    }
-
-                    return true;
-                });
+                        imageLog = this.CreateSpritedImages(mapXmlFile, imageAssemblyAnalysisLog, imageReferencesToAssemble, cacheSection, results);
+                        return imageLog != null;
+                    });
 
             return
                 success
                 ? Tuple.Create(imageLog, results)
                 : null;
+        }
+
+        /// <summary>The create sprited images.</summary>
+        /// <param name="mapXmlFile">The map xml file.</param>
+        /// <param name="imageAssemblyAnalysisLog">The image assembly analysis log.</param>
+        /// <param name="imageReferencesToAssemble">The image references to assemble.</param>
+        /// <param name="cacheSection">The cache section.</param>
+        /// <param name="results">The results.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private ImageLog CreateSpritedImages(
+            string mapXmlFile,
+            ImageAssemblyAnalysisLog imageAssemblyAnalysisLog,
+            IEnumerable<InputImage> imageReferencesToAssemble,
+            ICacheSection cacheSection,
+            ICollection<ContentItem> results)
+        {
+            if (!Directory.Exists(this.ImagesOutputDirectory))
+            {
+                Directory.CreateDirectory(this.ImagesOutputDirectory);
+            }
+
+            var imageMap = ImageAssembleGenerator.AssembleImages(
+                imageReferencesToAssemble.ToSafeReadOnlyCollection(),
+                SpritePackingType.Vertical,
+                this.ImagesOutputDirectory,
+                string.Empty,
+                true,
+                this.context,
+                this.ImageAssemblyPadding,
+                imageAssemblyAnalysisLog,
+                this.ForcedSpritingImageType);
+
+            if (imageMap == null || imageMap.Document == null)
+            {
+                return null;
+            }
+
+            var destinationDirectory = this.context.Configuration.DestinationDirectory;
+            if (!string.IsNullOrWhiteSpace(this.ImageAssembleScanDestinationFile))
+            {
+                var scanXml = imageMap.Document.ToString();
+                FileHelper.WriteFile(mapXmlFile, scanXml);
+                cacheSection.AddResult(ContentItem.FromFile(mapXmlFile), CacheFileCategories.SpriteLogFileXml);
+            }
+
+            var imageLog = new ImageLog(imageMap.Document);
+            cacheSection.AddResult(ContentItem.FromContent(imageLog.ToJson(true)), CacheFileCategories.SpriteLogFile);
+
+            foreach (var spritedFile in imageLog.InputImages.Select(il => il.OutputFilePath))
+            {
+                var spritedImageContentItem = ContentItem.FromFile(spritedFile, spritedFile.MakeRelativeToDirectory(destinationDirectory));
+                results.Add(spritedImageContentItem);
+                cacheSection.AddResult(spritedImageContentItem, CacheFileCategories.HashedSpriteImage);
+            }
+
+            return imageLog;
+        }
+
+        /// <summary>The restore sprited images from cache.</summary>
+        /// <param name="mapXmlFile">The map xml file.</param>
+        /// <param name="cacheSection">The cache section.</param>
+        /// <param name="results">The results.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private ImageLog RestoreSpritedImagesFromCache(string mapXmlFile, ICacheSection cacheSection, List<ContentItem> results)
+        {
+            // restore log file, is required by next step in applying sprites to the css.
+            var destinationDirectory = this.context.Configuration.DestinationDirectory;
+
+            var spriteLogFileContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.SpriteLogFile).FirstOrDefault();
+            if (spriteLogFileContentItem == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(this.ImageAssembleScanDestinationFile))
+            {
+                var spriteLogFileXmlContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.SpriteLogFileXml).FirstOrDefault();
+                if (spriteLogFileXmlContentItem != null)
+                {
+                    spriteLogFileXmlContentItem.WriteTo(mapXmlFile);
+                }
+            }
+
+            var imageLog = spriteLogFileContentItem.Content.FromJson<ImageLog>(true);
+
+            // Restore images
+            var spritedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedSpriteImage);
+            spritedImageContentItems.ForEach(sici => sici.WriteToContentPath(destinationDirectory));
+            results.AddRange(spritedImageContentItems);
+
+            return imageLog;
         }
 
         /// <summary>The get relative sprite cache key.</summary>
@@ -552,7 +604,7 @@ namespace WebGrease.Activities
                 ">",
                 imageReferencesToAssemble.Select(ir =>
                         "{0}|{1}|{2}".InvariantFormat(
-                            this.context.MakeRelativeToApplicationRoot(ir.ImagePath),
+                            this.context.MakeRelativeToApplicationRoot(ir.AbsoluteImagePath),
                             ir.Position,
                             string.Join(":", ir.DuplicateImagePaths.Select(dip => this.context.MakeRelativeToApplicationRoot(dip))))));
         }
