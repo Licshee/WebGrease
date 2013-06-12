@@ -10,9 +10,6 @@ namespace WebGrease
     {
         #region Constants
 
-        /// <summary>The add source dependency.</summary>
-        public const string AddSourceDependency = "AddSourceDependency";
-
         /// <summary>The assembler activity.</summary>
         public const string AssemblerActivity = "AssemblerActivity";
 
@@ -25,14 +22,8 @@ namespace WebGrease
         /// <summary>The css.</summary>
         public const string Css = "Css";
 
-        /// <summary>The cache.</summary>
-        public const string Cache = "Cache";
-
         /// <summary>The configuration file.</summary>
         public const string ConfigurationFile = "ConfigurationFile";
-
-        /// <summary>The add result file.</summary>
-        public const string AddResultFile = "AddResultFile";
 
         /// <summary>The web grease build task.</summary>
         public const string WebGreaseBuildTask = "WebGreaseBuildTask";
@@ -52,10 +43,7 @@ namespace WebGrease
         /// <summary>The file hasher activity.</summary>
         public const string FileHasherActivity = "FileHasherActivity";
 
-        /// <summary>The file hash.</summary>
-        public const string FileHash = "FileHash";
-
-        /// <summary>The file hash.</summary>
+        /// <summary>The content hash.</summary>
         public const string ContentHash = "ContentHash";
 
         /// <summary>The image hash.</summary>

@@ -433,7 +433,7 @@ namespace WebGrease.Activities
                     }
 
                     // localization
-                    this.context.Log.Information("Resolving tokens and performing localization.");
+                    this.context.Log.Information(ResourceStrings.ResolvingTokensAndPerformingLocalization);
 
                     // Resolve resources
                     var localeResources = GetLocaleResources(cssFileSet, this.context, FileTypes.CSS);
@@ -446,13 +446,13 @@ namespace WebGrease.Activities
                         themeResources,
                         cssMinifier.ShouldMinify);
 
-                    this.context.Log.Information("Minifying css files, and spriting background images.");
+                    this.context.Log.Information(ResourceStrings.MinifyingCssFilesAndSpritingBackgroundImages);
                     var localizeSuccess = localizedAndThemedCssItems.All(l => l != null);
 
                     if (!localizeSuccess)
                     {
                         // localization failed for this batch
-                        this.context.Log.Error(null, "There were errors while minifying the css files.");
+                        this.context.Log.Error(null, ResourceStrings.ThereWereErrorsWhileMinifyingTheCssFiles);
                         return false;
                     }
 
@@ -461,7 +461,7 @@ namespace WebGrease.Activities
                     if (minifiedCssItems.Any(i => i == null))
                     {
                         // localization failed for this batch
-                        this.context.Log.Error(null, "There were errors while minifying the css files.");
+                        this.context.Log.Error(null, ResourceStrings.ThereWereErrorsWhileMinifyingTheCssFiles);
                         return false;
                     }
 
@@ -553,7 +553,7 @@ namespace WebGrease.Activities
                         var localeResources = GetLocaleResources(jsFileSet, this.context, FileTypes.JS);
 
                         // localize
-                        this.context.Log.Information("Resolving tokens and performing localization.");
+                        this.context.Log.Information(ResourceStrings.ResolvingTokensAndPerformingLocalization);
                         var localizedJsFiles = this.LocalizeJs(bundledFiles, jsFileSet.Locales, localeResources);
                         if (localizedJsFiles == null)
                         {
@@ -615,12 +615,12 @@ namespace WebGrease.Activities
 
             if (bundleConfig.ShouldBundleFiles)
             {
-                this.context.Log.Information("Bundling files.");
+                this.context.Log.Information(ResourceStrings.BundlingFiles);
                 var resultFile = this.BundleFiles(fileSet.InputSpecs, outputFile, preprocessingConfig, fileType, minimalOutput || bundleConfig.MinimalOutput);
                 if (resultFile == null)
                 {
                     // bundling failed
-                    this.context.Log.Error(null, "There were errors while bundling files.");
+                    this.context.Log.Error(null, ResourceStrings.ThereWereErrorsWhileBundlingFiles);
                     return null;
                 }
 
@@ -790,7 +790,7 @@ namespace WebGrease.Activities
                 var sourceFile = inputFile.RelativeContentPath;
                 if (!inputFile.Pivots.All(this.context.TemporaryIgnore))
                 {
-                    this.context.Log.Information("Js Minify start: " + sourceFile + string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString())));
+                    this.context.Log.Information("Js Minify start: {0}{1}".InvariantFormat(sourceFile, string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString()))));
                     try
                     {
                         results.Add(minifier.Minify(inputFile));

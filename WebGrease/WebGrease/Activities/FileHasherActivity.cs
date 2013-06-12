@@ -159,7 +159,7 @@ namespace WebGrease.Activities
                             // No action for directory not present
                             Trace.TraceWarning(
                                 string.Format(
-                                    CultureInfo.InvariantCulture, "FileHasherActivity - Could not locate the source directory at {0}", sourceDirectory));
+                                    CultureInfo.InvariantCulture, ResourceStrings.FileHasheActivityCouldNotLocateDirectory, sourceDirectory));
                             continue;
                         }
 
@@ -171,29 +171,9 @@ namespace WebGrease.Activities
                 }
                 catch (Exception exception)
                 {
-                    throw new WorkflowException("FileHasherActivity - Error happened while executing the activity.", exception);
+                    throw new WorkflowException(ResourceStrings.FileHasherActivityErrorOccurred, exception);
                 }
             });
-        }
-
-        /// <summary>The hash.</summary>
-        /// <param name="content">The content.</param>
-        /// <param name="originalFiles">The destination files.</param>
-        /// <returns>The <see cref="ContentItem"/>.</returns>
-        internal IEnumerable<ContentItem> Hash(string content, IEnumerable<string> originalFiles)
-        {
-            var hashedFiles = new List<ContentItem>();
-
-            if (originalFiles.Any())
-            {
-                var firstDestinationFile = originalFiles.FirstOrDefault();
-                var hashedContentItem = this.Hash(ContentItem.FromContent(content, firstDestinationFile));
-                hashedFiles.Add(hashedContentItem);
-
-                hashedFiles.AddRange(this.AppendToWorkLog(hashedContentItem, originalFiles.Skip(1)));
-            }
-
-            return hashedFiles;
         }
 
         internal IEnumerable<ContentItem> Hash(ContentItem contentItem, IEnumerable<string> originalFiles)
@@ -616,7 +596,13 @@ namespace WebGrease.Activities
         /// <returns>The <see cref="string"/>.</returns>
         private static string GetConfigTypeLogFile(string logFileName, string configType)
         {
-            return Path.Combine(Path.GetDirectoryName(logFileName), Path.GetFileNameWithoutExtension(logFileName) + (string.IsNullOrWhiteSpace(configType) ? string.Empty : "." + configType)) + Path.GetExtension(logFileName);
+            if (!string.IsNullOrWhiteSpace(configType))
+            {
+                return logFileName;
+            }
+
+            var extension = Path.GetExtension(logFileName);
+            return Path.ChangeExtension(logFileName, configType + "." + extension);
         }
     }
 }

@@ -40,7 +40,25 @@ namespace WebGrease.ImageAssemble
         /// <param name="imageAssemblyAnalysisLog">The image Assembly Analysis Log.</param>
         /// <param name="forcedImageType">The forced image type to override detection.</param>
         /// <returns>The <see cref="ImageMap"/>.</returns>
-        internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context, int? imagePadding, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, ImageType? forcedImageType)
+        internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context, int? imagePadding = null, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog = null, ImageType? forcedImageType = null)
+        {
+            return AssembleImages(inputImages, packingType, assembleFileFolder, null, pngOptimizerToolCommand, dedup, context, imagePadding, imageAssemblyAnalysisLog, forcedImageType);
+        }
+
+        /// <summary>Invokes Assemble method of appropriate Image Assembler depending upon
+        /// the type of images to be Assembled.</summary>
+        /// <param name="inputImages">List of InputImage</param>
+        /// <param name="packingType">Image Packing Type(Horizontal/Vertical)</param>
+        /// <param name="assembleFileFolder">folder path where the assembled file will be created.</param>
+        /// <param name="mapFileName">The map File Name.</param>
+        /// <param name="pngOptimizerToolCommand">PNG Optimizer tool command</param>
+        /// <param name="dedup">Remove duplicate images</param>
+        /// <param name="context">The webgrease context</param>
+        /// <param name="imagePadding">The image padding</param>
+        /// <param name="imageAssemblyAnalysisLog">The image Assembly Analysis Log.</param>
+        /// <param name="forcedImageType">The forced image type to override detection.</param>
+        /// <returns>The <see cref="ImageMap"/>.</returns>
+        internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string mapFileName, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context, int? imagePadding = null, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog = null, ImageType? forcedImageType = null)
         {
             // deduping is optional.  CssPipelineTask already has deduping built into it, so it skips deduping in ImageAssembleTool.
             var inputImagesDeduped = dedup ? DedupImages(inputImages, context) : inputImages;
@@ -59,7 +77,7 @@ namespace WebGrease.ImageAssemble
 #endif
 
             var padding = imagePadding ?? DefaultPadding;
-            var xmlMap = new ImageMap(string.Empty);
+            var xmlMap = new ImageMap(mapFileName);
             var registeredAssemblers = RegisterAvailableAssemblers(context);
             Dictionary<InputImage, Bitmap> separatedList = null;
             foreach (var registeredAssembler in registeredAssemblers)
@@ -94,8 +112,12 @@ namespace WebGrease.ImageAssemble
                         {
                             if (entry.Value != null)
                             {
+                                if (imageAssemblyAnalysisLog != null)
+                                {
+                                    imageAssemblyAnalysisLog.UpdateSpritedImage(registeredAssembler.Type, entry.Key.OriginalImagePath, registeredAssembler.AssembleFileName);
+                                }
+
                                 context.Cache.CurrentCacheSection.AddSourceDependency(entry.Key.AbsoluteImagePath);
-                                imageAssemblyAnalysisLog.UpdateSpritedImage(registeredAssembler.Type, entry.Key.OriginalImagePath, registeredAssembler.AssembleFileName);
                                 entry.Value.Dispose();
                             }
                         }
@@ -281,7 +303,7 @@ namespace WebGrease.ImageAssemble
         /// <param name="forcedImageType">The forced image type to override detection.</param>
         /// <returns>separate lists per image type</returns>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Legacy Code")]
-        internal static Dictionary<ImageType, Dictionary<InputImage, Bitmap>> SeparateByImageType(ReadOnlyCollection<InputImage> inputImages, ImageType? forcedImageType)
+        internal static Dictionary<ImageType, Dictionary<InputImage, Bitmap>> SeparateByImageType(ReadOnlyCollection<InputImage> inputImages, ImageType? forcedImageType = null)
         {
             var separatedLists = new Dictionary<ImageType, Dictionary<InputImage, Bitmap>>();
             foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))

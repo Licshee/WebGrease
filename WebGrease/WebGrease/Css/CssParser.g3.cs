@@ -21,6 +21,8 @@ namespace WebGrease.Css
     using Antlr.Runtime.Tree;
     using Ast;
 
+    using WebGrease.Configuration;
+
     /// <summary>The css parser.</summary>
     public partial class CssParser
     {
@@ -34,13 +36,13 @@ namespace WebGrease.Css
         /// <param name="cssContent">The css Content.</param>
         /// <param name="shouldLogDiagnostics">Whether the tree should be printed.</param>
         /// <returns>The styleSheet Ast node.</returns>
-        public static StyleSheetNode Parse(string cssContent, bool shouldLogDiagnostics = true)
+        public static StyleSheetNode Parse(IWebGreaseContext context, string cssContent, bool shouldLogDiagnostics = true)
         {
             Contract.Requires(!string.IsNullOrWhiteSpace(cssContent));
-            return ParseStyleSheet(cssContent, shouldLogDiagnostics);
+            return ParseStyleSheet(context, cssContent, shouldLogDiagnostics);
         }
 
-        /// <summary>Parse the styleSheet node from the css file path.</summary>
+        /// <summary>Parse the styleSheet node from the css file path, this method is only used by tests.</summary>
         /// <param name="cssFile">The css file path.</param>
         /// <param name="shouldLogDiagnostics">Whether the tree should be printed.</param>
         /// <returns>The styleSheet Ast node.</returns>
@@ -51,7 +53,7 @@ namespace WebGrease.Css
 
             var cssFilePath = cssFile.FullName;
             Trace.WriteLine(string.Format(CultureInfo.InvariantCulture, "Parsing {0} ", cssFilePath));
-            return ParseStyleSheet(File.ReadAllText(cssFilePath), shouldLogDiagnostics);
+            return ParseStyleSheet(new WebGreaseContext(new WebGreaseConfiguration()), File.ReadAllText(cssFilePath), shouldLogDiagnostics);
         }
 
         /// <summary>Throws on first error (For debugging purposes.)</summary>
@@ -70,37 +72,46 @@ namespace WebGrease.Css
         /// <param name="cssContent">The css content.</param>
         /// <param name="shouldLogDiagnostics">The should log diagnostics.</param>
         /// <returns>The styleSheet node.</returns>
-        private static StyleSheetNode ParseStyleSheet(string cssContent, bool shouldLogDiagnostics)
+        private static StyleSheetNode ParseStyleSheet(IWebGreaseContext context, string cssContent, bool shouldLogDiagnostics)
         {
             var lexer = new CssLexer(new ANTLRStringStream(cssContent));
             var tokenStream = new CommonTokenStream(lexer);
             var parser = new CssParser(tokenStream);
 
-            // Assign listener to parser.
-            if (shouldLogDiagnostics)
-            {
-                var listener = Trace.Listeners.OfType<TextWriterTraceListener>().FirstOrDefault();
-                if (listener != null)
+            var commonTree = context
+                .SectionedAction("CssParser", "Antlr")
+                .Execute(() =>
                 {
-                    parser.TraceDestination = listener.Writer;
-                }
-            }
+                    // Assign listener to parser.
+                    if (shouldLogDiagnostics)
+                    {
+                        var listener = Trace.Listeners.OfType<TextWriterTraceListener>().FirstOrDefault();
+                        if (listener != null)
+                        {
+                            parser.TraceDestination = listener.Writer;
+                        }
+                    }
 
-            var styleSheet = parser.main();
-            var commonTree = styleSheet.Tree as CommonTree;
+                    var styleSheet = parser.main();
+                    return styleSheet.Tree as CommonTree;
+                });
+
             if (commonTree != null)
             {
-                if (shouldLogDiagnostics)
+                return context.SectionedAction("CssParser", "CreateObjects").Execute(() =>
                 {
-                    LogDiagnostics(cssContent, commonTree);
-                }
+                    if (shouldLogDiagnostics)
+                    {
+                        LogDiagnostics(cssContent, commonTree);
+                    }
 
-                if (parser.NumberOfSyntaxErrors > 0)
-                {
-                    throw new AggregateException("Syntax errors found.", parser._exceptions);
-                }
+                    if (parser.NumberOfSyntaxErrors > 0)
+                    {
+                        throw new AggregateException("Syntax errors found.", parser._exceptions);
+                    }
 
-                return CommonTreeTransformer.CreateStyleSheetNode(commonTree);
+                    return CommonTreeTransformer.CreateStyleSheetNode(commonTree);
+                });
             }
 
             return null;

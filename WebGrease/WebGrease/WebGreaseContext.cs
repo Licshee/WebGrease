@@ -186,11 +186,11 @@ namespace WebGrease
         public void CleanDestination()
         {
             var destinationDirectory = this.Configuration.DestinationDirectory;
-            this.Log.Information("Cleaning Destination: {0}".InvariantFormat(destinationDirectory, MessageImportance.High));
+            this.Log.Information("Cleaning Destination: {0}".InvariantFormat(destinationDirectory), MessageImportance.High);
             this.CleanDirectory(destinationDirectory);
 
             var logsDirectory = this.Configuration.LogsDirectory;
-            this.Log.Information("Cleaning Destination: {0}".InvariantFormat(logsDirectory, MessageImportance.High));
+            this.Log.Information("Cleaning Destination: {0}".InvariantFormat(logsDirectory), MessageImportance.High);
             this.CleanDirectory(logsDirectory);
         }
 

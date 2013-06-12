@@ -15,6 +15,9 @@ namespace Css.Tests.TestSuite
     using System.Diagnostics.Contracts;
     using System.IO;
     using System.Linq;
+
+    using WebGrease;
+    using WebGrease.Configuration;
     using WebGrease.Css;
     using WebGrease.Css.Ast;
     using WebGrease.Css.Extensions;
@@ -39,7 +42,7 @@ namespace Css.Tests.TestSuite
             // Now minify the minified file again and then compare (covers the reparsing validity)
             
             // Actual again
-            actualCssNode = CssParser.Parse(actualMinifiedCss);
+            actualCssNode = CssParser.Parse(new WebGreaseContext(new WebGreaseConfiguration()), actualMinifiedCss);
             var actualMinifiedCssAgain = ApplyVisitors(actualCssNode, visitors).MinifyPrint();
 
             if (string.Compare(actualMinifiedCss, actualMinifiedCssAgain, StringComparison.Ordinal) != 0)

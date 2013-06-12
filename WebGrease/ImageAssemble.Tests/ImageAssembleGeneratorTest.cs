@@ -26,9 +26,10 @@
 
         /// <summary>A test for RegisterImageAssemblers</summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void RegisterImageAssemblersTest()
         {
-            foreach (var entry in ImageAssembleGenerator.RegisterAvailableAssemblers(new WebGreaseContext(new WebGreaseConfiguration())))
+            foreach (var entry in ImageAssembleGenerator_Accessor.RegisterAvailableAssemblers(new WebGreaseContext(new WebGreaseConfiguration())))
             {
                 switch (entry.DefaultExtension)
                 {
@@ -47,6 +48,7 @@
 
         /// <summary>A test for HasAlpha</summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void HasAlphaTest()
         {
             Bitmap bitmap = null;
@@ -74,6 +76,7 @@
 
         /// <summary>A test for IsIndexable</summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void IsIndexableTest()
         {
             Bitmap bitmap = null;
@@ -106,6 +109,7 @@
 
         /// <summary>A test for IsIndexed</summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void IsIndexedTest()
         {
             Bitmap bitmap = null;
@@ -137,6 +141,7 @@
 
         /// <summary>A test for IsMultiframe</summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void IsMultiframeTest()
         {
             Bitmap bitmap = null;
@@ -166,6 +171,7 @@
 
         /// <summary>A test for IsPhoto</summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void IsPhotoTest()
         {
             Bitmap bitmap = null;
@@ -195,6 +201,7 @@
 
         /// <summary>A test for SeparateByImageType</summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void SeparateByImageTypeTest()
         {
             string[] fileNames =
@@ -276,10 +283,10 @@
                 "InputImages\\new\\NonphotoIndexed\\SingleFrame.tif"
             };
 
-            this.AppendCurrentDirectory(expectedFileNamesNotSupported);
-            this.AppendCurrentDirectory(expectedFileNamesPhoto);
-            this.AppendCurrentDirectory(expectedFileNamesNonphotoNonindexed);
-            this.AppendCurrentDirectory(expectedFileNamesNonphotoIndexed);
+            AppendCurrentDirectory(expectedFileNamesNotSupported);
+            AppendCurrentDirectory(expectedFileNamesPhoto);
+            AppendCurrentDirectory(expectedFileNamesNonphotoNonindexed);
+            AppendCurrentDirectory(expectedFileNamesNonphotoIndexed);
 
             var expectedFileNames = new Dictionary<WebGrease.ImageAssemble.ImageType, string[]>();
             expectedFileNames.Add(WebGrease.ImageAssemble.ImageType.NotSupported, expectedFileNamesNotSupported);
@@ -294,7 +301,7 @@
             }
 
             var separatedLists = ImageAssembleGenerator.SeparateByImageType(inputImagesList.AsReadOnly());
-            foreach (WebGrease.ImageAssemble.ImageType imageType in System.Enum.GetValues(typeof(WebGrease.ImageAssemble.ImageType)))
+            foreach (ImageType imageType in System.Enum.GetValues(typeof(WebGrease.ImageAssemble.ImageType)))
             {
                 var separatedList = separatedLists[imageType];
                 CompareLists(separatedList, expectedFileNames[imageType]);
@@ -311,37 +318,9 @@
             }
         }
 
-        /// <summary>The append current directory.</summary>
-        /// <param name="filePaths">The file paths.</param>
-        private void AppendCurrentDirectory(string[] filePaths)
-        {
-            for (var i = 0; i < filePaths.Length; i++)
-            {
-                filePaths[i] = Path.Combine(Environment.CurrentDirectory, filePaths[i]);
-            }
-        }
-
-        /// <summary>The compare lists.</summary>
-        /// <param name="separatedList">The separated list.</param>
-        /// <param name="expectedFileNames">The expected file names.</param>
-        private static void CompareLists(Dictionary<InputImage, Bitmap> separatedList, string[] expectedFileNames)
-        {
-            Assert.AreEqual(separatedList.Count, expectedFileNames.Length);
-
-            var expectedFileNameList = expectedFileNames.ToList();
-            var fileNameList = separatedList.Select(entry => entry.Key.ImagePath).ToList();
-
-            fileNameList.Sort();
-            expectedFileNameList.Sort();
-            for (var i = 0; i < fileNameList.Count; i++)
-            {
-                Assert.AreEqual(fileNameList[i], expectedFileNameList[i]);
-            }
-        }
-        
-
         /// <summary>A test for AssembleImages</summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void AssembleImagesTest1()
         {
             try
@@ -349,16 +328,16 @@
                 var imagePaths = Directory.GetFiles(Path.Combine(Environment.CurrentDirectory, "InputImages\\new\\NonphotoIndexed")).ToList().AsReadOnly();
                 var packingType = SpritePackingType_Accessor.Vertical;
                 const string mapFileName = "ReplaceLog.xml";
-                var inputImageList = ArgumentParser_Accessor.ConvertToInputImageList(imagePaths.ToArray());
-                ImageAssembleGenerator.AssembleImages(inputImageList.AsReadOnly(), SpritePackingType.Vertical, string.Empty, mapFileName, string.Empty, false, new WebGreaseContext(new WebGreaseConfiguration()));
+                var inputImageList = ArgumentParser.ConvertToInputImageList(imagePaths.ToArray());
+                ImageAssembleGenerator_Accessor.AssembleImages(inputImageList.AsReadOnly(), SpritePackingType_Accessor.Vertical, string.Empty, mapFileName, false, new WebGreaseContext(new WebGreaseConfiguration()));
                 Assert.IsTrue(ValidateImageGenerationFromLog(mapFileName));
-                var separatedList = new Dictionary<InputImage, Bitmap>();
+                var separatedList = new Dictionary<InputImage_Accessor, Bitmap>();
                 foreach(var inputImage in inputImageList)
                 {
                     Bitmap bitmap = null;
                     try
                     {
-                        bitmap = (Bitmap)Image.FromFile(inputImage.ImagePath);
+                        bitmap = (Bitmap)Image.FromFile(inputImage.AbsoluteImagePath);
                     }
                     catch
                     {
@@ -376,6 +355,34 @@
                 var logpath = Path.Combine(Environment.CurrentDirectory, "ReplaceLog.xml");
                 File.Delete(filepath);
                 File.Delete(logpath);
+            }
+        }
+
+        /// <summary>The append current directory.</summary>
+        /// <param name="filePaths">The file paths.</param>
+        private static void AppendCurrentDirectory(string[] filePaths)
+        {
+            for (var i = 0; i < filePaths.Length; i++)
+            {
+                filePaths[i] = Path.Combine(Environment.CurrentDirectory, filePaths[i]);
+            }
+        }
+
+        /// <summary>The compare lists.</summary>
+        /// <param name="separatedList">The separated list.</param>
+        /// <param name="expectedFileNames">The expected file names.</param>
+        private static void CompareLists(Dictionary<InputImage, Bitmap> separatedList, string[] expectedFileNames)
+        {
+            Assert.AreEqual(separatedList.Count, expectedFileNames.Length);
+
+            var expectedFileNameList = expectedFileNames.ToList();
+            var fileNameList = separatedList.Select(entry => entry.Key.AbsoluteImagePath).ToList();
+
+            fileNameList.Sort();
+            expectedFileNameList.Sort();
+            for (var i = 0; i < fileNameList.Count; i++)
+            {
+                Assert.AreEqual(fileNameList[i], expectedFileNameList[i]);
             }
         }
 

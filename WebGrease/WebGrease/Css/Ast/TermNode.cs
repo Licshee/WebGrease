@@ -26,6 +26,7 @@ namespace WebGrease.Css.Ast
         /// <param name="stringBasedValue">String based value</param>
         /// <param name="hexColor">Hexadecimal color code</param>
         /// <param name="functionNode">Function object</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "string", Justification = "Css value description.")]
         public TermNode(string unaryOperator, string numberBasedValue, string stringBasedValue, string hexColor, FunctionNode functionNode)
         {
             // Validity Checks

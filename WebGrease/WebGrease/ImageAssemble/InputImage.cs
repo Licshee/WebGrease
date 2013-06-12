@@ -33,7 +33,7 @@ namespace WebGrease.ImageAssemble
     /// <summary>This class defines individual Input Image that needs to be assembled.
     /// <remarks>This class is intended to be used only when invoking IAT from ImageAssembleTask.</remarks>
     /// </summary>
-    public class InputImage
+    internal class InputImage
     {
         /// <summary>The duplicate image paths.</summary>
         private readonly List<string> duplicateImagePaths = new List<string>();
@@ -43,8 +43,17 @@ namespace WebGrease.ImageAssemble
         /// <summary>
         /// Initializes a new instance of the InputImage class. The default image position used is Left.
         /// </summary>
-        public InputImage()
+        internal InputImage()
         {
+            this.Position = ImagePosition.Left;
+        }
+
+        /// <summary>Initializes a new instance of the InputImage class with Image path provided. 
+        /// The default image position used is Left.</summary>
+        /// <param name="imagePath">Image location.</param>
+        internal InputImage(string imagePath)
+        {
+            this.AbsoluteImagePath = imagePath;
             this.Position = ImagePosition.Left;
         }
 
@@ -55,18 +64,18 @@ namespace WebGrease.ImageAssemble
         /// <summary>
         /// Gets or sets Image path for this object.
         /// </summary>
-        public string AbsoluteImagePath { get; set; }
+        internal string AbsoluteImagePath { get; set; }
 
         /// <summary>Gets or sets the original image path.</summary>
-        public string OriginalImagePath { get; set; }
+        internal string OriginalImagePath { get; set; }
 
         /// <summary>
         /// Gets or sets Image Position (Left/Right) for this object.
         /// </summary>
-        public ImagePosition Position { get; set; }
+        internal ImagePosition Position { get; set; }
 
         /// <summary>Gets DuplicateImagePaths.</summary>
-        public IList<string> DuplicateImagePaths
+        internal IList<string> DuplicateImagePaths
         {
             get
             {

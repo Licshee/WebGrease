@@ -56,6 +56,7 @@ namespace WebGrease
         /// </summary>
         /// <param name="cssContent">Css to be minified.</param>
         /// <returns>The minifed css. If there are errors, this will be empty.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catching the exception and storing it for callers to use.")]
         public string Minify(string cssContent)
         {
             this.CssActivity.ShouldMinify = this.ShouldMinify;

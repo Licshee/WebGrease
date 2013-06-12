@@ -85,6 +85,22 @@ namespace WebGrease.Css.Visitor
 
         internal IWebGreaseContext Context { get; set; }
 
+        /// <summary>
+        /// Gets the Default Image Assembly Scan Output.
+        /// </summary>
+        internal ImageAssemblyScanOutput DefaultImageAssemblyScanOutput
+        {
+            get { return this._defaultImageAssemblyScanOutput; }
+        }
+
+        /// <summary>
+        /// Gets the Image Assembly Scan Outputs.
+        /// </summary>
+        internal IList<ImageAssemblyScanOutput> ImageAssemblyScanOutputs
+        {
+            get { return this._imageAssemblyScanOutputs; }
+        }
+
         /// <summary>Initializes a new instance of the ImageAssemblyScanVisitor class</summary>
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
         /// <param name="imageReferencesToIgnore">The list of image references to ignore</param>
@@ -141,22 +157,6 @@ namespace WebGrease.Css.Visitor
                 // Add to the member
                 _imageAssemblyScanOutputs.Add(new ImageAssemblyScanOutput { ImageAssemblyScanInput = new ImageAssemblyScanInput(additionalImageSpriteBucket.BucketName, imagesInBucket.ToSafeReadOnlyCollection()) });
             }
-        }
-
-        /// <summary>
-        /// Gets the Default Image Assembly Scan Output.
-        /// </summary>
-        public ImageAssemblyScanOutput DefaultImageAssemblyScanOutput
-        {
-            get { return _defaultImageAssemblyScanOutput; }
-        }
-
-        /// <summary>
-        /// Gets the Image Assembly Scan Outputs.
-        /// </summary>
-        public IList<ImageAssemblyScanOutput> ImageAssemblyScanOutputs
-        {
-            get { return _imageAssemblyScanOutputs; }
         }
 
         /// <summary>Gets the Image Assembly Analysis Log.</summary>

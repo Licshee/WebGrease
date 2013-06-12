@@ -154,7 +154,7 @@ Switches (only 1 may be used at a time)
 
 	-m : Minifies files in the set.
 
-	-v : Validates the code in the javascript files.
+	-v : Validates the code in the JavaScript files.
 	
 	-s : Sprites any background images in css files. 
 	
@@ -173,5 +173,47 @@ Parameters
   -out : Output path. This can be a folder or a single file. If this is a single file and the input is a folder, the -b switch must be set to enable bundling. When used with a configuration file, this parameter serves as a base path applied to all relative output paths in the configuration file.
 
   -images : Path containing images for CSS spriting. Required when the -s switch is set.</value>
+  </data>
+  <data name="BundlingFiles" xml:space="preserve">
+    <value>Bundling files.</value>
+  </data>
+  <data name="ThereWereErrorsWhileBundlingFiles" xml:space="preserve">
+    <value>There were errors while bundling files.</value>
+  </data>
+  <data name="ResolvingTokensAndPerformingLocalization" xml:space="preserve">
+    <value>Resolving tokens and performing localization.</value>
+  </data>
+  <data name="MinifyingCssFilesAndSpritingBackgroundImages" xml:space="preserve">
+    <value>Minifying css files, and spriting background images.</value>
+  </data>
+  <data name="ThereWereErrorsWhileMinifyingTheCssFiles" xml:space="preserve">
+    <value>There were errors while minifying the css files.</value>
+  </data>
+  <data name="FileHasherActivityErrorOccurred" xml:space="preserve">
+    <value>An error occurred while executing the file hasher activity.</value>
+  </data>
+  <data name="FileHasheActivityCouldNotLocateDirectory" xml:space="preserve">
+    <value>The file hasher activity could not locate the source directory at {0}</value>
+  </data>
+  <data name="PreprocessingInitializeEnd" xml:space="preserve">
+    <value>Preprocessing initialize end;</value>
+  </data>
+  <data name="PreprocessingInitializeStart" xml:space="preserve">
+    <value>preprocessing initialize start; from plugin path: {0}</value>
+  </data>
+  <data name="PreprocessingCouldNotFindThePluginPath" xml:space="preserve">
+    <value>Could not find the plugin path {0}</value>
+  </data>
+  <data name="PreprocessingPluginPath" xml:space="preserve">
+    <value>preprocessing plugin path: {0}</value>
+  </data>
+  <data name="PreprocessingLoadingError" xml:space="preserve">
+    <value>Error occurred while loading preprocessors.</value>
+  </data>
+  <data name="PreprocessingEngineFound" xml:space="preserve">
+    <value>preprocessing engine found: {0}</value>
+  </data>
+  <data name="ResourceResolverDuplicateKeyExceptionMessage" xml:space="preserve">
+    <value>Duplicate key: '{0}' found in the resx file '{1}'. Same key may exist with different delimiters in the resx file.</value>
   </data>
 </root>

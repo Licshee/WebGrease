@@ -18,7 +18,12 @@ namespace WebGrease
     {
         #region Fields
 
-        /// <summary>The cache section file version key.</summary>
+        /// <summary>
+        /// The cache section file version key.
+        /// This number is used to create the unique hash for each cache file. 
+        /// Upping this number will basically invalidate any of the existingcache files users of webgrease have on their box. 
+        /// Whenever we change caching logic/structure we should change/up this value.
+        /// </summary>
         private const string CacheSectionFileVersionKey = "1.0.8";
 
         /// <summary>The cache results.</summary>

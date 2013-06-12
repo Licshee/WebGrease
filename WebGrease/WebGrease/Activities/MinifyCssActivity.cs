@@ -173,7 +173,7 @@ namespace WebGrease.Activities
 
                         // Load the Css parser and stylesheet Ast
                         var stylesheetNode = this.context.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Parse)
-                            .Execute(() => CssParser.Parse(cssContent, false));
+                            .Execute(() => CssParser.Parse(context, cssContent, false));
 
                         // Apply all configured visitors, including, validating, optimizing, minifying and spriting.
                         var visitorResult = this.ApplyConfiguredVisitors(stylesheetNode);
@@ -445,17 +445,18 @@ namespace WebGrease.Activities
                 {
                     foreach (var failedSprite in imageAssemblyAnalysisLog.FailedSprites)
                     {
+                        var failureMessage = ImageAssemblyAnalysisLog.GetFailureMessage(failedSprite);
                         if (!string.IsNullOrWhiteSpace(failedSprite.Image))
                         {
                             context.Log.Error(
                                 "Failed to sprite image {0}\r\nReason:{1}\r\nCss:{2}".InvariantFormat(
-                                    failedSprite.Image, failedSprite.FailureReason, failedSprite.AstNode.PrettyPrint()));
+                                    failedSprite.Image, failureMessage, failedSprite.AstNode.PrettyPrint()));
                         }
                         else
                         {
                             context.Log.Error(
-                                "Failed to sprite:{0}\r\nCss:{1}".InvariantFormat(
-                                    failedSprite.Image, failedSprite.FailureReason, failedSprite.AstNode.PrettyPrint()));
+                                "Failed to sprite:{0}\r\nReason:{1}".InvariantFormat(
+                                    failedSprite.Image, failureMessage));
                         }
                     }
                 }

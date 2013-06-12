@@ -58,9 +58,9 @@ namespace WebGrease.Activities
                     .RestoreFromCacheAction(this.RestoreBundleFromCache)
                     .Execute(cacheSection =>
                     {
-                        this.context.Log.Information("Begin " + fileType + " bundle pipeline");
+                        this.context.Log.Information("Begin {0} bundle pipeline".InvariantFormat(fileType));
                         this.Bundle(assembler, fileSets, fileType);
-                        this.context.Log.Information("End " + fileType + " bundle pipeline");
+                        this.context.Log.Information("End {0} bundle pipeline".InvariantFormat(fileType));
                         return true;
                     });
             }

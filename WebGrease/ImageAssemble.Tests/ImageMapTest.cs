@@ -20,9 +20,10 @@
         /// A test for ImageMap Constructor
         /// </summary>
         [TestMethod]
+        [TestCategory("ImageAssemble")]
         public void ImageMapConstructorTest()
         {
-            var target = new ImageMap_Accessor();
+            var target = new ImageMap_Accessor(null as string);
             Assert.IsNull(target.xdoc);
             Assert.IsNull(target.root);
             Assert.IsTrue(string.IsNullOrEmpty(target.mapFileName));

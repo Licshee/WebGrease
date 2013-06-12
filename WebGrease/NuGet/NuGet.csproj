@@ -115,7 +115,7 @@
     <Message Text="Building Package" Importance="high" />
     <!-- Build Machine-->
     <PropertyGroup Condition="$(SemanticVersionText)==''">
-      <SemanticVersionText>1.5</SemanticVersionText>
+      <SemanticVersionText>1.5.1</SemanticVersionText>
     </PropertyGroup>
     <PropertyGroup Condition="$(VersionPreRelease)==''">
       <VersionTxt>$(SemanticVersionText)</VersionTxt>
@@ -157,10 +157,7 @@
 $(ProjectDir)\..\ref\build\ilmerge\ilmerge.exe /out:"$(TargetDir)Merged\WG.EXE"  /targetplatform:v4,"%25ProgramFiles%25\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0" /log /t:exe "$(TargetDir)WG.EXE" "$(TargetDir)Antlr3.Runtime.dll" "$(TargetDir)WebGrease.dll"
 
 )
-
-if exist "$(SolutionDir)..\..\..\Workspace2\MSNMetro\Main\MetroSDK\" (
-   $(SolutionDir)TmsSdkAfterBuildTask.bat "$(SolutionDir)" "$(TargetDir)" "$(SolutionDir)..\..\..\Workspace2\MSNMetro\Main\MetroSDK\" 1.5-build20130524153857
-)</PostBuildEvent>
+</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

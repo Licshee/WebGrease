@@ -24,6 +24,8 @@ namespace WebGrease.Css.Ast.Animation
         /// <param name="identValue">The ident value.</param>
         /// <param name="stringValue">The str value.</param>
         /// <param name="keyFramesBlockNodes">The key frames block nodes.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "string", Justification = "Css keyword")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "ident", Justification = "Css keyword")]
         public KeyFramesNode(string keyFramesSymbol, string identValue, string stringValue, ReadOnlyCollection<KeyFramesBlockNode> keyFramesBlockNodes)
         {
             Contract.Requires(!string.IsNullOrWhiteSpace(keyFramesSymbol));

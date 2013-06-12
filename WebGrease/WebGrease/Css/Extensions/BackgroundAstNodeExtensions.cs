@@ -92,6 +92,7 @@ namespace WebGrease.Css.Extensions
                 return false;
             }
 
+            // This will check if the selector hash -wg-spriting: ignore. If it does we will ignore the sprite.
             var webGreaseSpritingProperty = declarationAstNodes.FirstOrDefault(d => d.Property == "-wg-spriting");
             if (webGreaseSpritingProperty != null && webGreaseSpritingProperty.ExprNode.TermNode.StringBasedValue == "ignore")
             {

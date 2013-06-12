@@ -35,6 +35,7 @@ namespace WebGrease.Css.Ast.Selectors
         /// <summary>Initializes a new instance of the AttribOperatorAndValueNode class</summary>
         /// <param name="operatorKind">Operator Kind</param>
         /// <param name="identityOrString">Identity Or String</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "string", Justification = "Operator is a css description not a csharp one.")]
         public AttribOperatorAndValueNode(AttribOperatorKind operatorKind, string identityOrString)
         {
             // Error checking

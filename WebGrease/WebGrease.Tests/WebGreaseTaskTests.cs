@@ -25,6 +25,7 @@ namespace WebGrease.Tests
     using Moq;
 
     using WebGrease.Build;
+    using WebGrease.Configuration;
     using WebGrease.Extensions;
     using WebGrease.Css;
     using WebGrease.Css.Ast;
@@ -192,8 +193,8 @@ namespace WebGrease.Tests
                 var actualOutput = results.Where(r => r.Key.EndsWith(testName + ".css", StringComparison.OrdinalIgnoreCase)).Select(r => r.Value).FirstOrDefault();
                 Assert.IsNotNull(actualOutput);
 
-                var actualCss = CssParser.Parse(actualOutput);
-                var expectedCss = CssParser.Parse(expectedOutput);
+                var actualCss = CssParser.Parse(new WebGreaseContext(new WebGreaseConfiguration()), actualOutput);
+                var expectedCss = CssParser.Parse(new WebGreaseContext(new WebGreaseConfiguration()), expectedOutput);
 
                 EnsureExpectedCssResult(expectedCss.StyleSheetRules, actualCss);
             }

@@ -13,18 +13,18 @@ namespace WebGrease.Css.ImageAssemblyAnalysis
     using ImageAssemble;
 
     /// <summary>The image sprite scan output.</summary>
-    public sealed class ImageAssemblyScanOutput
+    internal sealed class ImageAssemblyScanOutput
     {
         /// <summary>Initializes a new instance of the <see cref="ImageAssemblyScanOutput"/> class.</summary>
-        public ImageAssemblyScanOutput()
+        internal ImageAssemblyScanOutput()
         {
             this.ImageReferencesToAssemble = new List<InputImage>();
         }
 
         /// <summary>Gets or sets ImageAssemblyScanInput.</summary>
-        public ImageAssemblyScanInput ImageAssemblyScanInput { get; set; }
+        internal ImageAssemblyScanInput ImageAssemblyScanInput { get; set; }
 
         /// <summary>Gets ImageReferencesToAssemble.</summary>
-        public IList<InputImage> ImageReferencesToAssemble { get; private set; }
+        internal IList<InputImage> ImageReferencesToAssemble { get; private set; }
     }
 }

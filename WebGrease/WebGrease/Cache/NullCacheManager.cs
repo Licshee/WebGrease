@@ -10,7 +10,7 @@ namespace WebGrease
     using WebGrease.Configuration;
 
     /// <summary>The null cache manager.</summary>
-    public class NullCacheManager : ICacheManager
+    internal class NullCacheManager : ICacheManager
     {
         #region Static Fields
 

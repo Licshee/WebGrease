@@ -148,7 +148,7 @@ namespace WebGrease.Preprocessing
         private void Initialize(string pluginPath, LogManager logManager, ITimeMeasure timeMeasure)
         {
             timeMeasure.Start(false, SectionIdParts.Preprocessing, SectionIdParts.Initialize);
-            logManager.Information("preprocessing initialize start; from plugin path: {0}".InvariantFormat(pluginPath));
+            logManager.Information(ResourceStrings.PreprocessingInitializeStart.InvariantFormat(pluginPath));
 
             // If no plugin path was provided, we use the assembly path.
             if (string.IsNullOrWhiteSpace(pluginPath))
@@ -163,12 +163,12 @@ namespace WebGrease.Preprocessing
                 {
                     logManager.Error(
                         new DirectoryNotFoundException(pluginPath),
-                        "Could not find the plugin path {0}".InvariantFormat(pluginPath));
+                        ResourceStrings.PreprocessingCouldNotFindThePluginPath.InvariantFormat(pluginPath));
                     return;
                 }
 
                 // And now use MEF to load all possible plugins.
-                logManager.Information("preprocessing plugin path: {0}".InvariantFormat(pluginPath));
+                logManager.Information(ResourceStrings.PreprocessingPluginPath.InvariantFormat(pluginPath));
                 using (var addInCatalog = new AggregateCatalog())
                 {
                     addInCatalog.Catalogs.Add(new DirectoryCatalog(pluginPath));
@@ -182,19 +182,19 @@ namespace WebGrease.Preprocessing
                         }
                         catch (CompositionException compositionException)
                         {
-                            logManager.Error(compositionException, "Error occurred while loading preprocessors.");
+                            logManager.Error(compositionException, ResourceStrings.PreprocessingLoadingError);
                         }
 
                         foreach (var registeredPreprocessingEngine in this.registeredPreprocessingEngines)
                         {
                             logManager.Information(
-                                "preprocessing engine found: {0}".InvariantFormat(registeredPreprocessingEngine.Name));
+                                ResourceStrings.PreprocessingEngineFound.InvariantFormat(registeredPreprocessingEngine.Name));
                         }
                     }
                 }
             }
 
-            logManager.Information("preprocessing initialize end;");
+            logManager.Information(ResourceStrings.PreprocessingInitializeEnd);
             timeMeasure.End(false, SectionIdParts.Preprocessing, SectionIdParts.Initialize);
         }
     }

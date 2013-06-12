@@ -7,6 +7,7 @@
 namespace WebGrease.Extensions
 {
     using System;
+    using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.IO;
@@ -44,8 +45,9 @@ namespace WebGrease.Extensions
             {
                 return string.IsNullOrWhiteSpace(originalPath) ? originalPath : Path.GetFullPath(originalPath).ToLower(CultureInfo.CurrentUICulture);
             }
-            catch
+            catch (Exception ex)
             {
+                Trace.TraceWarning("Exception occurred while trying to get the full path for path: {0}\r\n{1} ".InvariantFormat(originalPath, ex.ToString()));
                 return originalPath.ToLower(CultureInfo.CurrentUICulture);
             }
         }
@@ -66,8 +68,9 @@ namespace WebGrease.Extensions
 
                 return Path.Combine(Path.GetDirectoryName(pathToConvertFrom), pathToConvert).GetFullPathWithLowercase();
             }
-            catch
+            catch(Exception ex)
             {
+                Trace.TraceWarning("Exception occurred while trying make {0} absolute to {1}\r\n{2} ".InvariantFormat(pathToConvert, pathToConvertFrom, ex.ToString()));
                 return pathToConvert;
             }
         }

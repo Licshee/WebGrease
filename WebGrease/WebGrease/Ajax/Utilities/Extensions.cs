@@ -151,12 +151,6 @@ namespace Microsoft.Ajax.Utilities
             return source.Where(p => hash.Add(keySelector(p)));
         }
 
-        public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey> comparer)
-        {
-            var hash = new HashSet<TKey>(comparer);
-            return source.Where(p => hash.Add(keySelector(p)));
-        }
-
         public static TResult IfNotNull<TObject, TResult>(this TObject obj, Func<TObject, TResult> action)
         {
             if (action == null)

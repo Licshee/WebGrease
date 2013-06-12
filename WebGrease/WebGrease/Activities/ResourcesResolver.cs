@@ -251,7 +251,7 @@ namespace WebGrease.Activities
                     // Resx editor wont catch these since these are 2 different string keys
                     if (fileResources.ContainsKey(key))
                     {
-                        throw new BuildWorkflowException(string.Format(CultureInfo.CurrentCulture, "Duplicate key: '{0}' found in the resx file '{1}'. Same key may exist with different delimiters in the resx file.", key, filePath));
+                        throw new BuildWorkflowException(string.Format(CultureInfo.CurrentCulture, ResourceStrings.ResourceResolverDuplicateKeyExceptionMessage, key, filePath));
                     }
 
                     // Add the key to the fileResources

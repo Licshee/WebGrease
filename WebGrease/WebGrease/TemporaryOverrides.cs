@@ -87,8 +87,29 @@ namespace WebGrease
         public bool ShouldIgnore(IFileSet fileSet)
         {
             return fileSet != null
-                && !string.IsNullOrWhiteSpace(fileSet.Output)
-                && (this.ShouldIgnoreOutputs(fileSet) || this.ShouldIgnoreOutputExtensions(fileSet));
+                   && !string.IsNullOrWhiteSpace(fileSet.Output)
+                   && (this.ShouldIgnoreOutputs(fileSet) || this.ShouldIgnoreOutputExtensions(fileSet));
+        }
+
+        /// <summary>The get items from a string seperated by a semicolon.</summary>
+        /// <param name="items">The override locales.</param>
+        /// <returns>The items.</returns>
+        private static IEnumerable<string> GetItems(string items)
+        {
+            return
+                items == null
+                    ? new string[] { }
+                    : items.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        /// <summary>Get items from multiple elements where the content values are seperated by a semicolon.</summary>
+        /// <param name="elements">The elements.</param>
+        /// <param name="elementName">The element name.</param>
+        /// <returns>The items.</returns>
+        private static IEnumerable<string> GetElementItems(IEnumerable<XElement> elements, string elementName)
+        {
+            return Enumerable.Where(GetItems(elements.Elements(elementName).Select(e => (string)e).FirstOrDefault()), i => !i.IsNullOrWhitespace())
+                             .Select(i => i.Trim());
         }
 
         /// <summary>The should ignore outputs.</summary>
@@ -130,28 +151,6 @@ namespace WebGrease
             return !string.IsNullOrWhiteSpace(localeToIgnore)
                 && this.locales.Any()
                 && !this.locales.Any(locale => localeToIgnore.IndexOf(locale, StringComparison.OrdinalIgnoreCase) >= 0);
-        }
-
-        /// <summary>The get items from a string seperated by a semicolon.</summary>
-        /// <param name="items">The override locales.</param>
-        /// <returns>The items.</returns>
-        private static IEnumerable<string> GetItems(string items)
-        {
-            return
-                items == null
-                ? new string[] { }
-                : items.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-        }
-
-        /// <summary>Get items from an element value seperated by a semicolon.</summary>
-        /// <param name="elements">The elements.</param>
-        /// <param name="elementName">The element name.</param>
-        /// <returns>The items.</returns>
-        private static IEnumerable<string> GetElementItems(IEnumerable<XElement> elements, string elementName)
-        {
-            return GetItems(elements.Elements(elementName).Select(e => (string)e).FirstOrDefault())
-                .Where(i => !i.IsNullOrWhitespace())
-                .Select(i => i.Trim());
         }
 
         /// <summary>The load from file.</summary>

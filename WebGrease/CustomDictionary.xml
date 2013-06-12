@@ -13,6 +13,15 @@
       <Word>js</Word>
       <Word>Pos</Word>
       <Word>Rgb</Word>
+      <Word>combinator</Word>
+      <Word>expr</Word>
+      <Word>rulesets</Word>
+      <Word>ruleset</Word>
+      <Word>ident</Word>
+      <Word>eval</Word>
+      <Word>ascii</Word>
+      <Word>minifier</Word>
+      <Word>prio</Word>
       <Word>AssemblerActivity</Word>
       <Word>CssLocalizationActivity</Word>
       <Word>JsLocalizationActivity</Word>

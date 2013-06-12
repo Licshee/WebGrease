@@ -28,7 +28,7 @@ namespace WebGrease
         /// <summary>The timers.</summary>
         private readonly IList<TimeMeasureItem> timers = new List<TimeMeasureItem>();
 
-        /// <summary>Gets the results.</summary>
+        /// <summary>Gets the measure results for this timer.</summary>
         /// <returns>The measure results.</returns>
         public TimeMeasureResult[] GetResults()
         {
@@ -49,15 +49,15 @@ namespace WebGrease
 
         #region Public Methods and Operators
 
-        /// <summary>The start.</summary>
-        /// <param name="isGroup">The is Group.</param>
+        /// <summary>Starts a new timer.</summary>
+        /// <param name="isGroup">If it should also start a Group.</param>
         /// <param name="idParts">The id parts.</param>
         public void Start(bool isGroup, params string[] idParts)
         {
             var id = WebGreaseContext.ToStringId(idParts);
             if (this.timers.Any(t => t.Id.Equals(id)))
             {
-                throw new BuildWorkflowException("An error occurred while measuring, probably a wrong start/end for key: " + id);
+                throw new BuildWorkflowException("An error occurred while starting timer for {0}, probably a wrong start/end for key: ".InvariantFormat(id));
             }
 
             this.PauseLastTimer();
@@ -69,8 +69,8 @@ namespace WebGrease
             }
         }
 
-        /// <summary>The end.</summary>
-        /// <param name="isGroup">The is Group.</param>
+        /// <summary>Ends an already started timer.</summary>
+        /// <param name="isGroup">if it is a group.</param>
         /// <param name="idParts">The id parts.</param>
         public void End(bool isGroup, params string[] idParts)
         {
@@ -90,14 +90,14 @@ namespace WebGrease
             this.ResumeLastTimer();
         }
 
-        /// <summary>The begin group.</summary>
+        /// <summary>Begins a new group.</summary>
         public void BeginGroup()
         {
             this.measurementCounts.Add(new Dictionary<string, int>());
             this.measurements.Add(new Dictionary<string, double>());
         }
 
-        /// <summary>The end group.</summary>
+        /// <summary>Ends a group.</summary>
         public void EndGroup()
         {
             if (this.measurementCounts.Count() == 1)
