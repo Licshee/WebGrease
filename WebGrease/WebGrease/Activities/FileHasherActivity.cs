@@ -596,13 +596,13 @@ namespace WebGrease.Activities
         /// <returns>The <see cref="string"/>.</returns>
         private static string GetConfigTypeLogFile(string logFileName, string configType)
         {
-            if (!string.IsNullOrWhiteSpace(configType))
+            if (string.IsNullOrWhiteSpace(configType))
             {
                 return logFileName;
             }
 
-            var extension = Path.GetExtension(logFileName);
-            return Path.ChangeExtension(logFileName, configType + "." + extension);
+            var newExtension = configType + "." + Path.GetExtension(logFileName);
+            return Path.ChangeExtension(logFileName, newExtension);
         }
     }
 }
