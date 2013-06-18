@@ -26,14 +26,12 @@ namespace Microsoft.Ajax.Utilities
         public CommaOperator(Context context, JSParser parser)
             : base(context, parser)
         {
+            this.OperatorToken = JSToken.Comma;
         }
 
         public static AstNode CombineWithComma(Context context, JSParser parser, AstNode operand1, AstNode operand2)
         {
-            var comma = new CommaOperator(context, parser)
-                {
-                    OperatorToken = JSToken.Comma
-                };
+            var comma = new CommaOperator(context, parser);
 
             // if the left is a comma-operator already....
             var leftBinary = operand1 as BinaryOperator;

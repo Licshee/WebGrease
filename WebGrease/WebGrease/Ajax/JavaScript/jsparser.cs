@@ -564,13 +564,8 @@ namespace Microsoft.Ajax.Utilities
                     scriptBlock.Accept(visitor);
                 }
 
-                // if any of the conditions we check for in the final pass are available, then
-                // make the final pass
-                if (m_settings.IsModificationAllowed(TreeModifications.BooleanLiteralsToNotOperators))
-                {
-                    var visitor = new FinalPassVisitor(this);
-                    scriptBlock.Accept(visitor);
-                }
+                // make the final cleanup pass
+                FinalPassVisitor.Apply(scriptBlock, this);
 
                 // we want to walk all the scopes to make sure that any generated
                 // variables that haven't been crunched have been assigned valid

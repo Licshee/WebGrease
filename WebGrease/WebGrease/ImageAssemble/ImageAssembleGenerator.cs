@@ -71,7 +71,7 @@ namespace WebGrease.ImageAssemble
                 Console.WriteLine(Enum.GetName(typeof(ImageType), imageType));
                 foreach (var entry in separatedLists[imageType])
                 {
-                    Console.WriteLine(entry.Key.ImagePath);
+                    Console.WriteLine(entry.Key.OriginalImagePath);
                 }
             }
 #endif
@@ -132,7 +132,7 @@ namespace WebGrease.ImageAssemble
 #if DEBUG
                 foreach (var entry in notSupportedList)
                 {
-                    message.Append(" " + entry.Key.ImagePath);
+                    message.Append(" " + entry.Key.OriginalImagePath);
                 }
 
                 Console.WriteLine(message.ToString());
@@ -315,7 +315,7 @@ namespace WebGrease.ImageAssemble
             {
                 Bitmap bitmap = null;
 #if DEBUG
-                Console.WriteLine(inputImage.ImagePath);
+                Console.WriteLine(inputImage.OriginalImagePath);
 #endif
                 try
                 {
@@ -374,7 +374,7 @@ namespace WebGrease.ImageAssemble
                     var matchingImage = imageHashDictionary[imageHashString];
                     matchingImage.DuplicateImagePaths.Add(inputImage.AbsoluteImagePath);
 #if DEBUG
-                    Console.WriteLine(ResourceStrings.DuplicateFoundFormat, matchingImage.ImagePath, inputImage.ImagePath, inputImage.Position);
+                    Console.WriteLine(ResourceStrings.DuplicateFoundFormat, matchingImage.OriginalImagePath, inputImage.OriginalImagePath, inputImage.Position);
 #endif
                 }
                 else

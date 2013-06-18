@@ -1256,5 +1256,11 @@ namespace Microsoft.Ajax.Utilities
         /// initializer and referenced only once.
         /// </summary>
         RemoveUnusedVariables                       = 0x0002000000000000,
+
+        /// <summary>
+        /// Whether we should unfold comma-separated expressions statements into separate statements
+        /// as a final minification step (if it doesn't create more bytes)
+        /// </summary>
+        UnfoldCommaExpressionStatements             = 0x0004000000000000,
     }
 }
