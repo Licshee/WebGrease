@@ -51,18 +51,9 @@ namespace Microsoft.Ajax.Utilities
 
         private CssContext m_context;
 
-        private static Regex s_leadingZeros = new Regex(
-            "^0*([0-9]+?)$"
-#if !SILVERLIGHT
-            , RegexOptions.Compiled
-#endif
-            );
-        private static Regex s_trailingZeros = new Regex(
-            "^([0-9]+?)0*$"
-#if !SILVERLIGHT
-            , RegexOptions.Compiled
-#endif
-            );
+        private static Regex s_leadingZeros = new Regex("^0*([0-9]+?)$", RegexOptions.Compiled);
+
+        private static Regex s_trailingZeros = new Regex("^([0-9]+?)0*$", RegexOptions.Compiled);
 		
 		public bool AllowEmbeddedAspNetBlocks { get; set; }
 
@@ -1317,38 +1308,7 @@ namespace Microsoft.Ajax.Utilities
 
         private static string ConvertUtf32ToUtf16(int unicodeValue)
         {
-#if !SILVERLIGHT
             return char.ConvertFromUtf32(unicodeValue);
-#else
-            string text;
-            if (unicodeValue <= 0xffff)
-            {
-                if (0xd8000 <= unicodeValue && unicodeValue <= 0xdfff)
-                {
-                    throw new ArgumentException("UTF32 value cannot be in surrogate range");
-                }
-                else
-                {
-                    // single-character normal results
-                    text = new string((char)unicodeValue, 1);
-                }
-            }
-            else if (unicodeValue < 0x10ffff)
-            {
-                // need to calculate the surrogate pair representation
-                unicodeValue -= 0x10000;
-                text = new string(new char[2]
-                {
-                    (char)((unicodeValue >> 10) + 0xd800),
-                    (char)((unicodeValue & 0x3ff) + 0xdc00)
-                });
-            }
-            else
-            {
-                throw new ArgumentException("UTF32 value out of range");
-            }
-            return text;
-#endif
         }
 
         private string GetEscape()
@@ -2030,9 +1990,7 @@ namespace Microsoft.Ajax.Utilities
         #endregion
     }
 
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public sealed class CssScannerException : CssException
     {
         private static readonly string s_originator = CssStrings.ScannerSubsystem;
@@ -2057,12 +2015,10 @@ namespace Microsoft.Ajax.Utilities
         {
         }
 
-#if !SILVERLIGHT
         private CssScannerException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
-#endif
     }
 
     internal class CssScannerErrorEventArgs : EventArgs

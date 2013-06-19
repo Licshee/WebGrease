@@ -30,6 +30,8 @@ namespace Microsoft.Ajax.Utilities
         private string m_mapPath;
         private Dictionary<string, int> m_sourceFileIndexMap = new Dictionary<string, int>();
         private int currentIndex;
+        private int m_lineOffset;
+        private int m_columnOffset;
 
         /// <summary>
         /// Gets or sets an optional source root URI that will be added to the map object as the sourceRoot property if set
@@ -115,12 +117,36 @@ namespace Microsoft.Ajax.Utilities
             m_currentPackagePath = null;
         }
 
+        /// <summary>
+        /// A new line has been inserted into the output code, so adjust the offsets accordingly
+        /// for the next run.
+        /// </summary>
+        public void NewLineInsertedInOutput()
+        {
+            m_columnOffset = 0;
+            ++m_lineOffset;
+        }
+
+        /// <summary>
+        /// Signal the end of an output run by sending the NEXT position in the output
+        /// </summary>
+        /// <param name="lineNumber">0-based line number</param>
+        /// <param name="columnPosition">0-based column position</param>
+        public void EndOutputRun(int lineNumber, int columnPosition)
+        {
+            // the values are one-based, but we want a delta - so subtract one from them.
+            // for example, if the run ends on line 35 column 12, when the next position comes 
+            // in as line 0, column 0, we end up reporting that position at line 35 (0 + 35) column 12 (0 + 12).
+            m_lineOffset += lineNumber;
+            m_columnOffset += columnPosition;
+        }
+
         public object StartSymbol(AstNode node, int startLine, int startColumn)
         {
             if (node != null 
                 && !node.Context.Document.IsGenerated)
             {
-                return JavaScriptSymbol.StartNew(node, startLine, startColumn, GetSourceFileIndex(node.Context.Document.FileContext));
+                return JavaScriptSymbol.StartNew(node, startLine + m_lineOffset, startColumn + m_columnOffset, GetSourceFileIndex(node.Context.Document.FileContext));
             }
 
             return null;
@@ -142,6 +168,10 @@ namespace Microsoft.Ajax.Utilities
                 && string.CompareOrdinal(name, functionObject.Name) == 0
                 && context != functionObject.Context)
             {
+                // adjust the offsets
+                startLine += m_lineOffset;
+                startColumn += m_columnOffset;
+
                 // it does -- so this is the segment that corresponds to the function object's name, which
                 // for this format we want to output a separate segment for. It used to be its own Lookup
                 // node child of the function object, so we need to create a fake node here, start a new 
@@ -163,6 +193,10 @@ namespace Microsoft.Ajax.Utilities
             {
                 return;
             }
+
+            // adjust the offsets
+            endLine += m_lineOffset;
+            endColumn += m_columnOffset;
 
             var javaScriptSymbol = (JavaScriptSymbol)symbol;
             javaScriptSymbol.End(endLine, endColumn, parentContext);

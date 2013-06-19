@@ -37,16 +37,12 @@ namespace Microsoft.Ajax.Utilities
     //  2- Update JScript.resx with the US English error message
     //  3- Update Severity.
     //-------------------------------------------------------------------------------------------------------
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public class JScriptException : Exception
     {
         #region private fields
 
-#if !SILVERLIGHT
         [NonSerialized]
-#endif
         private Context m_context;
 
         private string m_valueObject;
@@ -288,7 +284,6 @@ namespace Microsoft.Ajax.Utilities
             SetHResult();
         }
 
-        #if !SILVERLIGHT
         protected JScriptException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -303,13 +298,11 @@ namespace Microsoft.Ajax.Utilities
             m_canRecover = info.GetBoolean("CanRecover");
             m_fileContext = info.GetString("FileContext");
         }
-        #endif
 
         #endregion
 
         #region public methods
 
-        #if !SILVERLIGHT
         [SecurityCritical] 
         [SecurityPermissionAttribute(SecurityAction.Demand, SerializationFormatter = true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -322,7 +315,6 @@ namespace Microsoft.Ajax.Utilities
             info.AddValue("CanRecover", m_canRecover);
             info.AddValue("FileContext", m_fileContext);
         }
-        #endif
 
         #endregion
 
@@ -415,19 +407,13 @@ namespace Microsoft.Ajax.Utilities
         }
     }
 
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public class UndefinedReferenceException : Exception
     {
-#if !SILVERLIGHT
         [NonSerialized]
-#endif
         private Context m_context;
 
-#if !SILVERLIGHT
         [NonSerialized]
-#endif
         private Lookup m_lookup;
         public AstNode LookupNode
         {
@@ -490,7 +476,6 @@ namespace Microsoft.Ajax.Utilities
         public UndefinedReferenceException(string message) : base(message) { }
         public UndefinedReferenceException(string message, Exception innerException) : base(message, innerException) { }
 
-#if !SILVERLIGHT
         protected UndefinedReferenceException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -515,7 +500,6 @@ namespace Microsoft.Ajax.Utilities
             info.AddValue("name", m_name);
             info.AddValue("type", m_type.ToString());
         }
-#endif
 
         public override string ToString()
         {

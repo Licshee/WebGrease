@@ -92,12 +92,8 @@ namespace Microsoft.Ajax.Utilities
         #endregion
 
         private static Regex s_vendorSpecific = new Regex(
-            @"^(\-(?<vendor>[^\-]+)\-)?(?<root>.+)$", 
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            @"^(\-(?<vendor>[^\-]+)\-)?(?<root>.+)$",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         #region Comment-related fields
 
@@ -107,11 +103,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         //private static Regex s_regexComments = new Regex(
         //    @"/\*([^*]|(\*+[^*/]))*\*+/",
-        //    RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-        //    | RegexOptions.Compiled
-#endif
-        //    );
+        //    RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// regular expression for matching first comment hack
@@ -119,11 +111,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         private static Regex s_regexHack1 = new Regex(
             @"/\*([^*]|(\*+[^*/]))*\**\\\*/(?<inner>.*?)/\*([^*]|(\*+[^*/]))*\*+/",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Regular expression for matching second comment hack
@@ -132,11 +120,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         private static Regex s_regexHack2 = new Regex(
             @"/\*/\*//\*/(?<inner>.*?)/\*([^*]|(\*+[^*/]))*\*+/",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Regular expression for matching third comment hack
@@ -145,11 +129,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         private static Regex s_regexHack3 = new Regex(
             @"/\*/\*/(?<inner>.*?)/\*([^*]|(\*+[^*/]))*\*+/",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Regular expression for matching fourth comment hack
@@ -162,11 +142,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         private static Regex s_regexHack4 = new Regex(
             @"(?<=\w\s+)/\*([^*]|(\*+[^*/]))*\*+/\s*(?=:)",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Regular expression for matching fifth comment hack
@@ -179,11 +155,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         private static Regex s_regexHack5 = new Regex(
             @"(?<=[\w/]\s*:)\s*/\*([^*]|(\*+[^*/]))*\*+/",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Regular expression for matching sixth comment hack -- although not a real hack
@@ -198,11 +170,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         private static Regex s_regexHack6 = new Regex(
             @"(?<=\w)/\*([^*]|(\*+[^*/]))*\*+/\s*(?=:)",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
         /// Regular expression for empty comments
@@ -213,11 +181,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         private static Regex s_regexHack7 = new Regex(
             @"/\*(\s?)\*/",
-            RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         #endregion
 
@@ -231,11 +195,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         private static Regex s_rrggbb = new Regex(
             @"^\#(?<r>[0-9a-fA-F])\k<r>(?<g>[0-9a-fA-F])\k<g>(?<b>[0-9a-fA-F])\k<b>$",
-            RegexOptions.IgnoreCase
-#if !SILVERLIGHT
-            | RegexOptions.Compiled
-#endif
-            );
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         // whether we are currently parsing the value for a property that might
         // use color names
@@ -251,12 +211,8 @@ namespace Microsoft.Ajax.Utilities
         /// Format: /*[id]*/
         /// </summary>
         private static Regex s_valueReplacement = new Regex(
-          @"/\*\s*\[(?<id>\w+)\]\s*\*/",
-          RegexOptions.IgnoreCase | RegexOptions.Singleline
-#if !SILVERLIGHT
- | RegexOptions.Compiled
-#endif
-);
+            @"/\*\s*\[(?<id>\w+)\]\s*\*/",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         // this variable will be set whenever we encounter a value-replacement comment
         // and have a string to replace it with
@@ -2662,160 +2618,109 @@ namespace Microsoft.Ajax.Utilities
             return text;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "No, we want to output lower-case here")]
         private Parsed ParseFunction()
         {
             Parsed parsed = Parsed.False;
             if (CurrentTokenType == TokenType.Function)
             {
-                var crunchedRGB = false;
                 var functionText = GetRoot(CurrentTokenText);
-
-                if (string.Compare(functionText, "rgb(", StringComparison.OrdinalIgnoreCase) == 0)
+                switch (functionText.ToUpperInvariant())
                 {
-                    // rgb function parsing
-                    bool useRGB = false;
-                    // converting to #rrggbb or #rgb IF we don't find any significant comments!
-                    // skip any space or comments
-                    int[] rgb = new int[3];
+                    case "RGB(":
+                        parsed = ParseRgb();
+                        break;
 
-                    // we're going to be building up the rgb function just in case we need it
-                    StringBuilder sbRGB = new StringBuilder();
-                    sbRGB.Append(CurrentTokenText.ToLowerInvariant());
+                    case "EXPRESSION(":
+                        parsed = ParseExpressionFunction();
+                        break;
 
-                    string comments = NextSignificantToken();
-                    if (comments.Length > 0)
-                    {
-                        // add the comments
-                        sbRGB.Append(comments);
-                        // and signal that we need to use the RGB function because of them
-                        useRGB = true;
-                    }
-                    for (int ndx = 0; ndx < 3; ++ndx)
-                    {
-                        // if this isn't the first number, we better find a comma separator
-                        if (ndx > 0)
+                    case "CALC(":
+                        parsed = ParseCalc();
+                        break;
+
+                    case "MIN(":
+                    case "MAX(":
+                        parsed = ParseMinMax();
+                        break;
+
+                    default:
+                        // generic function parsing
+                        AppendCurrent();
+                        SkipSpace();
+
+                        if (ParseFunctionParameters() == Parsed.False)
                         {
-                            if (CurrentTokenType == TokenType.Character && CurrentTokenText == ",")
-                            {
-                                // add it to the rgb string builder
-                                sbRGB.Append(',');
-                            }
-                            else if (CurrentTokenType == TokenType.Character && CurrentTokenText == ")")
-                            {
-                                ReportError(0, CssErrorCode.ExpectedComma, CurrentTokenText);
-
-                                // closing paren is the end of the function! exit the loop
-                                useRGB = true;
-                                break;
-                            }
-                            else
-                            {
-                                ReportError(0, CssErrorCode.ExpectedComma, CurrentTokenText);
-                                sbRGB.Append(CurrentTokenText);
-                                useRGB = true;
-                            }
-
-                            // skip to the next significant
-                            comments = NextSignificantToken();
-                            if (comments.Length > 0)
-                            {
-                                // add the comments
-                                sbRGB.Append(comments);
-                                // and signal that we need to use the RGB function because of them
-                                useRGB = true;
-                            }
+                            ReportError(0, CssErrorCode.ExpectedExpression, CurrentTokenText);
                         }
 
-                        // although we ALLOW negative numbers here, we'll trim them
-                        // later. But in the mean time, save a negation flag.
-                        bool negateNumber = false;
-                        if (CurrentTokenType == TokenType.Character && CurrentTokenText == "-")
+                        if (CurrentTokenType == TokenType.Character && CurrentTokenText == ")")
                         {
-                            negateNumber = true;
-                            comments = NextSignificantToken();
-                            if (comments.Length > 0)
-                            {
-                                // add the comments
-                                sbRGB.Append(comments);
-                                // and signal that we need to use the RGB function because of them
-                                useRGB = true;
-                            }
-                        }
-
-                        // we might adjust the value, so save the token text
-                        string tokenText = CurrentTokenText;
-
-                        if (CurrentTokenType != TokenType.Number && CurrentTokenType != TokenType.Percentage)
-                        {
-                            ReportError(0, CssErrorCode.ExpectedRgbNumberOrPercentage, CurrentTokenText);
-                            useRGB = true;
+                            AppendCurrent();
+                            SkipSpace();
+                            parsed = Parsed.True;
                         }
                         else
                         {
-                            if (CurrentTokenType == TokenType.Number)
-                            {
-                                // get the number value
-                                float numberValue;
-                                if (tokenText.TryParseSingleInvariant(out numberValue))
-                                {
-                                    numberValue *= (negateNumber ? -1 : 1);
-                                    // make sure it's between 0 and 255
-                                    if (numberValue < 0)
-                                    {
-                                        tokenText = "0";
-                                        rgb[ndx] = 0;
-                                    }
-                                    else if (numberValue > 255)
-                                    {
-                                        tokenText = "255";
-                                        rgb[ndx] = 255;
-                                    }
-                                    else
-                                    {
-                                        rgb[ndx] = System.Convert.ToInt32(numberValue);
-                                    }
-                                }
-                                else
-                                {
-                                    // error -- not even a number. Keep the rgb function
-                                    // (and don't change the token)
-                                    useRGB = true;
-                                }
-                            }
-                            else
-                            {
-                                // percentage
-                                float percentageValue;
-                                if (tokenText.Substring(0, tokenText.Length - 1).TryParseSingleInvariant(out percentageValue))
-                                {
-                                    percentageValue *= (negateNumber ? -1 : 1);
-                                    if (percentageValue < 0)
-                                    {
-                                        tokenText = "0%";
-                                        rgb[ndx] = 0;
-                                    }
-                                    else if (percentageValue > 100)
-                                    {
-                                        tokenText = "100%";
-                                        rgb[ndx] = 255;
-                                    }
-                                    else
-                                    {
-                                        rgb[ndx] = System.Convert.ToInt32(percentageValue * 255 / 100);
-                                    }
-                                }
-                                else
-                                {
-                                    // error -- not even a number. Keep the rgb function
-                                    // (and don't change the token)
-                                    useRGB = true;
-                                }
-                            }
+                            ReportError(0, CssErrorCode.UnexpectedToken, CurrentTokenText);
                         }
+                        break;
+                }
+            }
+            return parsed;
+        }
 
-                        // add the number to the rgb string builder
-                        sbRGB.Append(tokenText);
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "No, we want to output lower-case here")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "we want lower-case output")]
+        private Parsed ParseRgb()
+        {
+            var parsed = Parsed.False;
+            if (CurrentTokenType == TokenType.Function
+                && string.Compare(CurrentTokenText, "rgb(", StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                // rgb function parsing
+                var useRGB = false;
+                var crunchedRGB = false;
+                // converting to #rrggbb or #rgb IF we don't find any significant comments!
+                // skip any space or comments
+                var rgb = new int[3];
+
+                // we're going to be building up the rgb function just in case we need it
+                var sbRGB = new StringBuilder();
+                sbRGB.Append(CurrentTokenText.ToLowerInvariant());
+
+                var comments = NextSignificantToken();
+                if (comments.Length > 0)
+                {
+                    // add the comments
+                    sbRGB.Append(comments);
+                    // and signal that we need to use the RGB function because of them
+                    useRGB = true;
+                }
+
+                for (var ndx = 0; ndx < 3; ++ndx)
+                {
+                    // if this isn't the first number, we better find a comma separator
+                    if (ndx > 0)
+                    {
+                        if (CurrentTokenType == TokenType.Character && CurrentTokenText == ",")
+                        {
+                            // add it to the rgb string builder
+                            sbRGB.Append(',');
+                        }
+                        else if (CurrentTokenType == TokenType.Character && CurrentTokenText == ")")
+                        {
+                            ReportError(0, CssErrorCode.ExpectedComma, CurrentTokenText);
+
+                            // closing paren is the end of the function! exit the loop
+                            useRGB = true;
+                            break;
+                        }
+                        else
+                        {
+                            ReportError(0, CssErrorCode.ExpectedComma, CurrentTokenText);
+                            sbRGB.Append(CurrentTokenText);
+                            useRGB = true;
+                        }
 
                         // skip to the next significant
                         comments = NextSignificantToken();
@@ -2828,168 +2733,252 @@ namespace Microsoft.Ajax.Utilities
                         }
                     }
 
-                    if (useRGB)
+                    // although we ALLOW negative numbers here, we'll trim them
+                    // later. But in the mean time, save a negation flag.
+                    var negateNumber = false;
+                    if (CurrentTokenType == TokenType.Character && CurrentTokenText == "-")
                     {
-                        // something prevented us from collapsing the rgb function
-                        // just output the rgb function we've been building up
-                        Append(sbRGB.ToString());
+                        negateNumber = true;
+                        comments = NextSignificantToken();
+                        if (comments.Length > 0)
+                        {
+                            // add the comments
+                            sbRGB.Append(comments);
+                            // and signal that we need to use the RGB function because of them
+                            useRGB = true;
+                        }
+                    }
+
+                    // we might adjust the value, so save the token text
+                    var tokenText = CurrentTokenText;
+
+                    if (CurrentTokenType != TokenType.Number && CurrentTokenType != TokenType.Percentage)
+                    {
+                        ReportError(0, CssErrorCode.ExpectedRgbNumberOrPercentage, CurrentTokenText);
+                        useRGB = true;
                     }
                     else
                     {
-                        // we can collapse it to either #rrggbb or #rgb
-                        // calculate the full hex string and crunch it
-                        string fullCode = "#{0:x2}{1:x2}{2:x2}".FormatInvariant(rgb[0], rgb[1], rgb[2]);
-                        string hexString = CrunchHexColor(fullCode, Settings.ColorNames, m_noColorAbbreviation);
-                        Append(hexString);
-
-                        // set the flag so we know we don't want to add the closing paren
-                        crunchedRGB = true;
-                    }
-                }
-                else if (string.Compare(functionText, "expression(", StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    Append(CurrentTokenText.ToLowerInvariant());
-                    NextToken();
-
-                    // for now, just echo out everything up to the matching closing paren, 
-                    // taking into account that there will probably be other nested paren pairs. 
-                    // The content of the expression is JavaScript, so we'd really
-                    // need a full-blown JS-parser to crunch it properly. Kinda scary.
-                    // Start the parenLevel at 0 because the "expression(" token contains the first paren.
-                    var jsBuilder = new StringBuilder();
-                    int parenLevel = 0;
-
-                    while (!m_scanner.EndOfFile
-                      && (CurrentTokenType != TokenType.Character
-                        || CurrentTokenText != ")"
-                        || parenLevel > 0))
-                    {
-                        if (CurrentTokenType == TokenType.Function)
+                        if (CurrentTokenType == TokenType.Number)
                         {
-                            // the function token INCLUDES the opening parenthesis,
-                            // so up the paren level whenever we find a function.
-                            // AND this includes the actual expression( token -- so we'll
-                            // hit this branch at the beginning. Make sure the parenLevel
-                            // is initialized to take that into account
-                            ++parenLevel;
-                        }
-                        else if (CurrentTokenType == TokenType.Character)
-                        {
-                            switch (CurrentTokenText)
+                            // get the number value
+                            float numberValue;
+                            if (tokenText.TryParseSingleInvariant(out numberValue))
                             {
-                                case "(":
-                                    // start a nested paren
-                                    ++parenLevel;
-                                    break;
-
-                                case ")":
-                                    // end a nested paren 
-                                    // (we know it's nested because if it wasn't, we wouldn't
-                                    // have entered the loop)
-                                    --parenLevel;
-                                    break;
+                                numberValue *= (negateNumber ? -1 : 1);
+                                // make sure it's between 0 and 255
+                                if (numberValue < 0)
+                                {
+                                    tokenText = "0";
+                                    rgb[ndx] = 0;
+                                }
+                                else if (numberValue > 255)
+                                {
+                                    tokenText = "255";
+                                    rgb[ndx] = 255;
+                                }
+                                else
+                                {
+                                    rgb[ndx] = System.Convert.ToInt32(numberValue);
+                                }
                             }
-                        }
-                        jsBuilder.Append(CurrentTokenText);
-                        NextToken();
-                    }
-
-                    // create a JSParser object with the source we found, crunch it, and send 
-                    // the minified script to the output
-                    var expressionCode = jsBuilder.ToString();
-                    if (Settings.MinifyExpressions)
-                    {
-                        // we want to minify the javascript expressions.
-                        // create a JSParser object from the code we parsed.
-                        JSParser jsParser = new JSParser(expressionCode);
-
-                        // copy the file context
-                        jsParser.FileContext = this.FileContext;
-
-                        // hook the error handler and set the "contains errors" flag to false.
-                        // the handler will set the value to true if it encounters any errors
-                        var containsErrors = false;
-                        jsParser.CompilerError += (sender, ea) =>
+                            else
                             {
-                                ReportError(0, CssErrorCode.ExpressionError, ea.Error.Message);
-                                containsErrors = true;
-                            };
-
-                        // parse the source as an expression using our common JS settings
-                        Block block = jsParser.Parse(m_jsSettings);
-
-                        // if we got back a parsed block and there were no errors, output the minified code.
-                        // if we didn't get back the block, or if there were any errors at all, just output
-                        // the raw expression source.
-                        if (block != null && !containsErrors)
-                        {
-                            Append(block.ToCode());
+                                // error -- not even a number. Keep the rgb function
+                                // (and don't change the token)
+                                useRGB = true;
+                            }
                         }
                         else
                         {
-                            Append(expressionCode);
+                            // percentage
+                            float percentageValue;
+                            if (tokenText.Substring(0, tokenText.Length - 1).TryParseSingleInvariant(out percentageValue))
+                            {
+                                percentageValue *= (negateNumber ? -1 : 1);
+                                if (percentageValue < 0)
+                                {
+                                    tokenText = "0%";
+                                    rgb[ndx] = 0;
+                                }
+                                else if (percentageValue > 100)
+                                {
+                                    tokenText = "100%";
+                                    rgb[ndx] = 255;
+                                }
+                                else
+                                {
+                                    rgb[ndx] = System.Convert.ToInt32(percentageValue * 255 / 100);
+                                }
+                            }
+                            else
+                            {
+                                // error -- not even a number. Keep the rgb function
+                                // (and don't change the token)
+                                useRGB = true;
+                            }
                         }
                     }
-                    else
+
+                    // add the number to the rgb string builder
+                    sbRGB.Append(tokenText);
+
+                    // skip to the next significant
+                    comments = NextSignificantToken();
+                    if (comments.Length > 0)
                     {
-                        // we don't want to minify expression code for some reason.
-                        // just output the code exactly as we parsed it
-                        Append(expressionCode);
+                        // add the comments
+                        sbRGB.Append(comments);
+                        // and signal that we need to use the RGB function because of them
+                        useRGB = true;
                     }
                 }
-                else if (string.Compare(functionText, "calc(", StringComparison.OrdinalIgnoreCase) == 0)
-                {
-                    Append(CurrentTokenText.ToLowerInvariant());
-                    SkipSpace();
 
-                    // one sum
-                    parsed = ParseSum();
-                }
-                else if (string.Compare(functionText, "min(", StringComparison.OrdinalIgnoreCase) == 0
-                    || string.Compare(functionText, "max(", StringComparison.OrdinalIgnoreCase) == 0)
+                if (useRGB)
                 {
-                    Append(CurrentTokenText.ToLowerInvariant());
-                    SkipSpace();
-
-                    // need to be one or more sums, separated by commas
-                    // (ParseSum will only return true or false -- never empty)
-                    parsed = ParseSum();
-                    while (parsed == Parsed.True
-                        && CurrentTokenType == TokenType.Character
-                        && CurrentTokenText == ",")
-                    {
-                        AppendCurrent();
-                        SkipSpace();
-                        parsed = ParseSum();
-                    }
+                    // something prevented us from collapsing the rgb function
+                    // just output the rgb function we've been building up
+                    Append(sbRGB.ToString());
                 }
                 else
                 {
-                    // generic function parsing
-                    AppendCurrent();
-                    SkipSpace();
+                    // we can collapse it to either #rrggbb or #rgb
+                    // calculate the full hex string and crunch it
+                    var fullCode = "#{0:x2}{1:x2}{2:x2}".FormatInvariant(rgb[0], rgb[1], rgb[2]);
+                    var hexString = CrunchHexColor(fullCode, Settings.ColorNames, m_noColorAbbreviation);
+                    Append(hexString);
 
-                    if (ParseFunctionParameters() == Parsed.False)
-                    {
-                        ReportError(0, CssErrorCode.ExpectedExpression, CurrentTokenText);
-                    }
+                    // set the flag so we know we don't want to add the closing paren
+                    crunchedRGB = true;
                 }
 
-                if (CurrentTokenType == TokenType.Character
-                  && CurrentTokenText == ")")
+                if (CurrentTokenType == TokenType.Character && CurrentTokenText == ")")
                 {
                     if (!crunchedRGB)
                     {
-                        Append(')');
+                        AppendCurrent();
                     }
+
                     SkipSpace();
                     parsed = Parsed.True;
                 }
                 else
                 {
-                    ReportError(0, CssErrorCode.UnexpectedToken, CurrentTokenText);
+                    ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                 }
             }
+
+            return parsed;
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "we want lower-case output")]
+        private Parsed ParseExpressionFunction()
+        {
+            var parsed = Parsed.False;
+            if (CurrentTokenType == TokenType.Function
+                && string.Compare(CurrentTokenText, "expression(", StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                Append(CurrentTokenText.ToLowerInvariant());
+                NextToken();
+
+                // for now, just echo out everything up to the matching closing paren, 
+                // taking into account that there will probably be other nested paren pairs. 
+                // The content of the expression is JavaScript, so we'd really
+                // need a full-blown JS-parser to crunch it properly. Kinda scary.
+                // Start the parenLevel at 0 because the "expression(" token contains the first paren.
+                var jsBuilder = new StringBuilder();
+                int parenLevel = 0;
+
+                while (!m_scanner.EndOfFile
+                  && (CurrentTokenType != TokenType.Character
+                    || CurrentTokenText != ")"
+                    || parenLevel > 0))
+                {
+                    if (CurrentTokenType == TokenType.Function)
+                    {
+                        // the function token INCLUDES the opening parenthesis,
+                        // so up the paren level whenever we find a function.
+                        // AND this includes the actual expression( token -- so we'll
+                        // hit this branch at the beginning. Make sure the parenLevel
+                        // is initialized to take that into account
+                        ++parenLevel;
+                    }
+                    else if (CurrentTokenType == TokenType.Character)
+                    {
+                        switch (CurrentTokenText)
+                        {
+                            case "(":
+                                // start a nested paren
+                                ++parenLevel;
+                                break;
+
+                            case ")":
+                                // end a nested paren 
+                                // (we know it's nested because if it wasn't, we wouldn't
+                                // have entered the loop)
+                                --parenLevel;
+                                break;
+                        }
+                    }
+                    jsBuilder.Append(CurrentTokenText);
+                    NextToken();
+                }
+
+                // create a JSParser object with the source we found, crunch it, and send 
+                // the minified script to the output
+                var expressionCode = jsBuilder.ToString();
+                if (Settings.MinifyExpressions)
+                {
+                    // we want to minify the javascript expressions.
+                    // create a JSParser object from the code we parsed.
+                    JSParser jsParser = new JSParser(expressionCode);
+
+                    // copy the file context
+                    jsParser.FileContext = this.FileContext;
+
+                    // hook the error handler and set the "contains errors" flag to false.
+                    // the handler will set the value to true if it encounters any errors
+                    var containsErrors = false;
+                    jsParser.CompilerError += (sender, ea) =>
+                    {
+                        ReportError(0, CssErrorCode.ExpressionError, ea.Error.Message);
+                        containsErrors = true;
+                    };
+
+                    // parse the source as an expression using our common JS settings
+                    Block block = jsParser.Parse(m_jsSettings);
+
+                    // if we got back a parsed block and there were no errors, output the minified code.
+                    // if we didn't get back the block, or if there were any errors at all, just output
+                    // the raw expression source.
+                    if (block != null && !containsErrors)
+                    {
+                        Append(block.ToCode());
+                    }
+                    else
+                    {
+                        Append(expressionCode);
+                    }
+                }
+                else
+                {
+                    // we don't want to minify expression code for some reason.
+                    // just output the code exactly as we parsed it
+                    Append(expressionCode);
+                }
+
+                if (CurrentTokenType == TokenType.Character && CurrentTokenText == ")")
+                {
+                    AppendCurrent();
+                    SkipSpace();
+                    parsed = Parsed.True;
+                }
+                else
+                {
+                    ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
+                }
+            }
+
             return parsed;
         }
 
@@ -3068,16 +3057,15 @@ namespace Microsoft.Ajax.Utilities
                     break;
 
                 case TokenType.Function:
-                    // only min and max allowed here
-                    parsed = ParseMinMax();
+                    // calc( or attr( are allowed here.
+                    parsed = ParseFunction();
 
-                    // if parsed is false, then we encountered an error with min( or max(
+                    // if parsed is false, then we encountered an error with the function
                     // and probably already output an error message. So only output an error
-                    // message if we didn't find anything -- which means this function isn't
-                    // even min( or max(
+                    // message if we didn't find ANYTHING
                     if (parsed == Parsed.Empty)
                     {
-                        ReportError(0, CssErrorCode.ExpectedMinMax, CurrentTokenText);
+                        ReportError(0, CssErrorCode.UnexpectedFunction, CurrentTokenText);
                         parsed = Parsed.False;
                     }
                     break;
@@ -3128,6 +3116,7 @@ namespace Microsoft.Ajax.Utilities
             if (parsed == Parsed.True)
             {
                 // keep going while we have product operators
+                // "mod" isn't a final operator, but it was in earlier drafts so keep allowing it.
                 while ((CurrentTokenType == TokenType.Character && (CurrentTokenText == "*" || CurrentTokenText == "/"))
                     || (CurrentTokenType == TokenType.Identifier && string.Compare(CurrentTokenText, "mod", StringComparison.OrdinalIgnoreCase) == 0))
                 {
@@ -3157,6 +3146,8 @@ namespace Microsoft.Ajax.Utilities
                     SkipSpace();
 
                     // grab the next unit -- and there better be one
+                    // technically the candidate spec says / can only be followed by NUMBER, not a UNIT, but
+                    // let's let this slide and just parse a unit for both.
                     parsed = ParseUnit();
                     if (parsed != Parsed.True)
                     {
@@ -3251,6 +3242,37 @@ namespace Microsoft.Ajax.Utilities
                 {
                     ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                     parsed = Parsed.False;
+                }
+            }
+
+            return parsed;
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "we want lower-case output")]
+        private Parsed ParseCalc()
+        {
+            var parsed = Parsed.False;
+            if (CurrentTokenType == TokenType.Function
+                && string.Compare(GetRoot(CurrentTokenText), "calc(", StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                Append(CurrentTokenText.ToLowerInvariant());
+                SkipSpace();
+
+                // contains one sum
+                if (ParseSum() != Parsed.True)
+                {
+                    ReportError(0, CssErrorCode.ExpectedSum, CurrentTokenText);
+                }
+
+                if (CurrentTokenType == TokenType.Character && CurrentTokenText == ")")
+                {
+                    AppendCurrent();
+                    SkipSpace();
+                    parsed = Parsed.True;
+                }
+                else
+                {
+                    ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                 }
             }
 
@@ -4412,11 +4434,7 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
 //        private static Regex s_regexNewlines = new Regex(
 //            @"\r\n|\f|\r|\n",
-//            RegexOptions.IgnoreCase | RegexOptions.Singleline
-//#if !SILVERLIGHT
-//            | RegexOptions.Compiled
-//#endif
-//            );
+//            RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
         static string NormalizedValueReplacementComment(string source)
         {
@@ -4487,9 +4505,7 @@ namespace Microsoft.Ajax.Utilities
     /// <summary>
     /// Base class for exceptions thrown by the parser or the scanner
     /// </summary>
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public class CssException : Exception
     {
         private string m_originator;
@@ -4540,7 +4556,6 @@ namespace Microsoft.Ajax.Utilities
         {
         }
 
-#if !SILVERLIGHT
         protected CssException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -4577,12 +4592,9 @@ namespace Microsoft.Ajax.Utilities
             info.AddValue("line", m_line);
             info.AddValue("char", m_char);
         }
-#endif
     }
 
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public sealed class CssParserException : CssException
     {
         private static readonly string s_originator = CssStrings.ParserSubsystem;
@@ -4607,12 +4619,10 @@ namespace Microsoft.Ajax.Utilities
         {
         }
 
-#if !SILVERLIGHT
         private CssParserException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
-#endif
     }
 
     #endregion

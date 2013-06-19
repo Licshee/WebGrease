@@ -89,10 +89,10 @@ namespace Microsoft.Ajax.Utilities
         ExpectedUnit,
         ExpectedProduct,
         ExpectedSum,
-        ExpectedMinMax,
         UnexpectedEndOfFile,
         ExpectedNumber,
         UnexpectedCharset,
         PossibleCharsetError,
+        UnexpectedFunction,
     };
 }

@@ -31,21 +31,13 @@ namespace Microsoft.Ajax.Utilities
         // here, but some browsers (Firefox, Opera, Chrome) will parse it. IE and Safari
         // will not. So if we match that sign, we are in a cross-browser gray area.
         private static Regex s_hexNumberFormat = new Regex(
-          @"^\s*(?<sign>[-+])?0X(?<hex>[0-9a-f]+)\s*$",
-          RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
-#if !SILVERLIGHT
- | RegexOptions.Compiled
-#endif
-);
+            @"^\s*(?<sign>[-+])?0X(?<hex>[0-9a-f]+)\s*$",
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
         // used to detect possible ASP.NET substitutions in a string
         private static Regex s_aspNetSubstitution = new Regex(
             @"\<%.*%\>",
-            RegexOptions.CultureInvariant
-#if !SILVERLIGHT
- | RegexOptions.Compiled
-#endif
-);
+            RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
         public bool MayHaveIssues { get; set; }
 

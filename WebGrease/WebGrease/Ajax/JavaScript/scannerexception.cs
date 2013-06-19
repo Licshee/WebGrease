@@ -22,9 +22,7 @@ using System.Security.Permissions;
 
 namespace Microsoft.Ajax.Utilities
 {
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public class ScannerException : Exception
     {
         private JSError m_errorId;
@@ -53,7 +51,6 @@ namespace Microsoft.Ajax.Utilities
             m_errorId = JSError.SyntaxError;
         }
 
-#if !SILVERLIGHT
         protected ScannerException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -76,7 +73,6 @@ namespace Microsoft.Ajax.Utilities
             base.GetObjectData(info, context);
             info.AddValue("errorId", m_errorId.ToString());
         }
-#endif
 
         public JSError Error
         {

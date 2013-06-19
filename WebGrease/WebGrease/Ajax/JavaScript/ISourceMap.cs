@@ -26,7 +26,9 @@ namespace Microsoft.Ajax.Utilities
         object StartSymbol(AstNode node, int startLine, int startColumn);
         void MarkSegment(AstNode node, int startLine, int startColumn, string name, Context context);
         void EndSymbol(object symbol, int endLine, int endColumn, string parentContext);
+        void EndOutputRun(int lineNumber, int columnPosition);
         void EndFile(TextWriter writer, string newLine);
+        void NewLineInsertedInOutput();
         string Name { get; }
         string SourceRoot { get; set; }
         bool SafeHeader { get; set; }

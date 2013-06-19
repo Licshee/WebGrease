@@ -31,6 +31,16 @@ namespace Microsoft.Ajax.Utilities
         public int SourceOffsetStart { get; internal set; }
         public int SourceOffsetEnd { get; internal set; }
 
+        /// <summary>
+        /// Gets and sets the output start line after running an AST through an output visitor 
+        /// </summary>
+        public int OutputLine { get; set; }
+
+        /// <summary>
+        /// Gets and sets the output start column after running an AST through an output visitor
+        /// </summary>
+        public int OutputColumn { get; set; }
+
         public JSToken Token { get; internal set; }
 
         public Context(JSParser parser)

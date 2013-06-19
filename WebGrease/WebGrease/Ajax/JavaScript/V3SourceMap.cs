@@ -61,6 +61,10 @@ namespace Microsoft.Ajax.Utilities
 
         private int m_lastNameIndex;
 
+        private int m_lineOffset;
+
+        private int m_columnOffset;
+
         private static string s_base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
         #endregion
@@ -119,6 +123,10 @@ namespace Microsoft.Ajax.Utilities
             m_lastSourceColumn = -1;
             m_lastFileIndex = -1;
             m_lastNameIndex = -1;
+
+            // offsets
+            m_lineOffset = 0;
+            m_columnOffset = 0;
         }
 
         #region ISourceMap implementation
@@ -142,6 +150,30 @@ namespace Microsoft.Ajax.Utilities
             // nothing to do
         }
 
+        /// <summary>
+        /// A new line has been inserted into the output code, so adjust the offsets accordingly
+        /// for the next run.
+        /// </summary>
+        public void NewLineInsertedInOutput()
+        {
+            m_columnOffset = 0;
+            ++m_lineOffset;
+        }
+
+        /// <summary>
+        /// Signal the end of an output run by sending the NEXT position in the output
+        /// </summary>
+        /// <param name="lineNumber">0-based line number</param>
+        /// <param name="columnPosition">0-based column position</param>
+        public void EndOutputRun(int lineNumber, int columnPosition)
+        {
+            // the values are one-based, but we want a delta - so subtract one from them.
+            // for example, if the run ends on line 35 column 12, when the next position comes 
+            // in as line 0, column 0, we end up reporting that position at line 35 (0 + 35) column 12 (0 + 12).
+            m_lineOffset += lineNumber;
+            m_columnOffset += columnPosition;
+        }
+
         public object StartSymbol(AstNode node, int startLine, int startColumn)
         {
             // we don't care about the start/end methods -- we only care about segments
@@ -155,6 +187,10 @@ namespace Microsoft.Ajax.Utilities
             {
                 throw new ArgumentOutOfRangeException("startLine");
             }
+
+            // add the offsets
+            startLine += m_lineOffset;
+            startColumn += m_columnOffset;
 
             // if we have a name, try adding it to the hash set of names. If it already exists, the call to Add
             // will return false. If it doesn't already exist, Add will return true and we'll append it to the list
@@ -201,7 +237,7 @@ namespace Microsoft.Ajax.Utilities
         public void EndFile(TextWriter writer, string newLine)
         {
             // we want to output to the text stream a comment in the format of:
-            //      //@ sourceMappingURL=<uri>
+            //      //# sourceMappingURL=<uri>
             // where the URI is the relative uri from m_minifiedPath to the map file
             if (writer != null && !m_mapPath.IsNullOrWhiteSpace())
             {
@@ -210,6 +246,7 @@ namespace Microsoft.Ajax.Utilities
                 writer.Write(newLine);
                 writer.Write("/*");
                 writer.Write(newLine);
+                //writer.Write("//# sourceMappingURL={0}", MakeRelative(m_mapPath, m_minifiedPath));
                 writer.Write("//@ sourceMappingURL={0}", MakeRelative(m_mapPath, m_minifiedPath));
                 writer.Write(newLine);
                 writer.Write("*/");

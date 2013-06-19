@@ -324,8 +324,8 @@
   <data name="ExpectedSemicolonOrClosingBrace" xml:space="preserve">
     <value>Expected semicolon or closing curly-brace, found '{0}'</value>
   </data>
-  <data name="ExpectedMinMax" xml:space="preserve">
-    <value>Unexpected function; only min( or max( allowed here, found '{0}'</value>
+  <data name="UnexpectedFunction" xml:space="preserve">
+    <value>Unexpected function; only calc( or attr( allowed here, found '{0}'</value>
   </data>
   <data name="ExpectedProduct" xml:space="preserve">
     <value>Expected calculation product, found '{0}'</value>

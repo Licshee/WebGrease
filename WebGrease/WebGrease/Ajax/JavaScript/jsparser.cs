@@ -5668,9 +5668,7 @@ namespace Microsoft.Ajax.Utilities
     //***************************************************************************************
     //
     //***************************************************************************************
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public class ParserException : Exception
     {
         private static string s_errorMsg = JScript.JSParserException;
@@ -5679,40 +5677,28 @@ namespace Microsoft.Ajax.Utilities
         public ParserException(string message) : base(message) { }
         public ParserException(string message, Exception innerException) : base(message, innerException) { }
 
-#if !SILVERLIGHT
         protected ParserException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-#endif
     }
 
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public class UnexpectedTokenException : ParserException
     {
         public UnexpectedTokenException() : base() { }
         public UnexpectedTokenException(string message) : base(message) { }
         public UnexpectedTokenException(string message, Exception innerException) : base(message, innerException) { }
-#if !SILVERLIGHT
         protected UnexpectedTokenException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-#endif
     }
 
-#if !SILVERLIGHT
     [Serializable]
-#endif
     public class EndOfFileException : ParserException
     {
         public EndOfFileException() : base() { }
         public EndOfFileException(string message) : base(message) { }
         public EndOfFileException(string message, Exception innerException) : base(message, innerException) { }
-#if !SILVERLIGHT
         protected EndOfFileException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-#endif
     }
 
-#if !SILVERLIGHT
     [Serializable]
-#endif
     internal class RecoveryTokenException : ParserException
     {
         internal JSToken _token;
@@ -5724,9 +5710,8 @@ namespace Microsoft.Ajax.Utilities
             _token = token;
             _partiallyComputedNode = partialAST;
         }
-#if !SILVERLIGHT
+
         protected RecoveryTokenException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-#endif
     }
 
     //***************************************************************************************
