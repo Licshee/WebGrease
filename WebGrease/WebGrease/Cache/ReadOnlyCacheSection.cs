@@ -5,7 +5,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 namespace WebGrease
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -70,7 +69,7 @@ namespace WebGrease
                 return null;
             }
 
-            lock (LoadLock)
+            return Safe.Lock(LoadLock, () =>
             {
                 ReadOnlyCacheSection cacheSection;
                 if (!context.Cache.LoadedCacheSections.TryGetValue(fullPath, out cacheSection))
@@ -81,7 +80,7 @@ namespace WebGrease
 
                 cacheSection.referenceCount++;
                 return cacheSection;
-            }
+            });
         }
 
         internal IEnumerable<CacheResult> GetCacheResults(string fileCategory = null, bool endResultOnly = false)
@@ -183,7 +182,7 @@ namespace WebGrease
         /// <returns>The <see cref="bool"/>.</returns>
         private static bool Unload(IWebGreaseContext context, string fullPath)
         {
-            lock (LoadLock)
+            return Safe.Lock(LoadLock, () =>
             {
                 ReadOnlyCacheSection cacheSection;
                 if (context.Cache.LoadedCacheSections.TryGetValue(fullPath, out cacheSection))
@@ -200,7 +199,7 @@ namespace WebGrease
                 }
 
                 return true;
-            }
+            });
         }
 
         private static bool HasCachedEndResultThatChanged(IWebGreaseContext context, CacheResult r)

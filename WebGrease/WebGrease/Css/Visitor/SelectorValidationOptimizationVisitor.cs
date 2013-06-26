@@ -75,7 +75,7 @@ namespace WebGrease.Css.Visitor
                     }
                 });
 
-            return new StyleSheetNode(styleSheet.CharSetString, styleSheet.Dpi, styleSheet.Imports, styleSheet.Namespaces, updatedStyleSheetRules.AsReadOnly());
+            return new StyleSheetNode(styleSheet.CharSetString, styleSheet.Imports, styleSheet.Namespaces, updatedStyleSheetRules.AsReadOnly());
         }
 
         /// <summary>The <see cref="RulesetNode"/> visit implementation</summary>

@@ -168,18 +168,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Activities\MinifyCssPivot.cs" />
+    <Compile Include="Activities\ResourcePivotActivity.cs" />
     <Compile Include="Activities\MinifyCssResult.cs" />
     <Compile Include="Ajax\JavaScript\StatementStartVisitor.cs" />
+    <Compile Include="Cache\CacheFileLockException.cs" />
+    <Compile Include="Cache\CacheFileLockObject.cs" />
+    <Compile Include="Configuration\FileSetBase.cs" />
     <Compile Include="Configuration\GlobalConfig.cs" />
     <Compile Include="Configuration\INamedConfig.cs" />
+    <Compile Include="Configuration\ResourcePivot.cs" />
+    <Compile Include="Css\Visitor\ResourceResolutionVisitor.cs" />
     <Compile Include="DelayedLogManager.cs" />
     <Compile Include="Cache\CacheFileCategories.cs" />
-    <Compile Include="Activities\CssLocalizationActivity.cs" />
-    <Compile Include="Activities\CssLocalizationInput.cs" />
     <Compile Include="Activities\ErrorCode.cs" />
     <Compile Include="Activities\FileTypes.cs" />
-    <Compile Include="Activities\JSLocalizationActivity.cs" />
-    <Compile Include="Activities\JSLocalizationInput.cs" />
     <Compile Include="Activities\EverythingActivity.cs" />
     <Compile Include="Activities\LogDelegates.cs" />
     <Compile Include="Activities\MinifyJSActivity.cs" />
@@ -343,7 +346,7 @@
     <Compile Include="Configuration\PreprocessingConfig.cs" />
     <Compile Include="Configuration\WebGreaseConfiguration.cs" />
     <Compile Include="ContentPivot.cs" />
-    <Compile Include="Extensions\DictionaryExtensions.cs" />
+    <Compile Include="Extensions\EnumerableExtensions.cs" />
     <Compile Include="Extensions\InputSpecExtensions.cs" />
     <Compile Include="Extensions\JsonExtensions.cs" />
     <Compile Include="Extensions\StringPathExtensions.cs" />
@@ -354,6 +357,7 @@
     <Compile Include="ContentItem.cs" />
     <Compile Include="ContentItemType.cs" />
     <Compile Include="MessageImportance.cs" />
+    <Compile Include="Safe.cs" />
     <Compile Include="TemporaryOverrides.cs" />
     <Compile Include="WebGreaseSection.cs" />
     <Compile Include="TimeMeasure\ITimeMeasure.cs" />
@@ -470,6 +474,7 @@
     <Compile Include="Strings.cs" />
     <Compile Include="Activities\FileHasherActivity.cs" />
     <Compile Include="WebGreaseContext.cs" />
+    <Compile Include="WebGreaseSectionKey.cs" />
     <Compile Include="WorkflowException.cs" />
   </ItemGroup>
   <ItemGroup>

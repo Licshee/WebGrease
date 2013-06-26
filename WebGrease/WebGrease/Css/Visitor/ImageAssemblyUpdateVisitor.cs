@@ -54,7 +54,7 @@ namespace WebGrease.Css.Visitor
         /// <summary>
         /// The default DPI to use for the entire stylesheet
         /// </summary>
-        private readonly double defaultDpi;
+        private readonly float dpi;
 
         /// <summary>
         /// The source directory to determine relative from image to css.
@@ -67,6 +67,8 @@ namespace WebGrease.Css.Visitor
         /// <summary>The available source images.</summary>
         private readonly IDictionary<string, string> availableSourceImages;
 
+        private readonly string missingImage;
+
         /// <summary>Initializes a new instance of the ImageAssemblyUpdateVisitor class</summary>
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
         /// <param name="imageLogs">The log path which contains the image map after spriting</param>
@@ -76,7 +78,8 @@ namespace WebGrease.Css.Visitor
         /// <param name="destinationDirectory">The destination directory</param>
         /// <param name="prependToDestination">Prepend the the relative output path.</param>
         /// <param name="availableSourceImages">The available Source Images.</param>
-        internal ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<ImageLog> imageLogs, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1, string destinationDirectory = null, string prependToDestination = null, IDictionary<string, string> availableSourceImages = null)
+        /// <param name="missingImage">The missing Image.</param>
+        internal ImageAssemblyUpdateVisitor(string cssPath, IEnumerable<ImageLog> imageLogs, float dpi = 1f, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1, string destinationDirectory = null, string prependToDestination = null, IDictionary<string, string> availableSourceImages = null, string missingImage = null)
         {
             Contract.Requires(imageLogs != null);
 
@@ -87,9 +90,10 @@ namespace WebGrease.Css.Visitor
             this.prependToDestination = prependToDestination;
 
             this.availableSourceImages = availableSourceImages;
+            this.missingImage = missingImage;
 
             // default dpi is 1
-            this.defaultDpi = dpi;
+            this.dpi = dpi;
 
             // Normalize css path
             this.cssPath = cssPath.GetFullPathWithLowercase();
@@ -112,7 +116,7 @@ namespace WebGrease.Css.Visitor
         {
             var updatedStyleSheetRuleNodes = new List<StyleSheetRuleNode>();
             styleSheet.StyleSheetRules.ForEach(styleSheetRuleNode => updatedStyleSheetRuleNodes.Add((StyleSheetRuleNode)styleSheetRuleNode.Accept(this)));
-            return new StyleSheetNode(styleSheet.CharSetString, styleSheet.Dpi, styleSheet.Imports, styleSheet.Namespaces, updatedStyleSheetRuleNodes.AsReadOnly());
+            return new StyleSheetNode(styleSheet.CharSetString, styleSheet.Imports, styleSheet.Namespaces, updatedStyleSheetRuleNodes.AsReadOnly());
         }
 
         /// <summary>The <see cref="RulesetNode"/> visit implementation</summary>
@@ -283,37 +287,23 @@ namespace WebGrease.Css.Visitor
                 BackgroundImage backgroundImageNode;
                 BackgroundPosition backgroundPositionNode;
                 DeclarationNode backgroundSizeNode;
-                DeclarationNode webGreaseBackgroundDpiNode;
 
                 // There is no background node found in set of declarations, return without any change
-                if (!declarationNodes.TryGetBackgroundDeclaration(parent, out backgroundNode, out backgroundImageNode, out backgroundPositionNode, out backgroundSizeNode, out webGreaseBackgroundDpiNode, null, null, null, this.outputUnit, this.outputUnitFactor))
+                if (!declarationNodes.TryGetBackgroundDeclaration(parent, out backgroundNode, out backgroundImageNode, out backgroundPositionNode, out backgroundSizeNode, null, null, null, this.outputUnit, this.outputUnitFactor))
                 {
                     // No change, return the original collection
                     return declarationNodes;
                 }
 
-                // if we have a background DPI node, then use it to calculate the DPI we should be using,
-                // otherwise use the default DPI given to the visitor in constructor (default is 1.0).
-                var webGreaseBackgroundDpi =
-                    webGreaseBackgroundDpiNode != null
-                    ? double.Parse(webGreaseBackgroundDpiNode.ExprNode.TermNode.NumberBasedValue, NumberStyles.Any, CultureInfo.InvariantCulture)
-                    : this.defaultDpi;
-
                 // At this point, there should be atleast one "background" or "background-image" node found.
                 // In addition, there can be an optional "background-position" node
                 // Initialize a cloned set of declarations (The original AST collection is immutable by design)
                 var updatedDeclarations = new List<DeclarationNode>(declarationNodes);
-                var ix = updatedDeclarations.IndexOf(webGreaseBackgroundDpiNode);
-                if (ix > -1)
-                {
-                    // we had a -wg-background-dpi declaration node - comment it out now and move it to the top
-                    updatedDeclarations.RemoveAt(ix);
-                    updatedDeclarations.Insert(0, CreateDpiComment(webGreaseBackgroundDpi));
-                }
-                else if (webGreaseBackgroundDpi != 1.0)
+
+                if (this.dpi != 1f)
                 {
                     // not a normal-DPI (1x) -- output a comment at the top stating what our DPI really is
-                    updatedDeclarations.Insert(0, CreateDpiComment(webGreaseBackgroundDpi));
+                    updatedDeclarations.Insert(0, CreateDpiComment(this.dpi));
                 }
 
                 // Empty object to be discovered from log
@@ -338,12 +328,12 @@ namespace WebGrease.Css.Visitor
                     updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
 
                     // Update the declaration node with new values in AST
-                    var updatedDeclaration = backgroundNode.UpdateBackgroundNode(assembledImage.RelativeOutputFilePath, assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi);
+                    var updatedDeclaration = backgroundNode.UpdateBackgroundNode(assembledImage.RelativeOutputFilePath, assembledImage.X, assembledImage.Y, this.dpi);
 
                     // Update the declaration list
                     UpdateDeclarations(updatedDeclarations, backgroundNode.DeclarationAstNode, updatedDeclaration);
 
-                    this.SetBackgroundSize(updatedDeclarations, backgroundSizeNode, webGreaseBackgroundDpi, assembledImage);
+                    this.SetBackgroundSize(updatedDeclarations, backgroundSizeNode, this.dpi, assembledImage);
                 }
                 else if (backgroundImageNode != null)
                 {
@@ -379,7 +369,7 @@ namespace WebGrease.Css.Visitor
                         updatedDeclarations.Insert(0, CreateDebugOriginalPositionComment(backgroundPositionNode.X, backgroundPositionNode.XSource, backgroundPositionNode.Y, backgroundPositionNode.YSource));
                         updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
 
-                        updatedDeclaration = backgroundPositionNode.UpdateBackgroundPositionNode(assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi);
+                        updatedDeclaration = backgroundPositionNode.UpdateBackgroundPositionNode(assembledImage.X, assembledImage.Y, this.dpi);
 
                         // Update the list of declarations
                         UpdateDeclarations(updatedDeclarations, backgroundPositionNode.DeclarationNode, updatedDeclaration);
@@ -388,7 +378,7 @@ namespace WebGrease.Css.Visitor
                     {
                         // If there is no declaration found for "background-position",
                         // Create a new declaration node in AST for "background-position" declaration
-                        var newDeclaration = BackgroundPosition.CreateNewDeclaration(assembledImage.X, assembledImage.Y, webGreaseBackgroundDpi, this.outputUnit, this.outputUnitFactor);
+                        var newDeclaration = BackgroundPosition.CreateNewDeclaration(assembledImage.X, assembledImage.Y, this.dpi, this.outputUnit, this.outputUnitFactor);
 
                         // add a comment to help with debugging
                         updatedDeclarations.Insert(0, CreateDebugSpritePositionComment(assembledImage.X, assembledImage.Y));
@@ -399,7 +389,7 @@ namespace WebGrease.Css.Visitor
                         }
                     }
 
-                    this.SetBackgroundSize(updatedDeclarations, backgroundSizeNode, webGreaseBackgroundDpi, assembledImage);
+                    this.SetBackgroundSize(updatedDeclarations, backgroundSizeNode, this.dpi, assembledImage);
                 }
 
                 return updatedDeclarations.AsReadOnly();
@@ -417,14 +407,14 @@ namespace WebGrease.Css.Visitor
         /// <param name="backgroundSizeNode">The node containing the possible existing background size.</param>
         /// <param name="dpiFactor">The background dpi.</param>
         /// <param name="assembledImage">The assembled image.</param>
-        private void SetBackgroundSize(List<DeclarationNode> updatedDeclarations, DeclarationNode backgroundSizeNode, double dpiFactor, AssembledImage assembledImage)
+        private void SetBackgroundSize(List<DeclarationNode> updatedDeclarations, DeclarationNode backgroundSizeNode, float dpiFactor, AssembledImage assembledImage)
         {
             if (backgroundSizeNode != null)
             {
                 updatedDeclarations.Remove(backgroundSizeNode);
             }
 
-            if (dpiFactor != 1d)
+            if (dpiFactor != 1f)
             {
                 updatedDeclarations.AddRange(this.CreateBackgroundSizeNode(assembledImage, dpiFactor));
             }
@@ -436,10 +426,10 @@ namespace WebGrease.Css.Visitor
         /// <param name="assembledImage">The assembled image.</param>
         /// <param name="dpiFactor">The background dpi.</param>
         /// <returns>The background-size node.</returns>
-        private IEnumerable<DeclarationNode> CreateBackgroundSizeNode(AssembledImage assembledImage, double dpiFactor)
+        private IEnumerable<DeclarationNode> CreateBackgroundSizeNode(AssembledImage assembledImage, float dpiFactor)
         {
-            var calcWidth = (float?)Math.Round((assembledImage.SpriteWidth ?? 0d) * this.outputUnitFactor / dpiFactor, 3);
-            var calcHeight = (float?)Math.Round((assembledImage.SpriteHeight ?? 0d) * this.outputUnitFactor / dpiFactor, 3);
+            var calcWidth = (float?)Math.Round((assembledImage.SpriteWidth ?? 0f) * this.outputUnitFactor / dpiFactor, 3);
+            var calcHeight = (float?)Math.Round((assembledImage.SpriteHeight ?? 0f) * this.outputUnitFactor / dpiFactor, 3);
 
             var widthTermNode = new TermNode(
                 calcWidth.UnaryOperator(),
@@ -506,7 +496,13 @@ namespace WebGrease.Css.Visitor
 
             if (this.availableSourceImages != null)
             {
-                parsedImagePath = this.availableSourceImages[parsedImagePath.NormalizeUrl()];
+                if (!this.availableSourceImages.TryGetValue(parsedImagePath.NormalizeUrl(), out parsedImagePath))
+                {
+                    if (!string.IsNullOrWhiteSpace(this.missingImage))
+                    {
+                        parsedImagePath = this.availableSourceImages.TryGetValue(this.missingImage);
+                    }
+                }
             }
             else
             {

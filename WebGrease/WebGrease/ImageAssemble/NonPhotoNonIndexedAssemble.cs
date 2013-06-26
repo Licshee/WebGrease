@@ -13,6 +13,7 @@ namespace WebGrease.ImageAssemble
 {
     using System.Drawing;
     using System.Drawing.Imaging;
+    using System.IO;
 
     /// <summary>This class assembles nonphoto, nonindexed images into a single image and saves it
     /// in nonindexed format. PNG compression is used since GIF doesn't support nonindexed formats.
@@ -63,16 +64,18 @@ namespace WebGrease.ImageAssemble
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2122:DoNotIndirectlyExposeMethodsWithLinkDemands", Justification = "Invokes LCA approved tool OptiPNG.exe. This is by design.")]
         protected override void SaveImage(Bitmap newImage)
         {
-            base.SaveImage(newImage);
-            this.OptimizeImage();
+            if (!File.Exists(this.AssembleFileName))
+            {
+                base.SaveImage(newImage);
+                this.OptimizeImage();
+            }
         }
 
         /// <summary>Run the optimizer after passing through the image.</summary>
         /// <param name="image">Bitmap for image to pass through</param>
         /// <param name="inputImage">InputImage for image to pass through</param>
-        protected override void PassThroughImage(Bitmap image, InputImage inputImage)
+        protected virtual void PassThroughImage(Bitmap image, InputImage inputImage)
         {
-            base.PassThroughImage(image, inputImage);
             this.OptimizeImage();
         }
     }

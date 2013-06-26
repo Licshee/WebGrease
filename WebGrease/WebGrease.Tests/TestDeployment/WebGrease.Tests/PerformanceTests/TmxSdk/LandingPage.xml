@@ -6,8 +6,16 @@
     <TokensDirectory>Shared</TokensDirectory>
     <OverrideTokensDirectory>Resources</OverrideTokensDirectory>
     <!-- these settings apply to each file set defined in this config -->
-    <Locales>generic-generic;ja-jp;en-us;en-ca;en-au;en-in;es-ar;es-cl;es-co;de-de;nl-nl;</Locales>
-    <Themes>Resolution1x;Resolution15x;Resolution2x;Resolution14x;Resolution18x;Resolution24x</Themes>
+    <ResourcePivot key="locales" applyMode="CssApplyAfterParse">generic-generic;ja-jp;en-us;en-ca;en-au;en-in;es-ar;es-cl;es-co;de-de;nl-nl</ResourcePivot>
+    <ResourcePivot key="themes" applyMode="CssApplyAfterParse">msnblue</ResourcePivot>
+    
+    <Dpi>1</Dpi>
+    <Dpi output="tmx.pc">1;1.4;1.8;2</Dpi>
+    <Dpi output="tmx.mobile.ms">1.5;2.25;2.4</Dpi>
+    <Dpi output="tmx.mobile.webkit">1;2</Dpi>
+    
+    <OutputPathFormat>{themes}/{locales}/{dpi}/{output}</OutputPathFormat>
+    
     <CssMinification config="Debug">
       <Minify>False</Minify>
       <ValidateLowerCase>True</ValidateLowerCase>

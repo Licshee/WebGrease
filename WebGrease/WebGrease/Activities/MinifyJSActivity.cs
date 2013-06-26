@@ -94,7 +94,7 @@ namespace WebGrease.Activities
                 .MakeCachable(sourceContentItem, new { this.ShouldAnalyze, this.ShouldMinify, this.AnalyzeArgs, this.context.Configuration.Global.TreatWarningsAsErrors })
                 .RestoreFromCacheAction(cacheSection =>
                 {
-                    minifiedJsContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.MinifiedJsResult, sourceContentItem.RelativeContentPath, null, sourceContentItem.Pivots);
+                    minifiedJsContentItem = cacheSection.GetCachedContentItem(CacheFileCategories.MinifiedJsResult, sourceContentItem.RelativeContentPath, null, sourceContentItem.ResourcePivotKeys);
                     return minifiedJsContentItem != null;
                 }).Execute(cacheSection =>
                 {
@@ -108,7 +108,7 @@ namespace WebGrease.Activities
 
                     if (js != null)
                     {
-                        minifiedJsContentItem = ContentItem.FromContent(js, sourceContentItem.RelativeContentPath, null, sourceContentItem.Pivots == null ? null : sourceContentItem.Pivots.ToArray());
+                        minifiedJsContentItem = ContentItem.FromContent(js, sourceContentItem.RelativeContentPath, null, sourceContentItem.ResourcePivotKeys == null ? null : sourceContentItem.ResourcePivotKeys.ToArray());
                         cacheSection.AddResult(minifiedJsContentItem, CacheFileCategories.MinifiedJsResult);
                     }
 

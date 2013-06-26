@@ -97,6 +97,7 @@
     <Compile Include="Css30\SitesParseTest.cs" />
     <Compile Include="TestSuite\TestDeploymentPaths.cs" />
     <Compile Include="Css30\HacksSupportTest.cs" />
+    <Compile Include="WebGreaseSpecific\TokensTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="TestDeployment\Css.Tests\Css21\Sites\money.msn.com\money.css" />

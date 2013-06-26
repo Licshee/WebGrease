@@ -18,6 +18,12 @@ namespace WebGrease
     {
         #region Fields
 
+        /// <summary>The lock file name.</summary>
+        private const string LockFileName = "webgrease.caching.lock";
+
+        /// <summary>The first.</summary>
+        private static readonly IList<string> First = new List<string>();
+
         /// <summary>The loaded cache sections.</summary>
         private readonly IDictionary<string, ReadOnlyCacheSection> loadedCacheSections = new Dictionary<string, ReadOnlyCacheSection>(StringComparer.OrdinalIgnoreCase);
 
@@ -37,8 +43,11 @@ namespace WebGrease
         /// <summary>Initializes a new instance of the <see cref="CacheManager"/> class.</summary>
         /// <param name="configuration">The configuration.</param>
         /// <param name="logManager">The log manager.</param>
-        public CacheManager(WebGreaseConfiguration configuration, LogManager logManager)
+        /// <param name="parentCacheSection">The parent Cache Section.</param>
+        public CacheManager(WebGreaseConfiguration configuration, LogManager logManager, ICacheSection parentCacheSection)
         {
+            this.currentCacheSection = parentCacheSection;
+
             if (configuration == null)
             {
                 throw new ArgumentNullException("configuration");
@@ -63,7 +72,15 @@ namespace WebGrease
                 Directory.CreateDirectory(this.cacheRootPath);
             }
 
-            logManager.Information("Cache enabled using cache path: {0}".InvariantFormat(this.cacheRootPath));
+            Safe.Lock(First, () =>
+            {
+                // Only log this once when multi threading.
+                if (First.Contains(this.cacheRootPath))
+                {
+                    First.Add(this.cacheRootPath);
+                    logManager.Information("Cache enabled using cache path: {0}".InvariantFormat(this.cacheRootPath));
+                }
+            });
         }
 
         #endregion
@@ -102,37 +119,17 @@ namespace WebGrease
         #region Public Methods and Operators
 
         /// <summary>Begins a new cache section.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="contentItem">The result file.</param>
-        /// <param name="settings">The settings.</param>
-        /// <param name="cacheVaryByFileSet">The cache Var By File Set.</param>
+        /// <param name="webGreaseSectionKey">The web Grease Section Key.</param>
+        /// <param name="autoLoad">The auto Load.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVaryByFileSet = null)
+        public ICacheSection BeginSection(WebGreaseSectionKey webGreaseSectionKey, bool autoLoad = true)
         {
             return this.currentCacheSection = CacheSection.Begin(
                 this.context,
-                category,
-                cs =>
-                {
-                    if (contentItem != null)
-                    {
-                        cs.VaryByContentItem(contentItem);
-                        cs.VaryBySettings(contentItem.Pivots);
-                    }
-
-                    if (cacheVaryByFileSet != null)
-                    {
-                        cs.VaryBySettings(cacheVaryByFileSet);
-                    }
-
-                    if (context.Configuration.Overrides != null)
-                    {
-                        cs.VaryBySettings(context.Configuration.Overrides.UniqueKey);
-                    }
-
-                    cs.VaryBySettings(settings, true);
-                },
-                this.CurrentCacheSection);
+                webGreaseSectionKey.Category,
+                webGreaseSectionKey.Value,
+                this.CurrentCacheSection,
+                autoLoad);
         }
 
         /// <summary>Cleans up all the cache files that we don't need anymore.</summary>
@@ -162,12 +159,16 @@ namespace WebGrease
         /// <param name="cacheSection">The cache section.</param>
         public void EndSection(ICacheSection cacheSection)
         {
+#if DEBUG
             if (this.CurrentCacheSection != cacheSection)
             {
                 throw new BuildWorkflowException("Something unexpected went wrong with the caching logic.");
             }
-
-            this.currentCacheSection = cacheSection.Parent;
+#endif
+            if (this.CurrentCacheSection == cacheSection)
+            { 
+                this.currentCacheSection = cacheSection.Parent;
+            }
         }
 
         /// <summary>Gets absolute cache file path.</summary>
@@ -204,6 +205,11 @@ namespace WebGrease
             contentItem.WriteTo(absoluteCacheFilePath);
 
             return absoluteCacheFilePath;
+        }
+
+        public IDisposable SingleUseLock()
+        {
+            return CacheFileLockObject.TryCreate(Path.Combine(this.cacheRootPath, LockFileName));
         }
 
         #endregion

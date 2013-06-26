@@ -141,7 +141,7 @@ namespace Css.Tests.Css30
             Assert.IsNotNull(styleSheetNode);
 
             // use 2X DPI, REM units, and scale the number by 1/10.
-            var visitor = CreateVisitor(fileInfo.FullName, 2d, ImageAssembleConstants.Rem, 0.1);
+            var visitor = CreateVisitor(fileInfo.FullName, 2f, ImageAssembleConstants.Rem, 0.1);
             styleSheetNode = styleSheetNode.Accept(visitor) as StyleSheetNode;
             Assert.IsNotNull(styleSheetNode);
 
@@ -160,9 +160,8 @@ namespace Css.Tests.Css30
 
             var styleSheetNode = CssParser.Parse(fileInfo);
             Assert.IsNotNull(styleSheetNode);
-            Assert.IsNotNull(styleSheetNode.Dpi);
 
-            var visitor = CreateVisitor(fileInfo.FullName, styleSheetNode.Dpi.GetValueOrDefault(1d));
+            var visitor = CreateVisitor(fileInfo.FullName, 2f);
             styleSheetNode = styleSheetNode.Accept(visitor) as StyleSheetNode;
             Assert.IsNotNull(styleSheetNode);
 
@@ -212,8 +211,11 @@ namespace Css.Tests.Css30
 
         /// <summary>Creates the visitor.</summary>
         /// <param name="cssPath">The css path.</param>
+        /// <param name="dpi">The dpi.</param>
+        /// <param name="outputUnit">The output Unit.</param>
+        /// <param name="outputUnitFactor">The output Unit Factor.</param>
         /// <returns>The update visitor.</returns>
-        private static ImageAssemblyUpdateVisitor CreateVisitor(string cssPath, double dpi = 1d, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d)
+        private static ImageAssemblyUpdateVisitor CreateVisitor(string cssPath, float dpi = 1f, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d)
         {
             var xmlPath = cssPath + ".xml";
             var xmlPathLazyLoad = cssPath + ".lazyload.xml";

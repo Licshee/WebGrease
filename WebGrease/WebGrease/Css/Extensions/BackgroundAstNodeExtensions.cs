@@ -11,7 +11,6 @@ namespace WebGrease.Css.Extensions
 {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.Linq;
 
     using Ast;
@@ -66,7 +65,6 @@ namespace WebGrease.Css.Extensions
         /// <param name="backgroundImageNode">The out "background-image" node</param>
         /// <param name="backgroundPositionNode">The out "background-position" node</param>
         /// <param name="backgroundSize">The background size </param>
-        /// <param name="webGreaseBackgroundDpi">The webgrease dpi value.</param>
         /// <param name="imageReferencesInInvalidDeclarations">The list of urls which are valid but could not pass the other conditions in a list of declarations</param>
         /// <param name="imageReferencesToIgnore">The urls which should be igoned while scan</param>
         /// <param name="imageAssemblyAnalysisLog">The logging object</param>
@@ -75,14 +73,13 @@ namespace WebGrease.Css.Extensions
         /// <param name="ignoreImagesWithNonDefaultBackgroundSize">Determines whether to ignore images that have a non-default background image set.</param>
         /// <returns>The declaration node which matches the criteria</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Needs refactoring in a later release.")]
-        internal static bool TryGetBackgroundDeclaration(this IEnumerable<DeclarationNode> declarationAstNodes, AstNode parentAstNode, out Background backgroundNode, out BackgroundImage backgroundImageNode, out BackgroundPosition backgroundPositionNode, out DeclarationNode backgroundSize, out DeclarationNode webGreaseBackgroundDpi, List<string> imageReferencesInInvalidDeclarations, HashSet<string> imageReferencesToIgnore, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, string outputUnit, double outputUnitFactor, bool ignoreImagesWithNonDefaultBackgroundSize = false)
+        internal static bool TryGetBackgroundDeclaration(this IEnumerable<DeclarationNode> declarationAstNodes, AstNode parentAstNode, out Background backgroundNode, out BackgroundImage backgroundImageNode, out BackgroundPosition backgroundPositionNode, out DeclarationNode backgroundSize, List<string> imageReferencesInInvalidDeclarations, HashSet<string> imageReferencesToIgnore, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, string outputUnit, double outputUnitFactor, bool ignoreImagesWithNonDefaultBackgroundSize = false)
         {
             // Initialize the nodes to null
             backgroundNode = null;
             backgroundImageNode = null;
             backgroundPositionNode = null;
             backgroundSize = null;
-            webGreaseBackgroundDpi = null;
 
             // With CSS3 multiple urls can be present in a single rule, this is not yet supported
             // background: url(flower.png), url(ball.png), url(grass.png) no-repeat;
@@ -165,14 +162,6 @@ namespace WebGrease.Css.Extensions
                     return false;
                 }
 
-                //// Try to get the background dpi, returns false if the the found value is invalid.
-                if (!TryGetBackgroundDpi(declarationProperties, out webGreaseBackgroundDpi))
-                {
-                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackground.Url, FailureReason.InvalidDpi);
-                    UpdateFailedUrlsList(parsedBackground.Url, imageReferencesInInvalidDeclarations);
-                    return false;
-                }
-
                 //// Try to get the background size, returns false if we want to ignore images with background sizes and the background size is set to a non-default value.
                 if (!TryGetBackgroundSize(ignoreImagesWithNonDefaultBackgroundSize, declarationProperties, out backgroundSize))
                 {
@@ -221,14 +210,6 @@ namespace WebGrease.Css.Extensions
                 if (!new BackgroundRepeat(backgroundRepeat).VerifyBackgroundNoRepeat())
                 {
                     imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackgroundImage.Url, FailureReason.BackgroundRepeatInvalid);
-                    UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
-                    return false;
-                }
-
-                //// Try to get the background dpi, returns false if the the found value is invalid.
-                if (!TryGetBackgroundDpi(declarationProperties, out webGreaseBackgroundDpi))
-                {
-                    imageAssemblyAnalysisLog.SafeAdd(parentAstNode, parsedBackgroundImage.Url, FailureReason.InvalidDpi);
                     UpdateFailedUrlsList(parsedBackgroundImage.Url, imageReferencesInInvalidDeclarations);
                     return false;
                 }
@@ -356,31 +337,6 @@ namespace WebGrease.Css.Extensions
                     {
                         return false;
                     }
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Return the -wg-background-dpi declaration from the rule, if there is one
-        /// </summary>
-        /// <param name="declarationProperties">collection of declarations</param>
-        /// <param name="webGreaseBackgroundDpi">declaration to return</param>
-        /// <returns>true if found; false otherwise</returns>
-        private static bool TryGetBackgroundDpi(IDictionary<string, DeclarationNode> declarationProperties, out DeclarationNode webGreaseBackgroundDpi)
-        {
-            if (declarationProperties.TryGetValue(ImageAssembleConstants.WebGreaseBackgroundDpi, out webGreaseBackgroundDpi))
-            {
-                double webGreaseBackgroundDpiValue;
-                if (
-                    !double.TryParse(
-                        webGreaseBackgroundDpi.ExprNode.TermNode.NumberBasedValue,
-                        NumberStyles.Any,
-                        CultureInfo.InvariantCulture,
-                        out webGreaseBackgroundDpiValue))
-                {
-                    return false;
                 }
             }
 

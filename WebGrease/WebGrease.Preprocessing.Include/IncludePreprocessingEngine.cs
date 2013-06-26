@@ -44,9 +44,6 @@ namespace WebGrease.Preprocessing.Include
         /// <summary>The include regex.</summary>
         private static readonly Regex IncludeRegex = new Regex(IncludeMatchPattern, RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        /// <summary>The context.</summary>
-        private IWebGreaseContext context;
-
         /// <summary>
         /// Gets the name of the prepriocesor, used for matching the the engines attribute in the config.
         /// The includeengine uses : "include"
@@ -59,13 +56,12 @@ namespace WebGrease.Preprocessing.Include
             }
         }
 
-        /// <summary>
-        /// Determines if the processor can parse the filetype, always true for this engine.
-        /// </summary>
+        /// <summary>Determines if the processor can parse the filetype, always true for this engine.</summary>
+        /// <param name="context">The context.</param>
         /// <param name="contentItem">The full filename</param>
         /// <param name="preprocessConfig">The pre processing config</param>
         /// <returns>True if it can process it, otherwise false.</returns>
-        public bool CanProcess(ContentItem contentItem, PreprocessingConfig preprocessConfig = null)
+        public bool CanProcess(IWebGreaseContext context, ContentItem contentItem, PreprocessingConfig preprocessConfig = null)
         {
             if (preprocessConfig != null && preprocessConfig.Element != null)
             {
@@ -83,29 +79,21 @@ namespace WebGrease.Preprocessing.Include
             return true;
         }
 
-        /// <summary>The initialize.</summary>
-        /// <param name="webGreaseContext">The context.</param>
-        public void SetContext(IWebGreaseContext webGreaseContext)
-        {
-            this.context = webGreaseContext;
-        }
-
-        /// <summary>
-        /// Processed the contents of the file and returns the processed content.
-        /// returns null if anything went wrong, and reports any errors through the lot delegates.
-        /// </summary>
+        /// <summary>Processed the contents of the file and returns the processed content.
+        /// returns null if anything went wrong, and reports any errors through the lot delegates.</summary>
+        /// <param name="context">The context.</param>
         /// <param name="contentItem">The content of the file.</param>
         /// <param name="preprocessingConfig">The pre processing configuration</param>
         /// <param name="minimalOutput">Is the goal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The processed contents or null of an error occurred.</returns>
-        public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig, bool minimalOutput)
+        public ContentItem Process(IWebGreaseContext context, ContentItem contentItem, PreprocessingConfig preprocessingConfig, bool minimalOutput)
         {
             var settingsMinimalOutput = preprocessingConfig != null && preprocessingConfig.Element != null && (bool?)preprocessingConfig.Element.Attribute("minimalOutput") == true;
-            this.context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude")
+            context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude")
             .MakeCachable(contentItem, new { minimalOutput })
             .Execute(wgincludeCacheImportsSection =>
             {
-                var workingFolder = this.context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);
+                var workingFolder = context.GetWorkingSourceDirectory(contentItem.RelativeContentPath);
                 var content = contentItem.Content;
                 if (string.IsNullOrWhiteSpace(content))
                 {

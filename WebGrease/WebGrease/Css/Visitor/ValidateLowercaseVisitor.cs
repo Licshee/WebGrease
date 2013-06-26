@@ -134,8 +134,8 @@ namespace WebGrease.Css.Visitor
                 throw new ArgumentNullException("declarationNode");
             }
 
-            // Validate the declaration for lower case
-            ValidateForLowerCase(declarationNode.MinifyPrint());
+            // Validate the property for lower case
+            ValidateForLowerCase(declarationNode.Property);
             
             return declarationNode;
         }

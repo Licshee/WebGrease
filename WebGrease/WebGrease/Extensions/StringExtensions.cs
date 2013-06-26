@@ -6,7 +6,9 @@
 namespace WebGrease.Extensions
 {
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
+    using System.Linq;
 
     /// <summary>The string extensions.</summary>
     internal static class StringExtensions
@@ -49,8 +51,8 @@ namespace WebGrease.Extensions
         public static TEnum? TryParseToEnum<TEnum>(this string value, TEnum? defaultValue = null) where TEnum : struct
         {
             TEnum result;
-            return Enum.TryParse(value, true, out result) && Enum.IsDefined(typeof(TEnum), result) 
-                ? result 
+            return Enum.TryParse(value, true, out result) && Enum.IsDefined(typeof(TEnum), result)
+                ? result
                 : defaultValue;
         }
 
@@ -78,6 +80,25 @@ namespace WebGrease.Extensions
         {
             int temp;
             return int.TryParse(textToParse, out temp) ? temp : default(int);
+        }
+
+        /// <summary>parses text into a number (if valid)</summary>
+        /// <param name="textToParse">text to parse</param>
+        /// <returns>the number</returns>
+        internal static float? TryParseFloat(this string textToParse)
+        {
+            float temp;
+            return float.TryParse(textToParse, NumberStyles.Float, CultureInfo.InvariantCulture, out temp) ? (float?)temp : null;
+        }
+
+        /// <summary>The safe split semi colon seperated value.</summary>
+        /// <param name="semicolonSeperatedValue">The semicolon seperated value.</param>
+        /// <returns>The list of items.</returns>
+        internal static IEnumerable<string> SafeSplitSemiColonSeperatedValue(this string semicolonSeperatedValue)
+        {
+            return string.IsNullOrWhiteSpace(semicolonSeperatedValue) 
+                ? new string[] { } 
+                : semicolonSeperatedValue.Split(Strings.SemicolonSeparator, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim());
         }
 
         #endregion

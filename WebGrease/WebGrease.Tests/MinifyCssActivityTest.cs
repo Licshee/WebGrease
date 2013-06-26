@@ -100,6 +100,10 @@ namespace WebGrease.Tests
             {
                 minifyCssActivity.Execute();
             }
+            catch (AggregateException aggregateException)
+            {
+                exception = aggregateException.InnerExceptions.FirstOrDefault();
+            }
             catch (WorkflowException workflowException)
             {
                 exception = workflowException;
@@ -171,7 +175,6 @@ namespace WebGrease.Tests
             minifyCssActivity.OutputUnitFactor = 0.1;
             minifyCssActivity.ShouldMinify = true;
             minifyCssActivity.ShouldOptimize = true;
-            minifyCssActivity.AdditionalImageAssemblyBuckets.Add(new ImageAssemblyScanInput(".Lazy", new ReadOnlyCollection<string>(new List<string> { @"images/lazy1.jpg", @"images/lazy2.jpg" })));
             minifyCssActivity.Execute();
 
             // Assertions

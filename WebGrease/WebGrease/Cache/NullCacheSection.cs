@@ -17,9 +17,6 @@ namespace WebGrease
         #region Static Fields
 
         /// <summary>The empty cache results.</summary>
-        internal static readonly IEnumerable<CacheResult> EmptyCacheResults = new CacheResult[] { };
-
-        /// <summary>The empty cache results.</summary>
         private static readonly IEnumerable<ContentItem> EmptyContentItems = new ContentItem[] { };
 
         /// <summary>Initializes a new instance of the <see cref="NullCacheSection"/> class.</summary>
@@ -113,6 +110,22 @@ namespace WebGrease
             return EmptyContentItems;
         }
 
+        /// <summary>The get cached content item.</summary>
+        /// <param name="fileCategory">The file category.</param>
+        /// <param name="relativeDestinationFile">The relative destination file.</param>
+        /// <param name="relativeHashedDestinationFile">The relative hashed destination file.</param>
+        /// <param name="contentPivots">The content pivots.</param>
+        /// <returns>The <see cref="ContentItem"/>.</returns>
+        public ContentItem GetCachedContentItem(string fileCategory, string relativeDestinationFile, string relativeHashedDestinationFile = null, IEnumerable<ResourcePivotKey> contentPivots = null)
+        {
+            return null;
+        }
+
+        /// <summary>The load method.</summary>
+        public void Load()
+        {
+        }
+
         /// <summary>The get cache data.</summary>
         /// <param name="id">The id.</param>
         /// <typeparam name="T">The typeof object</typeparam>
@@ -130,32 +143,8 @@ namespace WebGrease
         {
         }
 
-        /// <summary>The get cached content item.</summary>
-        /// <param name="fileCategory">The file category.</param>
-        /// <param name="relativeDestinationFile">The relative destination file.</param>
-        /// <param name="relativeHashedDestinationFile">The relative hashed destination file.</param>
-        /// <param name="contentPivots">The content pivots.</param>
-        /// <returns>The <see cref="ContentItem"/>.</returns>
-        public ContentItem GetCachedContentItem(string fileCategory, string relativeDestinationFile = null, string relativeHashedDestinationFile = null, IEnumerable<ContentPivot> contentPivots = null)
-        {
-            return null;
-        }
-
-        /// <summary>Varys the section by file.</summary>
-        /// <param name="contentItem">The result file.</param>
-        public void VaryByContentItem(ContentItem contentItem)
-        {
-        }
-
         /// <summary>Stores a graph report file (.dgml visual studio file).</summary>
         public void Save()
-        {
-        }
-
-        /// <summary>Varys the section by settings.</summary>
-        /// <param name="settings">The settings.</param>
-        /// <param name="nonpublic">Determins if it should non public members of the object as well.</param>
-        public void VaryBySettings(object settings, bool nonpublic = false)
         {
         }
 

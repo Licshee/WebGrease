@@ -6,12 +6,16 @@
 namespace WebGrease
 {
     using System;
+    using System.Collections.Generic;
 
     using WebGrease.Configuration;
 
     /// <summary>The section.</summary>
     public class WebGreaseSection : IWebGreaseSection, ICachableWebGreaseSection
     {
+        /// <summary>The thread locks.</summary>
+        private static readonly Dictionary<string, object> SectionLocks = new Dictionary<string, object>();
+
         /// <summary>The is group.</summary>
         private readonly bool isGroup;
 
@@ -26,6 +30,9 @@ namespace WebGrease
 
         /// <summary>The cache is skipable.</summary>
         private bool cacheIsSkipable;
+
+        /// <summary>If the lock around the cache should wait indefinately and not use a timeout.</summary>
+        private bool cacheInfiniteWaitForLock;
 
         /// <summary>The cache var by content item.</summary>
         private ContentItem cacheVarByContentItem;
@@ -95,10 +102,11 @@ namespace WebGrease
         /// <summary>Makes the section cachable.</summary>
         /// <param name="varBySettings">The settings to var by.</param>
         /// <param name="isSkipable">Determines if the cache is skipable.</param>
+        /// <param name="infiniteWaitForLock">Should the lock wait infinitely (not use a timeout)</param>
         /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
-        public ICachableWebGreaseSection MakeCachable(object varBySettings, bool isSkipable = false)
+        public ICachableWebGreaseSection MakeCachable(object varBySettings, bool isSkipable = false, bool infiniteWaitForLock = false)
         {
-            this.MakeCachable(null as IFileSet, varBySettings, isSkipable);
+            this.MakeCachable(null as IFileSet, varBySettings, isSkipable, infiniteWaitForLock);
             return this;
         }
 
@@ -106,12 +114,14 @@ namespace WebGrease
         /// <param name="varByContentItem">The content item to vary by.</param>
         /// <param name="varBySettings">The settings to var by.</param>
         /// <param name="isSkipable">Determines if the cache is skipable.</param>
+        /// <param name="infiniteWaitForLock">Should the lock wait infinitely (not use a timeout)</param>
         /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
-        public ICachableWebGreaseSection MakeCachable(ContentItem varByContentItem, object varBySettings = null, bool isSkipable = false)
+        public ICachableWebGreaseSection MakeCachable(ContentItem varByContentItem, object varBySettings = null, bool isSkipable = false, bool infiniteWaitForLock = false)
         {
             this.cacheVarByContentItem = varByContentItem;
             this.cacheVarBySetting = varBySettings;
             this.cacheIsSkipable = isSkipable;
+            this.cacheInfiniteWaitForLock = infiniteWaitForLock;
             return this;
         }
 
@@ -119,12 +129,14 @@ namespace WebGrease
         /// <param name="varByFileSet">The var By File Set.</param>
         /// <param name="varBySettings">The settings to var by.</param>
         /// <param name="isSkipable">Determines if the cache is skipable.</param>
+        /// <param name="infiniteWaitForLock">Should the lock wait infinitely (not use a timeout)</param>
         /// <returns>The <see cref="ICachableWebGreaseSection"/>.</returns>
-        public ICachableWebGreaseSection MakeCachable(IFileSet varByFileSet, object varBySettings = null, bool isSkipable = false)
+        public ICachableWebGreaseSection MakeCachable(IFileSet varByFileSet, object varBySettings = null, bool isSkipable = false, bool infiniteWaitForLock = false)
         {
             this.cacheVarByFileSet = varByFileSet;
             this.cacheVarBySetting = varBySettings;
             this.cacheIsSkipable = isSkipable;
+            this.cacheInfiniteWaitForLock = infiniteWaitForLock;
             return this;
         }
 
@@ -155,62 +167,81 @@ namespace WebGrease
         public bool Execute(Func<ICacheSection, bool> cachableSectionAction)
         {
             var id = WebGreaseContext.ToStringId(this.idParts);
-
-            var errorHasOccurred = false;
-            EventHandler logOnErrorOccurred = delegate { errorHasOccurred = true; };
-
-            var cacheSection = this.context.Cache.BeginSection(id, this.cacheVarByContentItem, this.cacheVarBySetting, this.cacheVarByFileSet);
-            this.context.Log.ErrorOccurred += logOnErrorOccurred;
-            try
-            {
-                if (this.context.TemporaryIgnore(this.cacheVarByFileSet, this.cacheVarByContentItem) && !errorHasOccurred)
+            object sectionLock = null;
+            WebGreaseSectionKey webGreaseSectionKey = null;
+            Safe.Lock(
+                SectionLocks, 
+                () => 
                 {
-                    cacheSection.Save();
-                    return true;
-                }
-
-                if (this.cacheIsSkipable && cacheSection.CanBeSkipped())
-                {
-                    if (this.whenSkippedAction != null)
+                    webGreaseSectionKey = new WebGreaseSectionKey(this.context, id, this.cacheVarByContentItem, this.cacheVarBySetting, this.cacheVarByFileSet);
+                    if (!SectionLocks.TryGetValue(webGreaseSectionKey.Value, out sectionLock))
                     {
-                        this.whenSkippedAction(cacheSection);
+                        SectionLocks.Add(webGreaseSectionKey.Value, sectionLock = new object());
                     }
+                });
 
-                    if (!errorHasOccurred)
-                    {
-                        return true;
-                    }
-                }
-
-                if (this.restoreFromCacheAction != null && cacheSection.CanBeRestoredFromCache())
+            return Safe.Lock(
+                sectionLock, 
+                this.cacheInfiniteWaitForLock ? Safe.MaxLockTimeout : Safe.DefaultLockTimeout, 
+                () =>
                 {
-                    if (this.restoreFromCacheAction(cacheSection) && !errorHasOccurred)
-                    {
-                        return true;
-                    }
-                }
+                    var errorHasOccurred = false;
+                    EventHandler logOnErrorOccurred = delegate { errorHasOccurred = true; };
+                    this.context.Log.ErrorOccurred += logOnErrorOccurred;
+                    var cacheSection = this.context.Cache.BeginSection(webGreaseSectionKey);
 
-                this.context.Measure.Start(this.isGroup, this.idParts);
-                try
-                {
-                    if (!cachableSectionAction(cacheSection) || errorHasOccurred)
+                    try
                     {
-                        return false;
-                    }
+                        if (this.context.TemporaryIgnore(this.cacheVarByFileSet, this.cacheVarByContentItem) && !errorHasOccurred)
+                        {
+                            cacheSection.Save();
+                            return true;
+                        }
 
-                    cacheSection.Save();
-                    return true;
-                }
-                finally
-                {
-                    this.context.Measure.End(this.isGroup, this.idParts);
-                }
-            }
-            finally
-            {
-                this.context.Log.ErrorOccurred -= logOnErrorOccurred;
-                cacheSection.EndSection();
-            }
+                        cacheSection.Load();
+                        if (this.cacheIsSkipable && cacheSection.CanBeSkipped())
+                        {
+                            if (this.whenSkippedAction != null)
+                            {
+                                this.whenSkippedAction(cacheSection);
+                            }
+
+                            if (!errorHasOccurred)
+                            {
+                                return true;
+                            }
+                        }
+
+                        if (this.restoreFromCacheAction != null && cacheSection.CanBeRestoredFromCache())
+                        {
+                            if (this.restoreFromCacheAction(cacheSection) && !errorHasOccurred)
+                            {
+                                return true;
+                            }
+                        }
+
+                        this.context.Measure.Start(this.isGroup, this.idParts);
+                        try
+                        {
+                            if (!cachableSectionAction(cacheSection) || errorHasOccurred)
+                            {
+                                return false;
+                            }
+
+                            cacheSection.Save();
+                            return true;
+                        }
+                        finally
+                        {
+                            this.context.Measure.End(this.isGroup, this.idParts);
+                        }
+                    }
+                    finally
+                    {
+                        this.context.Log.ErrorOccurred -= logOnErrorOccurred;
+                        cacheSection.EndSection();
+                    }
+                });
         }
     }
 }

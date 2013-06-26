@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Settings>
+  <Dpi>1;2;2.4</Dpi>
+  <Spriting config="Debug">
+    <ImagePadding>100</ImagePadding>
+    <OutputUnit>rem</OutputUnit>
+    <OutputUnitFactor>0.1</OutputUnitFactor>
+    <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    <WriteLogFile>false</WriteLogFile>
+    <!-- 
+    <ForceImageType>NonPhotoNonIndexed</ForceImageType>
+    -->
+  </Spriting>
+  <Spriting config="Release">
+    <ImagePadding>100</ImagePadding>
+    <OutputUnit>rem</OutputUnit>
+    <OutputUnitFactor>0.1</OutputUnitFactor>
+    <ErrorOnInvalidSprite>true</ErrorOnInvalidSprite>
+    <WriteLogFile>false</WriteLogFile>
+    <!-- 
+    <ForceImageType>NonPhotoNonIndexed</ForceImageType>
+    -->
+  </Spriting>
+</Settings>

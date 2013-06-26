@@ -11,6 +11,9 @@ namespace WebGrease
 {
     using System;
     using System.Collections.Generic;
+    using System.Drawing;
+    using System.Drawing.Imaging;
+    using System.Threading.Tasks;
 
     using WebGrease.Activities;
     using WebGrease.Configuration;
@@ -41,6 +44,10 @@ namespace WebGrease
 
         /// <summary>Gets the session start time.</summary>
         DateTimeOffset SessionStartTime { get; }
+
+        /// <summary>Gets the threaded measure results.</summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1006:DoNotNestGenericTypesInMemberSignatures", Justification = "Maybe later make this into a class, for now this is good enough.")]
+        IEnumerable<KeyValuePair<string, IEnumerable<TimeMeasureResult>>> ThreadedMeasureResults { get; }
 
         #endregion
 
@@ -109,14 +116,28 @@ namespace WebGrease
         bool TemporaryIgnore(IFileSet fileSet, ContentItem contentItem);
 
         /// <summary>Returns if the code should temporary ignore and do no heavy processing for this execution run for this content pivot.</summary>
-        /// <param name="contentPivot">The content Pivot.</param>
+        /// <param name="resourcePivotKey">The resource pivot key.</param>
         /// <returns>The <see cref="bool"/>.</returns>
-        bool TemporaryIgnore(ContentPivot contentPivot);
+        bool TemporaryIgnore(IEnumerable<ResourcePivotKey> resourcePivotKey);
 
         /// <summary>Ensures the file exists so it can be reported with an error.</summary>
         /// <param name="sourceFile">The source file.</param>
         /// <param name="sourceContentItem">The input file.</param>
         /// <returns>The error file path.</returns>
         string EnsureErrorFileOnDisk(string sourceFile, ContentItem sourceContentItem);
+
+        /// <summary>The parallel for each call, that ensures valid multi threaded opeartions for webgrease calls.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="items">The items.</param>
+        /// <param name="parallelAction">The parallel action.</param>
+        /// <param name="serialAction">The serial action.</param>
+        /// <typeparam name="T">The type of items</typeparam>
+        void ParallelForEach<T>(Func<T, string[]> idParts, IEnumerable<T> items, Func<IWebGreaseContext, T, ParallelLoopState, bool> parallelAction, Func<IWebGreaseContext, T, bool> serialAction = null);
+
+        /// <summary>The get bitmap hash.</summary>
+        /// <param name="bitmap">The bitmap.</param>
+        /// <param name="format">The format.</param>
+        /// <returns>The bitmap hash.</returns>
+        string GetBitmapHash(Bitmap bitmap, ImageFormat format);
     }
 }

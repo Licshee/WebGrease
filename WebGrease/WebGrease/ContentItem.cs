@@ -8,6 +8,8 @@ namespace WebGrease
     using System.Collections.Generic;
     using System.IO;
 
+    using WebGrease.Configuration;
+
     /// <summary>
     /// The content item is the class that is used for all the intermediate states of the webgrease processing pipeline.
     /// It is an abstraction for files on disk/in mrmory/in cache, and allows the seperate parts of the pipeline to not have to care about where the content is.
@@ -36,7 +38,7 @@ namespace WebGrease
         public string RelativeContentPath { get; private set; }
 
         /// <summary>Gets the locale.</summary>
-        public IEnumerable<ContentPivot> Pivots { get; private set; }
+        public IEnumerable<ResourcePivotKey> ResourcePivotKeys { get; private set; }
 
         /// <summary>Gets the alternate relative path.</summary>
         public string RelativeHashedContentPath { get; private set; }
@@ -86,9 +88,9 @@ namespace WebGrease
 
         /// <summary>Creates a content item from a cache result.</summary>
         /// <param name="cacheResult">The cache result.</param>
-        /// <param name="pivots">The pivots.</param>
+        /// <param name="resourcePivotKeys">The pivots.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromCacheResult(CacheResult cacheResult, params ContentPivot[] pivots)
+        public static ContentItem FromCacheResult(CacheResult cacheResult, params ResourcePivotKey[] resourcePivotKeys)
         {
             return new ContentItem
                        {
@@ -96,7 +98,7 @@ namespace WebGrease
                            AbsoluteContentPath = cacheResult.CachedFilePath,
                            RelativeContentPath = cacheResult.RelativeContentPath,
                            RelativeHashedContentPath = cacheResult.RelativeHashedContentPath,
-                           Pivots = pivots,
+                           ResourcePivotKeys = resourcePivotKeys,
                        };
         }
 
@@ -104,9 +106,9 @@ namespace WebGrease
         /// <param name="cacheResult">The cache result.</param>
         /// <param name="relativeContentPath">The relative Content Path.</param>
         /// <param name="relativeHashedContentPath">The relative Hashed Content Path.</param>
-        /// <param name="pivots">The pivots.</param>
+        /// <param name="resourcePivotKeys">The resource Pivot Keys.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromCacheResult(CacheResult cacheResult, string relativeContentPath = null, string relativeHashedContentPath = null, params ContentPivot[] pivots)
+        public static ContentItem FromCacheResult(CacheResult cacheResult, string relativeContentPath = null, string relativeHashedContentPath = null, params ResourcePivotKey[] resourcePivotKeys)
         {
             return new ContentItem
                        {
@@ -114,7 +116,7 @@ namespace WebGrease
                            AbsoluteContentPath = cacheResult.CachedFilePath,
                            RelativeContentPath = relativeContentPath ?? cacheResult.RelativeContentPath,
                            RelativeHashedContentPath = relativeHashedContentPath ?? cacheResult.RelativeHashedContentPath,
-                           Pivots = pivots,
+                           ResourcePivotKeys = resourcePivotKeys,
                        };
         }
 
@@ -122,9 +124,9 @@ namespace WebGrease
         /// <param name="absoluteContentPath">The path.</param>
         /// <param name="relativeContentPath">The original Relative Path.</param>
         /// <param name="relativeHashedContentPath">The alternate Relative Path.</param>
-        /// <param name="pivots">The pivots.</param>
+        /// <param name="resourcePivotKeys">The resource Pivot Keys.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromFile(string absoluteContentPath, string relativeContentPath = null, string relativeHashedContentPath = null, params ContentPivot[] pivots)
+        public static ContentItem FromFile(string absoluteContentPath, string relativeContentPath = null, string relativeHashedContentPath = null, params ResourcePivotKey[] resourcePivotKeys)
         {
             return new ContentItem
                          {
@@ -132,7 +134,7 @@ namespace WebGrease
                              AbsoluteContentPath = absoluteContentPath,
                              RelativeContentPath = relativeContentPath ?? absoluteContentPath,
                              RelativeHashedContentPath = relativeHashedContentPath,
-                             Pivots = pivots,
+                             ResourcePivotKeys = resourcePivotKeys,
                          };
         }
 
@@ -151,7 +153,7 @@ namespace WebGrease
                            AbsoluteContentPath = contentItem.AbsoluteContentPath,
                            ContentItemType = contentItem.ContentItemType,
                            ContentValue = contentItem.ContentValue,
-                           Pivots = contentItem.Pivots,
+                           ResourcePivotKeys = contentItem.ResourcePivotKeys,
 
                            contentHash = contentItem.contentHash
                        };
@@ -159,15 +161,15 @@ namespace WebGrease
 
         /// <summary>The from content.</summary>
         /// <param name="content">The content.</param>
-        /// <param name="pivots">The pivots.</param>
+        /// <param name="resourcePivotKeys">The resource Pivot Keys.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromContent(string content, params ContentPivot[] pivots)
+        public static ContentItem FromContent(string content, params ResourcePivotKey[] resourcePivotKeys)
         {
             return new ContentItem
             {
                 ContentItemType = ContentItemType.Value,
                 ContentValue = content,
-                Pivots = pivots,
+                ResourcePivotKeys = resourcePivotKeys,
             };
         }
 
@@ -175,15 +177,15 @@ namespace WebGrease
         /// <param name="content">The content.</param>
         /// <param name="relativeContentPath">The original Relative Path.</param>
         /// <param name="relativeHashedContentPath">The alternate Relative Path.</param>
-        /// <param name="pivots">The pivots.</param>
+        /// <param name="resourcePivotKeys">The resource Pivot Keys.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromContent(string content, string relativeContentPath, string relativeHashedContentPath = null, params ContentPivot[] pivots)
+        public static ContentItem FromContent(string content, string relativeContentPath, string relativeHashedContentPath = null, params ResourcePivotKey[] resourcePivotKeys)
         {
             return new ContentItem
             {
                 ContentItemType = ContentItemType.Value,
                 ContentValue = content,
-                Pivots = pivots,
+                ResourcePivotKeys = resourcePivotKeys,
                 RelativeContentPath = relativeContentPath,
                 RelativeHashedContentPath = relativeHashedContentPath,
             };
@@ -193,9 +195,9 @@ namespace WebGrease
         /// <summary>The from content.</summary>
         /// <param name="content">The content.</param>
         /// <param name="contentItem">The content item.</param>
-        /// <param name="pivots">The pivots.</param>
+        /// <param name="resourcePivotKeys">The resource Pivot Keys.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        public static ContentItem FromContent(string content, ContentItem contentItem, params ContentPivot[] pivots)
+        public static ContentItem FromContent(string content, ContentItem contentItem, params ResourcePivotKey[] resourcePivotKeys)
         {
             return new ContentItem
             {
@@ -203,7 +205,7 @@ namespace WebGrease
                 ContentValue = content,
                 RelativeContentPath = contentItem.RelativeContentPath,
                 RelativeHashedContentPath = contentItem.RelativeHashedContentPath,
-                Pivots = pivots ?? contentItem.Pivots
+                ResourcePivotKeys = resourcePivotKeys ?? contentItem.ResourcePivotKeys
             };
         }
 
@@ -226,7 +228,7 @@ namespace WebGrease
         /// <param name="overwrite">if it should overwrite if it already exists.</param>
         internal void WriteToRelativeHashedPath(string destinationDirectory, bool overwrite = false)
         {
-            this.WriteTo(Path.Combine(destinationDirectory, this.RelativeHashedContentPath), overwrite);
+            this.WriteTo(Path.Combine(destinationDirectory ?? string.Empty, this.RelativeHashedContentPath), overwrite);
         }
 
         /// <summary>Writes the content to the relative content path using the provided destination directory as a root.</summary>
@@ -234,7 +236,7 @@ namespace WebGrease
         /// <param name="overwrite">The overwrite.</param>
         internal void WriteToContentPath(string destinationDirectory, bool overwrite = false)
         {
-            this.WriteTo(Path.Combine(destinationDirectory, this.RelativeContentPath), overwrite);
+            this.WriteTo(Path.Combine(destinationDirectory ?? string.Empty, this.RelativeContentPath), overwrite);
         }
 
         /// <summary>Save to disk.</summary>
@@ -243,22 +245,25 @@ namespace WebGrease
         internal void WriteTo(string fullPath, bool overwrite = false)
         {
             var absolutePath = new FileInfo(fullPath);
-            if (!absolutePath.Exists || overwrite)
+            Safe.FileLock(absolutePath, () =>
             {
-                if (absolutePath.Directory != null && !absolutePath.Directory.Exists)
+                if (!absolutePath.Exists || overwrite)
                 {
-                    absolutePath.Directory.Create();
-                }
+                    if (absolutePath.Directory != null && !absolutePath.Directory.Exists)
+                    {
+                        absolutePath.Directory.Create();
+                    }
 
-                if (this.ContentItemType == ContentItemType.Path)
-                {
-                    File.Copy(this.AbsoluteContentPath, absolutePath.FullName, overwrite);
+                    if (this.ContentItemType == ContentItemType.Path)
+                    {
+                                File.Copy(this.AbsoluteContentPath, absolutePath.FullName, overwrite);
+                    }
+                    else
+                    {
+                        File.WriteAllText(absolutePath.FullName, this.Content);
+                    }
                 }
-                else
-                {
-                    File.WriteAllText(absolutePath.FullName, this.Content);
-                }
-            }
+            });
         }
 
         /// <summary>Reads the content from disk, uses File.ReadAll, caches the result in a private field.</summary>

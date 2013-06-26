@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebGrease>
+  <Settings configSource="Settings.css.xml" />
+  <CssFileSet configSource="settings.css.tmx.xml" output="landingpage.tmx.pc.ms.css">
+    <Inputs>
+      <Input>css\landingpage.tmx.pc.ms.css</Input>
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet configSource="settings.css.downlevel.xml" output="landingpage.downlevel.css">
+    <Inputs>
+      <Input>css\landingpage.downlevel.css</Input>
+    </Inputs>
+  </CssFileSet>
+</WebGrease>

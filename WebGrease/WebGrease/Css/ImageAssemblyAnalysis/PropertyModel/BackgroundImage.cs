@@ -33,7 +33,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
     internal sealed class BackgroundImage
     {
         /// <summary>The url reg ex.</summary>
-        internal static readonly string UrlRegEx = @"url\((?<quote>[""']?)\s*([-\\:/.\w]+\.[\w]+)\s*\k<quote>\)";
+        internal static readonly string UrlRegEx = @"url\((?<quote>[""']?)\s*(hash\(.*?\)|([-:/.\w]+\.[\w]+))\s*\k<quote>\)";
 
         /// <summary>
         /// The compiled regular expression for identifying multiple urls

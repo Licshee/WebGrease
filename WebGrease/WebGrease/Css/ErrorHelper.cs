@@ -53,7 +53,18 @@ namespace WebGrease.Css
         {
             Contract.Requires(aggEx != null);
             return aggEx.InnerExceptions
-                        .Select(ex => ex as RecognitionException)
+                        .OfType<RecognitionException>()
+                        .CreateBuildErrors(fileName);
+        }
+
+        /// <summary>Creates a deduped set of build errors for a given aggregate exception thrown from antlr</summary>
+        /// <param name="exceptions">The exceptions.</param>
+        /// <param name="fileName">File responsible for the error</param>
+        /// <returns>A unique collection of errors.</returns>
+        internal static IEnumerable<BuildWorkflowException> CreateBuildErrors(this IEnumerable<RecognitionException> exceptions, string fileName)
+        {
+            Contract.Requires(exceptions != null);
+            return exceptions
                         .Where(ex => ex != null)
                         .Distinct(new ErrorDeduper())
                         .Select(ex => new BuildWorkflowException(ex.Message, "CSS", "CSS1000", null, fileName, ex.Line, ex.CharPositionInLine, 0, 0, ex));

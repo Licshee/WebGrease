@@ -1,0 +1,2878 @@
+﻿
+
+/* tmx/basepage/basepage.tmx.pc.ms.scss (C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Tmx\basePage\basePage.tmx.pc.ms.scss) */
+
+/* Media Query definitions */
+/* media queries sizes */
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+/* might extend with zone-limit in the future */
+/* All */
+@media screen {
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #header > div a.channel h1,
+  #header > div a.channel span, #header > div a.cobrand h1, #header > div a.cobrand span {
+    -ms-text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    display: inline-block; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #fbcount,
+  #twcount {
+    display: inline-block;
+    margin-left: 1.5rem;
+    min-height: 2.6rem;
+    padding-top: .5rem; }
+    #fbcount:first-child,
+    #twcount:first-child {
+      margin-left: 0; }
+    #fbcount iframe,
+    #twcount iframe {
+      border: 0;
+      height: 2rem;
+      overflow: hidden; }
+
+  #fbcount iframe {
+    width: %FacebookButtonWidth%; }
+
+  #language-social {
+    list-style: none;
+    text-align: center;
+    width: 100%; }
+    #language-social a,
+    #language-social button {
+      color: #666;
+      text-transform: uppercase; }
+    #language-social button {
+      background: 0;
+      border: 0; }
+      #language-social button:hover {
+        cursor: pointer; }
+    #language-social > li {
+      cursor: pointer;
+      height: 3rem; }
+
+  #username ul {
+    display: none;
+    text-align: left; }
+
+  #twcount iframe {
+    width: %TwitterButtonWidth%; }
+
+  #nav-bg {
+    display: none; }
+
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* (matbow) This style sheet is common between Ms and Webkit. Ms-specific styling should go in the Ms directory.
+  However, Webkit does not yet import Base and Base/Mobile as more time is needed to refactor and test Webkit. */
+  * {
+    margin: 0;
+    padding: 0; }
+
+  a {
+    text-decoration: none; }
+
+  body {
+    color: %darkgray%; }
+
+  #classic-white-bg {
+    display: none; }
+
+  img {
+    border: 0;
+    max-width: 100%; }
+
+  input {
+    border-radius: 0; }
+
+  ul.inline,
+  ul.inline li {
+    list-style: none; }
+
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  .pollcontainer.related, .pollcontainer.halfpane {
+    float: %Global.Left%;
+    clear: both; }
+
+  .pollheading,
+  .pollheading .heading {
+    overflow: hidden; }
+  .related .pollheading .heading,
+  .related .pollheading h2:first-child, .halfpane .pollheading .heading, .halfpane .pollheading h2:first-child {
+    float: %Global.Left%;
+    margin-bottom: 0; }
+
+  .poll {
+    clear: both; }
+    .poll .hide {
+      display: none; }
+    .poll li {
+      list-style-type: none; }
+      .poll li .question {
+        color: %darkgray%; }
+        .poll li .question input {
+          float: %Global.Left%; }
+      .poll li:last-child .question, .poll li.last .question {
+        margin-bottom: 0; }
+      .poll li .result {
+        clear: both; }
+      .poll li .resultcontainer {
+        display: inline-block; }
+      .poll li .barcontainer {
+        background-color: %mediumgray%;
+        overflow: hidden; }
+        .poll li .barcontainer .bar {
+          float: %Global.Left%;
+          color: %white%;
+          height: 100%; }
+    .poll footer .votebtn {
+      border: none;
+      color: %white%; }
+    .poll footer .skiptoresult,
+    .poll footer .backtovoting {
+      float: %Global.Right%;
+      background-color: transparent;
+      border: none;
+      outline: 0; }
+      .poll footer .skiptoresult:hover,
+      .poll footer .backtovoting:hover {
+        text-decoration: underline;
+        cursor: pointer; }
+
+  /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */
+  body.%theme_name% .pollcontainer .barcolor,
+  body.%theme_name% .pollcontainer .votebtn {
+    background-color: %theme_color%; }
+  body.%theme_name% .pollcontainer .skiptoresult,
+  body.%theme_name% .pollcontainer .backtovoting,
+  body.%theme_name% .pollcontainer .heading {
+    color: %theme_color%; }
+
+  .pollcontainer.halfpane {
+    width: 100%; }
+
+  .pollheading {
+    margin-bottom: .1rem; }
+    .pollheading .heading {
+      padding-bottom: .4rem; }
+    .articlecontent section:not(.storyimage) .pollheading {
+      margin-bottom: .4rem; }
+
+  .poll {
+    /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+    .poll .errormsg {
+      margin-bottom: 1.5rem; }
+    .pollcontainer .poll h3 {
+      margin-bottom: 1rem;
+      padding-bottom: .2rem; }
+    .articlecontent section .poll ol {
+      margin-left: 0; }
+      .articlecontent section .poll ol li,
+      .articlecontent section .poll ol li div:not(.question) {
+        margin-bottom: 0; }
+    .poll li {
+      width: 100%; }
+      .poll li .question {
+        margin-bottom: 1.3rem;
+        max-width: 27.1rem; }
+        .poll li .question input {
+          height: 2.3rem;
+          margin-right: .6rem;
+          width: 2.3rem; }
+        .poll li .question label {
+          display: block;
+          max-width: 24.2rem;
+          padding-bottom: .2rem; }
+      .poll li .barcontainer {
+        display: inline-block;
+        height: 1.9rem;
+        margin: .2rem 0;
+        width: 30rem; }
+        .poll li .barcontainer .bar {
+          line-height: 1.7rem;
+          padding-left: .4rem; }
+    .poll .responses {
+      color: %darkgray%;
+      margin-bottom: 1rem; }
+    .poll footer .result {
+      margin-top: 1rem; }
+    .poll footer .question {
+      margin-top: 1.3rem; }
+    .poll footer .votebtn {
+      height: 3.8rem;
+      min-width: 7rem;
+      padding: 0 1.2rem; }
+      .poll footer .votebtn:hover:not([disabled="disabled"]) {
+        cursor: pointer; }
+    .poll footer .skiptoresult {
+      margin-top: 1rem; }
+    .poll footer .backtovoting {
+      padding-bottom: .2rem; }
+    body.%theme_name% .poll .forresulttext {
+      color: %theme_color%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #breakingnews {
+    background: %red%;
+    border: solid %red%;
+    color: %white%;
+    display: block;
+    -ms-grid-column-span: 3;
+    -ms-grid-row: 4;
+    overflow: hidden; }
+    #breakingnews a {
+      color: %white%; }
+    #breakingnews p {
+      display: inline; }
+      #breakingnews p:nth-child(2):before {
+        content: "|";
+        padding: 0 .8rem; }
+    #breakingnews strong {
+      font-family: %fontFamilySemiBold%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #foot footer a,
+  #foot footer span {
+    color: %mediumgray%;
+    display: inline-block;
+    margin-right: 1.5rem; }
+  #foot footer .cobrand a,
+  #foot footer .cobrand span {
+    margin-right: 0; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  body {
+    -ms-grid-columns: auto 1fr auto;
+    -ms-grid-rows: auto auto auto; }
+    body div.head {
+      -ms-grid-column: 2; }
+
+  body,
+  #content,
+  #foot {
+    display: -ms-grid; }
+
+  #maincontent {
+    -ms-grid-column: 2;
+    -ms-grid-row: 2; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #header > div {
+    display: -ms-grid;
+    -ms-grid-columns: auto auto auto auto;
+    -ms-grid-rows: auto; }
+    #header > div a.channel, #header > div a.cobrand {
+      display: block; }
+      #header > div a.channel h1,
+      #header > div a.channel span, #header > div a.cobrand h1, #header > div a.cobrand span {
+        padding-bottom: .6rem; }
+    #header > div a.channel {
+      -ms-grid-column: 3;
+      -ms-grid-row: 1; }
+    #header > div a.cobrand {
+      -ms-grid-column: 2;
+      -ms-grid-row: 1;
+      margin: 0 1.5rem 0 0; }
+    #header > div a.network {
+      -ms-grid-column: 1;
+      -ms-grid-row: 1;
+      display: inline-block;
+      height: 5rem;
+      width: 15rem;
+      z-index: 1; }
+      #header > div a.network span {
+        display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #nav .outer li {
+    list-style-type: none; }
+    #nav .outer li,
+    #nav .outer li a {
+      display: inline-block; }
+    #nav .outer li a .inner {
+      display: none; }
+
+  #navmore .inner .inner {
+    visibility: hidden; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  * {
+    box-sizing: border-box;
+    -ms-text-size-adjust: none; }
+
+  html.hiperf.loaded body:not(.fullscreen), html.hiperf.loaded body:not(.fullscreen) #search, html.hiperf.loaded body:not(.fullscreen) .head, html.hiperf.loaded body:not(.fullscreen) #foot, html.hiperf.loaded body:not(.fullscreen) #maincontent, html.hiperf.loaded body:not(.fullscreen) #main {
+    transition: width .22s, height .22s, padding .22s, margin .22s; }
+
+  body {
+    -ms-overflow-style: -ms-autohiding-scrollbar;
+    margin: 0 .5rem 2rem; }
+    body:not(.fullscreen) #maincontent {
+      position: relative; }
+
+  a:active {
+    background-color: transparent; }
+
+  /* theme colors 
+  ---------------------------------------------------*/
+  /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */
+  .bg {
+    color: %white%; }
+    .bg.%theme_name% {
+      background-color: %theme_color%; }
+
+  .fg.%theme_name%,
+  .fg.%theme_name%:visited,
+  .heading.fg.%theme_name% a,
+  .related .heading.%theme_name%,
+  .related .heading.%theme_name% a,
+  .sponsorshiplist .heading.%theme_name%,
+  .sponsorshiplist .heading.%theme_name% a {
+    background-color: transparent;
+    color: %theme_color%; }
+
+  a.network.%theme_name% svg {
+    fill: %theme_color%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #search {
+    background-color: %white%;
+    height: 4rem;
+    margin-top: 3.8rem;
+    position: relative;
+    z-index: 10000; }
+    #search #srchfrm {
+      display: -ms-grid;
+      -ms-grid-columns: 1fr 5.6rem auto;
+      -ms-grid-rows: 1; }
+    #search label {
+      display: none; }
+    #search input[type=search] {
+      display: inline-block;
+      -ms-grid-column: 1;
+      vertical-align: top;
+      border: none;
+      height: 3.6rem; }
+    #search div.binglogo {
+      display: inline-block;
+      -ms-grid-column: 2;
+      /* until WebGrease is fixed, always use pixels for background positions; they'll get converted to rem during the build process.
+         But in the mean-time, WebGrease needs the source to be in pixels to properly combine re-used images. */
+      background: %white% url('hash(/images/binglogo_%MetroSdk.Resolution%.png)') no-repeat %Global.Left% 4px;
+      height: 3.6rem;
+      width: 5.6rem; }
+    #search #sw_as {
+      margin-top: 3.6rem;
+      position: relative; }
+      #search #sw_as .sa_as {
+        padding-top: 0.1rem; }
+    #search .sa_hd_first {
+      margin-left: 0; }
+    #search .sa_drw li {
+      font-size: 100%; } }
+/* fill */
+@media screen and (min-width: %MediaQueries.SnapMin%) and (max-width: %MediaQueries.FullMax%) {
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  body {
+    margin: 0 .5rem 2rem; }
+    body > div {
+      width: 92rem; }
+
+  #aside {
+    -ms-grid-column: 3;
+    -ms-grid-row: 3;
+    margin-right: 0;
+    -ms-grid-column-span: 1; }
+
+  #foot footer {
+    -ms-grid-column: 1;
+    -ms-grid-row: 4;
+    -ms-grid-column-span: 3; }
+
+  #main {
+    -ms-grid-column: 1;
+    -ms-grid-row: 3;
+    -ms-grid-column-span: 2; }
+
+  #nav {
+    -ms-grid-column: 1;
+    -ms-grid-row: 2;
+    -ms-grid-column-span: 3; }
+
+  .touchnavigation {
+    padding-left: 5rem;
+    padding-right: 5rem; }
+
+  #toc {
+    display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #search.default {
+    width: 40.4rem; }
+    #search.default #srchfrm {
+      width: 40rem; }
+    #search.default input[type=submit].text {
+      display: none; }
+    #search.default input[type=submit].image {
+      display: inline-block;
+      -ms-grid-column: 3;
+      -ms-grid-column-align: end;
+      color: %white%;
+      height: 3.6rem;
+      width: 3.6rem;
+      padding: 0; }
+  #search.long {
+    width: 57.4rem; }
+    #search.long #srchfrm {
+      width: 57rem; }
+
+  #featured {
+    max-height: 123.5rem; }
+
+  #logo-search-wrapper {
+    -ms-grid-columns: auto 1fr auto;
+    width: 92rem; }
+
+  #header > div a.channel h1,
+  #header > div a.channel span, #header > div a.cobrand h1, #header > div a.cobrand span {
+    max-width: 36.5rem; } }
+/* full */
+@media screen and (min-width: %MediaQueries.FullMin%) {
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  body {
+    margin: 0 .5rem 2rem; }
+    body > div {
+      width: 123rem; }
+
+  #aside {
+    -ms-grid-column: 3;
+    -ms-grid-row: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row-span: 1; }
+
+  #foot footer {
+    -ms-grid-column: 2;
+    -ms-grid-row: 4;
+    -ms-grid-column-span: 2; }
+
+  #main {
+    -ms-grid-column: 2;
+    -ms-grid-row: 3;
+    -ms-grid-column-span: 1;
+    -ms-grid-row-span: 1; }
+
+  #nav {
+    -ms-grid-column: 1;
+    -ms-grid-row: 2;
+    -ms-grid-column-span: 3; }
+
+  #toc {
+    -ms-grid-column: 1;
+    -ms-grid-row: 3;
+    -ms-grid-row-span: 2; }
+
+  #search.default {
+    width: 64.4rem; }
+    #search.default #srchfrm {
+      width: 64rem; }
+  #search.long {
+    width: 77.4rem; }
+    #search.long #srchfrm {
+      width: 77rem; }
+
+  #featured {
+    max-height: 93.5rem; }
+
+  body div.head {
+    -ms-grid-columns: 1fr; }
+
+  #logo-search-wrapper {
+    -ms-grid-columns: 1fr;
+    display: -ms-grid; }
+
+  #header > div a.channel h1,
+  #header > div a.channel span, #header > div a.cobrand h1, #header > div a.cobrand span {
+    max-width: 43rem; } }
+/* No snap (Fill+Full) */
+@media screen and (min-width: %MediaQueries.SnapMin%) {
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  div.ad {
+    min-height: 24.9rem;
+    max-height: 62.3rem;
+    width: 30rem;
+    position: relative;
+    left: .01rem;
+    margin: 0 0 1rem; }
+  div.adcontainer {
+    max-height: 60rem;
+    overflow: hidden; }
+
+  section.ad {
+    min-height: 24.9rem;
+    max-height: 62.3rem;
+    width: 30rem;
+    position: relative;
+    left: .01rem;
+    margin-bottom: %marginBottomAd%; }
+    section.ad a.adchoicesjs {
+      color: %darkgray%;
+      float: %Global.Left%;
+      padding-top: .1rem;
+      width: 19rem; }
+      section.ad a.adchoicesjs span {
+        vertical-align: middle; }
+    section.ad a.adchoices {
+      display: none; }
+    section.ad a.adfeedback {
+      color: #666;
+      float: %Global.Right%;
+      padding-top: .3rem; }
+    section.ad a.adfeedback, section.ad a.adchoicesjs {
+      font-family: %fontFamilySmall2%;
+      font-size: %fontSizeSmall2%;
+      font-weight: %fontWeightSmall2%;
+      line-height: %lineHeightSmall2%;
+      display: inline-block;
+      height: 2rem; }
+    section.ad .adchoiceicon {
+      display: inline-block;
+      width: 1.5rem;
+      height: 1.5rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #foot footer a,
+  #foot footer span {
+    font-family: %fontFamilySmall%;
+    font-size: %fontSizeSmall%;
+    font-weight: %fontWeightSmall%;
+    line-height: %lineHeightSmall%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #aside {
+    width: 30rem; }
+
+  body {
+    font-family: %fontFamilyNormal%;
+    font-size: %fontSizeNormal%;
+    font-weight: %fontWeightNormal%;
+    line-height: %lineHeightNormal%; }
+    body > div {
+      display: -ms-grid;
+      margin: 0 auto;
+      -ms-grid-columns: auto 1fr auto;
+      -ms-grid-rows: auto auto 1fr auto; }
+
+  #foot {
+    -ms-grid-column: 2;
+    -ms-grid-row: 3; }
+
+  #maincontent h1 {
+    font-family: %fontFamilyExtraLarge%;
+    font-size: %fontSizeExtraLarge%;
+    font-weight: %fontWeightExtraLarge%;
+    line-height: %lineHeightExtraLarge%; }
+
+  h2, h3, h4, h5, h6 {
+    font-family: %fontFamilyNormal%;
+    font-size: %fontSizeNormal%;
+    font-weight: %fontWeightNormal%;
+    line-height: %lineHeightNormal%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .pollheading .heading {
+    font-family: %fontFamilyMediumLarge%;
+    font-size: %fontSizeMediumLarge%;
+    font-weight: %fontWeightMediumLarge%;
+    line-height: %lineHeightMediumLarge%;
+    padding-top: %paddingTopMediumLarge%; }
+
+  .poll,
+  .poll .skiptoresult,
+  .poll .backtovoting {
+    font-family: %fontFamilyNormal%;
+    font-size: %fontSizeNormal%;
+    font-weight: %fontWeightNormal%;
+    line-height: %lineHeightNormal%; }
+  .poll li .question label {
+    font-family: %fontFamilyNormal%;
+    font-size: %fontSizeNormal%;
+    font-weight: %fontWeightNormal%;
+    line-height: %lineHeightNormal%; }
+    .poll li .question label {
+      line-height: 2rem; }
+  .poll h3,
+  .poll .votebtn, .articlecontent .poll h3 {
+    font-family: %fontFamilyMedium%;
+    font-size: %fontSizeMedium%;
+    font-weight: %fontWeightMedium%;
+    line-height: %lineHeightMedium%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #header > div a, #header > div a:link, #header > div a:visited, #header > div a:hover, #header > div a:active {
+    margin-top: %headerAnchorActiveMargin%; }
+  #header > div a.network {
+    margin: .1rem 0 0; }
+
+  #search {
+    border: solid .2rem #bebebe;
+    margin-right: 0; }
+    #search.long input[type=search]:-ms-input-placeholder {
+      color: %white%; }
+    #search input[type=search] {
+      font-family: %fontFamilyNormal%;
+      font-size: %fontSizeNormal%;
+      font-weight: %fontWeightNormal%;
+      line-height: %lineHeightNormal%;
+      padding-left: 1.1rem; }
+      #search input[type=search] {
+        line-height: 2.3rem; }
+    #search input[type=submit] {
+      border: 0; }
+      #search input[type=submit].image {
+        display: none; }
+      #search input[type=submit].text {
+        display: inline-block;
+        background-color: %bingorange%;
+        color: %white%;
+        height: 3.6rem;
+        padding: 0 1.5rem; }
+      #search input[type=submit].image, #search input[type=submit].text {
+        font-family: %fontFamilyNormal%;
+        font-size: %fontSizeNormal%;
+        font-weight: %fontWeightNormal%;
+        line-height: %lineHeightNormal%;
+        -ms-grid-column: 3;
+        -ms-grid-column-align: end;
+        vertical-align: top; }
+
+  .touchnavigation {
+    text-align: center;
+    padding: 10rem 5rem 0; }
+    .touchnavigation h1.title {
+      font-family: %fontFamilyMedium%;
+      font-size: %fontSizeMedium%;
+      font-weight: %fontWeightMedium%;
+      line-height: %lineHeightMedium%;
+      margin-bottom: 2rem;
+      color: %mediumgray%; }
+    .touchnavigation p.subtitle {
+      font-family: %fontFamilyNormal%;
+      font-size: %fontSizeNormal%;
+      font-weight: %fontWeightNormal%;
+      line-height: %lineHeightNormal%;
+      color: %darkgray%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #breakingnews {
+    border-width: %BreakingNews.Ms.NoSnap.Browse.BorderWidth%;
+    margin-bottom: 1rem;
+    max-height: 4rem;
+    width: 100%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #header {
+    display: -ms-grid;
+    position: relative;
+    -ms-grid-column-span: 2;
+    -ms-grid-columns: 1fr;
+    -ms-grid-row-span: 2;
+    -ms-grid-rows: 4rem 5.1rem; }
+    #header > div {
+      -ms-grid-column-align: start;
+      -ms-grid-row: 2; }
+      #header > div a.channel h1,
+      #header > div a.channel span, #header > div a.cobrand h1, #header > div a.cobrand span {
+        font-family: %fontFamilyLarge%;
+        font-size: %fontSizeLarge%;
+        font-weight: %fontWeightLarge%;
+        line-height: %lineHeightLarge%;
+        padding-left: .4rem; }
+
+  #fbcount {
+    -ms-grid-column: 2; }
+
+  #language-social {
+    display: -ms-grid;
+    margin-top: .4rem;
+    -ms-grid-column: 2;
+    -ms-grid-columns: auto auto auto auto; }
+    #language-social a,
+    #language-social button {
+      font-family: %fontFamilySmall2%;
+      font-size: %fontSizeSmall2%;
+      font-weight: %fontWeightSmall2%;
+      line-height: %lineHeightSmall2%; }
+    #language-social > li {
+      margin: 0 0 0 2rem; }
+
+  #langtoggle {
+    -ms-grid-column: 1; }
+
+  #language-social > #sign-in-out,
+  #username {
+    -ms-grid-column: 4; }
+
+  #logo-search-wrapper {
+    display: -ms-grid; }
+
+  #twcount {
+    -ms-grid-column: 3; }
+
+  #langtoggle,
+  #language-social > #sign-in-out,
+  #fbcount,
+  #twcount {
+    max-height: 3rem; }
+
+  #username.hover ul {
+    display: block; }
+  #username ul {
+    background: %white%;
+    border: solid .1rem #ccc;
+    list-style: none;
+    position: absolute;
+    right: 0;
+    top: 2.8rem;
+    z-index: 10001; }
+    #username ul a {
+      color: %darkgray%;
+      display: inline-block;
+      padding: .5rem 1rem;
+      text-transform: none;
+      width: 100%; }
+      #username ul a:hover {
+        color: %white%;
+        /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+        body.%theme_name% #username ul a:hover {
+          background: %theme_color%; }
+    #username ul li:first-child {
+      margin-top: -0.1rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #nav {
+    margin-top: 1.5rem;
+    /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+    #nav li a {
+      padding: 0 2rem 3rem 0; }
+    #nav .outer {
+      position: relative; }
+      #nav .outer .current a {
+        font-family: %fontFamilyNormal%; }
+      #nav .outer .inner {
+        display: none; }
+      #nav .outer li:not(.current) a {
+        color: %darkgray%; }
+      #nav .outer li:hover .inner, #nav .outer li.hover .inner {
+        display: block;
+        position: absolute;
+        width: 15.5rem;
+        background-color: %white%;
+        border: 1px solid %dimgray%;
+        z-index: 10000;
+        top: 3rem;
+        margin-left: -1rem; }
+        #nav .outer li:hover .inner li, #nav .outer li.hover .inner li {
+          width: 100%; }
+          #nav .outer li:hover .inner li a, #nav .outer li.hover .inner li a {
+            font-size: %fontSizeNormal%;
+            line-height: %lineHeightNormal%;
+            padding: 0.5rem 1rem;
+            width: 100%;
+            overflow: hidden; }
+            #nav .outer li:hover .inner li a:hover, #nav .outer li.hover .inner li a:hover {
+              color: %white%; }
+      #nav .outer li > a,
+      #nav .outer li > h1 {
+        font-family: %fontFamilyMedium%;
+        font-size: %fontSizeMedium%;
+        font-weight: %fontWeightMedium%;
+        line-height: %lineHeightMedium%; }
+    body.%theme_name% #nav .outer li .inner li a:hover {
+      background-color: %theme_color%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  /* TODO:RTUIT: Is %theme_name% necessary? */
+  body.decorated.%theme_name% {
+    -wg-spriting: ignore;
+    background: transparent url('hash(%theme_tmx_image_background%)') no-repeat left 0; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #search {
+    -ms-grid-column: 2;
+    -ms-grid-row: 2;
+    -ms-grid-column-align: end; } }
+@media screen and (max-width: %MediaQueries.SnapMax%) {
+  /* (matbow) This style sheet is common between Ms and Webkit. Ms-specific styling should go in the Ms directory.
+  However, Webkit does not yet import Base and Base/Mobile as more time is needed to refactor and test Webkit. */
+  #header {
+    white-space: nowrap; }
+    #header > div {
+      margin-left: .2rem; }
+      #header > div > a, #header > div > a:link, #header > div > a:visited, #header > div > a:hover, #header > div > a:active {
+        margin-top: .2rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  body.username {
+    position: relative; }
+    body.username .mobilead,
+    body.username #breakingnews,
+    body.username #foot > footer,
+    body.username #fbcount,
+    body.username #header > div,
+    body.username #langtoggle,
+    body.username #maincontent,
+    body.username #nav,
+    body.username #twcount,
+    body.username #search {
+      display: none !important; }
+    body.username #sign-in-out {
+      height: auto; }
+    body.username #language-social #username {
+      left: 0;
+      max-width: 100%;
+      padding: 3rem 1rem;
+      position: fixed;
+      text-align: %Global.Left%;
+      top: 0;
+      width: 100%;
+      z-index: 1001; }
+      body.username #language-social #username a,
+      body.username #language-social #username button {
+        color: %darkgray%;
+        text-transform: none; }
+      body.username #language-social #username button {
+        margin-left: 1rem; }
+      body.username #language-social #username ul a {
+        width: 100%; }
+      body.username #language-social #username ul,
+      body.username #language-social #username ul li {
+        display: block; }
+      body.username #language-social #username ul li {
+        padding-left: 1rem;
+        padding-top: 2rem; }
+
+  #fbcount + #langtoggle, #twcount + #langtoggle {
+    margin-top: .8rem; }
+  #sign-in-out + #langtoggle, #username + #langtoggle {
+    margin-top: -0.2rem; }
+
+  #language-social {
+    margin-top: 1.4rem; }
+
+  #language-social > #sign-in-out,
+  #username {
+    margin-top: .8rem; }
+
+  /* (matbow) This style sheet is common between Ms and Webkit. Ms-specific styling should go in the Ms directory.
+  However, Webkit does not yet import Base and Base/Mobile as more time is needed to refactor and test Webkit. */
+  .ad {
+    display: none; }
+
+  body > section:nth-of-type(1).mobilead {
+    margin: 1rem 0 0; }
+  body > div.head {
+    -ms-grid-row: 2; }
+
+  .mobilead {
+    margin-bottom: 1rem; }
+
+  #mobilead {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    line-height: 0.5rem;
+    border: 0;
+    text-align: center; }
+    #mobilead .hide {
+      display: none; }
+
+  /* (matbow) This style sheet is common between Ms and Webkit. Ms-specific styling should go in the Ms directory.
+  However, Webkit does not yet import Base and Base/Mobile as more time is needed to refactor and test Webkit. */
+  #search {
+    height: 3rem;
+    width: 3rem; }
+    #search.long {
+      width: 17rem; }
+      #search.long .sa_drw li {
+        white-space: normal; }
+    #search .sw_b3 {
+      overflow: hidden; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #breakingnews {
+    padding: 0 1rem .1rem;
+    margin-top: 1rem;
+    width: 100%; }
+    body #breakingnews {
+      border-width: %BreakingNews.Ms.Mobile.BorderWidth%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #foot {
+    -ms-grid-column: 2;
+    -ms-grid-row: 4;
+    margin-top: 3.1rem; }
+    #foot footer {
+      text-align: center; }
+      #foot footer a,
+      #foot footer span {
+        font-family: %fontFamilySmallMobile%;
+        font-size: %fontSizeSmallMobile%;
+        font-weight: %fontWeightSmallMobile%;
+        line-height: %lineHeightSmallMobile%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */
+  body.%theme_name% #header .carat {
+    background: transparent url('%theme_tmx_mobile_image_navigationCarat%') no-repeat 0 0; }
+
+  #header > div {
+    -ms-grid-column: 1;
+    transition: transform .13s linear .09s; }
+    #header > div a.carat {
+      display: block;
+      height: 2rem;
+      margin: 0 0 0 .4rem;
+      -ms-grid-column: 4;
+      width: 2rem;
+      position: relative;
+      top: 1.7rem; }
+    #header > div a.channel, #header > div a.cobrand {
+      max-width: 16.5rem; }
+      #header > div a.channel h1,
+      #header > div a.channel span, #header > div a.cobrand h1, #header > div a.cobrand span {
+        font-family: %fontFamilyLargeMobile%;
+        font-size: %fontSizeLargeMobile%;
+        font-weight: %fontWeightLargeMobile%;
+        line-height: %lineHeightLargeMobile%;
+        display: block;
+        margin: %headerDivAMarginTopSnap% 0 0 0.5rem; }
+      #header > div a.channel.longtitle, #header > div a.cobrand.longtitle {
+        -ms-grid-column: 1;
+        -ms-grid-row: 2; }
+        #header > div a.channel.longtitle h1,
+        #header > div a.channel.longtitle span, #header > div a.cobrand.longtitle h1, #header > div a.cobrand.longtitle span {
+          min-height: 2.7rem;
+          margin: .1rem 0 0;
+          max-width: none; }
+        #header > div a.channel.longtitle + .carat, #header > div a.cobrand.longtitle + .carat {
+          -ms-grid-column: 2;
+          -ms-grid-row: 2;
+          margin-top: .5rem;
+          position: static; }
+    #header > div a.network {
+      height: 4rem;
+      margin-top: .3rem;
+      width: 7rem; }
+  .expand #header > div {
+    visibility: hidden; }
+  #header .inner {
+    display: none; }
+
+  #logo-search-wrapper {
+    display: -ms-grid;
+    -ms-grid-columns: auto 1fr; }
+    .expand #logo-search-wrapper {
+      -ms-grid-columns: 0 100%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  body.username #username a,
+  body.username #username button {
+    font-family: %fontFamilyMediumMobile%;
+    font-size: %fontSizeMediumMobile%;
+    font-weight: %fontWeightMediumMobile%;
+    line-height: %lineHeightMediumMobile%; }
+
+  #language-social a,
+  #language-social button {
+    font-family: %fontFamilySmallMobile%;
+    font-size: %fontSizeSmallMobile%;
+    font-weight: %fontWeightSmallMobile%;
+    line-height: %lineHeightSmallMobile%; }
+  #language-social + footer[role="contentinfo"] {
+    margin-top: -0.1rem; }
+
+  #fbcount iframe,
+  #twcount iframe {
+    transform: %IFrameScale%;
+      transform-origin: 0 0; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  body > section.mobilead {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    display: block; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #nav {
+    display: none; }
+    .mobilemenu #nav {
+      display: block;
+      background-color: %white%;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: 0;
+      overflow: auto;
+      -ms-overflow-style: -ms-autohiding-scrollbar;
+      padding: 3rem 1rem;
+      position: fixed;
+      z-index: 1; }
+      .mobilemenu #nav .outer {
+        white-space: nowrap; }
+        .mobilemenu #nav .outer,
+        .mobilemenu #nav .outer h1 {
+          font-family: %fontFamilyMediumMobile%;
+          font-size: %fontSizeMediumMobile%;
+          font-weight: %fontWeightMediumMobile%;
+          line-height: %lineHeightMediumMobile%; }
+        .mobilemenu #nav .outer li {
+          min-height: 4rem;
+          float: %Global.Left%;
+          clear: %Global.Left%;
+          width: 100%; }
+          .mobilemenu #nav .outer li.current .inner {
+            display: block; }
+            .mobilemenu #nav .outer li.current .inner a {
+              padding-left: 2.4rem; }
+          .mobilemenu #nav .outer li a {
+            padding: .4rem .4rem 2rem 0; }
+          .mobilemenu #nav .outer li .inner {
+            display: none; }
+          .mobilemenu #nav .outer li:not(.current) a {
+            color: %darkgray%; }
+
+  .mobilemenu {
+    overflow: hidden; }
+    .mobilemenu #breakingnews,
+    .mobilemenu #content,
+    .mobilemenu #foot,
+    .mobilemenu .mobilead {
+      display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  h2, h3, h4, h5, h6 {
+    font-family: %fontFamilyMediumMobile%;
+    font-size: %fontSizeMediumMobile%;
+    font-weight: %fontWeightMediumMobile%;
+    line-height: %lineHeightMediumMobile%; }
+
+  body {
+    font-family: %fontFamilyNormalMobile%;
+    font-size: %fontSizeNormalMobile%;
+    font-weight: %fontWeightNormalMobile%;
+    line-height: %lineHeightNormalMobile%;
+    margin: 0 1rem 2rem;
+    min-width: 30rem;
+    overflow-x: hidden; }
+    body > div.head {
+      display: block;
+      margin-bottom: 1rem; }
+
+  #content {
+    -ms-grid-rows: auto auto; }
+
+  #foot {
+    display: block;
+    margin-top: 0; }
+    #foot footer {
+      margin: 1.5rem 0; }
+
+  html {
+    -ms-content-zooming: none; }
+
+  #maincontent {
+    -ms-grid-row: 3; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .pollheading .heading {
+    font-family: %fontFamilyMediumLargeMobile%;
+    font-size: %fontSizeMediumLargeMobile%;
+    font-weight: %fontWeightMediumLargeMobile%;
+    line-height: 1; }
+
+  .poll,
+  .poll .skiptoresult,
+  .poll .backtovoting,
+  .poll li .question label {
+    font-family: %fontFamilyNormalMobile%;
+    font-size: %fontSizeNormalMobile%;
+    font-weight: %fontWeightNormalMobile%;
+    line-height: %lineHeightNormalMobile%; }
+  .poll .skiptoresult {
+    padding-bottom: .1rem; }
+  .poll h3,
+  .poll .votebtn {
+    font-family: %fontFamilyMediumMobile%;
+    font-size: %fontSizeMediumMobile%;
+    font-weight: %fontWeightMediumMobile%;
+    line-height: %lineHeightMediumMobile%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #search {
+    -ms-grid-column: 2;
+    -ms-grid-column-align: end;
+    -ms-grid-row-align: end;
+    -ms-transition-property: width;
+    -ms-transition-duration: .22s;
+    transition-timing-function: ease-out;
+    border: solid .1rem #bebebe;
+    margin-top: .8rem; }
+    .expand #search {
+      width: 100%; }
+      .expand #search #srchfrm {
+        -ms-grid-columns: 1fr 5.6rem auto; }
+      .expand #search input[type=search] {
+        display: inline-block; }
+      .expand #search input[type=submit].image {
+        -ms-grid-column: 3; }
+      .expand #search div.binglogo {
+        display: inline-block;
+        /* we just need to set background-position-y to zero, but we can't just set that value by itself
+           because the image gets sprited and the position will be wrong. So completely repeat the
+           entire background property so the position will be updated accordingly once the image is
+           sprited */
+        background: %white% url('hash(/images/binglogo_%MetroSdk.Resolution%.png)') no-repeat %Global.Left% 0; }
+    #search #srchfrm {
+      -ms-grid-columns: 1fr; }
+    #search div.binglogo {
+      display: none;
+      height: 2.8rem; }
+    #search input[type=search] {
+      display: none;
+      font-size: %fontSizeNormalMobile%;
+      height: 2.8rem;
+      padding-left: .9rem; }
+    #search input[type=submit].image {
+      display: inline-block;
+      -ms-grid-column: 1;
+      vertical-align: top;
+      -ms-grid-column-align: end;
+      border: solid 0.1rem %white%;
+      color: %white%;
+      height: 2.8rem;
+      width: 2.8rem; }
+    #search input[type=submit].text {
+      display: none; }
+    #search #sw_as {
+      margin-top: 2.8rem; }
+    #search.long #srchfrm {
+      -ms-grid-columns: 1fr auto; }
+    #search.long input[type=search] {
+      display: inline-block; }
+      #search.long input[type=search]:-ms-input-placeholder {
+        font-size: %fontSizeSmallMobile%; }
+    #search.long input[type=submit].image {
+      -ms-grid-column: 2; }
+    #search.long #sw_as {
+      width: 16rem; }
+    #search.long .sa_drw li {
+      font-family: %fontFamilyNormalMobile%;
+      font-size: %fontSizeNormalMobile%;
+      font-weight: %fontWeightNormalMobile%;
+      line-height: %lineHeightNormalMobile%; }
+      #search.long .sa_drw li strong {
+        font-family: %fontFamilyNormal%; }
+
+  .expand #header > div {
+    -ms-transform: translate(-200%, 0px); }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .touchnavigation {
+    color: #888; }
+    .touchnavigation .subtitle {
+      font-family: %fontFamilyExtraLargeMobile%;
+      font-size: %fontSizeExtraLargeMobile%;
+      font-weight: %fontWeightExtraLargeMobile%;
+      line-height: %lineHeightExtraLargeMobile%;
+      margin: 0 1rem;
+      color: %mediumgray%; }
+    .touchnavigation .title {
+      display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  body {
+    position: relative; }
+    body.username #username button:hover {
+      cursor: auto; }
+    body.username #username li {
+      margin-left: 0; }
+
+  #language-social {
+    bottom: 20rem;
+    display: -ms-grid;
+    margin-top: -0.1rem;
+    position: absolute;
+    -ms-grid-columns: 1fr auto auto 1fr;
+    -ms-grid-rows: auto auto auto; }
+
+  #fbcount {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1;
+    padding-top: .3rem; }
+    #fbcount iframe {
+      width: %FacebookButtonWidth%; }
+
+  #twcount {
+    -ms-grid-column: 3;
+    -ms-grid-row: 1; }
+    #twcount iframe {
+      width: %TwitterButtonWidth%; }
+
+  #language-social > #sign-in-out,
+  #username {
+    -ms-grid-column: 2;
+    -ms-grid-row: 2;
+    -ms-grid-column-span: 2; }
+
+  #langtoggle {
+    -ms-grid-column: 2;
+    -ms-grid-row: 3;
+    -ms-grid-column-span: 2; } }
+/* Rescaling content for 640px --> 1024px. */
+/* Media Query definitions */
+/* media queries sizes */
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+/* might extend with zone-limit in the future */
+/* Scale down fill mode between 40em and 60em */
+@media (min-width: %MediaQueries.SnapMin%) and (max-width: %MediaQueries.FillViewport%) {
+  @-ms-viewport {
+    width: %MediaQueries.FillViewport%; } }
+/* Force 320 in Snap view */
+@media (max-width: %MediaQueries.SnapMax%) {
+  @-ms-viewport {
+    width: 100%; } }
+
+
+
+/* tmx/landingpage/landingpage.tmx.pc.ms.scss (C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Tmx\landingPage\landingPage.tmx.pc.ms.scss) */
+
+/* Media Query definitions */
+/* media queries sizes */
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+/* might extend with zone-limit in the future */
+/* All */
+@media screen {
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  .dept {
+    float: left;
+    clear: none; }
+    .dept a:not(.adchoicesjs):not(.adfeedback),
+    .dept p {
+      color: %white%;
+      width: 100%; }
+    .dept a {
+      background-color: transparent;
+      display: block;
+      height: 100%;
+      overflow: hidden; }
+    .dept .bg:not(.noimage) img {
+      display: block;
+      width: 100%; }
+    .dept .bg:not(.noimage) p {
+      background-color: rgba(0, 0, 0, 0.7);
+      bottom: 0;
+      position: absolute; }
+    .dept .noimage img {
+      display: none; }
+    .dept .noimage p {
+      height: 100%; }
+
+  #featured .featured.filler {
+    display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .heading.bg,
+  .heading.bg a,
+  .heading.bg > span, .heading.fg, .heading.fg a, .heading.fg > span {
+    -ms-text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap; }
+  .heading.subdept {
+    margin-top: -1rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .cluster,
+  .ip {
+    font-size: 0;
+    line-height: 0;
+    list-style: none; }
+    .cluster a,
+    .ip a {
+      color: %white%;
+      position: relative; }
+    .cluster li,
+    .ip li {
+      display: inline-block;
+      vertical-align: top; }
+      .cluster li.noimage:not(.hasimage) p,
+      .ip li.noimage:not(.hasimage) p {
+        height: 30rem; }
+    .cluster p,
+    .ip p {
+      background: rgba(0, 0, 0, 0.8);
+      left: 0;
+      overflow: hidden;
+      position: absolute;
+      width: 100%;
+      white-space: normal; }
+    .cluster .slidecount,
+    .ip .slidecount {
+      top: -0.6rem; }
+    .cluster ul,
+    .ip ul {
+      white-space: nowrap; }
+
+  .ip .hasimage p {
+    bottom: .5rem; }
+  .ip.invalid .hasimage p {
+    bottom: 0; }
+  .ip .noimage:not(.hasimage) p {
+    background: rgba(0, 0, 0, 0.2); }
+
+  .slidecount {
+    display: table;
+    height: .5rem;
+    opacity: .9;
+    position: relative; }
+    .slidecount span {
+      border: solid rgba(0, 0, 0, 0.6);
+      border-width: 0 .1rem .05rem;
+      display: table-cell;
+      height: .6rem;
+      line-height: .6rem;
+      opacity: 1; }
+      .slidecount span:not(.selected) {
+        background-color: rgba(255, 255, 255, 0.5); }
+      .slidecount span:last-child {
+        border-left-color: %black%;
+        border-right-color: %black%; }
+      .slidecount span:not(:last-child) {
+        border-left-color: %black%;
+        border-right-color: transparent; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .cluster .mediaicon span, .dept .mediaicon span, .ip .mediaicon a > span {
+    position: absolute; }
+  .cluster .mediaicon span, .dept .mediaicon span {
+    width: 1.4rem;
+    height: 1.4rem; }
+  .dept .mediaicon {
+    position: relative; }
+    .dept .mediaicon span {
+      bottom: .7rem; }
+
+  #aside,
+  #toc {
+    display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .pollcontainer.featured .pollheading {
+    height: 4rem;
+    margin: 0 -0.9rem 0.5rem 0.5rem;
+    text-indent: -0.45rem;
+    position: relative;
+    /* TODO:RTUIT: Is %theme_name% necessary? */ }
+    .pollcontainer.featured .pollheading .heading {
+      -ms-text-overflow: ellipsis;
+      -webkit-text-overflow: ellipsis;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 0 1rem;
+      color: %white%;
+      float: %Global.Left%;
+      position: relative;
+      bottom: 0.2rem;
+      left: 0.5rem; }
+    body.%theme_name% .pollcontainer.featured .pollheading {
+      background-color: %theme_color%; }
+
+  .featured .poll {
+    margin-left: 0.5rem; }
+    .featured .poll label {
+      max-height: 2.1rem; }
+    .featured .poll .barcontainer {
+      margin-bottom: 0; }
+    .featured .poll .errormsg {
+      height: 13.9rem;
+      padding-top: 3.9rem; }
+    .featured .poll .hideoption {
+      display: none; }
+    .featured .poll li {
+      height: auto; }
+      .featured .poll li .question {
+        margin-bottom: 2.1rem; }
+        .featured .poll li .question label {
+          overflow: hidden;
+          white-space: nowrap; }
+      .featured .poll li:first-child .question {
+        margin-top: 2rem; }
+      .featured .poll li:last-child,
+      .featured .poll li:last-child .result {
+        margin-bottom: 0; }
+      .featured .poll li:last-child .question {
+        margin-bottom: 2.5rem; }
+      .featured .poll li .result {
+        margin-bottom: 0.5rem; }
+    .featured .poll footer {
+      margin-top: 0; }
+      .featured .poll footer .result:not(.hide) {
+        display: block; }
+      .featured .poll footer .result .responses {
+        display: inline-block;
+        padding-right: 1rem;
+        max-width: 15rem;
+        margin-left: .5rem; }
+      .featured .poll footer .result .backtovoting {
+        float: %Global.Right%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #main {
+    -ms-grid-column-span: 2;
+    -ms-grid-columns: 1fr; }
+
+  .dept {
+    display: -ms-grid;
+    -ms-grid-columns: 15.5rem 14.5rem;
+    width: 30rem;
+    margin: 0 1rem 1rem 0; }
+    .dept .bg {
+      position: relative; }
+    .dept .noimage a {
+      padding: %clusterTilePadding%; }
+    .dept .noimage p {
+      -ms-hyphens: auto;
+      -ms-hyphenate-limit-lines: 3;
+      -ms-hyphenate-limit-zone: 8rem;
+      padding: 0;
+      background: none; }
+    .dept p {
+      display: block;
+      font-family: %fontFamilyNormalLight%;
+      max-height: %clusterMaxHeight%;
+      overflow: hidden;
+      padding: %clusterAnchorParaPadding%; }
+
+  /*
+  	// These are values you can use when you want to debug the pattern
+  	article {
+  		&.large
+  		{
+  			border:5px solid blue;
+  		}
+  
+  		&.big
+  		{
+  			border:5px solid red;
+  		}
+  
+  		&.small
+  		{
+  			border:5px solid green;
+  		}
+  
+  		&.none
+  		{
+  			border:5px solid pink;
+  		}
+  	}
+  */
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .heading.bg {
+    font-family: %fontFamilyMediumLarge%;
+    font-size: %fontSizeMediumLarge%;
+    font-weight: %fontWeightMediumLarge%;
+    line-height: %LandingPage.FeaturedHeading.LineHeight%;
+    padding-top: %paddingTopMediumLarge%;
+    -ms-hyphens: auto;
+    -ms-hyphenate-limit-lines: 3;
+    -ms-hyphenate-limit-zone: 8rem;
+    -ms-text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    bottom: .3rem;
+    height: 4.3rem;
+    padding: %LandingPage.FeaturedHeading.PaddingTop% 0.9rem 0;
+    position: relative;
+    margin-left: -0.9rem;
+    margin-right: -0.9rem; }
+    .heading.bg > a,
+    .heading.bg > span {
+      box-sizing: content-box;
+      display: inline-block;
+      padding: 0 0.9rem;
+      width: 100%;
+      height: 100%;
+      -ms-text-overflow: ellipsis;
+      -webkit-text-overflow: ellipsis;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap; }
+
+  .featured,
+  .ip {
+    display: inline-block; }
+
+  .swipenav {
+    -ms-scroll-chaining: none;
+    -ms-overflow-style: none; }
+    .swipenav li {
+      -ms-overflow-style: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .cluster,
+  .ip {
+    position: relative; }
+    .cluster .leftarrow,
+    .ip .leftarrow {
+      left: 0; }
+      .cluster .leftarrow::after,
+      .ip .leftarrow::after {
+        left: 1.4rem;
+        transform: rotate(-135deg); }
+    .cluster .rightarrow,
+    .ip .rightarrow {
+      right: 0; }
+      .cluster .rightarrow::after,
+      .ip .rightarrow::after {
+        right: 1.4rem;
+        transform: rotate(45deg); }
+    .cluster .leftarrow,
+    .cluster .rightarrow,
+    .ip .leftarrow,
+    .ip .rightarrow {
+      background-color: rgba(153, 153, 153, 0.8);
+      display: inline-block;
+      overflow: hidden;
+      position: absolute;
+      text-indent: 100%;
+      transition: background-color .22s;
+      white-space: nowrap;
+      z-index: 5001; }
+      .cluster .leftarrow:hover,
+      .cluster .rightarrow:hover,
+      .ip .leftarrow:hover,
+      .ip .rightarrow:hover {
+        background-color: #999; }
+      .cluster .leftarrow.fade,
+      .cluster .rightarrow.fade,
+      .ip .leftarrow.fade,
+      .ip .rightarrow.fade {
+        transition: opacity .22s, width .22s;
+        opacity: 0;
+        width: 0; }
+      .cluster .leftarrow::after,
+      .cluster .rightarrow::after,
+      .ip .leftarrow::after,
+      .ip .rightarrow::after {
+        border: solid 0.11rem;
+          border-color: %white% %white% transparent transparent;
+        content: '';
+        position: absolute; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #featured {
+    -ms-zoom: 1;
+    margin-left: -0.5rem;
+    padding-left: 0.5rem; }
+    #featured:before, #featured:after {
+      content: "\0020";
+      display: block;
+      height: 0;
+      overflow: hidden; }
+    #featured:after {
+      clear: both; } }
+/* fill */
+@media screen and (min-width: %MediaQueries.SnapMin%) and (max-width: %MediaQueries.FullMax%) {
+  .cluster ul {
+    -ms-columns: auto auto auto auto auto auto; }
+
+  #clusters,
+  #featured {
+    margin-right: -1rem; }
+
+  #featured > *:nth-child(3) {
+    /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+    For Fill, this is the 3rd child element inside the #main, 
+    which is actually the first .featured element.*/
+    clear: both; }
+
+  #main {
+    width: 92rem; }
+    #main div.ad {
+      margin: 0 .8rem 0 0; }
+
+  .featured .poll footer .skiptoresult {
+    margin-top: 1.7rem; }
+  .featured .poll footer .votebtn {
+    margin-top: .6rem; }
+
+  .cluster li:nth-child(n+8) {
+    display: none; }
+
+  .dept.withad ~ .dept:nth-child(6) {
+    position: relative;
+    z-index: 3; } }
+/* full */
+@media screen and (min-width: %MediaQueries.FullMin%) {
+  /*Create the 10-tile cluster's grid for Full mode, requires 8 columns*/
+  .cluster ul {
+    -ms-columns: auto auto auto auto auto auto auto auto; }
+
+  #featured > section:nth-of-type(3) {
+    margin-bottom: 0;
+    vertical-align: top; }
+  #featured > *:nth-child(4) {
+    /*Clear floats for the first item in the second row, when the ad is floating to the right. 
+    For Full, this is the 4th child element inside #main, which is actually 
+    the second .featured element.*/
+    clear: both; }
+  #featured div.ad {
+    margin: 1rem .8rem 0 0; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  body {
+    margin: 0 .5rem 2rem; }
+    body > div {
+      display: -ms-grid;
+      -ms-grid-columns: 1fr auto;
+      -ms-grid-rows: auto auto 1fr auto;
+      margin: 0 auto;
+      width: 123rem; }
+
+  #foot footer {
+    -ms-grid-column: 1;
+    -ms-grid-row: 4;
+    -ms-grid-column-span: 2; }
+
+  #main {
+    -ms-grid-column: 1;
+    -ms-grid-row: 3;
+    -ms-grid-column-span: 2;
+    width: 124rem; }
+
+  #nav {
+    -ms-grid-column: 1;
+    -ms-grid-row: 2;
+    -ms-grid-column-span: 2; }
+
+  .dept.withad ~ .dept:nth-child(8) {
+    position: relative;
+    z-index: 3; } }
+/* No snap (Fill+Full) */
+@media screen and (min-width: %MediaQueries.SnapMin%) {
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  #main div.ad {
+    float: left; }
+
+  .dept.withad:nth-of-type(1) {
+    float: right; }
+    .dept.withad:nth-of-type(1) .ad {
+      background-color: %white%;
+      display: table !important;
+      z-index: 2; }
+
+  #featured > section:nth-of-type(1).ad {
+    float: right;
+    margin-right: 1rem;
+    margin-bottom: 0; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .cluster {
+    clear: both; }
+    .cluster li {
+      /* The following important flag overrides an inline style added by JS. I believe it's set in \Implementations\swipeNavIE10.js. 
+      The 'left' gets applied in snap mode, but it is not removed when going back to fill or full. 
+      TODO: Remove this bit of CSS, and update the JS so that it removes the inline 'left' property when going back to fill or full. */
+      left: 0 !important;
+      list-style: none;
+      margin-bottom: 1rem;
+      margin-right: 1rem;
+      position: relative; }
+      .cluster li.navtile p {
+        background-color: transparent; }
+      .cluster li:nth-child(1) {
+        -ms-grid-column: 1;
+        -ms-grid-row: 1;
+        width: 30rem;
+        -ms-grid-column-span: 2;
+        -ms-grid-row-span: 2; }
+        .cluster li:nth-child(1),
+        .cluster li:nth-child(1) article {
+          height: 30rem; }
+        .cluster li:nth-child(1) img {
+          max-height: 30rem;
+          max-width: 30rem; }
+        .cluster li:nth-child(1).noimage p {
+          max-height: %clusterLargeNoImageMaxHeight%; }
+      .cluster li:nth-child(2) {
+        -ms-grid-column: 3;
+        -ms-grid-row: 1;
+        -ms-grid-column-span: 2; }
+      .cluster li:nth-child(3) {
+        -ms-grid-column: 3;
+        -ms-grid-row: 2; }
+      .cluster li:nth-child(4) {
+        -ms-grid-column: 4;
+        -ms-grid-row: 2; }
+      .cluster li:nth-child(5) {
+        -ms-grid-column: 5;
+        -ms-grid-row: 1; }
+      .cluster li:nth-child(6) {
+        -ms-grid-column: 6;
+        -ms-grid-row: 1; }
+      .cluster li:nth-child(7) {
+        -ms-grid-column: 5;
+        -ms-grid-row: 2;
+        -ms-grid-column-span: 2; }
+      .cluster li:nth-child(8) {
+        -ms-grid-column: 7;
+        -ms-grid-row: 1;
+        -ms-grid-column-span: 2; }
+      .cluster li:nth-child(9) {
+        -ms-grid-column: 7;
+        -ms-grid-row: 2; }
+      .cluster li:nth-child(10) {
+        -ms-grid-column: 8;
+        -ms-grid-row: 2; }
+      .cluster li:nth-child(n+3):nth-child(-n+6) a, .cluster li:nth-child(9) a, .cluster li:nth-child(10) a {
+        height: 14.5rem;
+        width: 14.5rem; }
+      .cluster li:nth-child(2) a, .cluster li:nth-child(7) a, .cluster li:nth-child(8) a {
+        height: 14.5rem;
+        width: 30rem; }
+      .cluster li:nth-child(2) img, .cluster li:nth-child(7) img, .cluster li:nth-child(8) img {
+        max-width: 30rem; }
+      .cluster li:nth-child(3) img, .cluster li:nth-child(5) img, .cluster li:nth-child(9) img, .cluster li.noimage img {
+        display: none; }
+      .cluster li:nth-child(3) p, .cluster li:nth-child(5) p, .cluster li:nth-child(9) p, .cluster li.noimage p {
+        background: none;
+        height: 100%;
+        max-height: 12.5rem;
+        position: static; }
+      .cluster li.noimage p {
+        -ms-hyphens: auto;
+        -ms-hyphenate-limit-lines: 3;
+        -ms-hyphenate-limit-zone: 8rem;
+        line-height: %clusterNoImageLineHeight%;
+        max-height: %clusterNoImageMaxHeight%;
+        padding: %clusterTilePadding%; }
+      .cluster li a {
+        color: %white%;
+        background-color: transparent;
+        display: block;
+        overflow: hidden;
+        position: static; }
+      .cluster li img {
+        display: block;
+        max-height: 14.5rem;
+        max-width: 14.5rem;
+        width: 100%; }
+      .cluster li p {
+        font-family: %fontFamilyNormalLightAlternate%;
+        font-size: %fontSizeNormalAlternate%;
+        font-weight: %fontWeightNormalLightAlternate%;
+        line-height: %lineHeightNormalLightAlternate%;
+        background-color: rgba(0, 0, 0, 0.7);
+        bottom: 0;
+        display: block;
+        max-height: %clusterMaxHeight%;
+        overflow: hidden;
+        padding: %clusterAnchorParaPadding%;
+        position: absolute;
+        width: 100%; }
+    .cluster ul {
+      display: -ms-grid;
+      list-style: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .dept {
+    height: 61rem; }
+    .dept p {
+      font-family: %fontFamilyNormalLightAlternate%;
+      font-size: %fontSizeNormalAlternate%;
+      font-weight: %fontWeightNormalLightAlternate%;
+      line-height: %lineHeightNormalLightAlternate%; }
+    .dept .noimage.large p {
+      max-height: %clusterLargeNoImageMaxHeight%; }
+    .dept .noimage p {
+      line-height: %clusterNoImageLineHeight%;
+      max-height: %clusterNoImageMaxHeight%; }
+    .dept.cluster1, .dept.cluster2, .dept.cluster3 {
+      overflow: hidden; }
+    .dept.cluster1.tilegroupa:not(.withad) {
+      height: 30rem; }
+    .dept.cluster1.tilegroupb, .dept.cluster1.tilegroupc {
+      height: 14.5rem; }
+    .dept.cluster2.tilegroupa:not(.withad), .dept.cluster2.tilegroupc {
+      height: 45.5rem; }
+    .dept.cluster2.tilegroupb {
+      height: 14.5rem; }
+    .dept.cluster3 {
+      /* The following equals 61rem, which is what .dept is already set to
+      	&.tilegroupc
+      	{
+      		height: $smallHeight + $padding + $largeHeight + $padding + $smallHeight;
+      	}
+      */ }
+      .dept.cluster3.tilegroupa:not(.withad) {
+        height: 45.5rem; }
+      .dept.cluster3.tilegroupb {
+        height: 30rem; }
+    .dept.tilegroupa {
+      -ms-grid-rows: 31rem 15.5rem 14.5rem; }
+      .dept.tilegroupa > :nth-child(1) {
+        -ms-grid-column: 1;
+        -ms-grid-column-span: 2;
+        -ms-grid-row: 1;
+        height: 30rem;
+        width: 30rem; }
+      .dept.tilegroupa > :nth-child(2) {
+        -ms-grid-column: 1;
+        -ms-grid-row: 2;
+        height: 14.5rem;
+        width: 14.5rem; }
+      .dept.tilegroupa > :nth-child(3) {
+        -ms-grid-column: 2;
+        -ms-grid-row: 2;
+        height: 14.5rem;
+        width: 14.5rem; }
+      .dept.tilegroupa > :nth-child(4) {
+        -ms-grid-column: 1;
+        -ms-grid-column-span: 2;
+        -ms-grid-row: 3;
+        width: 30rem;
+        height: 14.5rem; }
+    .dept.tilegroupb {
+      -ms-grid-rows: 15.5rem 15.5rem 30rem; }
+      .dept.tilegroupb > :nth-child(1) {
+        -ms-grid-column: 1;
+        -ms-grid-row: 1;
+        height: 14.5rem;
+        width: 14.5rem; }
+      .dept.tilegroupb > :nth-child(2) {
+        -ms-grid-column: 2;
+        -ms-grid-row: 1;
+        height: 14.5rem;
+        width: 14.5rem; }
+      .dept.tilegroupb > :nth-child(3) {
+        -ms-grid-column: 1;
+        -ms-grid-column-span: 2;
+        -ms-grid-row: 2;
+        width: 30rem;
+        height: 14.5rem; }
+      .dept.tilegroupb > :nth-child(4) {
+        -ms-grid-column: 1;
+        -ms-grid-column-span: 2;
+        -ms-grid-row: 3;
+        height: 30rem;
+        width: 30rem; }
+    .dept.tilegroupc {
+      -ms-grid-rows: 15.5rem 31rem 14.5rem; }
+      .dept.tilegroupc > :nth-child(1) {
+        -ms-grid-column: 1;
+        -ms-grid-column-span: 2;
+        -ms-grid-row: 1;
+        width: 30rem;
+        height: 14.5rem; }
+      .dept.tilegroupc > :nth-child(2) {
+        -ms-grid-column: 1;
+        -ms-grid-column-span: 2;
+        -ms-grid-row: 2;
+        height: 30rem;
+        width: 30rem; }
+      .dept.tilegroupc > :nth-child(3) {
+        -ms-grid-column: 1;
+        -ms-grid-row: 3;
+        height: 14.5rem;
+        width: 14.5rem; }
+      .dept.tilegroupc > :nth-child(4) {
+        -ms-grid-column: 2;
+        -ms-grid-row: 3;
+        height: 14.5rem;
+        width: 14.5rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #featured {
+    overflow: hidden; }
+
+  .featured {
+    height: 30rem;
+    overflow: hidden; }
+    .featured.headlines li {
+      background-size: 1rem 1rem;
+      display: block;
+      list-style: none;
+      margin: 0;
+      padding-left: 1.3rem;
+      margin-bottom: %bulletedListStyleAlternateMarginBottom%; }
+      .featured.headlines li a {
+        color: %darkgray%; }
+      .featured.headlines li a {
+        font-family: %fontFamilyNormalAlternate%;
+        font-size: %fontSizeNormalAlternate%;
+        font-weight: %fontWeightNormalAlternate%;
+        line-height: %lineHeightNormalAlternate%; }
+      .featured.headlines li a {
+        font-family: %fontFamilyNormalLightAlternate%;
+        display: inline-block;
+        padding-bottom: .2rem; }
+        .featured.headlines li a figure {
+          display: -ms-grid;
+          -ms-grid-columns: auto auto;
+          -ms-grid-rows: auto; }
+      .featured.headlines li:not(:first-child) {
+        max-height: %featureTilePlainTextMaxHeight%;
+        overflow: hidden; }
+      .featured.headlines li:first-child {
+        background-image: none;
+        list-style: none;
+        padding-left: 0; }
+        .featured.headlines li:first-child a {
+          font-family: %fontFamilyMediumFeatured%;
+          font-size: %fontSizeMediumFeatured%;
+          font-weight: %fontWeightMediumFeatured%;
+          line-height: %lineHeightMediumFeatured%;
+          max-height: 9.4rem;
+          overflow: hidden; }
+          .featured.headlines li:first-child a {
+            font-family: %fontFamilyNormalLightAlternate%; }
+          .featured.headlines li:first-child a figure figcaption {
+            -ms-hyphens: %ConditionalHyphenation-ms-hyphens%;
+            -ms-hyphenate-limit-lines: 3;
+            -ms-grid-column: 2;
+            -ms-grid-row: 1;
+            max-height: %featureTileFigcaptionMaxHeight%;
+            padding-bottom: .3rem;
+            position: relative;
+            top: %featureTileFigcaptionTop%;
+            overflow: hidden; }
+          .featured.headlines li:first-child a figure img + figcaption {
+            max-width: 16.4rem;
+            margin-left: 1rem; }
+        .featured.headlines li:first-child:after {
+          clear: both;
+          content: ".";
+          display: block;
+          height: 0;
+          visibility: hidden; }
+        .featured.headlines li:first-child figure img {
+          -ms-grid-column: 1;
+          -ms-grid-row: 1;
+          display: block;
+          margin: 0;
+          width: 12.5rem;
+          height: 9.5rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .heading {
+    font-family: %fontFamilyMediumLarge%;
+    font-size: %fontSizeMediumLarge%;
+    font-weight: %fontWeightMediumLarge%;
+    line-height: %lineHeightMediumLarge%;
+    padding-top: %paddingTopMediumLarge%; }
+    .featured .heading.bg,
+    .featured .heading.bg a {
+      color: %white%; }
+    .cluster .heading {
+      padding: %clusterH2Padding%;
+      margin: %clusterH2Margin%; }
+      .cluster .heading .chevron {
+        font-family: euphemia;
+        font-size: 2rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #clusters .slidecount {
+    display: none; }
+
+  .ip {
+    height: 30rem;
+    margin-bottom: .6rem;
+    margin-right: .5rem;
+    overflow: hidden; }
+    .ip .leftarrow,
+    .ip .rightarrow {
+      height: 6.8rem;
+      width: 4rem; }
+      .ip .leftarrow::after,
+      .ip .rightarrow::after {
+        height: 2.13rem;
+        top: 2.3rem;
+        width: 2.13rem; }
+    .ip,
+    .ip a,
+    .ip img,
+    .ip p,
+    .ip .slidecount {
+      width: 61rem; }
+    .ip a,
+    .ip img {
+      display: inline-block;
+      height: 30rem; }
+    .ip .halfpane:not(.noimage) a {
+      display: -ms-grid;
+      -ms-grid-columns: 30rem 2rem 25rem 5rem;
+      -ms-grid-rows: auto 1fr; }
+    .ip .halfpane:not(.noimage) h3 {
+      -ms-grid-column: 3;
+      -ms-grid-row: 1;
+      padding: 1.2rem 0 .8rem; }
+    .ip .halfpane:not(.noimage) div.section {
+      -ms-grid-column: 3;
+      -ms-grid-row: 2; }
+    .ip .halfpane:not(.noimage) p {
+      padding: .6rem 0 0; }
+    .ip .halfpane.noimage h3 {
+      padding: 1.2rem 2rem .8rem;
+      width: 100%; }
+    #main .ip .halfpane.noimage p {
+      border: 0;
+      padding: .6rem 2rem 0; }
+    .ip .halfpane a {
+      background: %black%;
+      white-space: normal; }
+    .ip .halfpane h3 {
+      font-family: %fontFamilyMediumLarge%;
+      font-size: %fontSizeMediumLarge%;
+      font-weight: %fontWeightMediumLarge%;
+      line-height: %lineHeightMediumLarge%;
+      padding-top: %paddingTopMediumLarge%;
+      max-height: 14.5rem;
+      overflow: hidden; }
+      .ip .halfpane h3 {
+        line-height: %LandingPage.Infopane.LineHeightMediumLarge%; }
+    .ip .halfpane img {
+      -ms-grid-column: 1;
+      -ms-grid-row: 1;
+      -ms-grid-row-span: 2;
+      width: 30rem; }
+    .ip .halfpane p {
+      font-family: %fontFamilyNormal%;
+      font-size: %fontSizeNormal%;
+      font-weight: %fontWeightNormal%;
+      line-height: %lineHeightNormal%;
+      background: transparent;
+      max-height: 9.8rem;
+      position: static;
+      width: auto; }
+    .ip .hasimage:not(.halfpane) p {
+      max-height: %LandingPage.Infopane.HasImageMaxHeight%;
+      padding: %LandingPage.Infopane.HasImagePaddingTop% 0.9rem %LandingPage.Infopane.HasImagePaddingBottom%;
+      border-bottom: solid .6rem transparent; }
+    .ip .noimage:not(.hasimage) p {
+      border-bottom: solid 2.8rem transparent;
+      line-height: %lineHeightMediumLargeInfoPaneNoImage%;
+      padding-top: 1.3rem;
+      padding-left: 2rem; }
+    .ip .noimage:not(.hasimage):not(.mediaicon) p {
+      padding-right: 2rem; }
+    .ip p {
+      font-family: %fontFamilyMediumLargeInfoPane%;
+      font-size: %fontSizeMediumLargeInfoPane%;
+      font-weight: %fontWeightMediumLargeInfoPane%;
+      line-height: %lineHeightMediumLargeInfoPane%; }
+    .ip ul {
+      display: inline-block;
+      height: 100%;
+      margin: 0;
+      overflow-y: hidden;
+      padding: 0; }
+
+  .featured li.mediaicon:first-child {
+    position: relative; }
+    .featured li.mediaicon:first-child img ~ span {
+      bottom: 1.1rem;
+      left: 10.2rem;
+      height: 1.4rem;
+      position: absolute;
+      width: 1.4rem;
+      z-index: 2; }
+
+  .dept .mediaicon a span, .cluster .mediaicon span, .ip .mediaicon a > span {
+    right: 1rem; }
+  #content .dept .mediaicon a p, #content .cluster .mediaicon p, #content .ip .mediaicon a > p {
+    padding-right: 2.2rem; }
+  .cluster .mediaicon span {
+    bottom: .7rem; }
+  .ip .mediaicon a > span {
+    bottom: 1.7rem;
+    width: 2.2rem;
+    height: 2.2rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #featured .barcontainer {
+    width: 29rem; }
+  #featured .poll h3 {
+    max-height: 5.8rem;
+    overflow: hidden; }
+  #featured .poll h3,
+  #featured .poll li,
+  #featured .poll .responses {
+    margin-left: 1rem; }
+  #featured .pollheading .heading {
+    line-height: %lineHeightMediumLarge%;
+    white-space: nowrap; }
+
+  .errormsg {
+    font-family: %fontFamilyMedium%;
+    font-size: %fontSizeMedium%;
+    font-weight: %fontWeightMedium%;
+    line-height: %lineHeightMedium%; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #featured {
+    -ms-zoom: 1;
+    margin-left: -0.5rem;
+    padding-left: 0.5rem; }
+    #featured:before, #featured:after {
+      content: "\0020";
+      display: block;
+      height: 0;
+      overflow: hidden; }
+    #featured:after {
+      clear: both; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .featured {
+    width: 30.5rem;
+    margin: 0 %LandingPage.TenPxGutter% 1rem -0.5rem; }
+    .featured li a {
+      color: %black%; }
+    .featured li:nth-child(n+2).mediaicon {
+      padding-left: 1.8rem; }
+    .featured li:nth-child(n+2):not(.mediaicon) {
+      margin-left: .5rem; }
+    .featured li:first-child {
+      margin: .2rem 0 .7rem .5rem; }
+    .featured li:last-child {
+      margin-bottom: 1.2rem; }
+    .featured.linkedimage li {
+      background-image: none;
+      list-style-type: none; }
+      .featured.linkedimage li a {
+        display: inline-block;
+        vertical-align: top; }
+    .featured.linkedimage:not(.video) li {
+      position: relative; }
+    .featured.linkedimage.video li:nth-of-type(2) {
+      font-family: %fontFamilyMedium%;
+      font-size: %fontSizeMedium%;
+      font-weight: %fontWeightMedium%;
+      line-height: %lineHeightMedium%; }
+      .featured.linkedimage.video li:nth-of-type(2),
+      .featured.linkedimage.video li:nth-of-type(2) a {
+        max-height: 5.9rem;
+        max-width: 30rem;
+        overflow: hidden;
+        display: inline-block;
+        padding-bottom: .3rem; }
+    .featured.linkedimage.video .videoicon {
+      margin-bottom: -0.2rem; }
+      .featured.linkedimage.video .videoicon img ~ span {
+        bottom: 1.8rem;
+        height: 8.3rem;
+        left: auto;
+        right: 1.5rem;
+        width: 8.3rem; }
+
+  .heading.bg {
+    margin-left: .5rem;
+    text-indent: -0.45rem; } }
+@media screen and (max-width: %MediaQueries.SnapMax%) {
+  .dept.cluster1 {
+    height: 14.5rem; }
+  .dept.cluster2.tilegroupa, .dept.cluster2.tilegroupc {
+    height: 30rem; }
+  .dept.cluster2.tilegroupb {
+    height: 14.5rem; }
+  .dept.cluster3.tilegroupa, .dept.cluster3.tilegroupb {
+    height: 30rem; }
+  .dept.cluster3.tilegroupc {
+    height: 45.5rem; }
+
+  #aside,
+  .ad,
+  .featured {
+    display: none; }
+
+  #featured .featured.filler {
+    display: none !important; }
+
+  .heading > a,
+  .heading > span {
+    margin-left: auto;
+    margin-right: auto;
+    display: block; }
+  .cluster .heading .chevron {
+    display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  #content {
+    display: block; }
+
+  .cluster,
+  .ip {
+    width: 100%;
+    overflow: hidden;
+    margin: 0 .6rem 1rem 0; }
+    .cluster ul a,
+    .cluster img,
+    .ip ul a,
+    .ip img {
+      display: inline-block;
+      height: 17rem;
+      width: 30rem; }
+    .cluster li,
+    .ip li {
+      border: solid %white%;
+        border-width: 0 .1rem; }
+    .cluster .hasimage h3,
+    .cluster .hasimage p,
+    .ip .hasimage h3,
+    .ip .hasimage p {
+      padding: .5rem .9rem .2rem; }
+    .cluster .hasimage.selected h3,
+    .cluster .hasimage.selected p,
+    .ip .hasimage.selected h3,
+    .ip .hasimage.selected p {
+      border-bottom: solid .6rem transparent; }
+    .cluster .hasimage:not(.selected) h3,
+    .cluster .hasimage:not(.selected) p,
+    .ip .hasimage:not(.selected) h3,
+    .ip .hasimage:not(.selected) p {
+      border-bottom: solid 1.1rem transparent;
+      bottom: 0; }
+    .cluster .selected:not(.noimage):not(.hasimage) h3,
+    .cluster .selected:not(.noimage):not(.hasimage) p,
+    .ip .selected:not(.noimage):not(.hasimage) h3,
+    .ip .selected:not(.noimage):not(.hasimage) p {
+      max-height: 5.5rem; }
+    .cluster.invalid ul,
+    .ip.invalid ul {
+      width: 100%; }
+    .cluster.invalid li:nth-child(1),
+    .ip.invalid li:nth-child(1) {
+      display: table;
+      position: relative;
+      margin-left: auto;
+      margin-right: auto; }
+    .cluster.invalid .slidecount,
+    .ip.invalid .slidecount {
+      right: 0; }
+    .cluster.invalid li:not(.selected),
+    .cluster.invalid .slidecount span:not(.selected),
+    .ip.invalid li:not(.selected),
+    .ip.invalid .slidecount span:not(.selected) {
+      display: none; }
+
+  .cluster {
+    height: 21rem; }
+    .cluster .hasimage.selected p {
+      bottom: .5rem; }
+    .cluster.invalid .hasimage.selected p {
+      bottom: 0; }
+    .cluster .noimage:not(.hasimage) p {
+      background: rgba(0, 0, 0, 0.3); }
+    .cluster .noimage:not(.hasimage) p {
+      padding: 1.2rem 1.5rem; }
+    .cluster .navtile {
+      display: none; }
+
+  .halfpane h3 {
+    background: rgba(0, 0, 0, 0.8);
+    left: 0;
+    overflow: hidden;
+    position: absolute;
+    width: 100%;
+    white-space: normal; }
+  .halfpane.noimage:not(.hasimage) h3 {
+    height: 30rem; }
+  .halfpane .section {
+    display: none; }
+
+  .ip {
+    height: 17rem;
+    margin-bottom: .6rem; }
+    .ip .hasimage h3 {
+      bottom: .5rem; }
+    .ip.invalid .hasimage h3 {
+      bottom: 0; }
+    .ip .noimage:not(.hasimage) h3 {
+      background: rgba(0, 0, 0, 0.2); }
+    .ip .noimage:not(.hasimage) h3,
+    .ip .noimage:not(.hasimage) p {
+      padding: .9rem 1.5rem; }
+
+  .slidecount {
+    margin: 0 auto;
+    width: 30rem; }
+
+  .dept .mediaicon span {
+    bottom: .5rem; }
+  .dept .mediaicon p, #main .cluster .mediaicon p, #main .ip .mediaicon p {
+    padding-right: 2rem; }
+  .cluster .mediaicon span, .ip .mediaicon a > span {
+    bottom: 1rem;
+    right: .4rem; }
+
+  .ip .mediaicon a > span {
+    width: 1.4rem;
+    height: 1.4rem; }
+
+  #featured .mobilead {
+    display: block; }
+
+  #main section.withad:nth-of-type(1) {
+    display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .dept p {
+    font-family: %fontFamilyNormalLightAlternateMobile%;
+    font-size: %fontSizeNormalLightAlternateMobile%;
+    line-height: %lineHeightNormalAlternateMobile%; }
+  .dept .noimage p {
+    line-height: %clusterNoImageLineHeightMobile%;
+    max-height: 13.8rem; }
+  .dept.tilegroupa > :nth-child(1), .dept.tilegroupb > :nth-child(3), .dept.tilegroupc > :nth-child(1) {
+    -ms-grid-column: 1;
+    -ms-grid-column-span: 2;
+    -ms-grid-row: 1;
+    width: 30rem;
+    height: 14.5rem; }
+  .dept.cluster1 {
+    -ms-grid-rows: 15.5rem; }
+  .dept.cluster1, .dept.cluster2, .dept.cluster3 {
+    width: 30rem; }
+    .dept.cluster1.tilegroupa > :nth-child(1), .dept.cluster1.tilegroupb > :nth-child(1), .dept.cluster1.tilegroupc > :nth-child(1), .dept.cluster2.tilegroupa > :nth-child(1), .dept.cluster2.tilegroupb > :nth-child(1), .dept.cluster2.tilegroupc > :nth-child(1), .dept.cluster3.tilegroupa > :nth-child(1), .dept.cluster3.tilegroupb > :nth-child(1), .dept.cluster3.tilegroupc > :nth-child(1) {
+      -ms-grid-column: 1;
+      -ms-grid-row: 1; }
+  .dept.cluster2.tilegroupa, .dept.cluster2.tilegroupc {
+    -ms-grid-rows: 15.5rem 14.5rem; }
+    .dept.cluster2.tilegroupa > :nth-child(2), .dept.cluster2.tilegroupc > :nth-child(2) {
+      -ms-grid-column: 1;
+      -ms-grid-row: 2; }
+  .dept.cluster2.tilegroupb {
+    -ms-grid-rows: 14.5rem; }
+    .dept.cluster2.tilegroupb > :nth-child(2) {
+      -ms-grid-column: 2;
+      -ms-grid-row: 1; }
+  .dept.cluster3.tilegroupa, .dept.cluster3.tilegroupb {
+    -ms-grid-rows: 15.5rem 14.5rem; }
+  .dept.cluster3.tilegroupa > :nth-child(2) {
+    -ms-grid-column: 1;
+    -ms-grid-row: 2; }
+  .dept.cluster3.tilegroupa > :nth-child(3) {
+    -ms-grid-column: 2;
+    -ms-grid-row: 2; }
+  .dept.cluster3.tilegroupb > :nth-child(2) {
+    -ms-grid-column: 2;
+    -ms-grid-row: 1; }
+  .dept.cluster3.tilegroupb > :nth-child(3) {
+    -ms-grid-column: 1;
+    -ms-grid-row: 2; }
+  .dept.cluster3.tilegroupc {
+    -ms-grid-rows: 15.5rem 15.5rem 14.5rem; }
+    .dept.cluster3.tilegroupc > :nth-child(2) {
+      -ms-grid-column: 1;
+      -ms-grid-row: 2; }
+    .dept.cluster3.tilegroupc > :nth-child(3) {
+      -ms-grid-column: 1;
+      -ms-grid-row: 3; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .cluster .heading.bg {
+    font-family: %fontFamilyMediumLargeMobile%;
+    font-size: %fontSizeMediumLargeMobile%;
+    font-weight: %fontWeightMediumLargeMobile%;
+    line-height: %LandingPage.FeaturedHeading.LineHeight%; }
+  .cluster > .heading {
+    margin-bottom: -0.3rem; }
+  .heading.bg {
+    -wg-spriting: ignore;
+    background-position: center top;
+    background-repeat: repeat-y;
+    background-size: 400rem .1rem; }
+    .heading.bg > a,
+    .heading.bg > span {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      width: 28rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .cluster h3,
+  .cluster p,
+  .ip h3,
+  .ip p {
+    font-family: %fontFamilyNormalLightAlternateMobile%;
+    font-size: %fontSizeNormalLightAlternateMobile%;
+    font-weight: %fontWeightNormalLightAlternateMobile%;
+    line-height: %lineHeightNormalLightAlternateMobile%; }
+  .cluster .hasimage.selected h3,
+  .cluster .hasimage.selected p,
+  .ip .hasimage.selected h3,
+  .ip .hasimage.selected p {
+    max-height: %LandingPage.Infopane.MsMobileHasImageMaxHeight%; }
+  .cluster .hasimage:not(.selected) h3,
+  .cluster .hasimage:not(.selected) p,
+  .ip .hasimage:not(.selected) h3,
+  .ip .hasimage:not(.selected) p {
+    max-height: %LandingPage.Infopane.MsMobileHasImageDeselectedMaxHeight%; }
+  .cluster .noimage.selected:not(.hasimage) h3,
+  .cluster .noimage.selected:not(.hasimage) p,
+  .ip .noimage.selected:not(.hasimage) h3,
+  .ip .noimage.selected:not(.hasimage) p {
+    border-bottom: solid 1rem transparent;
+    max-height: 16.4rem; }
+  .cluster .noimage:not(.selected):not(.hasimage) h3,
+  .cluster .noimage:not(.selected):not(.hasimage) p,
+  .ip .noimage:not(.selected):not(.hasimage) h3,
+  .ip .noimage:not(.selected):not(.hasimage) p {
+    border-bottom: solid 1.5rem transparent;
+    max-height: 16.9rem; }
+  .cluster:not(.invalid) ul:not(.loaded) li,
+  .ip:not(.invalid) ul:not(.loaded) li {
+    opacity: 0; }
+  .cluster.invalid li:not(.selected),
+  .cluster .loaded li:not(.selected),
+  .ip.invalid li:not(.selected),
+  .ip .loaded li:not(.selected) {
+    opacity: .6; }
+  .cluster li,
+  .ip li {
+    transition: opacity .22s ease 0s, transform 0s ease 0s; }
+
+  .slidecount {
+    top: -1.6rem; }
+
+  .dept .mediaicon span {
+    right: .5rem; }
+
+  .cluster li.mediaicon:not(.selected) span,
+  .ip li.mediaicon:not(.selected) span {
+    bottom: 1.4rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .errormsg {
+    font-family: %fontFamilyMediumMobile%;
+    font-size: %fontSizeMediumMobile%;
+    font-weight: %fontWeightMediumMobile%;
+    line-height: %lineHeightMediumMobile%; }
+
+  .heading.subdept {
+    display: none; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .cluster .leftarrow::after,
+  .ip .leftarrow::after {
+    margin-left: -0.3rem; }
+  .cluster .rightarrow::after,
+  .ip .rightarrow::after {
+    margin-right: -0.3rem; }
+  .cluster .leftarrow,
+  .cluster .rightarrow,
+  .ip .leftarrow,
+  .ip .rightarrow {
+    height: 5.1rem;
+    width: 3rem; }
+    .cluster .leftarrow::after,
+    .cluster .rightarrow::after,
+    .ip .leftarrow::after,
+    .ip .rightarrow::after {
+      height: 1.5rem;
+      top: 1.7rem;
+      width: 1.5rem; } }
+/* PC snap portrait only */
+@media screen and (max-width: %MediaQueries.MobilePortraitMin%) {
+  .cluster li,
+  .ip li {
+    border-left: 0; } }
+/* Mobile Portrait */
+@media screen and (max-width: %MediaQueries.MobilePortraitMax%) {
+  .dept {
+    height: 45.5rem;
+    width: 30rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .dept {
+    -ms-grid-rows: 15.5rem 15.5rem 14.5rem; }
+    .dept.tilegroupa > :nth-child(2), .dept.tilegroupb > :nth-child(1) {
+      -ms-grid-column: 1;
+      -ms-grid-row: 2;
+      height: 14.5rem;
+      width: 14.5rem; }
+    .dept.tilegroupa > :nth-child(3), .dept.tilegroupb > :nth-child(2) {
+      -ms-grid-column: 2;
+      -ms-grid-row: 2;
+      height: 14.5rem;
+      width: 14.5rem; }
+    .dept.tilegroupa > :nth-child(4), .dept.tilegroupb > :nth-child(4) {
+      -ms-grid-column: 1;
+      -ms-grid-column-span: 2;
+      -ms-grid-row: 3;
+      width: 30rem;
+      height: 14.5rem; }
+    .dept.tilegroupc > :nth-child(2) {
+      -ms-grid-column: 1;
+      -ms-grid-column-span: 2;
+      -ms-grid-row: 2;
+      width: 30rem;
+      height: 14.5rem; }
+    .dept.tilegroupc > :nth-child(3) {
+      -ms-grid-column: 1;
+      -ms-grid-row: 3;
+      height: 14.5rem;
+      width: 14.5rem; }
+    .dept.tilegroupc > :nth-child(4) {
+      -ms-grid-column: 2;
+      -ms-grid-row: 3;
+      height: 14.5rem;
+      width: 14.5rem; } }
+/* Mobile Landscape */
+@media screen and (min-width: %MediaQueries.MobileLandscapeMin%) and (max-width: %MediaQueries.SnapMin%) {
+  .dept {
+    height: 30rem;
+    width: 45.5rem; }
+
+  /* Media Query definitions */
+  /* media queries sizes */
+  /* Theme tokens */
+  /* shades of gray */
+  /* common interface colors */
+  /* might extend with zone-limit in the future */
+  .dept {
+    -ms-grid-columns: 15.5rem 15.5rem 14.5rem;
+    -ms-grid-rows: 15.5rem 14.5rem; }
+    .dept.tilegroupa > :nth-child(2), .dept.tilegroupb > :nth-child(1), .dept.tilegroupc > :nth-child(3) {
+      -ms-grid-column: 3;
+      -ms-grid-row: 1;
+      height: 14.5rem;
+      width: 14.5rem; }
+    .dept.tilegroupa > :nth-child(4), .dept.tilegroupb > :nth-child(4), .dept.tilegroupc > :nth-child(2) {
+      -ms-grid-column: 2;
+      -ms-grid-column-span: 2;
+      -ms-grid-row: 2;
+      width: 30rem;
+      height: 14.5rem; }
+    .dept.tilegroupa > :nth-child(3), .dept.tilegroupb > :nth-child(2), .dept.tilegroupc > :nth-child(4) {
+      -ms-grid-column: 1;
+      -ms-grid-row: 2;
+      height: 14.5rem;
+      width: 14.5rem; }
+    .dept.cluster2.tilegroupa {
+      -ms-grid-rows: 15.5rem; }
+      .dept.cluster2.tilegroupa > :nth-child(1) {
+        -ms-grid-column: 1;
+        -ms-grid-row: 1; }
+      .dept.cluster2.tilegroupa > :nth-child(2) {
+        -ms-grid-column: 2;
+        -ms-grid-row: 1; } }
+

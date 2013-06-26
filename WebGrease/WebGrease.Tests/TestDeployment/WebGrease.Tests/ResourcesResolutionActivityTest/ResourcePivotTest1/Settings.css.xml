@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Settings>
+  <Global config="Debug" treatWarningsAsErrors="false" />
+  <Global config="Release" treatWarningsAsErrors="true" />
+  <ImageDirectories>images</ImageDirectories>
+  <ImageExtensions>*.png;*.jpg;*.jpeg;*.gif;*.ico;*.svg</ImageExtensions>
+  <TokensDirectory>Resources</TokensDirectory>
+  <!-- 
+  All locales supported by the SDK, ordered by the unique ones first:
+  <ResourcePivot key="locales" applyMode="CssApplyAfterParse">generic-generic;da-dk;de-at;el-gr;en-ca;es-ar;fi-fi;fr-be;he-il;id-id;it-it;ja-jp;ko-kr;nb-no;nl-be;pt-br;ru-ru;sv-se;th-th;tr-tr;zh-hk;de-ch;de-de;en-gb;en-ie;en-in;en-my;en-ph;en-sg;en-us;en-za;es-cl;es-co;es-cr;es-es;es-mx;es-pe;es-us;es-ve;es-xl;fr-ca;fr-ch;fr-fr;nl-nl;pt-pt;zh-sg;zh-tw</ResourcePivot>
+  -->
+  <ResourcePivot key="locales" applyMode="ApplyAsStringReplace">generic-generic;en-ca;en-us;de-de;zh-hk</ResourcePivot>
+  <ResourcePivot key="themes" applyMode="ApplyAsStringReplace">aquamarine;msnblue;slate</ResourcePivot>
+  <OutputPathFormat>{themes}/{locales}/{dpi}/{output}</OutputPathFormat>
+  <Dpi>1</Dpi>
+  <CssMinificationDefaults>
+    <ValidateLowerCase>True</ValidateLowerCase>
+  </CssMinificationDefaults>
+  <CssMinification config="Debug">
+    <Minify>False</Minify>
+    <Optimize>True</Optimize>
+    <MergeMediaQueries>True</MergeMediaQueries>
+  </CssMinification>
+  <CssMinification config="Release">
+    <Minify>True</Minify>
+    <MergeMediaQueries>True</MergeMediaQueries>
+  </CssMinification>
+</Settings>

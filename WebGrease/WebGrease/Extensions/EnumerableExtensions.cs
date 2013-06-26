@@ -10,6 +10,7 @@
 namespace WebGrease.Extensions
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
@@ -18,9 +19,48 @@ namespace WebGrease.Extensions
     using WebGrease.Css.Extensions;
 
     /// <summary>Enumerable extensions.</summary>
-    internal static class DictionaryExtensions
+    internal static class EnumerableExtensions
     {
         #region Methods
+
+        /// <summary>The has at least.</summary>
+        /// <param name="source">The source.</param>
+        /// <param name="atLeast">The at least.</param>
+        /// <typeparam name="T">The type of the item in the enumrable.</typeparam>
+        /// <returns>The <see cref="bool"/>.</returns>
+        internal static bool HasAtLeast<T>(this IEnumerable<T> source, int atLeast)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException("source");
+            }
+
+            var count = 0;
+            using (var enumerator = source.GetEnumerator())
+            {
+                while (enumerator.MoveNext())
+                {
+                    if (++count == atLeast)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>The distinct by extension method.</summary>
+        /// <param name="source">The source.</param>
+        /// <param name="keySelector">The key selector.</param>
+        /// <typeparam name="TSource">The source type</typeparam>
+        /// <typeparam name="TKey">Type of the key</typeparam>
+        /// <returns>The <see cref="IEnumerable"/>.</returns>
+        internal static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
+        {
+            var hash = new HashSet<TKey>();
+            return source.Where(p => hash.Add(keySelector(p)));
+        }
 
         /// <summary>Adds a dictionary to another dictionary with the same types.</summary>
         /// <param name="dictionary">The dictionary to add to.</param>
@@ -50,7 +90,7 @@ namespace WebGrease.Extensions
                 }
 
                 dictionary1[key] += kvp2.Value;
-            } 
+            }
         }
 
         /// <summary>Tries to get a value from the dictionary, returns TValue default if not found.</summary>
@@ -67,8 +107,8 @@ namespace WebGrease.Extensions
             }
 
             TValue value;
-            return 
-                dictionary.TryGetValue(key, out value) 
+            return
+                dictionary.TryGetValue(key, out value)
                     ? value
                     : default(TValue);
         }
@@ -125,6 +165,27 @@ namespace WebGrease.Extensions
                    ?? configDictionary.TryGetValue(string.Empty)
                    ?? (configName.IsNullOrWhitespace() ? configDictionary.FirstOrDefault().Value : null)
                    ?? new T();
+        }
+
+        /// <summary>The if not null.</summary>
+        /// <param name="obj">The obj.</param>
+        /// <param name="action">The action.</param>
+        /// <typeparam name="TObject">The type of object</typeparam>
+        /// <typeparam name="TResult">The type of the result</typeparam>
+        /// <returns>The <see cref="TResult"/>.</returns>
+        internal static TResult NullSafeAction<TObject, TResult>(this TObject obj, Func<TObject, TResult> action)
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
+
+            if (obj != null)
+            {
+                return action(obj);
+            }
+
+            return default(TResult);
         }
     }
 }

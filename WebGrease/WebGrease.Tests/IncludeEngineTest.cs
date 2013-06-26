@@ -27,8 +27,8 @@ namespace Microsoft.WebGrease.Tests
         {
             var includeFile = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\IncludeTest\Test1\test1.js");
             var ie = new IncludePreprocessingEngine();
-            ie.SetContext(new WebGreaseContext(new WebGreaseConfiguration() { DestinationDirectory = TestDeploymentPaths.TestDirectory }));
-            var result = ie.Process(ContentItem.FromFile(includeFile, includeFile.MakeRelativeToDirectory(TestDeploymentPaths.TestDirectory)), new PreprocessingConfig(), false).Content;
+            var webGreaseContext = new WebGreaseContext(new WebGreaseConfiguration() { DestinationDirectory = TestDeploymentPaths.TestDirectory });
+            var result = ie.Process(webGreaseContext, ContentItem.FromFile(includeFile, includeFile.MakeRelativeToDirectory(TestDeploymentPaths.TestDirectory)), new PreprocessingConfig(), false).Content;
 
             Assert.IsTrue(result.Contains("included1();"));
             Assert.IsTrue(result.Contains("included2();"));

@@ -138,7 +138,7 @@ namespace WebGrease
         /// <param name="title">The title.</param>
         /// <param name="startTime">The start time.</param>
         /// <param name="activityName">The activity name.</param>
-        internal static void WriteResults(string filePathWithoutExtension, IDictionary<FileTypes, TimeMeasureResult[]> results, string title, DateTimeOffset startTime, string activityName)
+        internal static void WriteResults(string filePathWithoutExtension, IEnumerable<Tuple<string, bool, IEnumerable<TimeMeasureResult>>> results, string title, DateTimeOffset startTime, string activityName)
         {
             var endTime = DateTimeOffset.Now;
 
@@ -155,12 +155,12 @@ namespace WebGrease
             textReportBuilder.AppendLine();
             textReportBuilder.AppendLine();
 
-            foreach (var result in results.OrderByDescending(r => r.Value.Sum(v => v.Duration)))
+            foreach (var result in results.OrderBy(r => r.Item2).ThenByDescending(r => r.Item3.Sum(v => v.Duration)))
             {
-                var fileType = result.Key;
-                var timeMeasureResults = result.Value;
+                var key = result.Item1;
+                var timeMeasureResults = result.Item3;
 
-                textReportBuilder.AppendLine(timeMeasureResults.GetTextTable(fileType + " - " + "Details"));
+                textReportBuilder.AppendLine(timeMeasureResults.GetTextTable(key + " - " + "Details"));
             }
 
             textReportBuilder.AppendLine();
@@ -169,10 +169,10 @@ namespace WebGrease
             textReportBuilder.AppendLine();
             textReportBuilder.AppendLine();
 
-            foreach (var result in results.OrderByDescending(r => r.Value.Sum(v => v.Duration)))
+            foreach (var result in results.Where(r => !r.Item2).OrderByDescending(r => r.Item3.Sum(v => v.Duration)))
             {
-                var fileType = result.Key;
-                var timeMeasureResults = result.Value;
+                var fileType = result.Item1;
+                var timeMeasureResults = result.Item3;
 
                 textReportBuilder.AppendLine(timeMeasureResults.Group(tm => tm.IdParts.FirstOrDefault()).GetTextTable(fileType + " - " + "Summary"));
             }
@@ -182,8 +182,8 @@ namespace WebGrease
             foreach (var result in results)
             {
                 File.WriteAllText(
-                    "{0}.{1}.{2}.measure.csv".InvariantFormat(filePathWithoutExtension, activityName, result.Key),
-                    result.Value.GetCsv());
+                    "{0}.{1}.{2}.measure.csv".InvariantFormat(filePathWithoutExtension, activityName, result.Item1),
+                    result.Item3.GetCsv());
             }
         }
 

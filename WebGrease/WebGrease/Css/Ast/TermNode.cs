@@ -27,7 +27,7 @@ namespace WebGrease.Css.Ast
         /// <param name="hexColor">Hexadecimal color code</param>
         /// <param name="functionNode">Function object</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "string", Justification = "Css value description.")]
-        public TermNode(string unaryOperator, string numberBasedValue, string stringBasedValue, string hexColor, FunctionNode functionNode)
+        public TermNode(string unaryOperator, string numberBasedValue, string stringBasedValue, string hexColor, FunctionNode functionNode, string replacementTokenBasedValue = null)
         {
             // Validity Checks
             // Besides the optional unary_operator, only one value can exist for the remaing arguments the rest need to be null
@@ -87,7 +87,11 @@ namespace WebGrease.Css.Ast
             this.StringBasedValue = stringBasedValue;
             this.Hexcolor = hexColor;
             this.FunctionNode = functionNode;
+            this.ReplacementTokenBasedValue = replacementTokenBasedValue;
         }
+
+        /// <summary>Gets or sets the replacement token based value.</summary>
+        public string ReplacementTokenBasedValue { get; set; }
 
         /// <summary>
         /// Gets Unary Operatior

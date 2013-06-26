@@ -90,9 +90,9 @@ $margin: 16px;
         private static string ProcessSass(string content, string filename, LogExtendedError logExtendedError = null)
         {
             var sassPreprocessingEngine = new SassPreprocessingEngine();
-            sassPreprocessingEngine.SetContext(new WebGreaseContext(new WebGreaseConfiguration(), logInformation: null, logExtendedWarning: null, logError: null, logExtendedError: logExtendedError));
+            var webGreaseContext = new WebGreaseContext(new WebGreaseConfiguration(), logInformation: null, logExtendedWarning: null, logError: null, logExtendedError: logExtendedError);
             File.WriteAllText(filename, content);
-            var processSassResult = sassPreprocessingEngine.Process(ContentItem.FromFile(filename), null, false);
+            var processSassResult = sassPreprocessingEngine.Process(webGreaseContext, ContentItem.FromFile(filename), null, false);
             return processSassResult != null
                 ? processSassResult.Content
                 : null;

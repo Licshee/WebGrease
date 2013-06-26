@@ -15,87 +15,101 @@ namespace WebGrease.Configuration
     using System.Linq;
     using System.Xml.Linq;
 
+    using WebGrease.Css.Extensions;
     using WebGrease.Extensions;
 
     /// <summary>
     /// A set of Css files that are defined together.
     /// </summary>
-    internal sealed class CssFileSet : IFileSet
+    internal sealed class CssFileSet : FileSetBase
     {
-        /// <summary>
-        /// This flag is used to determine whether we are using the local file-set
-        /// Locales and not the global defaults. If we parse a file-set locale
-        /// and this flag is false, we are going to clear anything we picked up from
-        /// the global settings, thereby completely replacing the default list of locales
-        /// with the local set.
-        /// </summary>
-        private bool usingFileSetLocales;
+        /// <summary>The local dpi used.</summary>
+        private bool localDpiUsed;
 
-        /// <summary>
-        /// This flag is used to determine whether we are using the local file-set
-        /// Themes and not the global defaults. If we parse a file-set theme
-        /// and this flag is false, we are going to clear anything we picked up from
-        /// the global settings, thereby completely replacing the default list of themes
-        /// with the local set.
-        /// </summary>
-        private bool usingFileSetThemes;
+        /// <summary>Gets all the the dpi values.</summary>
+        private IDictionary<string, HashSet<float>> allDpi = new Dictionary<string, HashSet<float>>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CssFileSet"/> class.
         /// </summary>
         internal CssFileSet()
         {
-            this.Locales = new List<string>();
-            this.Themes = new List<string>();
             this.Minification = new Dictionary<string, CssMinificationConfig>(StringComparer.OrdinalIgnoreCase);
             this.ImageSpriting = new Dictionary<string, CssSpritingConfig>(StringComparer.OrdinalIgnoreCase);
-            this.InputSpecs = new List<InputSpec>();
             this.Autonaming = new Dictionary<string, AutoNameConfig>(StringComparer.OrdinalIgnoreCase);
-            this.Bundling = new Dictionary<string, BundlingConfig>(StringComparer.OrdinalIgnoreCase);
-            this.Preprocessing = new Dictionary<string, PreprocessingConfig>(StringComparer.OrdinalIgnoreCase);
-            this.LoadedConfigurationFiles = new List<string>();
+            this.Dpi = new HashSet<float>();
         }
 
         /// <summary>Initializes a new instance of the <see cref="CssFileSet"/> class.</summary>
         /// <param name="cssFileSetElement">config element containing info for a set of css files</param>
         /// <param name="sourceDirectory">The base directory.</param>
-        /// <param name="defaultLocales">The default set of locales.</param>
         /// <param name="defaultMinification">The default set of minification configs.</param>
         /// <param name="defaultSpriting">The default set of spriting configs. </param>
-        /// <param name="defaultThemes">The default set of themes.</param>
         /// <param name="defaultPreprocessing">The default pre processing config.</param>
         /// <param name="defaultBundling">The defayult bundling configuration</param>
+        /// <param name="defaultResourcePivots">The default resource pivots</param>
         /// <param name="globalConfig">The global Config.</param>
+        /// <param name="defaultOutputPathFormat">The default Output Path Format.</param>
+        /// <param name="defaultDpi">The default dpi values</param>
         /// <param name="configurationFile">The parent configuration file</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Is not excessive")]
-        internal CssFileSet(XElement cssFileSetElement, string sourceDirectory, IList<string> defaultLocales, IDictionary<string, CssMinificationConfig> defaultMinification, IDictionary<string, CssSpritingConfig> defaultSpriting, IList<string> defaultThemes, IDictionary<string, PreprocessingConfig> defaultPreprocessing, IDictionary<string, BundlingConfig> defaultBundling, GlobalConfig globalConfig, string configurationFile)
-            : this(defaultLocales, defaultMinification, defaultSpriting, defaultThemes, defaultPreprocessing, defaultBundling)
+        internal CssFileSet(XElement cssFileSetElement, string sourceDirectory, IDictionary<string, CssMinificationConfig> defaultMinification, IDictionary<string, CssSpritingConfig> defaultSpriting, IDictionary<string, PreprocessingConfig> defaultPreprocessing, IDictionary<string, BundlingConfig> defaultBundling, ResourcePivotGroupCollection defaultResourcePivots, GlobalConfig globalConfig, string defaultOutputPathFormat, IDictionary<string, HashSet<float>> defaultDpi, string configurationFile)
+            : this()
         {
             Contract.Requires(cssFileSetElement != null);
             Contract.Requires(!string.IsNullOrWhiteSpace(sourceDirectory));
 
-            var outputAttribute = cssFileSetElement.Attribute("output");
-            this.Output = outputAttribute != null ? outputAttribute.Value : string.Empty;
+            this.InitializeDefaults(defaultResourcePivots, defaultPreprocessing, defaultBundling, defaultOutputPathFormat);
+            this.InitializeDefaults(defaultMinification, defaultSpriting, defaultDpi);
+            var fileSetElements = this.Initialize(cssFileSetElement, globalConfig, configurationFile);
+            this.Load(fileSetElements, sourceDirectory);
+        }
 
-            this.GlobalConfig = globalConfig;
+        /// <summary>
+        /// Gets the dictionary of auto naming configs
+        /// </summary>
+        public IDictionary<string, AutoNameConfig> Autonaming { get; private set; }
 
-            var fileSetElements = cssFileSetElement.Descendants().ToList();
-            WebGreaseConfiguration.ForEachConfigSourceElement(
-                cssFileSetElement,
-                configurationFile,
-                (element, s) =>
-                    {
-                        LoadedConfigurationFiles.Add(s);
-                        fileSetElements.AddRange(element.Descendants());
-                    });
+        /// <summary>Gets the dictionary of configurations.</summary>
+        internal IDictionary<string, CssMinificationConfig> Minification { get; private set; }
 
+        /// <summary>Gets the dpi values specific for this output.</summary>
+        internal HashSet<float> Dpi { get; private set; }
+
+
+        /// <summary>
+        /// Gets the dictionary of spriting configurations.
+        /// </summary>
+        internal IDictionary<string, CssSpritingConfig> ImageSpriting { get; private set; }
+
+        /// <summary>Loads the settings from the elements.</summary>
+        /// <param name="fileSetElements">The elements.</param>
+        /// <param name="sourceDirectory">The source Directory.</param>
+        protected override void Load(IEnumerable<XElement> fileSetElements, string sourceDirectory)
+        {
+            base.Load(fileSetElements, sourceDirectory);
             foreach (var element in fileSetElements)
             {
                 var name = element.Name.ToString();
-                var value = element.Value;
-
+                var value = (string)element;
                 switch (name)
                 {
+                    case "Dpi":
+                        if (!this.localDpiUsed)
+                        {
+                            this.localDpiUsed = true;
+                            this.allDpi.Clear();
+                        }
+
+                        var dpi = value.NullSafeAction(StringExtensions.SafeSplitSemiColonSeperatedValue)
+                            .Select(d => d.TryParseFloat())
+                            .Where(d => d != null)
+                            .Select(d => d.Value);
+
+                        var output = (string)element.Attribute("output");
+                        this.allDpi[output.AsNullIfWhiteSpace() ?? string.Empty] = new HashSet<float>(dpi);
+
+                        break;
                     case "Minification":
                         // create a configuration object from the markup and set it in the dictionary.
                         // if it already exists (a default was there), clobber it with the new one.
@@ -106,79 +120,33 @@ namespace WebGrease.Configuration
                         this.ImageSpriting.AddNamedConfig(new CssSpritingConfig(element));
                         break;
 
-                    case "Preprocessing":
-                        this.Preprocessing.AddNamedConfig(new PreprocessingConfig(element));
-                        break;
-
                     case "Autoname":
                         this.Autonaming.AddNamedConfig(new AutoNameConfig(element));
                         break;
-
-                    case "Bundling":
-                        this.Bundling.AddNamedConfig(new BundlingConfig(element));
-                        break;
-
-                    case "Locales":
-                        if (!this.usingFileSetLocales)
-                        {
-                            // we haven't found any file-set locales yet, so we
-                            // are going to clear the list (if it has anything)
-                            // so we clobber the default in effect.
-                            this.usingFileSetLocales = true;
-                            this.Locales.Clear();
-                        }
-
-                        WebGreaseConfiguration.AddSeperatedValues(this.Locales, value);
-                        break;
-
-                    case "Themes":
-                        if (!this.usingFileSetThemes)
-                        {
-                            // we haven't found any file-set themes yet, so we
-                            // are going to clear the list (if it has anything)
-                            // so we clobber the default in effect.
-                            this.usingFileSetThemes = true;
-                            this.Themes.Clear();
-                        }
-
-                        WebGreaseConfiguration.AddSeperatedValues(this.Themes, value);
-                        break;
-
-                    case "Inputs":
-                        this.InputSpecs.AddInputSpecs(sourceDirectory, element);
-                        break;
                 }
             }
+
+            var outputSpecificKey = this.allDpi.Keys.FirstOrDefault(k => !k.IsNullOrWhitespace() && this.Output.IndexOf(k, StringComparison.OrdinalIgnoreCase) != -1) ?? string.Empty;
+
+            HashSet<float> outputSpecificDpi;
+            if (!this.allDpi.TryGetValue(outputSpecificKey, out outputSpecificDpi))
+            {
+                this.allDpi.TryGetValue(string.Empty, out outputSpecificDpi);
+            }
+
+            this.Dpi = outputSpecificDpi ?? new HashSet<float> { 1f };
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CssFileSet"/> class.
-        /// </summary>
-        /// <param name="defaultLocales">The default set of locales.</param>
-        /// <param name="defaultMinification">The default set of minification configs.</param>
-        /// <param name="defaultSpriting">The default set of spriting configs.</param>
-        /// <param name="defaultThemes">The default set of themes.</param>
-        /// <param name="defaultPreprocessing">The default pre processing config.</param>
-        /// <param name="defaultBundling">The defayult bundling configuration</param>
-        private CssFileSet(IList<string> defaultLocales, IDictionary<string, CssMinificationConfig> defaultMinification, IDictionary<string, CssSpritingConfig> defaultSpriting, IList<string> defaultThemes, IDictionary<string, PreprocessingConfig> defaultPreprocessing, IDictionary<string, BundlingConfig> defaultBundling)
-            : this()
+        /// <summary>Initializes the defaults for the css file set.</summary>
+        /// <param name="defaultMinification">The default minification.</param>
+        /// <param name="defaultSpriting">The default spriting.</param>
+        /// <param name="defaultDpi">The default Dpi.</param>
+        private void InitializeDefaults(IDictionary<string, CssMinificationConfig> defaultMinification, IDictionary<string, CssSpritingConfig> defaultSpriting, IDictionary<string, HashSet<float>> defaultDpi)
         {
-            // if we were given a default set of locales, add them to the list
-            if (defaultLocales != null && defaultLocales.Count > 0)
+            // apply default dpi's
+            if (defaultDpi != null && defaultDpi.Any())
             {
-                foreach (var locale in defaultLocales)
-                {
-                    this.Locales.Add(locale);
-                }
-            }
-
-            // if we were given a default set of themes, add them to the list
-            if (defaultThemes != null && defaultThemes.Count > 0)
-            {
-                foreach (var theme in defaultThemes)
-                {
-                    this.Themes.Add(theme);
-                }
+                defaultDpi.ForEach(dd => this.allDpi[dd.Key] = dd.Value);
             }
 
             // if we were given a default set of minification configs, copy them now
@@ -198,63 +166,6 @@ namespace WebGrease.Configuration
                     this.ImageSpriting[configuration] = defaultSpriting[configuration];
                 }
             }
-
-            // if we were given a default set of minification configs, copy them now
-            if (defaultPreprocessing != null && defaultPreprocessing.Count > 0)
-            {
-                foreach (var configuration in defaultPreprocessing.Keys)
-                {
-                    this.Preprocessing[configuration] = defaultPreprocessing[configuration];
-                }
-            }
-
-            // Set the default bundling
-            if (defaultBundling != null && defaultBundling.Count > 0)
-            {
-                foreach (var configuration in defaultBundling.Keys)
-                {
-                    this.Bundling[configuration] = defaultBundling[configuration];
-                }
-            }
         }
-
-        /// <summary>Gets the external files.</summary>
-        public IList<string> LoadedConfigurationFiles { get; private set; }
-
-        /// <summary>Gets the locales.</summary>
-        public IList<string> Locales { get; private set; }
-
-        /// <summary>Gets the preprocessing configuration.</summary>
-        public IDictionary<string, PreprocessingConfig> Preprocessing { get; private set; }
-
-        /// <summary>
-        /// Gets the dictionary of auto naming configs
-        /// </summary>
-        public IDictionary<string, AutoNameConfig> Autonaming { get; private set; }
-
-        /// <summary>
-        /// Gets the dictionary of auto naming configs
-        /// </summary>
-        public IDictionary<string, BundlingConfig> Bundling { get; private set; }
-
-        /// <summary>Gets the output specified.</summary>
-        public string Output { get; set; }
-
-        /// <summary>Gets the list of <see cref="InputSpec"/> items specified.</summary>
-        public IList<InputSpec> InputSpecs { get; private set; }
-
-        /// <summary>Gets the themes.</summary>
-        internal IList<string> Themes { get; private set; }
-
-        /// <summary>Gets the dictionary of configurations.</summary>
-        internal IDictionary<string, CssMinificationConfig> Minification { get; private set; }
-
-        /// <summary>Gets the global config.</summary>
-        internal GlobalConfig GlobalConfig { get; private set; }
-
-        /// <summary>
-        /// Gets the dictionary of spriting configurations.
-        /// </summary>
-        internal IDictionary<string, CssSpritingConfig> ImageSpriting { get; private set; }
     }
 }

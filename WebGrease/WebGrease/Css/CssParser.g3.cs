@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="CssParser.g3.cs" company="Microsoft">
 //   Copyright Microsoft Corporation, all rights reserved
 // </copyright>
@@ -33,6 +33,7 @@ namespace WebGrease.Css
         private static char[] _semicolon = new[] { ';' };
 
         /// <summary>Parse the styleSheet node from the css file path.</summary>
+        /// <param name="context">The context.</param>
         /// <param name="cssContent">The css Content.</param>
         /// <param name="shouldLogDiagnostics">Whether the tree should be printed.</param>
         /// <returns>The styleSheet Ast node.</returns>

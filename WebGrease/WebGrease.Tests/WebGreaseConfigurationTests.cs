@@ -173,13 +173,13 @@ namespace WebGrease.Tests
 
             var locales = cssSet1.Locales;
             Assert.IsNotNull(locales);
-            Assert.IsTrue(locales.Count == 2);
+            Assert.IsTrue(locales.Count() == 2);
             Assert.IsTrue(locales[0] == "en-us");
             Assert.IsTrue(locales[1] == "fr-ca");
 
             var themes = cssSet1.Themes;
             Assert.IsNotNull(themes);
-            Assert.IsTrue(themes.Count == 2);
+            Assert.IsTrue(themes.Count() == 2);
             Assert.IsTrue(themes[0] == "red");
             Assert.IsTrue(themes[1] == "blue");
 

@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WebGrease>
+  <Settings configSource="Settings.css.xml" />
+  <CssFileSet configSource="settings.css.classic.xml" output="ChannelHomepage.classic.pc.ms.ie9.css">
+    <Inputs>
+      <Input>css\ChannelHomepage.classic.pc.ms.ie9.css</Input>
+    </Inputs>
+  </CssFileSet>
+  <CssFileSet configSource="settings.css.downlevel.xml" output="ChannelHomepage.downlevel.css">
+    <Inputs>
+      <Input>css\ChannelHomepage.downlevel.css</Input>
+    </Inputs>
+  </CssFileSet>
+</WebGrease>

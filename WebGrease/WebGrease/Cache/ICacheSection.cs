@@ -19,15 +19,6 @@ namespace WebGrease
         /// <summary>Gets the unique key.</summary>
         string UniqueKey { get; }
 
-        /// <summary>Varys the section by settings.</summary>
-        /// <param name="settings">The settings.</param>
-        /// <param name="nonpublic">Determins if it should non public members of the object as well.</param>
-        void VaryBySettings(object settings, bool nonpublic = false);
-
-        /// <summary>Varys the section by file.</summary>
-        /// <param name="contentItem">The result file.</param>
-        void VaryByContentItem(ContentItem contentItem);
-
         /// <summary>Ends the section.</summary>
         void EndSection();
 
@@ -91,6 +82,9 @@ namespace WebGrease
         /// <param name="relativeHashedDestinationFile">The relative hashed Destination File.</param>
         /// <param name="contentPivots">The content Pivots.</param>
         /// <returns>The <see cref="ContentItem"/>.</returns>
-        ContentItem GetCachedContentItem(string fileCategory, string relativeDestinationFile, string relativeHashedDestinationFile = null, IEnumerable<ContentPivot> contentPivots = null);
+        ContentItem GetCachedContentItem(string fileCategory, string relativeDestinationFile, string relativeHashedDestinationFile = null, IEnumerable<ResourcePivotKey> contentPivots = null);
+
+        /// <summary>The load.</summary>
+        void Load();
     }
 }

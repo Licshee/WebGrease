@@ -55,7 +55,7 @@ namespace WebGrease
                            EndResult = endResult,
                            FileCategory = fileCategory,
                            CachedFilePath = context.Cache.StoreInCache(cacheCategory, contentItem),
-                           ContentHash = context.GetContentItemHash(contentItem),
+                           ContentHash = contentItem.GetContentHash(context),
                            RelativeContentPath = contentItem.RelativeContentPath,
                            RelativeHashedContentPath = contentItem.RelativeHashedContentPath,
                         };

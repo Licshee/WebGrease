@@ -8,6 +8,7 @@ namespace WebGrease
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     using Css;
     using WebGrease.Activities;
@@ -82,10 +83,9 @@ namespace WebGrease
                 }
             }
 
-            return
-                cssMinifyResult != null && cssMinifyResult.Css != null
-                ? cssMinifyResult.Css.Content
-                : null;
+            return cssMinifyResult != null && cssMinifyResult.Css != null && cssMinifyResult.Css.Any()
+                        ? cssMinifyResult.Css.FirstOrDefault().Content
+                        : null;
         }
     }
 }

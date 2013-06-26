@@ -41,7 +41,7 @@ namespace WebGrease.Tests
             var resourcesResolutionActivity = new ResourcesResolutionActivity(new WebGreaseContext(new WebGreaseConfiguration()))
             {
                 SourceDirectory = sourceDirectory,
-                ResourceTypeFilter = ResourceType.Themes,
+                ResourceGroupKey = Strings.ThemesResourcePivotKey,
                 ApplicationDirectoryName = "App",
                 SiteDirectoryName = "Site1",
                 DestinationDirectory = Path.Combine(destinationDirectory, @"ToolsLogs\Resources\Themes")

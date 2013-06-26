@@ -46,7 +46,7 @@ namespace WebGrease.Preprocessing.Sass
         /// <summary>
         /// The execution parameters for sass
         /// </summary>
-        private const string SassExecuteParametersFormat = "{0} \"{1}\"  --load-path \"{2}\" --";
+        private const string SassExecuteParametersFormat = "{0} \"{1}\" \"{2}\"  --load-path \"{3}\" --";
 
         /// <summary>
         /// The filename for the sass executable.
@@ -60,6 +60,9 @@ namespace WebGrease.Preprocessing.Sass
 
         /// <summary>The regex replace token for the TokenRegex.</summary>
         private const string TokenRegexReplaceValue = "${token}";
+
+        /// <summary>The regex replace token for the TokenRegex.</summary>
+        private const string ClassTokenRegexReplaceValue = "%${token}%";
 
         #endregion
 
@@ -82,6 +85,12 @@ namespace WebGrease.Preprocessing.Sass
         private static readonly Regex TokenRegex = new Regex(@"token\((?<quote>[""'])(?<token>.*?)\k<quote>\)", RegexOptions.Compiled);
 
         /// <summary>
+        /// Regex to match ___TOKEN_NAME___ in the output with %TOKEN_NAME% to be passed on to webgrease.
+        /// ___TOKEN_NAME___ is  valid syntax in sass for selectors.
+        /// </summary>
+        private static readonly Regex ClassTokenRegex = new Regex(@"___(?<token>.*?)___", RegexOptions.Compiled);
+
+        /// <summary>
         /// This is the patternt hat is used to match the Imports(".*?") statement
         /// </summary>
         private static readonly Regex ImportsPattern = new Regex(@"@imports\s*?(?<quote>[""'])(?<path>.*?)\k<quote>\s*?;", RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -93,9 +102,6 @@ namespace WebGrease.Preprocessing.Sass
 
         /// <summary>The ruby root path</summary>
         private static string rubyRootPath;
-
-        /// <summary>The context.</summary>
-        private IWebGreaseContext context;
 
         #endregion
 
@@ -114,13 +120,12 @@ namespace WebGrease.Preprocessing.Sass
 
         #region Public Methods and Operators
 
-        /// <summary>
-        /// This method will be called to check if the processor believes it can handle the file based on the filename.
-        /// </summary>
+        /// <summary>This method will be called to check if the processor believes it can handle the file based on the filename.</summary>
+        /// <param name="context">The context.</param>
         /// <param name="contentItem">The full path to the file.</param>
         /// <param name="preprocessConfig">The configuration</param>
         /// <returns>If it thinks it can process it.</returns>
-        public bool CanProcess(ContentItem contentItem, PreprocessingConfig preprocessConfig = null)
+        public bool CanProcess(IWebGreaseContext context, ContentItem contentItem, PreprocessingConfig preprocessConfig = null)
         {
             var sassConfig = GetConfig(preprocessConfig);
             var extension = Path.GetExtension(contentItem.RelativeContentPath);
@@ -130,31 +135,20 @@ namespace WebGrease.Preprocessing.Sass
                     || extension.EndsWith(sassConfig.ScssExtension, StringComparison.OrdinalIgnoreCase));
         }
 
-        /// <summary>The initialize.</summary>
-        /// <param name="webGreaseContext">The web grease context.</param>
-        public void SetContext(IWebGreaseContext webGreaseContext)
-        {
-            if (webGreaseContext == null)
-            {
-                throw new ArgumentNullException("webGreaseContext");
-            }
-
-            this.context = webGreaseContext;
-        }
-
         /// <summary>The main method for Preprocessing, this is where it gets passed the full content, parses it and returns the parsed content.</summary>
+        /// <param name="context">The context.</param>
         /// <param name="contentItem">Content of the file to parse.</param>
         /// <param name="preprocessingConfig">The configuration.</param>
         /// <param name="minimalOutput">Is the goal to have the most minimal output (true skips lots of comments)</param>
         /// <returns>The processed content.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Is meant to catch all, if delete fails it is not important, it is in the temp folder.")]
-        public ContentItem Process(ContentItem contentItem, PreprocessingConfig preprocessingConfig, bool minimalOutput)
+        public ContentItem Process(IWebGreaseContext context, ContentItem contentItem, PreprocessingConfig preprocessingConfig, bool minimalOutput)
         {
             var settingsMinimalOutput = preprocessingConfig != null && preprocessingConfig.Element != null && (bool?)preprocessingConfig.Element.Attribute("minimalOutput") == true;
             var relativeContentPath = contentItem.RelativeContentPath;
-            this.context.Log.Information("Sass: Processing contents for file {0}".InvariantFormat(relativeContentPath));
+            context.Log.Information("Sass: Processing contents for file {0}".InvariantFormat(relativeContentPath));
 
-            this.context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass")
+            context.SectionedAction(SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass")
                 .Execute(
                     () =>
                     {
@@ -166,7 +160,7 @@ namespace WebGrease.Preprocessing.Sass
                         {
                             var workingDirectory = Path.IsPathRooted(relativeContentPath)
                                                        ? Path.GetDirectoryName(relativeContentPath)
-                                                       : this.context.GetWorkingSourceDirectory(relativeContentPath);
+                                                       : context.GetWorkingSourceDirectory(relativeContentPath);
 
                             var content = ParseImports(contentItem.Content, workingDirectory, sassCacheImportsSection, minimalOutput || settingsMinimalOutput);
 
@@ -182,10 +176,10 @@ namespace WebGrease.Preprocessing.Sass
                             }
                             else if (!string.IsNullOrWhiteSpace(relativeContentPath))
                             {
-                                fileToProcess = Path.Combine(this.context.Configuration.SourceDirectory ?? string.Empty, relativeContentPath);
+                                fileToProcess = Path.Combine(context.Configuration.SourceDirectory ?? string.Empty, relativeContentPath);
 
-                                fileToProcess = Path.ChangeExtension(fileToProcess, ".generated" + Path.GetExtension(fileToProcess));
-                                relativeContentPath = Path.ChangeExtension(relativeContentPath, ".generated" + Path.GetExtension(relativeContentPath));
+                                fileToProcess = PrependToExtension(fileToProcess, ".imports");
+                                relativeContentPath = PrependToExtension(relativeContentPath, ".imports");
 
                                 if (!File.Exists(fileToProcess) || !context.GetFileHash(fileToProcess).Equals(currentContentHash))
                                 {
@@ -199,7 +193,7 @@ namespace WebGrease.Preprocessing.Sass
                                 File.WriteAllText(fileToProcess, content);
                             }
 
-                            content = ProcessFile(fileToProcess, workingDirectory, relativeContentPath, this.context);
+                            content = ProcessFile(fileToProcess, workingDirectory, relativeContentPath, context);
 
                             contentItem = content != null ? ContentItem.FromContent(content, contentItem) : null;
 
@@ -221,6 +215,12 @@ namespace WebGrease.Preprocessing.Sass
                     });
 
             return contentItem;
+        }
+
+        private static string PrependToExtension(string fileToProcess, string prepend)
+        {
+            fileToProcess = Path.ChangeExtension(fileToProcess, "{0}{1}".InvariantFormat(prepend, Path.GetExtension(fileToProcess)));
+            return fileToProcess;
         }
 
         /// <summary>
@@ -295,10 +295,10 @@ namespace WebGrease.Preprocessing.Sass
                     files
                         .Select(file => MakeRelativePath(workingFolder, file))
                         .Select(relativeFile => "{0}\r\n@import \"{1}\";".InvariantFormat(
-                            minimalOutput ? string.Empty : "\r\n"+GetImportsComment(path, Path.GetFileName(relativeFile)), 
+                            minimalOutput ? string.Empty : "\r\n" + GetImportsComment(path, Path.GetFileName(relativeFile)),
                             relativeFile.Replace("\\", "/"))));
         }
-        
+
         /// <summary>Gets the imports comment.</summary>
         /// <param name="path">The path.</param>
         /// <param name="file">The file.</param>
@@ -399,14 +399,12 @@ namespace WebGrease.Preprocessing.Sass
             }
         }
 
-        /// <summary>
-        /// This will:
+        /// <summary>This will:
         /// - Use a file on disk
         /// - Pass it onto ruby with sass
         /// - read the result
         /// - detect any syntax errors
-        /// - return the parsed result and/or throw an exception.
-        /// </summary>
+        /// - return the parsed result and/or throw an exception.</summary>
         /// <param name="fullFileName">The full filename</param>
         /// <param name="workingDirectory">The working directory</param>
         /// <param name="relativeFilename">The original filename</param>
@@ -425,27 +423,33 @@ namespace WebGrease.Preprocessing.Sass
 
                     // Determine all the file and paths
                     var targetFile = new FileInfo(Path.Combine(Directory.GetCurrentDirectory(), fullFileName));
+                    var resultFile = Path.ChangeExtension(targetFile.FullName, ".css");
                     var targetFolder = workingDirectory ?? targetFile.DirectoryName;
                     var rubyFilename = new FileInfo(Path.Combine(rubyRootPath, RubyExecutable));
 
                     // Create a new process object with all the execute information
-                    var processStartInfo = new ProcessStartInfo(rubyFilename.FullName, SassExecuteParametersFormat.InvariantFormat(SassFile, targetFile, targetFolder)) { WorkingDirectory = rubyFilename.DirectoryName ?? string.Empty, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+                    var processStartInfo = new ProcessStartInfo(rubyFilename.FullName, SassExecuteParametersFormat.InvariantFormat(SassFile, targetFile, resultFile, targetFolder)) { WorkingDirectory = rubyFilename.DirectoryName ?? string.Empty, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
                     using (var proc = new Process { StartInfo = processStartInfo })
                     {
                         // Start the process
                         proc.Start();
 
                         // get the standard output
-                        var result = proc.StandardOutput.ReadToEnd();
+                        var sassOutput = proc.StandardOutput.ReadToEnd();
 
                         // get the standard error
-                        var errorResult = proc.StandardError.ReadToEnd();
+                        var sassErrorOutput = proc.StandardError.ReadToEnd();
+
+                        if (!File.Exists(resultFile) && string.IsNullOrWhiteSpace(sassErrorOutput))
+                        {
+                            sassErrorOutput = "No errors received from sass but could not find the sass result at: {0}".InvariantFormat(resultFile);
+                        }
 
                         // if the standard error is not empty there was an error.
-                        if (!string.IsNullOrEmpty(errorResult))
+                        if (!string.IsNullOrEmpty(sassErrorOutput))
                         {
                             // try and match to see if it is a syntax error.
-                            var match = SassSyntaxErrorRegex.Match(errorResult);
+                            var match = SassSyntaxErrorRegex.Match(sassErrorOutput);
                             if (match.Success)
                             {
                                 // parse the syntax error.
@@ -481,14 +485,22 @@ namespace WebGrease.Preprocessing.Sass
                             }
 
                             // throw a general exception.
-                            context.Log.Error(null, errorResult);
+                            context.Log.Error(null, sassErrorOutput);
                             return null;
                         }
 
+                        if (!string.IsNullOrWhiteSpace(sassOutput))
+                        {
+                            context.Log.Information(sassOutput);
+                        }
+
+                        var result = File.ReadAllText(resultFile);
+
                         // Return the content with the tokens correctly replaces for webgrease.
-                        return TokenRegex
-                            .Replace(result.Replace("\r\n", "\n"), TokenRegexReplaceValue)
-                            .Replace("\n", "\r\n");
+                        var tokenReplaced = result.Replace("\r\n", "\n");
+                        tokenReplaced = TokenRegex.Replace(tokenReplaced, TokenRegexReplaceValue);
+                        tokenReplaced = ClassTokenRegex.Replace(tokenReplaced, ClassTokenRegexReplaceValue);
+                        return tokenReplaced.Replace("\n", "\r\n");
                     }
                 }
                 catch (Exception ex)

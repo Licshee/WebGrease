@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Settings>
+  <Spriting>
+    <ErrorOnInvalidSprite>true</ErrorOnInvalidSprite>
+    <WriteLogFile>false</WriteLogFile>
+  </Spriting>
+</Settings>

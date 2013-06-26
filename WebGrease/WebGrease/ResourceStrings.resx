@@ -189,6 +189,9 @@ Parameters
   <data name="ThereWereErrorsWhileMinifyingTheCssFiles" xml:space="preserve">
     <value>There were errors while minifying the css files.</value>
   </data>
+  <data name="ThereWereErrorsWhileApplyingCssresources" xml:space="preserve">
+    <value>There were errors while applying resources to the css files.</value>
+  </data>
   <data name="FileHasherActivityErrorOccurred" xml:space="preserve">
     <value>An error occurred while executing the file hasher activity.</value>
   </data>
@@ -215,5 +218,17 @@ Parameters
   </data>
   <data name="ResourceResolverDuplicateKeyExceptionMessage" xml:space="preserve">
     <value>Duplicate key: '{0}' found in the resx file '{1}'. Same key may exist with different delimiters in the resx file.</value>
+  </data>
+  <data name="ResourcePivotActivityError" xml:space="preserve">
+    <value>ResourcePivotActivity - Error occured while executing the expand resources activity</value>
+  </data>
+  <data name="ResourcePivotActivityDuplicateKeysError" xml:space="preserve">
+    <value>ResourcePivotActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only.</value>
+  </data>
+  <data name="OverrideFileLoadErrorMessage" xml:space="preserve">
+    <value>Error occurred while loading the WebGrease override xml file: {0}</value>
+  </data>
+  <data name="SafeLockFailedMessage" xml:space="preserve">
+    <value>Safe.Lock wasn't able to acquire a lock in {0}ms</value>
   </data>
 </root>

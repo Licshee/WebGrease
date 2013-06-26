@@ -14,6 +14,7 @@ namespace WebGrease
     /// <summary>The delayed log manager, will send out all it's message on dispose, except for errors they are also outputted immediately.</summary>
     internal class DelayedLogManager
     {
+        /// <summary>The message format for the logger.</summary>
         private const string MessageFormat = "{0} {1:HH:mm:ss.ff} {2}";
 
         /// <summary>The log name.</summary>
@@ -54,7 +55,7 @@ namespace WebGrease
         {
             if (!this.isFlushed)
             {
-                lock (this.flushLock)
+                Safe.Lock(this.flushLock, () =>
                 {
                     if (!this.isFlushed)
                     {
@@ -62,7 +63,7 @@ namespace WebGrease
                         this.actions.ForEach(a => a.Item2(a.Item1));
                         this.actions.Clear();
                     }
-                }
+                });
             }
         }
 
@@ -72,7 +73,7 @@ namespace WebGrease
         private void AddTimedAction(string message, Action<string> action)
         {
             var formattedMessage = MessageFormat.InvariantFormat(this.messagePrefix, DateTime.Now, message);
-            lock (this.flushLock)
+            Safe.Lock(this.flushLock, () =>
             {
                 if (this.isFlushed)
                 {
@@ -82,7 +83,7 @@ namespace WebGrease
                 {
                     this.actions.Add(Tuple.Create(formattedMessage, action));
                 }
-            }
+            });
         }
     }
 }

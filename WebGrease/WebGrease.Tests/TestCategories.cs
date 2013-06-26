@@ -25,6 +25,9 @@ namespace Microsoft.WebGrease.Tests
         /// <summary>The configuration.</summary>
         public const string Configuration = "Configuration";
 
+        /// <summary>The resource pivots.</summary>
+        public const string ResourcePivots = "ResourcePivots";
+
         /// <summary>The css localization activity.</summary>
         public const string CssLocalizationActivity = "CssLocalizationActivity";
 
@@ -73,11 +76,17 @@ namespace Microsoft.WebGrease.Tests
         /// <summary>The spriting.</summary>
         public const string Spriting = "Spriting";
 
+        /// <summary>The tokens.</summary>
+        public const string Tokens = "Tokens";
+
         /// <summary>The web grease task.</summary>
         public const string WebGreaseTask = "WebGreaseTask";
 
         /// <summary>The wg include.</summary>
         public const string WgInclude = "WgInclude";
+
+        /// <summary>The cloning.</summary>
+        public const string Cloning = "Cloning";
 
         #endregion
     }

@@ -10,7 +10,6 @@
 
 namespace Css.Tests.Css30
 {
-    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.IO;
@@ -59,7 +58,7 @@ namespace Css.Tests.Css30
             var styleSheetNode = CssParser.Parse(fileInfo);
             Assert.IsNotNull(styleSheetNode);
 
-            var visitor = new ImageAssemblyScanVisitor(fileInfo.FullName, null, null);
+            var visitor = new ImageAssemblyScanVisitor(fileInfo.FullName, null);
             styleSheetNode = styleSheetNode.Accept(visitor) as StyleSheetNode;
             Assert.IsNotNull(styleSheetNode);
 
@@ -81,7 +80,7 @@ namespace Css.Tests.Css30
             var styleSheetNode = CssParser.Parse(fileInfo);
             Assert.IsNotNull(styleSheetNode);
 
-            var visitor = new ImageAssemblyScanVisitor(fileInfo.FullName, new[] { "/i/1.gif", "/i/2.gif" }, null);
+            var visitor = new ImageAssemblyScanVisitor(fileInfo.FullName, new[] { "/i/1.gif", "/i/2.gif" });
             styleSheetNode = styleSheetNode.Accept(visitor) as StyleSheetNode;
             Assert.IsNotNull(styleSheetNode);
 
@@ -91,58 +90,6 @@ namespace Css.Tests.Css30
             Assert.IsTrue(imageReferencesToAssemble[0].AbsoluteImagePath.Contains(@"\i\3.gif"));
             Assert.IsTrue(imageReferencesToAssemble[1].AbsoluteImagePath.Contains(@"\i\4.gif"));
             Assert.IsTrue(imageReferencesToAssemble[2].AbsoluteImagePath.Contains(@"\i\5.gif"));
-        }
-
-        /// <summary>A test for background selectors which should be sprited with buckets.</summary>
-        [TestMethod]
-        [TestCategory(TestCategories.CssParser)]
-        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
-        public void SpritingCandidatesWithBucketsTest()
-        {
-            const string FileName = @"spritingcandidateswithbuckets.css";
-            var fileInfo = new FileInfo(Path.Combine(ActualDirectory, FileName));
-
-            var styleSheetNode = CssParser.Parse(fileInfo);
-            Assert.IsNotNull(styleSheetNode);
-
-            // Image 1 - Ignore
-            // Image 2 - Zero Bucket (Default)
-            // Image 3 - First Bucket
-            // Image 4, 5 - Second Bucket
-            var visitor = new ImageAssemblyScanVisitor(fileInfo.FullName, new[] { "/i/1.gif" }, new[] { new ImageAssemblyScanInput("lazy.xml", new List<string> { "/i/3.gif" }.AsReadOnly()), new ImageAssemblyScanInput("lazy.xml", new List<string> { "/i/4.gif", "/i/5.gif" }.AsReadOnly()) });
-            styleSheetNode = styleSheetNode.Accept(visitor) as StyleSheetNode;
-            Assert.IsNotNull(styleSheetNode);
-
-            var imageAssemblyScanOutputs = visitor.ImageAssemblyScanOutputs;
-            Assert.IsNotNull(imageAssemblyScanOutputs);
-            Assert.IsTrue(imageAssemblyScanOutputs.Count == 3);
-
-            // Zero bucket
-            var imageAssemblyScanOutput = imageAssemblyScanOutputs[0];
-            var imageReferencesToAssemble = imageAssemblyScanOutput.ImageReferencesToAssemble;
-            Assert.IsTrue(imageReferencesToAssemble.Count == 1);
-            var imageReferenceToAssemble = imageReferencesToAssemble[0];
-            Assert.IsNotNull(imageReferenceToAssemble);
-            Assert.IsTrue(imageReferenceToAssemble.AbsoluteImagePath.Contains(@"\i\2.gif"));
-
-            // First bucket
-            imageAssemblyScanOutput = imageAssemblyScanOutputs[1];
-            imageReferencesToAssemble = imageAssemblyScanOutput.ImageReferencesToAssemble;
-            Assert.IsTrue(imageReferencesToAssemble.Count == 1);
-            imageReferenceToAssemble = imageReferencesToAssemble[0];
-            Assert.IsNotNull(imageReferenceToAssemble);
-            Assert.IsTrue(imageReferenceToAssemble.AbsoluteImagePath.Contains(@"\i\3.gif"));
-
-            // Second bucket
-            imageAssemblyScanOutput = imageAssemblyScanOutputs[2];
-            imageReferencesToAssemble = imageAssemblyScanOutput.ImageReferencesToAssemble;
-            Assert.IsTrue(imageReferencesToAssemble.Count == 2);
-            imageReferenceToAssemble = imageReferencesToAssemble[0];
-            Assert.IsNotNull(imageReferenceToAssemble);
-            Assert.IsTrue(imageReferenceToAssemble.AbsoluteImagePath.Contains(@"\i\4.gif"));
-            imageReferenceToAssemble = imageReferencesToAssemble[1];
-            Assert.IsNotNull(imageReferenceToAssemble);
-            Assert.IsTrue(imageReferenceToAssemble.AbsoluteImagePath.Contains(@"\i\5.gif"));
         }
 
         /// <summary>A test for background selectors with duplicate declaration.</summary>
@@ -159,7 +106,7 @@ namespace Css.Tests.Css30
 
             try
             {
-                styleSheetNode.Accept(new ImageAssemblyScanVisitor(fileInfo.FullName, null, null));
+                styleSheetNode.Accept(new ImageAssemblyScanVisitor(fileInfo.FullName, null));
             }
             catch (ImageAssembleException imageAssembleException)
             {
@@ -181,7 +128,7 @@ namespace Css.Tests.Css30
             
             try
             {
-                styleSheetNode.Accept(new ImageAssemblyScanVisitor(fileInfo.FullName, null, null));
+                styleSheetNode.Accept(new ImageAssemblyScanVisitor(fileInfo.FullName, null));
             }
             catch (ImageAssembleException imageAssembleException)
             {
@@ -203,7 +150,7 @@ namespace Css.Tests.Css30
 
             try
             {
-                styleSheetNode.Accept(new ImageAssemblyScanVisitor(fileInfo.FullName, null, null));
+                styleSheetNode.Accept(new ImageAssemblyScanVisitor(fileInfo.FullName, null));
             }
             catch (ImageAssembleException imageAssembleException)
             {
@@ -225,7 +172,7 @@ namespace Css.Tests.Css30
 
             try
             {
-                styleSheetNode.Accept(new ImageAssemblyScanVisitor(fileInfo.FullName, null, null));
+                styleSheetNode.Accept(new ImageAssemblyScanVisitor(fileInfo.FullName, null));
             }
             catch (ImageAssembleException imageAssembleException)
             {

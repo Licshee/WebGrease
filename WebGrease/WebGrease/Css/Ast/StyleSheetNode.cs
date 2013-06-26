@@ -25,28 +25,21 @@ namespace WebGrease.Css.Ast
     {
         /// <summary>Initializes a new instance of the StyleSheetNode class</summary>
         /// <param name="charSet">Character String</param>
-        /// <param name="dpi">DPI value</param>
         /// <param name="imports">Imports list</param>
         /// <param name="namespaces">The list of namespaces</param>
         /// <param name="styleSheetRules">StyleSheet nodes dictionary</param>
-        public StyleSheetNode(string charSet, double? dpi, ReadOnlyCollection<ImportNode> imports, ReadOnlyCollection<NamespaceNode> namespaces, ReadOnlyCollection<StyleSheetRuleNode> styleSheetRules)
+        public StyleSheetNode(string charSet, ReadOnlyCollection<ImportNode> imports, ReadOnlyCollection<NamespaceNode> namespaces, ReadOnlyCollection<StyleSheetRuleNode> styleSheetRules)
         {
             this.CharSetString = charSet ?? string.Empty;
             this.Imports = imports ?? new List<ImportNode>(0).AsReadOnly();
             this.Namespaces = namespaces ?? new List<NamespaceNode>(0).AsReadOnly();
             this.StyleSheetRules = styleSheetRules ?? new List<StyleSheetRuleNode>(0).AsReadOnly();
-            this.Dpi = dpi;
         }
 
         /// <summary>
         /// Gets Character Set string
         /// </summary>
         public string CharSetString { get; private set; }
-
-        /// <summary>
-        /// Gets the dpi specified by a dpi at-rule
-        /// </summary>
-        public double? Dpi { get; private set; }
 
         /// <summary>
         /// Gets Imports list

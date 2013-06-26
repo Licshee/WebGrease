@@ -68,7 +68,7 @@ namespace WebGrease.Extensions
 
                 return Path.Combine(Path.GetDirectoryName(pathToConvertFrom), pathToConvert).GetFullPathWithLowercase();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Trace.TraceWarning("Exception occurred while trying make {0} absolute to {1}\r\n{2} ".InvariantFormat(pathToConvert, pathToConvertFrom, ex.ToString()));
                 return pathToConvert;
@@ -161,6 +161,11 @@ namespace WebGrease.Extensions
         [SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Lowercase is needed.")]
         internal static string NormalizeUrl(this string url)
         {
+            url = url.Trim('\'', '"');
+            if (url.StartsWith("hash(", StringComparison.OrdinalIgnoreCase) && url.EndsWith(")", StringComparison.OrdinalIgnoreCase))
+            {
+                url = url.Substring(5, url.Length - 6);
+            }
             if (url.StartsWith("hash://", StringComparison.OrdinalIgnoreCase))
             {
                 url = url.Substring(7);

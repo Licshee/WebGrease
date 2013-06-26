@@ -131,81 +131,72 @@ namespace WebGrease.Build
             var logManager = this.CreateLogManager();
 
             var globalContext = this.CreateSessionContext(logManager);
-
-            if (globalContext.Configuration.Overrides != null && globalContext.Configuration.Overrides.SkipAll)
+            using (globalContext.Cache.SingleUseLock())
             {
-                logManager.Information("WebGrease Skipping because of SkipAll in webgrease override file.");
-                return true;
-            }
-
-            if (this.CleanDestination)
-            {
-                globalContext.CleanDestination();
-            }
-
-            var fileTypesToExecuteParallel = this.FileType == FileTypes.All ? new[] { FileTypes.JS, FileTypes.CSS | FileTypes.Image } : new[] { this.FileType };
-
-            if (this.CleanCache)
-            {
-                globalContext.CleanCache();
-            }
-
-            var parallelSessions = new List<Tuple<IWebGreaseContext, FileTypes, DelayedLogManager>>();
-            foreach (var fileType in fileTypesToExecuteParallel)
-            {
-                var delayedLogManager = new DelayedLogManager(logManager, fileType.ToString());
-                var sessionContext = this.CreateSessionContext(delayedLogManager.LogManager, fileType, activity);
-                if (this.CleanCache)
+                if (globalContext.Configuration.Overrides != null && globalContext.Configuration.Overrides.SkipAll)
                 {
-                    sessionContext.CleanCache(logManager);
+                    logManager.Information("WebGrease Skipping because of SkipAll in webgrease override file.");
+                    return true;
                 }
 
-                parallelSessions.Add(Tuple.Create(sessionContext, fileType, delayedLogManager));
-            }
-
-            if (Directory.Exists(globalContext.Configuration.IntermediateErrorDirectory))
-            {
-                Directory.Delete(globalContext.Configuration.IntermediateErrorDirectory, true);
-            }
-
-            var totalSuccess = true;
-            this.MeasureResults = new TimeMeasureResult[] { };
-            var localLock = new object();
-
-            var activityResults = new Dictionary<FileTypes, Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration>>();
-
-            logManager.Information("WebGrease starting");
-            Parallel.ForEach(
-                parallelSessions,
-                parallelSession =>
+                if (this.CleanDestination)
                 {
-                    logManager.Information("Starting WebGrease thread for " + parallelSession.Item2);
-                    try
-                    {
-                        var fileTypeResult = this.Execute(parallelSession.Item2, activity.Value, this.ConfigurationPath, parallelSession.Item1);
-                        totalSuccess &= fileTypeResult != null && fileTypeResult.Item1;
-                        if (totalSuccess)
-                        {
-                            lock (localLock)
-                            {
-                                activityResults.Add(parallelSession.Item2, fileTypeResult);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        lock (localLock)
-                        {
-                            parallelSession.Item3.Flush();
-                            parallelSessions.ForEach(dlm => dlm.Item3.Flush());
-                        }
-                    }
-                });
+                    globalContext.CleanDestination();
+                }
 
-            this.FinalizeMeasure(totalSuccess, activityResults, logManager, start, activity);
+                var fileTypesToExecuteParallel = this.FileType == FileTypes.All ? new[] { FileTypes.JS, FileTypes.CSS | FileTypes.Image } : new[] { this.FileType };
 
-            logManager.Information("WebGrease done");
-            return totalSuccess && !this.hasErrors;
+                if (this.CleanCache)
+                {
+                    globalContext.CleanCache();
+                }
+
+                if (Directory.Exists(globalContext.Configuration.IntermediateErrorDirectory))
+                {
+                    Directory.Delete(globalContext.Configuration.IntermediateErrorDirectory, true);
+                }
+
+                var totalSuccess = true;
+                globalContext.ParallelForEach(
+                    item => new[] { SectionIdParts.WebGreaseBuildTaskSession, item.ToString() },
+                    fileTypesToExecuteParallel,
+                    (threadContext, item, state) =>
+                    {
+                        logManager.Information("Starting WebGrease thread for " + item);
+                        var success = this.Execute(item, activity.Value, this.ConfigurationPath, threadContext);
+                        totalSuccess &= totalSuccess;
+                        return success;
+                    },
+                    (threadContext, item) =>
+                    {
+                        if (this.CleanCache)
+                        {
+                            threadContext.CleanCache(logManager);
+                        }
+
+                        return true;
+                    });
+
+                var threadedAndGroupedMeasureResults = globalContext
+                    .ThreadedMeasureResults
+                    .GroupBy(mr => mr.Key)
+                    .Select(g => new Tuple<string, bool, IEnumerable<TimeMeasureResult>>(
+                        g.Key + (g.HasAtLeast(2) ? " - Multi-Threaded" : string.Empty),
+                        g.HasAtLeast(2),
+                        g.SelectMany(l => l.Value)
+                            .GroupBy(l => l.Name)
+                            .Select(l => new TimeMeasureResult
+                                        {
+                                            IdParts = WebGreaseContext.ToIdParts(l.Key),
+                                            Count = l.Sum(c => c.Count),
+                                            Duration = l.Sum(c => c.Duration)
+                                        })));
+
+                this.FinalizeMeasure(totalSuccess, threadedAndGroupedMeasureResults, logManager, start, activity, globalContext.Configuration);
+
+                logManager.Information("WebGrease done");
+                return totalSuccess && !this.hasErrors;
+            }
         }
 
         /// <summary>The get file sets.</summary>
@@ -249,7 +240,7 @@ namespace WebGrease.Build
             {
                 var configFileContentItem = ContentItem.FromFile(configFileInfo.FullName);
                 configFileSuccess = sessionContext
-                    .SectionedActionGroup(SectionIdParts.WebGreaseBuildTask, SectionIdParts.ConfigurationFile)
+                    .SectionedActionGroup(fileType.ToString(), SectionIdParts.WebGreaseBuildTask, SectionIdParts.ConfigurationFile)
                     .MakeCachable(configFileContentItem, new { activity, fileContext.Configuration }, activity == ActivityName.Bundle) // Cached action can only be skipped when it is the bundle activity, otherwise don't.
                     .Execute(configFileCacheSection =>
                         {
@@ -291,20 +282,18 @@ namespace WebGrease.Build
         /// <param name="logManager">The log manager.</param>
         /// <param name="start">The start time of the current run..</param>
         /// <param name="activity">The current activity name.</param>
-        private void FinalizeMeasure(bool success, ICollection<KeyValuePair<FileTypes, Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration>>> activityResults, LogManager logManager, DateTimeOffset start, ActivityName? activity)
+        private void FinalizeMeasure(bool success, IEnumerable<Tuple<string, bool, IEnumerable<TimeMeasureResult>>> activityResults, LogManager logManager, DateTimeOffset start, ActivityName? activity, WebGreaseConfiguration configuration)
         {
-            if (this.Measure && success && activityResults.Count > 0)
+            if (this.Measure && success && activityResults.Any())
             {
-                var configuration = activityResults.Select(ar => ar.Value.Item3).FirstOrDefault(ar => ar != null);
                 if (configuration != null)
                 {
                     var reportFileBase = Path.Combine(configuration.ReportPath, new DirectoryInfo(this.ConfigurationPath).Name);
                     logManager.Information("Writing overal report file to:".InvariantFormat(reportFileBase));
-                    TimeMeasure.WriteResults(
-                        reportFileBase, activityResults.ToDictionary(k => k.Key, v => v.Value.Item2), this.ConfigurationPath, start, activity.ToString());
+                    TimeMeasure.WriteResults(reportFileBase, activityResults, this.ConfigurationPath, start, activity.ToString());
                 }
 
-                this.MeasureResults = activityResults.SelectMany(ar => ar.Value.Item2).ToArray();
+                this.MeasureResults = activityResults.SelectMany(ar => ar.Item3).ToArray();
             }
         }
 
@@ -328,16 +317,16 @@ namespace WebGrease.Build
         /// <param name="configurationPath">The configuration path</param>
         /// <param name="sessionContext">The session context</param>
         /// <returns>The <see cref="Tuple"/>.</returns>
-        private Tuple<bool, TimeMeasureResult[], WebGreaseConfiguration> Execute(FileTypes fileType, ActivityName activity, string configurationPath, IWebGreaseContext sessionContext)
+        private bool Execute(FileTypes fileType, ActivityName activity, string configurationPath, IWebGreaseContext sessionContext)
         {
             var availableFileSetsForFileType = 0;
 
             var fullPathToConfigFiles = Path.GetFullPath(configurationPath);
 
-            var contentTypeSectionId = new[] { SectionIdParts.WebGreaseBuildTask };
+            var contentTypeSectionId = new[] { fileType.ToString(), SectionIdParts.WebGreaseBuildTask };
 
             var sessionSuccess = sessionContext
-                .SectionedAction(SectionIdParts.WebGreaseBuildTaskSession)
+                .SectionedAction(SectionIdParts.WebGreaseBuildTaskSession, fileType.ToString())
                 .MakeCachable(new { fullPathToConfigFiles, activity })
                 .Execute(sessionCacheSection =>
                 {
@@ -346,7 +335,7 @@ namespace WebGrease.Build
                     var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = SearchOption.TopDirectoryOnly }.GetFiles();
                     var contentTypeSuccess = sessionContext
                         .SectionedAction(contentTypeSectionId)
-                        .MakeCachable(new { activity, inputFiles, sessionContext.Configuration }, activity == ActivityName.Bundle)
+                        .MakeCachable(new { activity, inputFiles, sessionContext.Configuration }, isSkipable: activity == ActivityName.Bundle)
                         .Execute(contentTypeCacheSection =>
                             {
                                 var success = true;
@@ -400,7 +389,7 @@ namespace WebGrease.Build
             }
 
             // Return tuple, that contains,the success, the results and the configuration for this thread.
-            return Tuple.Create(sessionSuccess, sessionContext.Measure.GetResults(), sessionContext.Configuration);
+            return sessionSuccess;
         }
 
         /// <summary>The handle other content type cache sections.</summary>
@@ -454,7 +443,7 @@ namespace WebGrease.Build
                            CacheUniqueKey = this.CacheUniqueKey + fileTypeKey + activityKey,
                            ReportPath = this.ReportPath,
                            CacheTimeout = !string.IsNullOrWhiteSpace(this.CacheTimeout) ? TimeSpan.Parse(this.CacheTimeout) : TimeSpan.FromHours(48),
-                           Overrides = TemporaryOverrides.Create(this.OverrideFile)
+                           Overrides = TemporaryOverrides.Load(this.OverrideFile)
                        };
         }
 
@@ -470,7 +459,7 @@ namespace WebGrease.Build
                     importance = Microsoft.Build.Framework.MessageImportance.High;
                     break;
                 case MessageImportance.Low:
-                    importance = Microsoft.Build.Framework.MessageImportance.High;
+                    importance = Microsoft.Build.Framework.MessageImportance.Low;
                     break;
             }
 

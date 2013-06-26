@@ -14,6 +14,7 @@ namespace WebGrease.ImageAssemble
 {
     using System.Drawing;
     using System.Drawing.Imaging;
+    using System.IO;
 
     /// <summary>This class assembles nonphoto, indexed images into a single image and saves it
     /// in indexed format. Color quanization is done to ensure it can be saved in indexed
@@ -67,18 +68,21 @@ namespace WebGrease.ImageAssemble
         protected override void SaveImage(Bitmap newImage)
         {
 
-            Bitmap packedBitmap = null;
-            try
+            if (!File.Exists(this.AssembleFileName))
             {
-                packedBitmap = ColorQuantizer.Quantize(newImage, PixelFormat.Format8bppIndexed);
-                base.SaveImage(packedBitmap);
-                this.OptimizeImage();
-            }
-            finally
-            {
-                if (packedBitmap != null)
+                Bitmap packedBitmap = null;
+                try
                 {
-                    packedBitmap.Dispose();
+                    packedBitmap = ColorQuantizer.Quantize(newImage, PixelFormat.Format8bppIndexed);
+                    base.SaveImage(packedBitmap);
+                    this.OptimizeImage();
+                }
+                finally
+                {
+                    if (packedBitmap != null)
+                    {
+                        packedBitmap.Dispose();
+                    }
                 }
             }
         }
@@ -86,9 +90,8 @@ namespace WebGrease.ImageAssemble
         /// <summary>Run the optimizer after passing through the image.</summary>
         /// <param name="image">Bitmap for image to pass through</param>
         /// <param name="inputImage">InputImage for image to pass through</param>
-        protected override void PassThroughImage(Bitmap image, InputImage inputImage)
+        protected virtual void PassThroughImage(Bitmap image, InputImage inputImage)
         {
-            base.PassThroughImage(image, inputImage);
             this.OptimizeImage();
         }
     }

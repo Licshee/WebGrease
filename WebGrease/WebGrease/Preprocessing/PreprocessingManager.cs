@@ -15,6 +15,7 @@ namespace WebGrease.Preprocessing
     using System.Reflection;
 
     using WebGrease.Configuration;
+    using WebGrease.Css.Extensions;
     using WebGrease.Extensions;
 
     /// <summary>
@@ -61,17 +62,18 @@ namespace WebGrease.Preprocessing
             this.Initialize(webGreaseConfiguration.PreprocessingPluginPath, logManager, timeMeasure);
         }
 
+        /// <summary>Initializes a new instance of the <see cref="PreprocessingManager"/> class.</summary>
+        /// <param name="preprocessingManager">The preprocessing manager.</param>
+        internal PreprocessingManager(PreprocessingManager preprocessingManager)
+        {
+            preprocessingManager.registeredPreprocessingEngines.ForEach(rp => this.registeredPreprocessingEngines.Add(rp));
+        }
+
         /// <summary>Set the current context.</summary>
         /// <param name="webGreaseContext">The web grease context.</param>
-        internal void SetContext(WebGreaseContext webGreaseContext)
+        internal void SetContext(IWebGreaseContext webGreaseContext)
         {
             this.context = webGreaseContext;
-
-            // Loop through each available engine and initialize it.
-            foreach (var preprocessingEngine in this.registeredPreprocessingEngines)
-            {
-                preprocessingEngine.SetContext(this.context);
-            }
         }
 
         /// <summary>This will call any of the registered preprocessor plugins, that are named in the provided preprocessing config, in the order they are configured.
@@ -110,7 +112,7 @@ namespace WebGrease.Preprocessing
                      this.context.Log.Information("preprocessing with: {0}".InvariantFormat(preprocessingEngine.Name));
 
                      // Get the new content
-                     contentItem = preprocessingEngine.Process(contentItem, preprocessConfig, minimalOutput);
+                     contentItem = preprocessingEngine.Process(this.context, contentItem, preprocessConfig, minimalOutput);
 
                      if (contentItem == null)
                      {
@@ -133,7 +135,7 @@ namespace WebGrease.Preprocessing
         {
             return preprocessConfig.PreprocessingEngines
                                    .SelectMany(ppe => this.registeredPreprocessingEngines.Where(rppe => rppe.Name.Equals(ppe, StringComparison.OrdinalIgnoreCase)))
-                                   .Where(pptu => pptu.CanProcess(contentItem, preprocessConfig))
+                                   .Where(pptu => pptu.CanProcess(this.context, contentItem, preprocessConfig))
                                    .ToArray();
         }
 

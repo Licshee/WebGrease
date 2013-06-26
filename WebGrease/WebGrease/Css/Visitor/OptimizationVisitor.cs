@@ -42,7 +42,6 @@ namespace WebGrease.Css.Visitor
             // Create a new object with updated rulesets list.
             return new StyleSheetNode(
                 styleSheet.CharSetString,
-                styleSheet.Dpi,
                 styleSheet.Imports,
                 styleSheet.Namespaces,
                 styleSheetRuleNodes.AsSafeReadOnly());

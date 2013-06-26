@@ -77,6 +77,14 @@ namespace WebGrease.Activities
             this.staticAssemblerDirectory = Path.Combine(this.toolsTempDirectory, StaticAssemblerDirectoryName);
         }
 
+        /// <summary>The dpi to resolution name.</summary>
+        /// <param name="dpi">The dpi.</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        internal static string DpiToResolutionName(float dpi)
+        {
+            return "Resolution{0:0.##}X".InvariantFormat(dpi.ToString(CultureInfo.InvariantCulture).Replace(".", string.Empty));
+        }
+
         /// <summary>Will execute the pipeline for all filesets in the provided context configuration.</summary>
         /// <returns>If it is successfull.</returns>
         internal bool Execute()
@@ -162,52 +170,26 @@ namespace WebGrease.Activities
                        };
         }
 
-        /// <summary>Expands the resource tokens for locales and themes</summary>
-        /// <param name="cssFileSet">The file set to be processed</param>
-        /// <param name="context">Config object with locations of needed directories.</param>
-        /// <param name="fileType">The file type</param>
-        /// <returns>The merged resources.</returns>
-        private static IDictionary<string, IDictionary<string, string>> GetThemeResources(CssFileSet cssFileSet, IWebGreaseContext context, FileTypes fileType)
-        {
-            var themeResourceActivity = new ResourcesResolutionActivity(context)
-                                            {
-                                                SourceDirectory = context.Configuration.SourceDirectory,
-                                                ApplicationDirectoryName = context.Configuration.TokensDirectory,
-                                                SiteDirectoryName = context.Configuration.OverrideTokensDirectory,
-                                                ResourceTypeFilter = ResourceType.Themes,
-                                                FileType = fileType
-                                            };
-
-            foreach (var theme in cssFileSet.Themes)
-            {
-                themeResourceActivity.ResourceKeys.Add(theme);
-            }
-
-            return themeResourceActivity.GetMergedResources();
-        }
-
-        /// <summary>Expands the resource tokens for locales and themes</summary>
-        /// <param name="fileSet">The js File Set.</param>
+        /// <summary>Gets the merged resources.</summary>
         /// <param name="context">The context.</param>
-        /// <param name="fileType">The file type</param>
+        /// <param name="fileType">The file type.</param>
+        /// <param name="resourceGroupKey">The resource type filter.</param>
+        /// <param name="resourceKeys">The resource resolution activity.</param>
         /// <returns>The merged resources.</returns>
-        private static IDictionary<string, IDictionary<string, string>> GetLocaleResources(IFileSet fileSet, IWebGreaseContext context, FileTypes fileType)
+        private static IDictionary<string, IDictionary<string, string>> GetMergedResources(IWebGreaseContext context, FileTypes fileType, string resourceGroupKey, IEnumerable<string> resourceKeys)
         {
-            var localeResourceActivity = new ResourcesResolutionActivity(context)
-                                             {
-                                                 SourceDirectory = context.Configuration.SourceDirectory,
-                                                 ApplicationDirectoryName = context.Configuration.TokensDirectory,
-                                                 SiteDirectoryName = context.Configuration.OverrideTokensDirectory,
-                                                 ResourceTypeFilter = ResourceType.Locales,
-                                                 FileType = fileType
-                                             };
+            var resourcesResolutionActivity =
+                new ResourcesResolutionActivity(context)
+                {
+                    SourceDirectory = context.Configuration.SourceDirectory,
+                    ApplicationDirectoryName = context.Configuration.TokensDirectory,
+                    SiteDirectoryName = context.Configuration.OverrideTokensDirectory,
+                    ResourceGroupKey = resourceGroupKey,
+                    FileType = fileType
+                };
 
-            foreach (var locale in fileSet.Locales)
-            {
-                localeResourceActivity.ResourceKeys.Add(locale);
-            }
-
-            return localeResourceActivity.GetMergedResources();
+            resourcesResolutionActivity.ResourceKeys.AddRange(resourceKeys);
+            return resourcesResolutionActivity.GetMergedResources();
         }
 
         /// <summary>The ensure css log file.</summary>
@@ -224,21 +206,47 @@ namespace WebGrease.Activities
         /// <param name="relativeContentPath">The relative Content Path.</param>
         /// <param name="destinationDirectoryName">The destination directory name.</param>
         /// <param name="destinationExtension">The destination Extension.</param>
-        /// <param name="contentPivot">The content pivot.</param>
+        /// <param name="destinationPathFormat">The pivot File Format.</param>
+        /// <param name="resourcePivotKeys">The resource Pivot Keys.</param>
         /// <returns>The destination path.</returns>
-        private static string GetContentPivotDestinationFilePath(string relativeContentPath, string destinationDirectoryName, string destinationExtension, ContentPivot contentPivot = null)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Lowercase for url output.")]
+        private static string GetContentPivotDestinationFilePath(string relativeContentPath, string destinationDirectoryName, string destinationExtension, string destinationPathFormat, IEnumerable<ResourcePivotKey> resourcePivotKeys = null)
         {
-            var themeFilePrefix = contentPivot != null && !contentPivot.Theme.IsNullOrWhitespace()
-                                      ? contentPivot.Theme + "_"
-                                      : string.Empty;
+            // Legacy run when no format is given
+            if (string.IsNullOrWhiteSpace(destinationPathFormat))
+            {
+                var theme = resourcePivotKeys != null ? resourcePivotKeys.FirstOrDefault(rpk => rpk.GroupKey.Equals(Strings.ThemesResourcePivotKey)) : null;
+                var themeFilePrefix = theme != null && !theme.Key.IsNullOrWhitespace()
+                                          ? theme.Key + "_"
+                                          : string.Empty;
 
-            var localePath = contentPivot != null && !contentPivot.Locale.IsNullOrWhitespace()
-                                 ? contentPivot.Locale
-                                 : string.Empty;
+                var locale = resourcePivotKeys != null ? resourcePivotKeys.FirstOrDefault(rpk => rpk.GroupKey.Equals(Strings.LocalesResourcePivotKey)) : null;
+                var localePath = locale != null && !locale.Key.IsNullOrWhitespace()
+                                     ? locale.Key
+                                     : string.Empty;
 
-            var fileName = Path.Combine(localePath, destinationDirectoryName, themeFilePrefix + Path.ChangeExtension(relativeContentPath, destinationExtension));
+                return Path.Combine(localePath, destinationDirectoryName, themeFilePrefix + Path.ChangeExtension(relativeContentPath, destinationExtension));
+            }
 
-            return fileName;
+            // Example: {locale}/{theme}/{dpi}/{output} --> en-us/red/resolution1x/destinationPage.css
+            destinationPathFormat = destinationPathFormat.ToLowerInvariant();
+
+            if (resourcePivotKeys != null)
+            {
+                foreach (var resourcePivotKey in resourcePivotKeys)
+                {
+                    destinationPathFormat = destinationPathFormat.Replace("{" + resourcePivotKey.GroupKey.ToLowerInvariant() + "}", resourcePivotKey.Key);
+                }
+            }
+
+            destinationPathFormat = destinationPathFormat.Replace("{output}", relativeContentPath);
+
+            if (destinationPathFormat.IndexOf("{", StringComparison.OrdinalIgnoreCase) != -1)
+            {
+                throw new BuildWorkflowException("Could not generate the correct output file, one key was not replaced: {0}".InvariantFormat(destinationPathFormat));
+            }
+
+            return Path.Combine(destinationDirectoryName, Path.ChangeExtension(destinationPathFormat, destinationExtension));
         }
 
         /// <summary>The ensure js log file.</summary>
@@ -292,27 +300,61 @@ namespace WebGrease.Activities
                 });
         }
 
+        /// <summary>The get grouped resource keys.</summary>
+        /// <param name="flatResourceKeyList">The flat resource key list.</param>
+        /// <returns>The grouped resource pivot keys.</returns>
+        private static IEnumerable<IEnumerable<ResourcePivotKey>> GetGroupedResourceKeys(ResourcePivotKey[] flatResourceKeyList)
+        {
+            var groupKeys = flatResourceKeyList.Select(k => k.GroupKey).Distinct();
+            var results = new List<IEnumerable<ResourcePivotKey>>();
+            foreach (var groupKey in groupKeys)
+            {
+                var newResults = new List<IEnumerable<ResourcePivotKey>>();
+                var keys = flatResourceKeyList.Where(k => k.GroupKey.Equals(groupKey));
+                foreach (var resourcePivotKey in keys)
+                {
+                    if (!results.Any())
+                    {
+                        newResults.Add(new List<ResourcePivotKey>(new[] { resourcePivotKey }));
+                    }
+                    else
+                    {
+                        foreach (var result in results)
+                        {
+                            newResults.Add(result.Concat(new[] { resourcePivotKey }));
+                        }
+                    }
+
+                }
+
+                results = newResults;
+            }
+
+            return results;
+        }
+
         /// <summary>Gets the destination file paths.</summary>
         /// <param name="inputFile">The input file.</param>
         /// <param name="destinationDirectoryName">The destination directory name.</param>
         /// <param name="destinationExtension">The destination Extension.</param>
+        /// <param name="destinationPathFormat">The pivot File Format.</param>
         /// <returns>The destination files as a colon seperated list.</returns>
-        private IEnumerable<string> GetDestinationFilePaths(ContentItem inputFile, string destinationDirectoryName, string destinationExtension)
+        private IEnumerable<string> GetDestinationFilePaths(ContentItem inputFile, string destinationDirectoryName, string destinationExtension, string destinationPathFormat)
         {
-            if (inputFile.Pivots == null || !inputFile.Pivots.Any())
+            if (inputFile.ResourcePivotKeys == null || !inputFile.ResourcePivotKeys.Any())
             {
-                return new[] { GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension) };
+                return new[] { GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension, destinationPathFormat) };
             }
 
             var fileNames = new List<string>();
-            foreach (var contentPivot in inputFile.Pivots)
+            foreach (var groupedResourcePivotKeys in GetGroupedResourceKeys(inputFile.ResourcePivotKeys.ToArray()))
             {
-                if (this.context.TemporaryIgnore(contentPivot))
+                if (this.context.TemporaryIgnore(groupedResourcePivotKeys))
                 {
                     continue;
                 }
 
-                fileNames.Add(GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension, contentPivot));
+                fileNames.Add(GetContentPivotDestinationFilePath(inputFile.RelativeContentPath, destinationDirectoryName, destinationExtension, destinationPathFormat, groupedResourcePivotKeys));
             }
 
             return fileNames;
@@ -341,7 +383,7 @@ namespace WebGrease.Activities
             var cssHasher = GetFileHasher(this.context, cssHashedOutputPath, cssLogPath, FileTypes.CSS, this.context.Configuration.ApplicationRootDirectory);
 
             var totalSuccess = this.context.SectionedAction(SectionIdParts.EverythingActivity, SectionIdParts.Css)
-                .MakeCachable(new { cssFileSets, sourceDirectory, destinationDirectory, configType, imageExtensions, imageDirectories }, true)
+                .MakeCachable(new { cssFileSets, sourceDirectory, destinationDirectory, configType, imageExtensions, imageDirectories }, isSkipable: true)
                 .WhenSkipped(cacheSection => EnsureCssLogFile(cssHasher, imageHasher, cacheSection))
                 .Execute(cacheSection =>
                 {
@@ -385,6 +427,8 @@ namespace WebGrease.Activities
         /// <param name="imageHasher">The image hasher.</param>
         /// <param name="imagesDestinationDirectory">The images Destination Directory.</param>
         /// <returns>The <see cref="bool"/>.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Needs refactoring at some point, just like all other methods in everything activity.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "Needs refactoring at some point, just like all other methods in everything activity.")]
         private bool ExecuteCssFileSet(string configType, IList<string> imageDirectories, IList<string> imageExtensions, CssFileSet cssFileSet, FileHasherActivity cssHasher, FileHasherActivity imageHasher, string imagesDestinationDirectory)
         {
             var cssSpritingConfig = cssFileSet.ImageSpriting.GetNamedConfig(configType);
@@ -398,7 +442,7 @@ namespace WebGrease.Activities
                 Minification = cssMinificationConfig,
                 Preprocessing = cssFileSet.Preprocessing.GetNamedConfig(configType),
                 cssFileSet.Locales,
-                cssFileSet.Themes
+                cssFileSet.Themes,
             };
 
             return this.context
@@ -424,7 +468,21 @@ namespace WebGrease.Activities
                 })
                 .Execute(cacheSection =>
                 {
-                    var cssMinifier = this.CreateCssMinifier(imageHasher, imageExtensions, imageDirectories, imagesDestinationDirectory, cssMinificationConfig, cssSpritingConfig);
+                    var mergedResouresToApplyAsStringReplace = cssFileSet.ResourcePivots
+                        .Where(rp => rp.ApplyMode == ResourcePivotApplyMode.ApplyAsStringReplace)
+                        .ToDictionary(
+                            rpg => rpg.Key,
+                            rpg => GetMergedResources(this.context, FileTypes.CSS, rpg.Key, rpg.Keys));
+
+                    var mergedResouresToApplyAsCss = cssFileSet.ResourcePivots
+                        .Where(rp => rp.ApplyMode != ResourcePivotApplyMode.ApplyAsStringReplace)
+                        .ToDictionary(
+                            rpg => rpg.Key,
+                            rpg => GetMergedResources(this.context, FileTypes.CSS, rpg.Key, rpg.Keys));
+
+                    var dpiResources = GetMergedResources(this.context, FileTypes.CSS, Strings.DpiResourcePivotKey, cssFileSet.Dpi.Select(DpiToResolutionName));
+
+                    var cssMinifier = this.CreateCssMinifier(imageHasher, imageExtensions, imageDirectories, imagesDestinationDirectory, cssMinificationConfig, cssSpritingConfig, cssFileSet.Dpi, mergedResouresToApplyAsCss, dpiResources);
                     var outputFile = Path.Combine(this.staticAssemblerDirectory, cssFileSet.Output);
                     var inputFiles = this.Bundle(cssFileSet, outputFile, FileTypes.CSS, configType, cssMinifier.ShouldMinify);
                     if (inputFiles == null)
@@ -432,31 +490,20 @@ namespace WebGrease.Activities
                         return false;
                     }
 
-                    // localization
+                    // Resource pivots
                     this.context.Log.Information(ResourceStrings.ResolvingTokensAndPerformingLocalization);
 
-                    // Resolve resources
-                    var localeResources = GetLocaleResources(cssFileSet, this.context, FileTypes.CSS);
-                    var themeResources = GetThemeResources(cssFileSet, this.context, FileTypes.CSS);
+                    var resourcedContentItems = this.ApplyResources(inputFiles, mergedResouresToApplyAsStringReplace);
+                    var resourceSuccess = resourcedContentItems.All(l => l != null);
 
-                    // Localize the css
-                    var localizedAndThemedCssItems = this.LocalizeAndThemeCss(
-                        inputFiles,
-                        localeResources,
-                        themeResources,
-                        cssMinifier.ShouldMinify);
-
-                    this.context.Log.Information(ResourceStrings.MinifyingCssFilesAndSpritingBackgroundImages);
-                    var localizeSuccess = localizedAndThemedCssItems.All(l => l != null);
-
-                    if (!localizeSuccess)
+                    if (!resourceSuccess)
                     {
                         // localization failed for this batch
-                        this.context.Log.Error(null, ResourceStrings.ThereWereErrorsWhileMinifyingTheCssFiles);
+                        this.context.Log.Error(null, ResourceStrings.ThereWereErrorsWhileApplyingCssresources);
                         return false;
                     }
 
-                    var minifiedCssItems = this.MinifyCss(localizedAndThemedCssItems, cssMinifier, imageHasher, cssSpritingConfig.WriteLogFile);
+                    var minifiedCssItems = this.MinifyCss(resourcedContentItems, cssMinifier, imageHasher, cssSpritingConfig.WriteLogFile, mergedResouresToApplyAsCss);
 
                     if (minifiedCssItems.Any(i => i == null))
                     {
@@ -465,10 +512,10 @@ namespace WebGrease.Activities
                         return false;
                     }
 
-                    var hashedCssItems = this.HashContentItems(cssHasher, minifiedCssItems.Select(i => i.Css), CssDestinationDirectoryName, Strings.Css);
+                    var hashedCssItems = this.HashContentItems(cssHasher, minifiedCssItems.SelectMany(i => i.Css).Where(n => n != null), CssDestinationDirectoryName, Strings.Css, cssFileSet.OutputPathFormat);
                     hashedCssItems.ForEach(hi => cacheSection.AddResult(hi, CacheFileCategories.HashedMinifiedCssResult));
 
-                    var hashedImageItems = minifiedCssItems.SelectMany(mci => mci.HashedImages);
+                    var hashedImageItems = minifiedCssItems.SelectMany(mci => mci.HashedImages).Where(n => n != null);
                     hashedImageItems.ForEach(hi => cacheSection.AddResult(hi, CacheFileCategories.HashedImage));
 
                     return true;
@@ -494,7 +541,7 @@ namespace WebGrease.Activities
             var jsHasher = GetFileHasher(this.context, jsHashedOutputPath, jsLogPath, FileTypes.JS, this.context.Configuration.ApplicationRootDirectory);
             var varBySettings = new { jsFileSets, configType, sourceDirectory, destinationDirectory };
             var totalSuccess = this.context.SectionedAction(SectionIdParts.EverythingActivity, SectionIdParts.Js)
-                .MakeCachable(varBySettings, true)
+                .MakeCachable(varBySettings, isSkipable: true)
                 .WhenSkipped(cacheSection => EnsureJsLogFile(jsHasher, cacheSection))
                 .Execute(cacheSection =>
                 {
@@ -550,11 +597,17 @@ namespace WebGrease.Activities
                         }
 
                         // resolve the resources
-                        var localeResources = GetLocaleResources(jsFileSet, this.context, FileTypes.JS);
+                        var mergedResoures = jsFileSet.ResourcePivots
+                            .ToDictionary(
+                                rpg => rpg.Key,
+                                rpg => GetMergedResources(this.context, FileTypes.CSS, rpg.Key, rpg.Keys));
 
                         // localize
                         this.context.Log.Information(ResourceStrings.ResolvingTokensAndPerformingLocalization);
-                        var localizedJsFiles = this.LocalizeJs(bundledFiles, jsFileSet.Locales, localeResources);
+                        var localizedJsFiles = this.ApplyResources(
+                            bundledFiles,
+                            mergedResoures);
+
                         if (localizedJsFiles == null)
                         {
                             this.context.Log.Error(null, "There were errors encountered while resolving tokens.");
@@ -576,7 +629,7 @@ namespace WebGrease.Activities
                             return false;
                         }
 
-                        var hashedContentItems = this.HashContentItems(jsHasher, minifiedContentItems, JsDestinationDirectoryName, Strings.JS);
+                        var hashedContentItems = this.HashContentItems(jsHasher, minifiedContentItems, JsDestinationDirectoryName, Strings.JS, jsFileSet.OutputPathFormat);
                         hashedContentItems.ForEach(ci => cacheSection.AddResult(ci, CacheFileCategories.HashedMinifiedJsResult, true));
 
                         return true;
@@ -588,13 +641,14 @@ namespace WebGrease.Activities
         /// <param name="contentItems">The content items.</param>
         /// <param name="destinationDirectoryName">The destination directory name.</param>
         /// <param name="destinationExtension">The destination extension.</param>
+        /// <param name="destinationPathFormat">The destination Path Format.</param>
         /// <returns>The hashed content items</returns>
-        private IEnumerable<ContentItem> HashContentItems(FileHasherActivity hasher, IEnumerable<ContentItem> contentItems, string destinationDirectoryName, string destinationExtension)
+        private IEnumerable<ContentItem> HashContentItems(FileHasherActivity hasher, IEnumerable<ContentItem> contentItems, string destinationDirectoryName, string destinationExtension, string destinationPathFormat)
         {
             var hashedFiles = new List<ContentItem>();
-            foreach (var contentItem in contentItems)
+            foreach (var contentItem in contentItems.Where(ci => ci != null))
             {
-                var destinationFilePaths = this.GetDestinationFilePaths(contentItem, destinationDirectoryName, destinationExtension);
+                var destinationFilePaths = this.GetDestinationFilePaths(contentItem, destinationDirectoryName, destinationExtension, destinationPathFormat);
                 hashedFiles.AddRange(hasher.Hash(contentItem, destinationFilePaths));
             }
 
@@ -647,32 +701,38 @@ namespace WebGrease.Activities
         /// <param name="imagesDestinationDirectory">The images Destination Directory.</param>
         /// <param name="minificationConfig">The minification Config.</param>
         /// <param name="spritingConfig">The spriting Config.</param>
+        /// <param name="dpi">The dpi values</param>
+        /// <param name="mergedResoures">The merged Resoures.</param>
+        /// <param name="dpiResources">The dpi Resources.</param>
         /// <returns>The <see cref="MinifyCssActivity"/>.</returns>
-        private MinifyCssActivity CreateCssMinifier(FileHasherActivity imageHasher, IList<string> imageExtensions, IList<string> imageDirectories, string imagesDestinationDirectory, CssMinificationConfig minificationConfig, CssSpritingConfig spritingConfig)
+        private MinifyCssActivity CreateCssMinifier(FileHasherActivity imageHasher, IList<string> imageExtensions, IList<string> imageDirectories, string imagesDestinationDirectory, CssMinificationConfig minificationConfig, CssSpritingConfig spritingConfig, HashSet<float> dpi, Dictionary<string, IDictionary<string, IDictionary<string, string>>> mergedResoures, IDictionary<string, IDictionary<string, string>> dpiResources)
         {
             var cssMinifier = new MinifyCssActivity(this.context)
-                                  {
-                                      ShouldAssembleBackgroundImages = spritingConfig.ShouldAutoSprite,
-                                      ShouldMinify = minificationConfig.ShouldMinify,
-                                      ShouldMergeMediaQueries = minificationConfig.ShouldMergeMediaQueries,
-                                      ShouldOptimize = minificationConfig.ShouldMinify || minificationConfig.ShouldOptimize,
-                                      ShouldValidateForLowerCase = minificationConfig.ShouldValidateLowerCase,
-                                      ShouldExcludeProperties = minificationConfig.ShouldExcludeProperties,
-                                      ImageExtensions = imageExtensions,
-                                      ImageDirectories = imageDirectories,
-                                      BannedSelectors = new HashSet<string>(minificationConfig.RemoveSelectors.ToArray()),
-                                      HackSelectors = new HashSet<string>(minificationConfig.ForbiddenSelectors.ToArray()),
-                                      ImageAssembleReferencesToIgnore = new HashSet<string>(spritingConfig.ImagesToIgnore.ToArray()),
-                                      ImageAssemblyPadding = spritingConfig.ImagePadding,
-                                      ErrorOnInvalidSprite = spritingConfig.ErrorOnInvalidSprite,
-                                      OutputUnit = spritingConfig.OutputUnit,
-                                      OutputUnitFactor = spritingConfig.OutputUnitFactor,
-                                      ImagesOutputDirectory = imagesDestinationDirectory,
-                                      IgnoreImagesWithNonDefaultBackgroundSize = spritingConfig.IgnoreImagesWithNonDefaultBackgroundSize,
-                                      ImageBasePrefixToRemoveFromOutputPathInLog = imageHasher != null ? imageHasher.BasePrefixToRemoveFromOutputPathInLog : null,
-                                      ImageBasePrefixToAddToOutputPath = imageHasher != null ? imageHasher.BasePrefixToAddToOutputPath : null,
-                                      ForcedSpritingImageType = spritingConfig.ForceImageType
-                                  };
+            {
+                ShouldAssembleBackgroundImages = spritingConfig.ShouldAutoSprite,
+                ShouldMinify = minificationConfig.ShouldMinify,
+                ShouldMergeMediaQueries = minificationConfig.ShouldMergeMediaQueries,
+                ShouldOptimize = minificationConfig.ShouldMinify || minificationConfig.ShouldOptimize,
+                ShouldValidateForLowerCase = minificationConfig.ShouldValidateLowerCase,
+                ShouldExcludeProperties = minificationConfig.ShouldExcludeProperties,
+                ImageExtensions = imageExtensions,
+                ImageDirectories = imageDirectories,
+                BannedSelectors = new HashSet<string>(minificationConfig.RemoveSelectors.ToArray()),
+                HackSelectors = new HashSet<string>(minificationConfig.ForbiddenSelectors.ToArray()),
+                ImageAssembleReferencesToIgnore = new HashSet<string>(spritingConfig.ImagesToIgnore.ToArray()),
+                ImageAssemblyPadding = spritingConfig.ImagePadding,
+                ErrorOnInvalidSprite = spritingConfig.ErrorOnInvalidSprite,
+                OutputUnit = spritingConfig.OutputUnit,
+                OutputUnitFactor = spritingConfig.OutputUnitFactor,
+                ImagesOutputDirectory = imagesDestinationDirectory,
+                IgnoreImagesWithNonDefaultBackgroundSize = spritingConfig.IgnoreImagesWithNonDefaultBackgroundSize,
+                ImageBasePrefixToRemoveFromOutputPathInLog = imageHasher != null ? imageHasher.BasePrefixToRemoveFromOutputPathInLog : null,
+                ImageBasePrefixToAddToOutputPath = imageHasher != null ? imageHasher.BasePrefixToAddToOutputPath : null,
+                ForcedSpritingImageType = spritingConfig.ForceImageType,
+                Dpi = dpi,
+                MergedResources = mergedResoures,
+                DpiResources = dpiResources
+            };
             return cssMinifier;
         }
 
@@ -700,9 +760,15 @@ namespace WebGrease.Activities
         /// <param name="minifier">The css minifier</param>
         /// <param name="imageHasher">The image Hasher.</param>
         /// <param name="writeSpriteLogFile">If set to tue, it will write a log file for each sprite.</param>
+        /// <param name="mergedResources">The merged Resources.</param>
         /// <returns>True is successfull false if not.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private IEnumerable<MinifyCssResult> MinifyCss(IEnumerable<ContentItem> inputCssItems, MinifyCssActivity minifier, FileHasherActivity imageHasher, bool writeSpriteLogFile)
+        private IEnumerable<MinifyCssResult> MinifyCss(
+            IEnumerable<ContentItem> inputCssItems,
+            MinifyCssActivity minifier,
+            FileHasherActivity imageHasher,
+            bool writeSpriteLogFile,
+            Dictionary<string, IDictionary<string, IDictionary<string, string>>> mergedResources)
         {
             var results = new List<MinifyCssResult>();
             foreach (var inputFile in inputCssItems)
@@ -710,11 +776,12 @@ namespace WebGrease.Activities
                 var sourceFile = inputFile.RelativeContentPath;
                 var destinationFile = inputFile.RelativeContentPath;
 
-                var pivots = inputFile.Pivots.Select(p => p.ToString());
+                var pivots = inputFile.ResourcePivotKeys.Select(p => p.ToString());
                 var pivotFileExtensions = string.Join(".", pivots);
                 this.context.Log.Information("Css Minify start: {0} : {1}".InvariantFormat(destinationFile, pivotFileExtensions));
 
                 minifier.SourceFile = sourceFile;
+                minifier.MergedResources = mergedResources;
                 minifier.DestinationFile = destinationFile;
 
                 if (writeSpriteLogFile)
@@ -731,31 +798,71 @@ namespace WebGrease.Activities
                 try
                 {
                     // execute the minifier on the css.
-                    results.Add(minifier.Process(inputFile, imageHasher));
+                    var result = minifier.Process(inputFile, imageHasher);
+
+                    // Add the result to the results.
+                    results.Add(result);
                 }
                 catch (Exception ex)
                 {
                     results.Add(null);
-                    AggregateException aggEx;
-
-                    if ((aggEx = ex as AggregateException) != null || ((ex.InnerException != null) && (aggEx = ex.InnerException as AggregateException) != null))
-                    {
-                        // antlr can throw a blob of errors, so they need to be deduped to get the real set of errors
-                        var errors = aggEx.CreateBuildErrors(sourceFile);
-                        foreach (var error in errors)
-                        {
-                            this.HandleError(inputFile, error, sourceFile);
-                        }
-                    }
-                    else
-                    {
-                        // Catch, record and display error
-                        this.HandleError(inputFile, ex, sourceFile);
-                    }
+                    this.HandleCssAggregateException(ex, sourceFile, inputFile);
                 }
             }
 
             return results;
+        }
+
+        private void HandleCssAggregateException(Exception ex, string sourceFile, ContentItem inputFile)
+        {
+            AggregateException aggEx;
+            if ((aggEx = ex as AggregateException) != null || ((ex.InnerException != null) && (aggEx = ex.InnerException as AggregateException) != null))
+            {
+                var cssExceptions = new List<Antlr.Runtime.RecognitionException>();
+                var aggregateExceptions = new List<AggregateException>();
+                var otherExceptions = new List<Exception>();
+                foreach (var innerException in aggEx.InnerExceptions)
+                {
+                    var cssException = innerException as Antlr.Runtime.RecognitionException;
+                    if (cssException != null)
+                    {
+                        cssExceptions.Add(cssException);
+                    }
+                    else
+                    {
+                        var aggregateException = innerException as AggregateException;
+                        if (aggregateException != null)
+                        {
+                            aggregateExceptions.Add(aggregateException);
+                        }
+                        else
+                        {
+                            otherExceptions.Add(innerException);
+                        }
+                    }
+                }
+
+                var errors = cssExceptions.CreateBuildErrors(sourceFile);
+                foreach (var error in errors)
+                {
+                    this.HandleError(inputFile, error, sourceFile);
+                }
+
+                foreach (var aggregateException in aggregateExceptions)
+                {
+                    this.HandleCssAggregateException(aggregateException, sourceFile, inputFile);
+                }
+
+                foreach (var otherException in otherExceptions)
+                {
+                    this.HandleError(inputFile, otherException, sourceFile);
+                }
+            }
+            else
+            {
+                // Catch, record and display error
+                this.HandleError(inputFile, ex, sourceFile);
+            }
         }
 
         /// <summary>Minify js activity</summary>
@@ -788,9 +895,9 @@ namespace WebGrease.Activities
             foreach (var inputFile in inputFiles)
             {
                 var sourceFile = inputFile.RelativeContentPath;
-                if (!inputFile.Pivots.All(this.context.TemporaryIgnore))
+                if (!this.context.TemporaryIgnore(inputFile.ResourcePivotKeys))
                 {
-                    this.context.Log.Information("Js Minify start: {0}{1}".InvariantFormat(sourceFile, string.Join(string.Empty, inputFile.Pivots.Select(p => p.ToString()))));
+                    this.context.Log.Information("Js Minify start: {0}{1}".InvariantFormat(sourceFile, string.Join(string.Empty, inputFile.ResourcePivotKeys.Select(p => p.ToString()))));
                     try
                     {
                         results.Add(minifier.Minify(inputFile));
@@ -806,66 +913,25 @@ namespace WebGrease.Activities
             return results;
         }
 
-        /// <summary>Localize the js files based on the expanded resource tokens for locales</summary>
-        /// <param name="inputFiles">the files to resolve tokens in.</param>
-        /// <param name="locales">A collection of locale codes</param>
-        /// <param name="localeResources">The locale Resources.</param>
-        /// <returns>True if successfull false if not.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Need to catch all in order to log errors.")]
-        private IEnumerable<ContentItem> LocalizeJs(IEnumerable<ContentItem> inputFiles, IEnumerable<string> locales, IDictionary<string, IDictionary<string, string>> localeResources)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch and handle/pass down all errors on purpose.")]
+        private IEnumerable<ContentItem> ApplyResources(IEnumerable<ContentItem> inputItems, Dictionary<string, IDictionary<string, IDictionary<string, string>>> mergedResource)
         {
-            if (!locales.Any())
+            if (!mergedResource.Any())
             {
-                return inputFiles;
+                return inputItems;
             }
 
             var results = new List<ContentItem>();
 
-            foreach (var jsFile in inputFiles)
+            foreach (var inputItem in inputItems)
             {
                 try
                 {
-                    results.AddRange(
-                        JSLocalizationActivity.Localize(
-                            this.context,
-                            jsFile,
-                            locales,
-                            localeResources));
+                    results.AddRange(ResourcePivotActivity.ApplyResourceKeys(inputItem, mergedResource));
                 }
                 catch (Exception ex)
                 {
-                    this.HandleError(jsFile, ex, jsFile.RelativeContentPath);
-                }
-            }
-
-            return results;
-        }
-
-        /// <summary>Localize the css files based on the expanded resource tokens for locales and themes</summary>
-        /// <param name="cssInputItems">The css files to localize</param>
-        /// <param name="localeResources">The locale resources</param>
-        /// <param name="themeResources">The theme resources</param>
-        /// <param name="shouldMinify">If it should minify, in this case we preemtively remove comments, faster to do before multiplication of files.</param>
-        /// <returns>True if it succeeded, false if it did not</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Handles all errors")]
-        private IEnumerable<ContentItem> LocalizeAndThemeCss(IEnumerable<ContentItem> cssInputItems, IDictionary<string, IDictionary<string, string>> localeResources, IDictionary<string, IDictionary<string, string>> themeResources, bool shouldMinify)
-        {
-            var results = new List<ContentItem>();
-
-            if (!localeResources.Any())
-            {
-                localeResources[Strings.DefaultLocale] = new Dictionary<string, string>();
-            }
-
-            foreach (var cssInputItem in cssInputItems)
-            {
-                try
-                {
-                    results.AddRange(CssLocalizationActivity.LocalizeAndTheme(this.context, cssInputItem, localeResources, themeResources, shouldMinify));
-                }
-                catch (Exception ex)
-                {
-                    this.HandleError(cssInputItem, ex, cssInputItem.RelativeContentPath);
+                    this.HandleError(inputItem, ex, inputItem.RelativeContentPath);
                     results.Add(null);
                 }
             }
@@ -939,6 +1005,19 @@ namespace WebGrease.Activities
             }
 
             this.context.Log.Error(ex, message);
+
+            var aggEx = ex as AggregateException;
+            if (aggEx != null)
+            {
+                foreach (var innerException in aggEx.InnerExceptions)
+                {
+                    this.HandleError(contentItem, innerException, file, message);
+                }
+            }
+            else if (ex.InnerException != null)
+            {
+                this.HandleError(contentItem, ex.InnerException, file, message);
+            }
         }
     }
 }

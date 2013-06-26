@@ -13,8 +13,8 @@ namespace WebGrease.Configuration
     /// <summary>The FileSet interface.</summary>
     public interface IFileSet
     {
-        /// <summary>Gets the locales.</summary>
-        IList<string> Locales { get; }
+        /// <summary>Gets the resource pivots.</summary>
+        ResourcePivotGroupCollection ResourcePivots { get; }
 
         /// <summary>Gets the preprocessing configuration.</summary>
         IDictionary<string, PreprocessingConfig> Preprocessing { get; }
@@ -32,5 +32,9 @@ namespace WebGrease.Configuration
 
         /// <summary>Gets the external files.</summary>
         IList<string> LoadedConfigurationFiles { get; }
+
+        IList<string> Locales { get; }
+
+        IList<string> Themes { get; }
     }
 }

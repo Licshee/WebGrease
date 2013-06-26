@@ -94,7 +94,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="updatedY">The updated y</param>
         /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
         /// <returns>The new declaration node with updated values</returns>
-        internal DeclarationNode UpdateBackgroundNode(string updatedUrl, int? updatedX, int? updatedY, double webGreaseBackgroundDpi)
+        internal DeclarationNode UpdateBackgroundNode(string updatedUrl, int? updatedX, int? updatedY, float webGreaseBackgroundDpi)
         {
             var isUrlUpdated = false;
             var isXUpdated = false;
@@ -118,7 +118,6 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                         continue;
                     }
                 }
-
 
                 // Try updating X
                 if (!isXUpdated)

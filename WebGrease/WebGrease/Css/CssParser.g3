@@ -96,6 +96,10 @@ tokens
     URIBASEDVALUE;
     WHITESPACE;
     WG_DPI;
+    REPLACEMENTTOKEN;
+    REPLACEMENTTOKENBASEDVALUE;
+    REPLACEMENTTOKENIDENTIFIER;
+    URIHASH;
 }
 
 @namespace { WebGrease.Css }
@@ -166,8 +170,8 @@ media_query_list
     ;
 
 // media_query
-// : [ONLY | NOT]? S* media_type S* [ AND S* expression ]*
-// | expression [ AND S* expression ]*
+// : [ONLY | NOT]? S* media_type S* [ AND S* media_expression ]*
+// | media_expression [ AND S* media_expression ]*
 // ;
 media_query
  : (ONLY | NOT)? media_type (AND media_expression)*
@@ -184,7 +188,7 @@ media_type
  -> ^(MEDIA_TYPE IDENT)
  ;
 
-// expression
+// media_expression
 // : '(' S* media_feature S* [ ':' S* expr ]? ')' S*
 // ;
 media_expression
@@ -198,6 +202,8 @@ media_expression
 media_feature
  : IDENT
  -> ^(MEDIA_FEATURE IDENT)
+ | REPLACEMENTTOKEN
+ -> ^(MEDIA_FEATURE REPLACEMENTTOKEN)
  ;
 
 // page
@@ -238,6 +244,8 @@ unary_operator
 property
     : (STAR)? IDENT
     -> ^(PROPERTY STAR? IDENT)
+	|REPLACEMENTTOKEN
+	-> ^(PROPERTY REPLACEMENTTOKEN)
     ;
 
 // ruleset
@@ -298,6 +306,7 @@ whitespace
 //  : [ type_selector | universal ]
 //    [ HASH | class | attrib | pseudo | negation ]*
 //  | [ HASH | class | attrib | pseudo | negation ]+
+//  | REPLACEMENTTOKEN
 //  ;
 // universal is subset of type_selector
 // Grammar Note - The productions don't exactly match the Css 3 spec because of whitespace handling done through
@@ -310,7 +319,9 @@ simple_selector_sequence
     ;
 
 hashclassatnameattribpseudonegation
-    : hash
+    : REPLACEMENTTOKEN
+    -> ^(REPLACEMENTTOKEN ^(REPLACEMENTTOKENIDENTIFIER REPLACEMENTTOKEN))
+    | hash
     -> ^(HASHCLASSATNAMEATTRIBPSEUDONEGATION hash)
     | class
     -> ^(HASHCLASSATNAMEATTRIBPSEUDONEGATION class)
@@ -419,12 +430,12 @@ functional_pseudo
 // expression
 //  /* In CSS3, the expressions are identifiers, strings, */
 //  /* or of the form "an+b" */
-//  : [ [ PLUS | '-' | DIMENSION | NUMBER | STRING | IDENT ] S* ]+
+//  : [ [ PLUS | '-' | DIMENSION | NUMBER | STRING | IDENT | REPLACEMENT ] S* ]+
 //  ;
 selectorexpression
   /* In CSS3, the expressions are identifiers, strings, */
   /* or of the form "an+b" */
-  : (PLUS|MINUS|DIMENSION|NUMBER|STRING|IDENT)+
+  : (PLUS|MINUS|DIMENSION|NUMBER|STRING|IDENT|REPLACEMENT)+
   ;
 
 // negation
@@ -500,6 +511,8 @@ term
     -> ^(TERM ^(STRINGBASEDVALUE STRING))
     | hash
     -> ^(TERM ^(HEXBASEDVALUE hash))
+    | REPLACEMENTTOKEN
+    -> ^(TERM ^(REPLACEMENTTOKENBASEDVALUE REPLACEMENTTOKEN))
     | function
     -> ^(TERM function)
     ;

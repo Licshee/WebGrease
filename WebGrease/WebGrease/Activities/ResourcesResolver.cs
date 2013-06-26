@@ -25,35 +25,35 @@ namespace WebGrease.Activities
     internal sealed class ResourcesResolver
     {
         /// <summary>
-        /// Gets the localization resource key format
-        /// </summary>
-        /// <value>Regular expression pattern</value>
-        private static readonly Regex LocalizationResourceKeyRegex = new Regex(@"%([-./\w_]+)%", RegexOptions.Compiled);
-
-        /// <summary>
-        /// Output folder path.
-        /// </summary>
-        private readonly string outputDirectoryPath;
-
-        /// <summary>
         /// Directories to search the resource files.
         /// </summary>
         private readonly List<ResourceDirectoryPath> resourceDirectoryPaths = new List<ResourceDirectoryPath>();
 
         /// <summary>
+        /// Gets the localization resource key format
+        /// </summary>
+        /// <value>Regular expression pattern</value>
+        internal static readonly Regex LocalizationResourceKeyRegex = new Regex(@"%([-./\w_]+)%", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Output folder path.
+        /// </summary>
+        private string outputDirectoryPath;
+
+        /// <summary>
         /// The resource keys for which the resources will be compressed.
         /// </summary>
-        private readonly IEnumerable<string> resourceKeys;
+        private IEnumerable<string> resourceKeys;
 
         /// <summary>Initializes a new instance of the <see cref="ResourcesResolver"/> class.</summary>
         /// <param name="context">The webgrease context</param>
         /// <param name="inputContentDirectory">The base Resources Directory.</param>
-        /// <param name="resourceType">The compress Filter Directory Name.</param>
+        /// <param name="resourceGroupKey">The compress Filter Directory Name.</param>
         /// <param name="applicationDirectoryName">The modules Aggregation Directory Name.</param>
         /// <param name="siteName">The site name</param>
         /// <param name="resourceKeys">The resource keys for which the resources will be compressed.</param>
         /// <param name="outputDirectoryPath">Output folder to write the resource files on hard drive</param>
-        private ResourcesResolver(IWebGreaseContext context, string inputContentDirectory, ResourceType resourceType, string applicationDirectoryName, string siteName, IEnumerable<string> resourceKeys, string outputDirectoryPath)
+        private ResourcesResolver(IWebGreaseContext context, string inputContentDirectory, string resourceGroupKey, string applicationDirectoryName, string siteName, IEnumerable<string> resourceKeys, string outputDirectoryPath)
         {
             // Directory Structure:
             // Content
@@ -63,15 +63,19 @@ namespace WebGrease.Activities
             //                  css
             //                      locales
             //                      themes
+            //                      ?????
             //                  js
             //                      locales
+            //                      ?????
             //          Site2
             //              Resources
             //                  css
             //                      locales
             //                      themes
+            //                      ?????
             //                  js
             //                      locales
+            //                      ?????
             // ..
             // ..
             //      F1
@@ -79,52 +83,57 @@ namespace WebGrease.Activities
             //              css
             //                  locales
             //                  themes
+            //                  ?????
             //              js
             //                  locales
+            //                  ?????
             //      F2
             //      F3
             //      ..
             //      ..
             var contentDirectoryInfo = new DirectoryInfo(inputContentDirectory);
 
-            // Iterate the top level directories inside "Content"
-            foreach (var contentChildDirectory in contentDirectoryInfo.EnumerateDirectories())
+            Safe.FileLock(contentDirectoryInfo, () => 
             {
-                // "Application" directory
-                if (string.Compare(contentChildDirectory.Name, applicationDirectoryName, StringComparison.OrdinalIgnoreCase) == 0)
+                // Iterate the top level directories inside "Content"
+                foreach (var contentChildDirectory in contentDirectoryInfo.EnumerateDirectories())
                 {
-                    // "Site" directory
-                    var siteDirectory = Path.Combine(contentChildDirectory.FullName, siteName);
-
-                    if (Directory.Exists(siteDirectory))
+                    // "Application" directory
+                    if (string.Compare(contentChildDirectory.Name, applicationDirectoryName, StringComparison.OrdinalIgnoreCase) == 0)
                     {
-                        // This is "Site" directory which can override the resources
-                        foreach (var filterDirectory in new DirectoryInfo(siteDirectory).EnumerateDirectories(resourceType.ToString(), SearchOption.AllDirectories))
+                        // "Site" directory
+                        var siteDirectory = Path.Combine(contentChildDirectory.FullName, siteName ?? string.Empty);
+
+                        if (Directory.Exists(siteDirectory))
                         {
-                            this.resourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = true, Directory = filterDirectory.FullName });
+                            // This is "Site" directory which can override the resources
+                            foreach (var filterDirectory in new DirectoryInfo(siteDirectory).EnumerateDirectories(resourceGroupKey, SearchOption.AllDirectories))
+                            {
+                                this.resourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = true, Directory = filterDirectory.FullName });
+                                context.Cache.CurrentCacheSection.AddSourceDependency(filterDirectory.FullName, "*.resx");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // "Feature" directories
+                        foreach (var filterDirectory in contentChildDirectory.EnumerateDirectories(resourceGroupKey, SearchOption.AllDirectories))
+                        {
+                            this.resourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = false, Directory = filterDirectory.FullName });
                             context.Cache.CurrentCacheSection.AddSourceDependency(filterDirectory.FullName, "*.resx");
                         }
                     }
                 }
-                else
-                {
-                    // "Feature" directories
-                    foreach (var filterDirectory in contentChildDirectory.EnumerateDirectories(resourceType.ToString(), SearchOption.AllDirectories))
-                    {
-                        this.resourceDirectoryPaths.Add(new ResourceDirectoryPath { AllowOverrides = false, Directory = filterDirectory.FullName });
-                        context.Cache.CurrentCacheSection.AddSourceDependency(filterDirectory.FullName, "*.resx");
-                    }
-                }
-            }
 
-            this.outputDirectoryPath = outputDirectoryPath;
-            this.resourceKeys = resourceKeys ?? new List<string> { Strings.DefaultLocale };
+                this.outputDirectoryPath = outputDirectoryPath;
+                this.resourceKeys = resourceKeys ?? new List<string> { Strings.DefaultLocale };
+            });
         }
 
         /// <summary>Resource Manager factory.</summary>
         /// <param name="context">The webgrease context</param>
         /// <param name="inputContentDirectory">The base Resources Directory.</param>
-        /// <param name="resourceType">The resource type.</param>
+        /// <param name="resourceGroupKey">The resource type.</param>
         /// <param name="applicationDirectoryName">The modules Aggregation Directory Name.</param>
         /// <param name="siteName">The site name</param>
         /// <param name="resourceKeys">The resource keys for which the resources will be compressed.</param>
@@ -133,13 +142,13 @@ namespace WebGrease.Activities
         internal static ResourcesResolver Factory(
             IWebGreaseContext context,
             string inputContentDirectory,
-            ResourceType resourceType,
+            string resourceGroupKey,
             string applicationDirectoryName,
             string siteName,
             IEnumerable<string> resourceKeys,
             string outputDirectoryPath)
         {
-            return new ResourcesResolver(context, inputContentDirectory, resourceType, applicationDirectoryName, siteName, resourceKeys, outputDirectoryPath);
+            return new ResourcesResolver(context, inputContentDirectory, resourceGroupKey, applicationDirectoryName, siteName, resourceKeys, outputDirectoryPath);
         }
 
         /// <summary>Gets the merged resources.</summary>
@@ -147,7 +156,7 @@ namespace WebGrease.Activities
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "Explicit choice.")]
         internal IDictionary<string, IDictionary<string, string>> GetMergedResources()
         {
-            var results = new Dictionary<string, IDictionary<string, string>>();
+            var results = new Dictionary<string, IDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
             // False value of this variable indicates generic-generic is not present in the key collection.
             // After the ResourceKeys loop if genericProcessed value is still false it means generic-generic file is 
@@ -190,13 +199,13 @@ namespace WebGrease.Activities
         private SortedDictionary<string, string> GetResources(string resourceKey, string localeOrThemeName)
         {
             // Keep the resolved resources sorted for better readability
-            var resources = new SortedDictionary<string, string>();
+            var resources = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             // Get the resources for all sets of folder paths
             foreach (var resourceDirectoryPath in this.resourceDirectoryPaths.OrderBy(resourceDirectoryPath => resourceDirectoryPath.AllowOverrides))
             {
                 var resourceDirectoryInfo = new DirectoryInfo(resourceDirectoryPath.Directory);
-                var genericResource = new Dictionary<string, string>();
+                var genericResource = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
                 // First of all consider the default locale file with in a directory
                 if (resourceKey != Strings.DefaultLocale)
@@ -209,7 +218,7 @@ namespace WebGrease.Activities
                 }
 
                 // Now check if the actual locale file is present in same directory.
-                var resxResource = new Dictionary<string, string>();
+                var resxResource = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 var localeFilePath = Path.Combine(resourceDirectoryInfo.FullName, localeOrThemeName + Strings.ResxExtension);
 
                 if (File.Exists(localeFilePath))
@@ -233,7 +242,7 @@ namespace WebGrease.Activities
         /// <returns>Read the resources from a file</returns>
         internal static Dictionary<string, string> ReadResources(string filePath)
         {
-            var fileResources = new Dictionary<string, string>();
+            var fileResources = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             using (var resXResourceReader = new ResXResourceReader(filePath))
             {
                 foreach (DictionaryEntry resource in resXResourceReader)
@@ -359,10 +368,10 @@ namespace WebGrease.Activities
                         .OrderBy(rk => rk)
                         .ToArray());
 
-            var result = new Dictionary<string, Tuple<List<string>, Dictionary<string, string>>>();
+            var result = new Dictionary<string, Tuple<List<string>, Dictionary<string, string>>>(StringComparer.OrdinalIgnoreCase);
             foreach (var resource in resources)
             {
-                var usedKeyValues = resource.Value.Where(kvp => usedResourceKeys.Contains(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+                var usedKeyValues = new Dictionary<string, string>(resource.Value.Where(kvp => usedResourceKeys.Contains(kvp.Key)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value), StringComparer.OrdinalIgnoreCase);
                 var uniqueKey = string.Join("%", usedKeyValues.Select(kv => kv.ToString()));
                 Tuple<List<string>, Dictionary<string, string>> matchingResourceKeys;
                 if (!result.TryGetValue(uniqueKey, out matchingResourceKeys))

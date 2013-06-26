@@ -50,6 +50,9 @@ namespace WebGrease.Css.Visitor
         /// </summary>
         private readonly string _cssPath;
 
+        /// <summary>The _missing image url.</summary>
+        private readonly string _missingImage;
+
         /// <summary>
         /// The default image asssembly scan output.
         /// </summary>
@@ -83,6 +86,9 @@ namespace WebGrease.Css.Visitor
         /// </summary>
         private readonly HashSet<string> _imagesCriteriaFailedReferences = new HashSet<string>();
 
+        /// <summary>The image not found throw error.</summary>
+        private bool imageNotFoundThrowError;
+
         internal IWebGreaseContext Context { get; set; }
 
         /// <summary>
@@ -104,14 +110,17 @@ namespace WebGrease.Css.Visitor
         /// <summary>Initializes a new instance of the ImageAssemblyScanVisitor class</summary>
         /// <param name="cssPath">The css file path which would be used to configure the image path</param>
         /// <param name="imageReferencesToIgnore">The list of image references to ignore</param>
-        /// <param name="additionalImageAssemblyBuckets">The list of additional image references to scan</param>
         /// <param name="ignoreImagesWithNonDefaultBackgroundSize">The value used to determine if the visitor should ignore images that have a non-default background-size value set. </param>
         /// <param name="outputUnit">The output unit.</param>
         /// <param name="outputUnitFactor">The output unit factor.</param>
         /// <param name="availableImageSources"></param>
-        public ImageAssemblyScanVisitor(string cssPath, IEnumerable<string> imageReferencesToIgnore, IEnumerable<ImageAssemblyScanInput> additionalImageAssemblyBuckets, bool ignoreImagesWithNonDefaultBackgroundSize = false, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d, IDictionary<string, string> availableImageSources = null)
+        /// <param name="missingImage">The missing Image Url.</param>
+        public ImageAssemblyScanVisitor(string cssPath, IEnumerable<string> imageReferencesToIgnore, bool ignoreImagesWithNonDefaultBackgroundSize = false, string outputUnit = ImageAssembleConstants.Px, double outputUnitFactor = 1d, IDictionary<string, string> availableImageSources = null, string missingImage = null, bool imageNotFoundThrowError = false)
         {
             Contract.Requires(availableImageSources != null || !string.IsNullOrWhiteSpace(cssPath));
+
+            this._missingImage = missingImage;
+            this.imageNotFoundThrowError = imageNotFoundThrowError;
 
             // Set the image output root.
             this._availableImageSources = availableImageSources;
@@ -131,31 +140,6 @@ namespace WebGrease.Css.Visitor
             {
                 // Normalize the image references paths to ignore
                 imageReferencesToIgnore.ForEach(imageReferenceToIgnore => this._imageReferencesToIgnore.Add(imageReferenceToIgnore.NormalizeUrl()));
-            }
-
-            if (additionalImageAssemblyBuckets == null)
-            {
-                return;
-            }
-
-            // Expand the additional bucket image paths relative to the css
-            foreach (var additionalImageSpriteBucket in additionalImageAssemblyBuckets)
-            {
-                var imagesInBucket = new HashSet<string>();
-
-
-                // Normalize the image references paths to lazy load
-                additionalImageSpriteBucket.ImagesInBucket.ForEach(imagePath =>
-                                                                              {
-                                                                                  var path = imagePath.NormalizeUrl().MakeAbsoluteTo(_cssPath);
-                                                                                  if (!string.IsNullOrWhiteSpace(path))
-                                                                                  {
-                                                                                      imagesInBucket.Add(path);
-                                                                                  }
-                                                                              });
-
-                // Add to the member
-                _imageAssemblyScanOutputs.Add(new ImageAssemblyScanOutput { ImageAssemblyScanInput = new ImageAssemblyScanInput(additionalImageSpriteBucket.BucketName, imagesInBucket.ToSafeReadOnlyCollection()) });
             }
         }
 
@@ -239,7 +223,6 @@ namespace WebGrease.Css.Visitor
                 BackgroundImage backgroundImageNode;
                 BackgroundPosition backgroundPositionNode;
                 DeclarationNode backgroundSize;
-                DeclarationNode webGreaseBackgroundDpiNode;
 
                 var imagesCriteriaFailedUrls = new List<string>();
 
@@ -249,7 +232,6 @@ namespace WebGrease.Css.Visitor
                     out backgroundImageNode,
                     out backgroundPositionNode,
                     out backgroundSize,
-                    out webGreaseBackgroundDpiNode,
                     imagesCriteriaFailedUrls, // Images which don't pass the spriting criteria
                     _imageReferencesToIgnore, // Images which should not be considered for spriting
                     _imageAssemblyAnalysisLog,
@@ -309,25 +291,10 @@ namespace WebGrease.Css.Visitor
         /// <param name="backgroundPosition">THe background position</param>
         private void AddImageReference(string url, BackgroundPosition backgroundPosition)
         {
-            var originalUrl = url;
             var relativeUrl = url.NormalizeUrl();
-            if (this._availableImageSources != null)
-            {
-                var sourceFile = this._availableImageSources.ContainsKey(relativeUrl)
-                    ? this._availableImageSources[relativeUrl]
-                    : null;
+            var originalUrl = url;
 
-                if (string.IsNullOrWhiteSpace(sourceFile))
-                {
-                    throw new FileNotFoundException("Could not find the image file:" + relativeUrl);
-                }
-
-                url = sourceFile;
-            }
-            else
-            {
-                url = relativeUrl.MakeAbsoluteTo(this._cssPath);
-            }
+            url = this.GetAbsoluteImagePath(relativeUrl);
 
             // No need to report the url if it is present in ignore list
             if (this._imageReferencesToIgnore.Contains(relativeUrl) || this._imageReferencesToIgnore.Contains(Path.GetDirectoryName(relativeUrl) + "\\*"))
@@ -380,6 +347,42 @@ namespace WebGrease.Css.Visitor
             }
 
             this._defaultImageAssemblyScanOutput.ImageReferencesToAssemble.Add(new InputImage { AbsoluteImagePath = url, Position = imagePosition, OriginalImagePath = originalUrl });
+        }
+
+        /// <summary>Gets the absolute image path.</summary>
+        /// <param name="relativeUrl">The relative url.</param>
+        /// <returns>The absolute image path.</returns>
+        private string GetAbsoluteImagePath(string relativeUrl)
+        {
+            string url;
+            if (this._availableImageSources != null)
+            {
+                var sourceFile = this._availableImageSources.ContainsKey(relativeUrl) ? this._availableImageSources[relativeUrl] : null;
+
+                url = sourceFile;
+            }
+            else
+            {
+                url = relativeUrl.MakeAbsoluteTo(this._cssPath);
+            }
+
+            if (string.IsNullOrWhiteSpace(url) || !File.Exists(url))
+            {
+                var isMissingImageUrl = relativeUrl.Equals(this._missingImage);
+                if (!string.IsNullOrWhiteSpace(this._missingImage) && !isMissingImageUrl)
+                {
+                    url = this.GetAbsoluteImagePath(this._missingImage);
+                }
+                else
+                {
+                    if (this.imageNotFoundThrowError)
+                    {
+                        throw new FileNotFoundException("Could not find the image file:" + relativeUrl + " (" + url + ")", url ?? string.Empty);
+                    }
+                }
+            }
+
+            return url;
         }
     }
 }

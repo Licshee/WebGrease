@@ -9,7 +9,6 @@
 /* common interface colors */
 /* Left & Right */
 /* might extend with zone-limit in the future */
-@-wg-dpi %WebGrease.Dpi%;
 /* All */
 @media screen {
   /* Media Query definitions */

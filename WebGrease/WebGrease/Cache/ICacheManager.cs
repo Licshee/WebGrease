@@ -5,9 +5,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 namespace WebGrease
 {
+    using System;
     using System.Collections.Generic;
-
-    using WebGrease.Configuration;
 
     /// <summary>The CacheManager interface.</summary>
     public interface ICacheManager
@@ -28,12 +27,10 @@ namespace WebGrease
         #region Public Methods and Operators
 
         /// <summary>Begins a new cache section.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="contentItem">The result file.</param>
-        /// <param name="settings">The settings.</param>
-        /// <param name="cacheVaryByFileSet">The cache Var By File Set.</param>
+        /// <param name="webGreaseSectionKey">The web Grease Section Key.</param>
+        /// <param name="autoLoad">The auto Load.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVaryByFileSet = null);
+        ICacheSection BeginSection(WebGreaseSectionKey webGreaseSectionKey, bool autoLoad = true);
 
         /// <summary>Cleans up all the cache files that we don't need anymore.</summary>
         void CleanUp();
@@ -57,6 +54,8 @@ namespace WebGrease
         /// <param name="contentItem">The content file.</param>
         /// <returns>The cache file path.</returns>
         string StoreInCache(string cacheCategory, ContentItem contentItem);
+
+        IDisposable SingleUseLock();
 
         #endregion
     }

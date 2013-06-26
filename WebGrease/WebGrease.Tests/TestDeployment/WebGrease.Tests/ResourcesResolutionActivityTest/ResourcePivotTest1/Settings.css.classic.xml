@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Settings>
+  <Spriting config="Debug">
+    <ImagePadding>100</ImagePadding>
+    <ErrorOnInvalidSprite>false</ErrorOnInvalidSprite>
+    <WriteLogFile>false</WriteLogFile>
+    <!-- 
+    <ForceImageType>NonPhotoNonIndexed</ForceImageType>
+    -->
+  </Spriting>
+  <Spriting config="Release">
+    <ImagePadding>100</ImagePadding>
+    <ErrorOnInvalidSprite>true</ErrorOnInvalidSprite>
+    <WriteLogFile>false</WriteLogFile>
+    <!-- 
+    <ForceImageType>NonPhotoNonIndexed</ForceImageType>
+    -->
+  </Spriting>
+</Settings>

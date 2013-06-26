@@ -34,9 +34,6 @@ namespace WebGrease
         /// <summary>The css file set.</summary>
         public const string CssFileSet = "CssFileSet";
 
-        /// <summary>The css localization activity.</summary>
-        public const string CssLocalizationActivity = "CssLocalizationActivity";
-
         /// <summary>The everything activity.</summary>
         public const string EverythingActivity = "EverythingActivity";
 
@@ -45,6 +42,9 @@ namespace WebGrease
 
         /// <summary>The content hash.</summary>
         public const string ContentHash = "ContentHash";
+
+        /// <summary>The bitmap hash.</summary>
+        public const string BitmapHash = "BitmapHash";
 
         /// <summary>The image hash.</summary>
         public const string ImageHash = "ImageHash";
@@ -58,9 +58,6 @@ namespace WebGrease
         /// <summary>The js file set.</summary>
         public const string JsFileSet = "JsFileSet";
 
-        /// <summary>The js localization activity.</summary>
-        public const string JSLocalizationActivity = "JSLocalizationActivity";
-
         /// <summary>The css.</summary>
         public const string MinifyCssActivity = "MinifyCssActivity";
 
@@ -69,9 +66,6 @@ namespace WebGrease
 
         /// <summary>The optimize.</summary>
         public const string Optimize = "Optimize";
-
-        /// <summary>The parse.</summary>
-        public const string Parse = "Parse";
 
         /// <summary>The preprocessing.</summary>
         public const string Preprocessing = "Preprocessing";
@@ -84,6 +78,8 @@ namespace WebGrease
 
         /// <summary>The resources resolution activity.</summary>
         public const string ResourcesResolutionActivity = "ResourcesResolutionActivity";
+        
+        public const string ResourcesResolution = "ResourcesResolution";
 
         /// <summary>The sprite.</summary>
         public const string Spriting = "Spriting";

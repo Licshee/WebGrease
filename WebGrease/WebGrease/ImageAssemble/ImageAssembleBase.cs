@@ -20,8 +20,10 @@ namespace WebGrease.ImageAssemble
     using System.Linq;
     using System.Reflection;
     using System.Runtime.InteropServices;
-    using Common;
+
     using Css.ImageAssemblyAnalysis;
+
+    using WebGrease.Extensions;
 
     /// <summary>Packing type of Assembled image.</summary>
     internal enum SpritePackingType
@@ -134,13 +136,14 @@ namespace WebGrease.ImageAssemble
         /// Images are combined using Octree based quantizer + dithering algorithm.
         /// Images are also packed in rectangle using Nuclex Rectangle Packer algorithm.</summary>
         /// <param name="inputImages">The input Images.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all on purpose.")]
         internal virtual void Assemble(Dictionary<InputImage, Bitmap> inputImages)
         {
             Bitmap newImage = null;
             try
             {
                 // If there is only one image then don't pack images
-                if (inputImages.Count > 1)
+                if (inputImages.HasAtLeast(2))
                 {
                     // If Orientation is Auto (which is by default) then get the orientation 
                     // wherein the assembled file size would be minimal.
@@ -160,42 +163,52 @@ namespace WebGrease.ImageAssemble
 
                     if (newImage != null)
                     {
+                        // Hash the saved file using MD5 hashing algorithm
+                        var hash = this.context.GetBitmapHash(newImage, this.Format);
 
-                        this.SaveImage(newImage);
+                        this.AssembleFileName = this.HashImage(hash);
+
+                        var targetFileInfo = new FileInfo(this.AssembleFileName);
+                        Safe.FileLock(targetFileInfo, () =>
+                        {
+                            if (!targetFileInfo.Exists)
+                            {
+                                this.SaveImage(newImage);
+                            }
+                        }); 
 
                         // Add the sprite image size to the imagemap output element.
                         this.ImageXmlMap.UpdateSize(this.AssembleFileName, newImage.Width, newImage.Height);
-
-                        // Hash the saved file using MD5 hashing algorithm
-                        this.AssembleFileName = this.HashImage();
                     }
-                }
-                else if (inputImages.Count == 1)
-                {
-                    var image = inputImages.Values.First();
-                    this.PassThroughImage(image, inputImages.Keys.First());
-
-                    // Add the sprite image size to the imagemap output element.
-                    this.ImageXmlMap.UpdateSize(this.AssembleFileName, image.Width, image.Height);
-
-                    // Hash the saved file using MD5 hashing algorithm
-                    this.AssembleFileName = this.HashImage();
                 }
             }
             catch (OutOfMemoryException ex)
             {
+                this.context.Log.Error(ex);
+
                 // If there this type of exception is thrown while Image.FromFile(path)
                 // then thrown a custom exception. Ref: http://msdn.microsoft.com/en-us/library/stf701f5.aspx
                 var imageException = new ImageAssembleException(ImageAssembleStrings.ImageLoadOutofMemoryExceptionMessage, ex);
                 throw imageException;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // First delete the invalid file, if it exists
-                if (File.Exists(this.AssembleFileName))
+                this.context.Log.Error(ex);
+                try
                 {
-                     File.Delete(this.AssembleFileName);
+                    Safe.FileLock(new FileInfo(this.AssembleFileName), () =>
+                    {
+                        // First delete the invalid file, if it exists
+                        if (File.Exists(this.AssembleFileName))
+                        {
+                            File.Delete(this.AssembleFileName);
+                        }
+                    });
                 }
+                catch (Exception)
+                {
+                }
+
 
                 throw;
             }
@@ -218,9 +231,12 @@ namespace WebGrease.ImageAssemble
         {
             try
             {
-                // This try-catch block checks if there is some GDI+ error occured while saving the image. 
-                // Incase an exception is thrown, remove the invalid file, if it is generated.
-                newImage.Save(this.AssembleFileName, this.Format);
+                if (!File.Exists(this.AssembleFileName))
+                {
+                    // This try-catch block checks if there is some GDI+ error occured while saving the image. 
+                    // Incase an exception is thrown, remove the invalid file, if it is generated.
+                    newImage.Save(this.AssembleFileName, this.Format);
+                }
             }
             catch (ExternalException ex)
             {
@@ -233,21 +249,8 @@ namespace WebGrease.ImageAssemble
             }
         }
 
-        /// <summary>Pass through the given the input image as the output image without any image manipulation</summary>
-        /// <param name="image">Bitmap for image to pass through</param>
-        /// <param name="inputImage">InputImage for image to pass through</param>
-        protected virtual void PassThroughImage(Bitmap image, InputImage inputImage)
-        {
-            this.ImageXmlMap.AppendToXml(inputImage.AbsoluteImagePath, this.AssembleFileName, image.Width, image.Height, 0, 0, "passthrough", true, inputImage.Position);
-
-            if (!File.Exists(this.AssembleFileName))
-            {
-                File.Copy(inputImage.AbsoluteImagePath, this.AssembleFileName); 
-            }
-        }
-
         /// <summary>Runs the optimizer command on the saved image.</summary>
-        protected virtual void OptimizeImage()
+        protected void OptimizeImage()
         {
             // If Optimizer tool command is provided then execute the tool
             if (!string.IsNullOrEmpty(this.OptimizerToolCommand))
@@ -282,12 +285,13 @@ namespace WebGrease.ImageAssemble
         }
 
         /// <summary>Hashes the Assembled Image using MD5 hash algorithm</summary>
-        protected string HashImage()
+        /// <param name="hash"></param>
+        protected string HashImage(string hash)
         {
             var fileInfo = new FileInfo(this.AssembleFileName);
 
-            var newName = this.context.GetFileHash(fileInfo.FullName) + fileInfo.Extension;
-        
+            var newName = hash + fileInfo.Extension;
+
             var destinationDirectory = fileInfo.DirectoryName;
 
             // use the first 2 chars for a directory name, the last chars for the file name
@@ -298,18 +302,7 @@ namespace WebGrease.ImageAssemble
 
             // now get the file 
             destinationFilePath = Path.Combine(destinationFilePath, newName.Remove(0, 2));
-            if (!File.Exists(destinationFilePath))
-            {
-                // Move the file to destination folder
-                fileInfo.MoveTo(destinationFilePath);
-            }
-            else
-            {
-                // If file already exist then no need to copy again 
-                // and remove the original sprite file.
-                fileInfo.Delete();
-            }
-            
+
             if (!this.ImageXmlMap.UpdateAssembledImageName(this.AssembleFileName, destinationFilePath))
             {
                 throw new ImageAssembleException(null, this.AssembleFileName, "Operation failed while replacing assembled image name: '" + this.AssembleFileName + "' with hashed name.");

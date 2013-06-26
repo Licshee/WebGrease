@@ -178,6 +178,7 @@ namespace WebGrease.Activities
 
         internal IEnumerable<ContentItem> Hash(ContentItem contentItem, IEnumerable<string> originalFiles)
         {
+
             var hashedFiles = new List<ContentItem>();
 
             if (originalFiles.Any())
@@ -371,40 +372,43 @@ namespace WebGrease.Activities
                 fileBeforeHashing = fileBeforeHashing.MakeRelativeToDirectory(this.BasePrefixToRemoveFromInputPathInLog);
             }
 
-            if (!this.renamedFilesLog.ContainsKey(fileAfterHashing))
+            Safe.Lock(this.renamedFilesLog, () =>
             {
-                // add a new key
-                this.renamedFilesLog.Add(fileAfterHashing, new List<string>());
-            }
-
-            // if it already exists, we need to ignore it and delete it from disk if it exists.
-            var existingRenames = this.renamedFilesLog.Where(rfl => rfl.Value.Contains(fileBeforeHashing) && !rfl.Key.Equals(fileAfterHashing)).ToArray();
-            if (existingRenames.Any())
-            {
-                if (skipIfExists)
+                if (!this.renamedFilesLog.ContainsKey(fileAfterHashing))
                 {
-                    if (File.Exists(fileAfterHashing))
-                    {
-                        File.Delete(fileAfterHashing);
-                        var directoryName = Path.GetDirectoryName(fileAfterHashing);
-                        if (!Directory.EnumerateFiles(directoryName).Any())
-                        {
-                            Directory.Delete(directoryName);
-                        }
-                    }
-
-                    return;
+                    // add a new key
+                    this.renamedFilesLog.Add(fileAfterHashing, new List<string>());
                 }
 
-                throw new BuildWorkflowException(
-                    "The renamed filename already has a rename to a different file: \r\nBeforehashing:{0} \r\nNewAfterHashing:{1} ExistingAfterhashing:{2}"
-                        .InvariantFormat(fileBeforeHashing, fileAfterHashing, string.Join(",", existingRenames.Select(e => e.Key))));
-            }
+                // if it already exists, we need to ignore it and delete it from disk if it exists.
+                var existingRenames = this.renamedFilesLog.Where(rfl => rfl.Value.Contains(fileBeforeHashing) && !rfl.Key.Equals(fileAfterHashing)).ToArray();
+                if (existingRenames.Any())
+                {
+                    if (skipIfExists)
+                    {
+                        if (File.Exists(fileAfterHashing))
+                        {
+                            File.Delete(fileAfterHashing);
+                            var directoryName = Path.GetDirectoryName(fileAfterHashing);
+                            if (!Directory.EnumerateFiles(directoryName).Any())
+                            {
+                                Directory.Delete(directoryName);
+                            }
+                        }
 
-            if (!this.renamedFilesLog[fileAfterHashing].Contains(fileBeforeHashing))
-            {
-                this.renamedFilesLog[fileAfterHashing].Add(fileBeforeHashing);
-            }
+                        return;
+                    }
+
+                    throw new BuildWorkflowException(
+                        "The renamed filename already has a rename to a different file: \r\nBeforehashing:{0} \r\nNewAfterHashing:{1} ExistingAfterhashing:{2}"
+                            .InvariantFormat(fileBeforeHashing, fileAfterHashing, string.Join(",", existingRenames.Select(e => e.Key))));
+                }
+
+                if (!this.renamedFilesLog[fileAfterHashing].Contains(fileBeforeHashing))
+                {
+                    this.renamedFilesLog[fileAfterHashing].Add(fileBeforeHashing);
+                }
+            });
         }
 
         /// <summary>The make output absolute.</summary>

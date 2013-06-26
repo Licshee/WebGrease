@@ -7,6 +7,7 @@ namespace WebGrease
 {
     using System;
     using System.Collections.Generic;
+    using System.Configuration;
     using System.IO;
     using System.Linq;
     using System.Xml.Linq;
@@ -17,11 +18,8 @@ namespace WebGrease
     /// <summary>The temporary overrides.</summary>
     public class TemporaryOverrides
     {
-        /// <summary>The locales.</summary>
-        private readonly List<string> locales = new List<string>();
-
-        /// <summary>The themes.</summary>
-        private readonly List<string> themes = new List<string>();
+        /// <summary>The resource pivots.</summary>
+        private readonly IDictionary<string, List<string>> resourcePivots = new Dictionary<string, List<string>>();
 
         /// <summary>The outputs.</summary>
         private readonly List<string> outputs = new List<string>();
@@ -47,41 +45,41 @@ namespace WebGrease
         /// <summary>Initializes a new instance of the <see cref="TemporaryOverrides"/> class.</summary>
         /// <param name="overrideFile">The override file.</param>
         /// <returns>The <see cref="TemporaryOverrides"/>.</returns>
-        public static TemporaryOverrides Create(string overrideFile)
+        public static TemporaryOverrides Load(string overrideFile)
         {
             var to = new TemporaryOverrides();
             to.LoadFromFile(overrideFile);
             to.uniqueKey = to.ToJson(true);
 
             // Only return when there are any values to override
-            return to.locales.Any() || to.themes.Any() || to.outputs.Any() || to.SkipAll
+            return to.resourcePivots.Any(rp => rp.Value.Any()) || to.outputs.Any() || to.SkipAll
                 ? to
                 : null;
         }
 
-        /// <summary>The should ignore.</summary>
+        /// <summary>Determines if the content item should be temporary ignored.</summary>
         /// <param name="contentItem">The content item.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         public bool ShouldIgnore(ContentItem contentItem)
         {
             return
                 contentItem != null
-                && contentItem.Pivots != null
-                && contentItem.Pivots.Any()
-                && contentItem.Pivots.All(cp => this.ShouldIgnoreLocale(cp.Locale) || this.ShouldIgnoreTheme(cp.Theme));
+                && this.ShouldIgnore(contentItem.ResourcePivotKeys);
         }
 
-        /// <summary>The should ignore.</summary>
-        /// <param name="contentPivot">The content Pivot.</param>
+        /// <summary>Determines if the resource pivot keys should be temporary ignored.</summary>
+        /// <param name="resourcePivotKeys">The resource pivot keys.</param>
         /// <returns>The <see cref="bool"/>.</returns>
-        public bool ShouldIgnore(ContentPivot contentPivot)
+        public bool ShouldIgnore(IEnumerable<ResourcePivotKey> resourcePivotKeys)
         {
-            return
-                contentPivot != null
-                && (this.ShouldIgnoreLocale(contentPivot.Locale) || this.ShouldIgnoreTheme(contentPivot.Theme));
+            return resourcePivotKeys != null
+                && resourcePivotKeys.Any()
+                && resourcePivotKeys
+                                .GroupBy(rpk => rpk.GroupKey)
+                                .Any(rpk => rpk.All(this.ShouldIgnore));      
         }
 
-        /// <summary>The should ignore.</summary>
+        /// <summary>Determines if the fileset should be temporary ignored.</summary>
         /// <param name="fileSet">The file set.</param>
         /// <returns>The <see cref="bool"/>.</returns>
         public bool ShouldIgnore(IFileSet fileSet)
@@ -89,6 +87,16 @@ namespace WebGrease
             return fileSet != null
                    && !string.IsNullOrWhiteSpace(fileSet.Output)
                    && (this.ShouldIgnoreOutputs(fileSet) || this.ShouldIgnoreOutputExtensions(fileSet));
+        }
+
+        /// <summary>Determines if the resource pivot key should be temporary ignored.</summary>
+        /// <param name="resourcePivotKey">The resource pivot key.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private bool ShouldIgnore(ResourcePivotKey resourcePivotKey)
+        {
+            return this.resourcePivots.ContainsKey(resourcePivotKey.GroupKey)
+                   && this.resourcePivots[resourcePivotKey.GroupKey].Any()
+                   && this.resourcePivots[resourcePivotKey.GroupKey].All(pivotToIgnore => resourcePivotKey.Key.IndexOf(pivotToIgnore, StringComparison.OrdinalIgnoreCase) == -1);
         }
 
         /// <summary>The get items from a string seperated by a semicolon.</summary>
@@ -133,39 +141,31 @@ namespace WebGrease
                    && !this.outputExtensions.Any(outputExtension => fileSet.Output.EndsWith(outputExtension, StringComparison.OrdinalIgnoreCase));
         }
 
-        /// <summary>The should ignore theme.</summary>
-        /// <param name="themeToIgnore">The theme To Ignore.</param>
-        /// <returns>The <see cref="bool"/>.</returns>
-        private bool ShouldIgnoreTheme(string themeToIgnore)
-        {
-            return !string.IsNullOrWhiteSpace(themeToIgnore)
-                   && this.themes.Any()
-                   && !this.themes.Any(theme => themeToIgnore.IndexOf(theme, StringComparison.OrdinalIgnoreCase) >= 0);
-        }
-
-        /// <summary>The should ignore locale.</summary>
-        /// <param name="localeToIgnore">The locale To Ignore.</param>
-        /// <returns>The <see cref="bool"/>.</returns>
-        private bool ShouldIgnoreLocale(string localeToIgnore)
-        {
-            return !string.IsNullOrWhiteSpace(localeToIgnore)
-                && this.locales.Any()
-                && !this.locales.Any(locale => localeToIgnore.IndexOf(locale, StringComparison.OrdinalIgnoreCase) >= 0);
-        }
-
         /// <summary>The load from file.</summary>
         /// <param name="overrideFile">The override file.</param>
         private void LoadFromFile(string overrideFile)
         {
             if (File.Exists(overrideFile))
             {
-                var doc = XDocument.Load(overrideFile);
-                var overrideElements = doc.Elements("Overrides");
-                this.SkipAll = overrideElements.Attributes("SkipAll").Select(a => (bool?)a).FirstOrDefault() == true;
-                this.locales.AddRange(GetElementItems(overrideElements, "Locales"));
-                this.themes.AddRange(GetElementItems(overrideElements, "Themes"));
-                this.outputs.AddRange(GetElementItems(overrideElements, "Outputs"));
-                this.outputExtensions.AddRange(GetElementItems(overrideElements, "OutputExtensions"));
+                try
+                {
+                    var doc = XDocument.Load(overrideFile);
+                    var overrideElements = doc.Elements("Overrides");
+                    this.SkipAll = overrideElements.Attributes("SkipAll").Select(a => (bool?)a).FirstOrDefault() == true;
+                    this.resourcePivots.Add(Strings.LocalesResourcePivotKey, GetElementItems(overrideElements, "Locales").ToList());
+                    this.resourcePivots.Add(Strings.ThemesResourcePivotKey, GetElementItems(overrideElements, "Themes").ToList());
+                    this.resourcePivots.Add(Strings.DpiResourcePivotKey, GetElementItems(overrideElements, "Dpi").ToList());
+                    this.outputs.AddRange(GetElementItems(overrideElements, "Outputs"));
+                    this.outputExtensions.AddRange(GetElementItems(overrideElements, "OutputExtensions"));
+                    foreach (var resourcePivotElement in overrideElements.Elements("ResourcePivot"))
+                    {
+                        this.resourcePivots.Add((string)resourcePivotElement.Attribute("key"), ((string)resourcePivotElement).SafeSplitSemiColonSeperatedValue().ToList());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new ConfigurationErrorsException(ResourceStrings.OverrideFileLoadErrorMessage.InvariantFormat(overrideFile), ex);
+                }
             }
         }
     }

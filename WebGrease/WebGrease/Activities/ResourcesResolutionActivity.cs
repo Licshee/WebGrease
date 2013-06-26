@@ -42,7 +42,7 @@ namespace WebGrease.Activities
         /// Gets or sets the directory such as "Locales", "Themes"
         /// </summary>
         /// <value>The type of resources to process. Used for directory names.</value>
-        internal ResourceType ResourceTypeFilter { get; set; }
+        internal string ResourceGroupKey { get; set; }
 
         /// <summary>
         /// Gets or sets the directory App directory which would contain the list of sites.
@@ -67,7 +67,7 @@ namespace WebGrease.Activities
         /// Gets the list of locales or themes to generate the resources for.
         /// </summary>
         /// <value>The list of locales or themes.</value>
-        internal IList<string> ResourceKeys { get; private set; }
+        internal List<string> ResourceKeys { get; private set; }
 
         /// <summary>Gets or sets the measure name.</summary>
         internal FileTypes FileType { get; set; }
@@ -81,11 +81,11 @@ namespace WebGrease.Activities
                 return EmptyResult;
             }
 
-            return this.context.SectionedAction(SectionIdParts.ResourcesResolutionActivity, this.FileType.ToString(), this.ResourceTypeFilter.ToString()).Execute(() =>
+            return this.context.SectionedAction(SectionIdParts.ResourcesResolutionActivity, this.FileType.ToString(), this.ResourceGroupKey).Execute(() =>
             {
                 try
                 {
-                    var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
+                    var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceGroupKey, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
                     return resourcesResolver.GetMergedResources();
                 }
                 catch (ResourceOverrideException resourceOverrideException)
@@ -111,11 +111,11 @@ namespace WebGrease.Activities
                 return;
             }
 
-            this.context.SectionedAction(SectionIdParts.ResourcesResolutionActivity, this.FileType.ToString(), this.ResourceTypeFilter.ToString()).Execute(() =>
+            this.context.SectionedAction(SectionIdParts.ResourcesResolutionActivity, this.FileType.ToString(), this.ResourceGroupKey).Execute(() =>
             {
                 try
                 {
-                    var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceTypeFilter, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
+                    var resourcesResolver = ResourcesResolver.Factory(this.context, this.SourceDirectory, this.ResourceGroupKey, this.ApplicationDirectoryName, this.SiteDirectoryName, this.ResourceKeys, this.DestinationDirectory);
                     resourcesResolver.ResolveHierarchy();
                 }
                 catch (ResourceOverrideException resourceOverrideException)

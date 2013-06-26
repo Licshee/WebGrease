@@ -1,0 +1,206 @@
+﻿
+
+/* downlevel/basepage/basepage.downlevel.scss (C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Downlevel\basePage\basePage.downlevel.scss) */
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+a {
+  color: %darkgray%; }
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: normal; }
+
+img {
+  border: 0; }
+
+input {
+  font-size: 1em; }
+
+p {
+  margin: .533em 0; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+html {
+  color: %darkgray%;
+  font-family: %Downlevel.FontFamily%;
+  font-size: .938em;
+  line-height: 1.267; }
+
+body {
+  margin: .533em .667em; }
+
+.ieupgrade {
+  margin-top: .667em; }
+  .ieupgrade a {
+    font-size: .933em; }
+
+/* TODO:RTUIT: Is the body selector with %theme_name% necessary? */
+h1.%theme_name% {
+  color: %theme_color%; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#breakingnews {
+  background-color: %red%;
+  font-size: .933em;
+  line-height: 1.429;
+  margin-top: .667em;
+  margin-bottom: .667em;
+  padding: 0 .333em; }
+  #breakingnews,
+  #breakingnews a {
+    color: %white%; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#foot {
+  clear: both;
+  margin-top: 1.333em;
+  text-align: center; }
+  #foot a {
+    text-decoration: none; }
+  #foot a,
+  #foot span {
+    color: %mediumgray%;
+    font-size: %Downlevel.ExtraSmallFontSize%;
+    line-height: %Downlevel.ExtraSmallLineHeight%;
+    margin-right: .833em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+/* TODO:RTUIT: Is the body selector with %theme_name% necessary? */
+body.%theme_name% .head .channel {
+  color: %theme_color%; }
+
+#header a {
+  text-decoration: none; }
+#header .channel {
+  font-size: %Downlevel.LargeFontSize%;
+  line-height: %Downlevel.LargeLineHeight%; }
+
+ul {
+  margin: 0;
+  padding-left: 1.067em; }
+  ul.nobullet {
+    list-style: none;
+    padding: 0; }
+  ul li {
+    margin: 0 0 .667em;
+    padding-left: 0; }
+    ul li img {
+      display: block; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#nav {
+  clear: both;
+  padding-top: .533em; }
+  #nav a {
+    display: inline-block;
+    font-size: %Downlevel.Normal2FontSize%;
+    line-height: %Downlevel.Normal2LineHeight%;
+    margin-right: .625em;
+    text-decoration: none;
+    zoom: 1; }
+
+/* TODO:RTUIT: Is the body selector with %theme_name% necessary? */
+#nav .%theme_name%,
+#nav .%theme_name% a {
+  color: %theme_color%; }
+#nav .%theme_name% a {
+  margin-right: 0; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#search {
+  border: .067em solid #999;
+  display: block;
+  height: 1.867em;
+  margin-top: .267em;
+  width: 20em; }
+  #search #q {
+    border: 0;
+    float: left;
+    line-height: 1.867;
+    height: 1.733em;
+    margin: 0;
+    padding: 0 .067em;
+    width: 12em; }
+  #search .text {
+    background-color: %bingorange%;
+    border: 0.067em solid %white%;
+    color: %white%;
+    float: right;
+    height: 1.733em;
+    margin: .067em;
+    overflow: hidden;
+    padding: 0;
+    text-align: center;
+    width: 6.267em; }
+
+
+
+/* downlevel/landingpage/landingpage.downlevel.scss (C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Downlevel\landingPage\landingPage.downlevel.scss) */
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+h1 {
+  display: none; }
+
+h2 {
+  clear: both;
+  font-size: %Downlevel.LargeFontSize%;
+  line-height: %Downlevel.LargeLineHeight%;
+  margin: 0;
+  /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+  h2 a {
+    font-size: 1em;
+    text-decoration: none; }
+  body.%theme_name% h2,
+  body.%theme_name% h2 a {
+    color: %theme_color%; }
+
+.ip ul li a,
+.cluster ul li a,
+.contentlist li a {
+  font-size: %Downlevel.NormalFontSize%;
+  line-height: %Downlevel.NormalLineHeight%;
+  text-decoration: none; }
+
+.ip ul li.first,
+.cluster ul li.first {
+  list-style: none;
+  margin-top: .333em;
+  margin-left: -1.067em; }
+  .ip ul li.first span,
+  .cluster ul li.first span {
+    font-size: %Downlevel.Large2FontSize%;
+    line-height: %Downlevel.Large2LineHeight%;
+    margin: 0; }
+
+.ip li.hasimage {
+  line-height: 0; }
+  .ip li.hasimage img {
+    margin-bottom: .533em; }
+
+.cluster li.hasimage a {
+  display: inline-block; }
+  .cluster li.hasimage a img {
+    float: left;
+    margin-right: .533em; }
+  .cluster li.hasimage a span {
+    display: inline;
+    zoom: 1; }
+

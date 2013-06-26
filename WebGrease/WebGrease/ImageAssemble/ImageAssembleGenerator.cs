@@ -24,6 +24,7 @@ namespace WebGrease.ImageAssemble
     using Css.ImageAssemblyAnalysis;
 
     using WebGrease.Css.ImageAssemblyAnalysis.LogModel;
+    using WebGrease.Extensions;
 
     /// <summary>Factory class that invokes appropriate Assemble type to assemble images.</summary>
     internal static class ImageAssembleGenerator
@@ -98,15 +99,19 @@ namespace WebGrease.ImageAssemble
 
                     // Assemble images of this type
                     separatedList = separatedLists[registeredAssembler.Type];
-                    
-                    // Set Assembled Image Name
-                    registeredAssembler.AssembleFileName = GenerateAssembleFileName(separatedList.Keys, assembleFileFolder) + registeredAssembler.DefaultExtension;
 
-                    registeredAssembler.Assemble(separatedList);
+                    if (separatedList.HasAtLeast(2))
+                    {
+                        // Set Assembled Image Name
+                        registeredAssembler.AssembleFileName = GenerateAssembleFileName(separatedList.Keys, assembleFileFolder)
+                                                               + registeredAssembler.DefaultExtension;
+
+                        registeredAssembler.Assemble(separatedList);
+                    }
                 }
                 finally
                 {
-                    if (separatedList != null)
+                    if (separatedList != null && separatedList.HasAtLeast(2))
                     {
                         foreach (var entry in separatedList)
                         {
@@ -368,6 +373,11 @@ namespace WebGrease.ImageAssemble
             var imageHashDictionary = new Dictionary<string, InputImage>();
             foreach (var inputImage in inputImages)
             {
+                if (!File.Exists(inputImage.AbsoluteImagePath))
+                {
+                    throw new FileNotFoundException("Could not find image to sprite: {0}".InvariantFormat(inputImage.AbsoluteImagePath), inputImage.AbsoluteImagePath);    
+                }
+
                 var imageHashString = context.GetFileHash(inputImage.AbsoluteImagePath) + "." + inputImage.Position;
                 if (imageHashDictionary.ContainsKey(imageHashString))
                 {

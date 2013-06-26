@@ -12,7 +12,6 @@ namespace WebGrease.Css
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Diagnostics.Contracts;
-    using System.Globalization;
     using System.Linq;
     using Antlr.Runtime.Tree;
     using Ast;
@@ -35,7 +34,6 @@ namespace WebGrease.Css
 
             return new StyleSheetNode(
                 CreateCharsetNode(styleSheetTree),
-                CreateDpiNode(styleSheetTree),
                 CreateImportNodes(styleSheetTree),
                 CreateNamespaceNodes(styleSheetTree),
                 CreateStyleSheetRulesNodes(styleSheetTree));
@@ -53,33 +51,6 @@ namespace WebGrease.Css
 
             var charset = styleSheetTree.Children(T(CssParser.CHARSET)).FirstOrDefault();
             return charset != null ? StringOrUriBasedValue(charset.Children(T(CssParser.STRINGBASEDVALUE)).FirstChildText()) : null;
-        }
-
-        /// <summary>Creates the dpi node.</summary>
-        /// <param name="styleSheetTree">The styleSheet tree.</param>
-        /// <returns>The dpi value.</returns>
-        private static double? CreateDpiNode(CommonTree styleSheetTree)
-        {
-            if (styleSheetTree == null)
-            {
-                return null;
-            }
-
-            var dpiRule = styleSheetTree.Children(T(CssParser.WG_DPI)).FirstOrDefault();
-            if (dpiRule != null)
-            {
-                var dpiString = dpiRule.FirstChildText();
-                if (dpiString != null)
-                {
-                    double dpi;
-                    if (double.TryParse(dpiString, NumberStyles.Any, CultureInfo.InvariantCulture, out dpi))
-                    {
-                        return dpi;
-                    }
-                }
-            }
-
-            return null;
         }
 
         /// <summary>Gets the ruleset media page nodes.</summary>
@@ -343,6 +314,9 @@ namespace WebGrease.Css
             // Number based value
             var numberBasedValue = termTree.Children(T(CssParser.NUMBERBASEDVALUE)).FirstChildText();
 
+            // Token value
+            var replacementTokenBasedValue = termTree.Children(T(CssParser.REPLACEMENTTOKENBASEDVALUE)).FirstChildText();
+
 
             // Url based value
             var uriStringOrIdentBasedValue = StringOrUriBasedValue(termTree.Children(T(CssParser.URIBASEDVALUE)).FirstChildText());
@@ -363,7 +337,7 @@ namespace WebGrease.Css
             var hexBasedNode = termTree.Children(T(CssParser.HEXBASEDVALUE)).FirstOrDefault();
             var hexBasedValue = hexBasedNode != null ? hexBasedNode.Children(T(CssParser.HASHIDENTIFIER)).FirstChildText() : null;
 
-            return new TermNode(unaryOperator, numberBasedValue, uriStringOrIdentBasedValue, hexBasedValue, CreateFunctionNode(termTree.Children(T(CssParser.FUNCTIONBASEDVALUE)).FirstOrDefault()));
+            return new TermNode(unaryOperator, numberBasedValue, uriStringOrIdentBasedValue, hexBasedValue, CreateFunctionNode(termTree.Children(T(CssParser.FUNCTIONBASEDVALUE)).FirstOrDefault()), replacementTokenBasedValue);
         }
 
         /// <summary>Creates the function node.</summary>
@@ -499,6 +473,7 @@ namespace WebGrease.Css
             {
                 var child = hashClassAttribPseudoNegationNode.Children().FirstOrDefault();
                 string hash = null;
+                string replacementToken = null;
                 string cssClass = null;
                 string atName = null;
                 AttribNode attribNode = null;
@@ -532,9 +507,13 @@ namespace WebGrease.Css
                     {
                         negationNode = CreateNegationNode(child);
                     }
+                    else if (nodeText == T(CssParser.REPLACEMENTTOKENIDENTIFIER))
+                    {
+                        replacementToken = child.FirstChildText();
+                    }
                 }
 
-                return new HashClassAtNameAttribPseudoNegationNode(hash, cssClass, atName, attribNode, pseudoNode, negationNode);
+                return new HashClassAtNameAttribPseudoNegationNode(hash, cssClass, replacementToken, atName, attribNode, pseudoNode, negationNode);
             });
         }
 

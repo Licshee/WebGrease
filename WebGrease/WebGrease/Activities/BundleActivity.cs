@@ -54,7 +54,7 @@ namespace WebGrease.Activities
             {
                 var varBySettings = new { fileSets, fileType, this.context.Configuration };
                 this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString())
-                    .MakeCachable(varBySettings, true)
+                    .MakeCachable(varBySettings, isSkipable: true)
                     .RestoreFromCacheAction(this.RestoreBundleFromCache)
                     .Execute(cacheSection =>
                     {

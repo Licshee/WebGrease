@@ -17,6 +17,8 @@ namespace WebGrease.Css.Visitor
     using Ast.Selectors;
     using Extensions;
 
+    using WebGrease.Extensions;
+
     /// <summary>The node walker visitor.</summary>
     public class NodeTransformVisitor : NodeVisitor
     {
@@ -31,11 +33,11 @@ namespace WebGrease.Css.Visitor
             }
 
             return new StyleSheetNode(
-                styleSheet.CharSetString, 
-                styleSheet.Dpi,
-                styleSheet.Imports, 
-                styleSheet.Namespaces, 
-                styleSheet.StyleSheetRules.Select(styleSheetRule => (StyleSheetRuleNode)styleSheetRule.Accept(this)).ToSafeReadOnlyCollection());
+                styleSheet.CharSetString,
+                styleSheet.Imports,
+                styleSheet.Namespaces,
+                styleSheet.StyleSheetRules.Select(
+                    styleSheetRule => (StyleSheetRuleNode)styleSheetRule.Accept(this)).ToSafeReadOnlyCollection());
         }
 
         /// <summary>The <see cref="Ast.ImportNode"/> visit implementation</summary>
@@ -44,8 +46,8 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitImportNode(ImportNode importNode)
         {
             return new ImportNode(
-                importNode.AllowedImportDataType, 
-                importNode.ImportDataValue, 
+                importNode.AllowedImportDataType,
+                importNode.ImportDataValue,
                 importNode.MediaQueries.Select(mediaQueryNode => (MediaQueryNode)mediaQueryNode.Accept(this)).ToSafeReadOnlyCollection());
         }
 
@@ -55,7 +57,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitRulesetNode(RulesetNode rulesetNode)
         {
             return new RulesetNode(
-                rulesetNode.SelectorsGroupNode, 
+                rulesetNode.SelectorsGroupNode.Accept(this) as SelectorsGroupNode,
                 rulesetNode.Declarations.Select(declarationNode => (DeclarationNode)declarationNode.Accept(this)).ToSafeReadOnlyCollection());
         }
 
@@ -65,7 +67,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitMediaNode(MediaNode mediaNode)
         {
             return new MediaNode(
-                mediaNode.MediaQueries, 
+                mediaNode.MediaQueries.Select(ruleset => (MediaQueryNode)ruleset.Accept(this)).ToSafeReadOnlyCollection(),
                 mediaNode.Rulesets.Select(ruleset => (RulesetNode)ruleset.Accept(this)).ToSafeReadOnlyCollection(),
                 mediaNode.PageNodes.Select(pages => (PageNode)pages.Accept(this)).ToSafeReadOnlyCollection());
         }
@@ -76,7 +78,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitPageNode(PageNode pageNode)
         {
             return new PageNode(
-                pageNode.PseudoPage, 
+                pageNode.PseudoPage,
                 pageNode.Declarations.Select(declaration => (DeclarationNode)declaration.Accept(this)).ToSafeReadOnlyCollection());
         }
 
@@ -97,8 +99,8 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitAttribNode(AttribNode attrib)
         {
             return new AttribNode(
-                attrib.SelectorNamespacePrefixNode != null ? (SelectorNamespacePrefixNode)attrib.SelectorNamespacePrefixNode.Accept(this) : null, 
-                attrib.Ident, 
+                attrib.SelectorNamespacePrefixNode != null ? (SelectorNamespacePrefixNode)attrib.SelectorNamespacePrefixNode.Accept(this) : null,
+                attrib.Ident,
                 (AttribOperatorAndValueNode)attrib.OperatorAndValueNode.Accept(this));
         }
 
@@ -124,7 +126,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitExprNode(ExprNode exprNode)
         {
             return new ExprNode(
-                (TermNode)exprNode.TermNode.Accept(this), 
+                (TermNode)exprNode.TermNode.Accept(this),
                 exprNode.TermsWithOperators.Select(termWithOperatorNode => (TermWithOperatorNode)termWithOperatorNode.Accept(this)).ToSafeReadOnlyCollection());
         }
 
@@ -144,8 +146,8 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitPseudoNode(PseudoNode pseudoNode)
         {
             return new PseudoNode(
-                pseudoNode.NumberOfColons, 
-                pseudoNode.Ident, 
+                pseudoNode.NumberOfColons,
+                pseudoNode.Ident,
                 pseudoNode.FunctionalPseudoNode != null ? (FunctionalPseudoNode)pseudoNode.FunctionalPseudoNode.Accept(this) : null);
         }
 
@@ -155,7 +157,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitSelectorNode(SelectorNode selectorNode)
         {
             return new SelectorNode(
-                (SimpleSelectorSequenceNode)selectorNode.SimpleSelectorSequenceNode.Accept(this), 
+                (SimpleSelectorSequenceNode)selectorNode.SimpleSelectorSequenceNode.Accept(this),
                 selectorNode.CombinatorSimpleSelectorSequenceNodes.Select(combinatorSimpleSelectorSequenceNode => (CombinatorSimpleSelectorSequenceNode)combinatorSimpleSelectorSequenceNode.Accept(this)).ToSafeReadOnlyCollection());
         }
 
@@ -164,7 +166,7 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitTermNode(TermNode termNode)
         {
-            return new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+            return new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, (FunctionNode)termNode.FunctionNode.NullSafeAction(nsa => nsa.Accept(this)), termNode.ReplacementTokenBasedValue);
         }
 
         /// <summary>The <see cref="Ast.TermWithOperatorNode"/> visit implementation</summary>
@@ -181,7 +183,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitFunctionalPseudoNode(FunctionalPseudoNode functionalPseudoNode)
         {
             return new FunctionalPseudoNode(
-                functionalPseudoNode.FunctionName, 
+                functionalPseudoNode.FunctionName,
                 (SelectorExpressionNode)functionalPseudoNode.SelectorExpressionNode.Accept(this));
         }
 
@@ -191,12 +193,14 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitHashClassAtNameAttribPseudoNegationNode(HashClassAtNameAttribPseudoNegationNode hashClassAtNameAttribPseudoNegationNode)
         {
             return new HashClassAtNameAttribPseudoNegationNode(
-                hashClassAtNameAttribPseudoNegationNode.Hash, 
-                hashClassAtNameAttribPseudoNegationNode.CssClass, 
-                hashClassAtNameAttribPseudoNegationNode.AtName, 
-                hashClassAtNameAttribPseudoNegationNode.AttribNode != null ? (AttribNode)hashClassAtNameAttribPseudoNegationNode.AttribNode.Accept(this) : null, 
-                hashClassAtNameAttribPseudoNegationNode.PseudoNode != null ? (PseudoNode)hashClassAtNameAttribPseudoNegationNode.PseudoNode.Accept(this) : null, 
-                hashClassAtNameAttribPseudoNegationNode.NegationNode != null ? (NegationNode)hashClassAtNameAttribPseudoNegationNode.NegationNode.Accept(this) : null);
+                hashClassAtNameAttribPseudoNegationNode.Hash,
+                hashClassAtNameAttribPseudoNegationNode.CssClass,
+                hashClassAtNameAttribPseudoNegationNode.ReplacementToken,
+                hashClassAtNameAttribPseudoNegationNode.AtName,
+                hashClassAtNameAttribPseudoNegationNode.AttribNode != null ? (AttribNode)hashClassAtNameAttribPseudoNegationNode.AttribNode.Accept(this) : null,
+                hashClassAtNameAttribPseudoNegationNode.PseudoNode != null ? (PseudoNode)hashClassAtNameAttribPseudoNegationNode.PseudoNode.Accept(this) : null,
+                hashClassAtNameAttribPseudoNegationNode.NegationNode != null ? (NegationNode)hashClassAtNameAttribPseudoNegationNode.NegationNode.Accept(this) : null
+                );
         }
 
         /// <summary>The <see cref="SelectorNamespacePrefixNode"/> visit implementation</summary>
@@ -213,11 +217,11 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitNegationArgNode(NegationArgNode negationArgNode)
         {
             return new NegationArgNode(
-                negationArgNode.TypeSelectorNode != null ? (TypeSelectorNode)negationArgNode.TypeSelectorNode.Accept(this) : null, 
-                negationArgNode.UniversalSelectorNode != null ? (UniversalSelectorNode)negationArgNode.UniversalSelectorNode.Accept(this) : null, 
-                negationArgNode.Hash, 
-                negationArgNode.CssClass, 
-                negationArgNode.AttribNode != null ? (AttribNode)negationArgNode.AttribNode.Accept(this) : null, 
+                negationArgNode.TypeSelectorNode != null ? (TypeSelectorNode)negationArgNode.TypeSelectorNode.Accept(this) : null,
+                negationArgNode.UniversalSelectorNode != null ? (UniversalSelectorNode)negationArgNode.UniversalSelectorNode.Accept(this) : null,
+                negationArgNode.Hash,
+                negationArgNode.CssClass,
+                negationArgNode.AttribNode != null ? (AttribNode)negationArgNode.AttribNode.Accept(this) : null,
                 negationArgNode.PseudoNode != null ? (PseudoNode)negationArgNode.PseudoNode.Accept(this) : null);
         }
 
@@ -251,9 +255,9 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitSimpleSelectorSequenceNode(SimpleSelectorSequenceNode simpleSelectorSequenceNode)
         {
             return new SimpleSelectorSequenceNode(
-                simpleSelectorSequenceNode.TypeSelectorNode != null ? (TypeSelectorNode)simpleSelectorSequenceNode.TypeSelectorNode.Accept(this) : null, 
-                simpleSelectorSequenceNode.UniversalSelectorNode != null ? (UniversalSelectorNode)simpleSelectorSequenceNode.UniversalSelectorNode.Accept(this) : null, 
-                simpleSelectorSequenceNode.Separator, 
+                simpleSelectorSequenceNode.TypeSelectorNode != null ? (TypeSelectorNode)simpleSelectorSequenceNode.TypeSelectorNode.Accept(this) : null,
+                simpleSelectorSequenceNode.UniversalSelectorNode != null ? (UniversalSelectorNode)simpleSelectorSequenceNode.UniversalSelectorNode.Accept(this) : null,
+                simpleSelectorSequenceNode.Separator,
                 simpleSelectorSequenceNode.HashClassAttribPseudoNegationNodes.Select(hashClassAtNameAttribPseudoNegationNode => (HashClassAtNameAttribPseudoNegationNode)hashClassAtNameAttribPseudoNegationNode.Accept(this)).ToSafeReadOnlyCollection());
         }
 
@@ -263,7 +267,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitTypeSelectorNode(TypeSelectorNode typeSelectorNode)
         {
             return new TypeSelectorNode(
-                typeSelectorNode.SelectorNamespacePrefixNode != null ? (SelectorNamespacePrefixNode)typeSelectorNode.SelectorNamespacePrefixNode.Accept(this) : null, 
+                typeSelectorNode.SelectorNamespacePrefixNode != null ? (SelectorNamespacePrefixNode)typeSelectorNode.SelectorNamespacePrefixNode.Accept(this) : null,
                 typeSelectorNode.ElementName);
         }
 
@@ -281,7 +285,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitCombinatorSimpleSelectorSequenceNode(CombinatorSimpleSelectorSequenceNode combinatorSimpleSelectorSequenceNode)
         {
             return new CombinatorSimpleSelectorSequenceNode(
-                combinatorSimpleSelectorSequenceNode.Combinator, 
+                combinatorSimpleSelectorSequenceNode.Combinator,
                 (SimpleSelectorSequenceNode)combinatorSimpleSelectorSequenceNode.SimpleSelectorSequenceNode.Accept(this));
         }
 
@@ -299,9 +303,9 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitMediaQueryNode(MediaQueryNode mediaQueryNode)
         {
             return new MediaQueryNode(
-                mediaQueryNode.OnlyText, 
-                mediaQueryNode.NotText, 
-                mediaQueryNode.MediaType, 
+                mediaQueryNode.OnlyText,
+                mediaQueryNode.NotText,
+                mediaQueryNode.MediaType,
                 mediaQueryNode.MediaExpressions.Select(mediaExpressionNode => (MediaExpressionNode)mediaExpressionNode.Accept(this)).ToSafeReadOnlyCollection());
         }
 
@@ -311,7 +315,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitMediaExpressionNode(MediaExpressionNode mediaExpressionNode)
         {
             return new MediaExpressionNode(
-                mediaExpressionNode.MediaFeature, 
+                mediaExpressionNode.MediaFeature,
                 mediaExpressionNode.ExprNode != null ? (ExprNode)mediaExpressionNode.ExprNode.Accept(this) : null);
         }
 
@@ -321,9 +325,9 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitKeyFramesNode(KeyFramesNode keyFramesNode)
         {
             return new KeyFramesNode(
-                keyFramesNode.KeyFramesSymbol, 
-                keyFramesNode.IdentValue, 
-                keyFramesNode.StringValue, 
+                keyFramesNode.KeyFramesSymbol,
+                keyFramesNode.IdentValue,
+                keyFramesNode.StringValue,
                 keyFramesNode.KeyFramesBlockNodes.Select(keyFramesBlockNode => (KeyFramesBlockNode)keyFramesBlockNode.Accept(this)).ToSafeReadOnlyCollection());
         }
 
@@ -333,7 +337,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitKeyFramesBlockNode(KeyFramesBlockNode keyFramesBlockNode)
         {
             return new KeyFramesBlockNode(
-                keyFramesBlockNode.KeyFramesSelectors, 
+                keyFramesBlockNode.KeyFramesSelectors,
                 keyFramesBlockNode.DeclarationNodes.Select(declarationNode => (DeclarationNode)declarationNode.Accept(this)).ToSafeReadOnlyCollection());
         }
     }

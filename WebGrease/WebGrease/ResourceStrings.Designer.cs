@@ -169,6 +169,15 @@ namespace WebGrease {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error occurred while loading the WebGrease override xml file: {0}.
+        /// </summary>
+        internal static string OverrideFileLoadErrorMessage {
+            get {
+                return ResourceManager.GetString("OverrideFileLoadErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Could not find the plugin path {0}.
         /// </summary>
         internal static string PreprocessingCouldNotFindThePluginPath {
@@ -232,6 +241,24 @@ namespace WebGrease {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ResourcePivotActivity - {0} has more than one value assigned. Only one value per key name is allowed in libraries and features. Resource key overrides are allowed at the product level only..
+        /// </summary>
+        internal static string ResourcePivotActivityDuplicateKeysError {
+            get {
+                return ResourceManager.GetString("ResourcePivotActivityDuplicateKeysError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ResourcePivotActivity - Error occured while executing the expand resources activity.
+        /// </summary>
+        internal static string ResourcePivotActivityError {
+            get {
+                return ResourceManager.GetString("ResourcePivotActivityError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Duplicate key: &apos;{0}&apos; found in the resx file &apos;{1}&apos;. Same key may exist with different delimiters in the resx file..
         /// </summary>
         internal static string ResourceResolverDuplicateKeyExceptionMessage {
@@ -241,11 +268,29 @@ namespace WebGrease {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Safe.Lock wasn&apos;t able to acquire a lock in {0}ms.
+        /// </summary>
+        internal static string SafeLockFailedMessage {
+            get {
+                return ResourceManager.GetString("SafeLockFailedMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Semitransparency found.
         /// </summary>
         internal static string SemiTransparencyFound {
             get {
                 return ResourceManager.GetString("SemiTransparencyFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There were errors while applying resources to the css files..
+        /// </summary>
+        internal static string ThereWereErrorsWhileApplyingCssresources {
+            get {
+                return ResourceManager.GetString("ThereWereErrorsWhileApplyingCssresources", resourceCulture);
             }
         }
         
@@ -283,7 +328,7 @@ namespace WebGrease {
         ///	
         ///	-a : Auto names output files (if the -out parameter is a Directory and not a file).
         ///	
-        ///	-b : Bundles all input files into a single output file. Required if the -out parameter is a fi [rest of string was truncated]&quot;;.
+        ///	-b : Bundles all input files into a single output file. Required if the -out pa [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string Usage {
             get {

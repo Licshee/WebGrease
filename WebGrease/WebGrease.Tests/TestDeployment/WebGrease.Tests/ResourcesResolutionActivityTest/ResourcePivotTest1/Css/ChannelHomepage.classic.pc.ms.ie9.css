@@ -1,0 +1,1302 @@
+﻿
+
+/* classic/basepage/basepage.classic.pc.ms.ie9.scss (C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Classic\basePage\basePage.classic.pc.ms.ie9.scss) */
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, input, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+  margin: 0;
+  padding: 0; }
+
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+  display: block; }
+
+body {
+  line-height: 1; }
+
+ol, ul {
+  list-style: none; }
+
+blockquote, q {
+  quotes: none; }
+
+blockquote:before, blockquote:after, q:before, q:after {
+  content: none; }
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#aside .ad {
+  margin-bottom: 2.5em;
+  float: right;
+  width: 30em; }
+.ad a.adchoicesjs {
+  color: %darkgray%;
+  float: %Global.Left%;
+  padding-top: 3px;
+  width: 190px; }
+  .ad a.adchoicesjs:hover {
+    text-decoration: none; }
+  .ad a.adchoicesjs span {
+    vertical-align: middle; }
+.ad a.adchoices {
+  display: none; }
+.ad a.adfeedback {
+  color: #666666;
+  float: %Global.Right%;
+  padding-top: 5px; }
+.ad a.adfeedback, .ad a.adchoicesjs {
+  font-size: 12px;
+  line-height: 1;
+  display: inline-block;
+  height: 20px; }
+.ad .adchoiceicon {
+  display: inline-block;
+  height: 15px;
+  width: 15px; }
+.ad.skinad {
+  display: none; }
+
+#precontent {
+  padding-bottom: 2.5em; }
+  #precontent .ad {
+    font-size: 0;
+    line-height: 0; }
+    #precontent .ad .outeradcontainer {
+      display: inline-block; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+* {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+
+html {
+  color: %darkgray%;
+  font: 0.625em/1.5 %Classic.PC.FontFamily%; }
+
+body {
+  min-width: 97.6em; }
+
+a {
+  text-decoration: none; }
+  a:hover, a:focus {
+    text-decoration: underline; }
+
+button,
+input {
+  font-family: %Classic.PC.FontFamily%;
+  -webkit-appearance: none;
+  -webkit-border-radius: 0; }
+
+#classic-white-bg {
+  background: %white%;
+  left: 50%;
+  height: 100%;
+  margin-left: -49.8em;
+  position: fixed;
+  width: 99.6em;
+  z-index: -1; }
+
+#logo-search-wrapper {
+  position: relative;
+  min-height: 9em; }
+
+#logo-search-wrapper,
+#maincontent,
+#foot,
+#precontent {
+  margin: 0 auto;
+  width: 95.6em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#breakingnews {
+  background: %red%;
+  border: solid %red%;
+  color: %white%;
+  display: block;
+  height: 3.1em;
+  margin: 0 auto 1.7em;
+  width: 95.6em;
+  overflow: hidden;
+  padding: 0 0.8em; }
+  #breakingnews > div.section {
+    margin-top: -0.3em; }
+  #breakingnews a {
+    color: %white%; }
+  #breakingnews p {
+    display: inline;
+    line-height: 2;
+    font-size: 1.6em; }
+    #breakingnews p + p:before {
+      content: "|";
+      padding: 0 .5em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#foot {
+  padding: 3em 0 4em; }
+  #foot .cobrand {
+    margin-bottom: 1em; }
+  #foot footer {
+    position: relative; }
+
+#footer-text {
+  display: inline-block;
+  max-width: 83em; }
+  #footer-text > a,
+  #footer-text > span {
+    font-size: %Classic.PC.ExtraSmallFontSize%;
+    line-height: %Classic.PC.ExtraSmallLineHeight%;
+    color: %mediumgray%;
+    margin-right: 1.545em; }
+
+#msft-logo {
+  display: inline-block;
+  height: 2.1em;
+  position: absolute;
+  right: 0;
+  text-indent: -8000px;
+  top: -0.6em;
+  width: 9.5em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+.head {
+  min-width: 95.6em;
+  padding-top: 1em; }
+
+#header {
+  display: block;
+  height: 2em;
+  white-space: nowrap; }
+  #header .carat {
+    display: none; }
+  #header .channel,
+  #header .cobrand,
+  #header .network {
+    float: left; }
+  #header .channel.fg,
+  #header .cobrand.fg {
+    /* TODO:RTUIT: Is %theme_name% necessary, is not $themeColor Enough? */ }
+    #header .channel.fg h1,
+    #header .channel.fg span,
+    #header .cobrand.fg h1,
+    #header .cobrand.fg span {
+      font-size: %Classic.PC.MediumLargeFontSize%;
+      line-height: %Classic.PC.MediumLargeLineHeight%;
+      -ms-text-overflow: ellipsis;
+      -webkit-text-overflow: ellipsis;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      display: block;
+      margin: .346em 0 0 .423em;
+      max-width: 8.769em;
+      position: relative;
+      top: .038em; }
+    #header .channel.fg.%theme_name%,
+    #header .cobrand.fg.%theme_name% {
+      color: %theme_color%; }
+  #header > div {
+    clear: both;
+    left: 0;
+    position: absolute;
+    top: 4.9em;
+    width: 33.9em; }
+  #header .network {
+    display: inline-block;
+    height: 3.4em;
+    margin-right: -0.1em;
+    width: 9.8em;
+    z-index: 1;
+    /* TODO:RTUIT: Is %theme_name% necessary? */ }
+    #header .network.%theme_name% {
+      background: transparent url('%theme_classic_image_logo%') no-repeat 0 0; }
+    #header .network span {
+      display: none; }
+
+#fbcount,
+#langtoggle,
+#language-social > #sign-in-out,
+#twcount,
+#username {
+  height: 2.3em; }
+
+#fbcount,
+#twcount {
+  margin-left: 2em; }
+  #fbcount iframe,
+  #twcount iframe {
+    border: 0;
+    height: 2em;
+    overflow: hidden; }
+
+#fbcount iframe {
+  width: %Classic.FacebookButtonWidth%; }
+
+#langtoggle,
+#language-social > #sign-in-out {
+  vertical-align: top; }
+
+#language-social {
+  position: absolute;
+  right: 0; }
+  #language-social > li {
+    display: inline-block;
+    text-transform: uppercase;
+    vertical-align: top; }
+
+#language-social a,
+#language-social button {
+  font-size: %Classic.PC.ExtraSmallFontSize%;
+  line-height: %Classic.PC.ExtraSmallLineHeight%;
+  color: #666666; }
+
+#makemsn {
+  font-size: %Classic.PC.Small2FontSize%;
+  line-height: %Classic.PC.Small2LineHeight%;
+  float: left; }
+  #makemsn a {
+    color: #666666; }
+
+#username,
+#language-social > #sign-in-out {
+  margin-left: 2em; }
+
+#twcount iframe {
+  width: %Classic.TwitterButtonWidth%; }
+
+#username.hover ul {
+  display: block; }
+#username button {
+  background: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  text-transform: uppercase; }
+  #username button::-moz-focus-inner {
+    border: 0;
+    padding: 0; }
+  #username button:hover {
+    cursor: pointer; }
+#username ul {
+  background: %white%;
+  display: none;
+  border: solid 0.1em #cccccc;
+  position: absolute;
+  right: 0;
+  text-transform: none;
+  top: 2.1em;
+  z-index: 2; }
+  #username ul a {
+    font-size: %Classic.PC.Small2FontSize%;
+    line-height: %Classic.PC.Small2LineHeight%;
+    color: %darkgray%;
+    display: inline-block;
+    padding: .417em .833em;
+    width: 100%; }
+    #username ul a:hover {
+      color: %white%;
+      /* TODO:RTUIT: Is %theme_name% necessary? */ }
+      body.%theme_name% #username ul a:hover {
+        background: %theme_color%; }
+  #username ul li {
+    display: block; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#username button:hover, #username button:focus {
+  text-decoration: underline; }
+
+#header > div a:hover, #header > div a:focus,
+#username ul a:hover,
+#username ul a:focus {
+  text-decoration: none; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+.imglinkabs .mediaicon figure > span, .imglinkabswithlinklist .mediaicon:first-child figure > span {
+  display: inline-block;
+  height: 1.4em;
+  left: 11.5em;
+  position: absolute;
+  top: 5.7em;
+  width: 1.4em;
+  z-index: 3; }
+
+.imglinkabswithlinklist li.mediaicon {
+  margin-left: -0.5em;
+  padding-left: 1.8em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#nav-bg {
+  height: 2em;
+  margin: 0 auto;
+  width: 99.6em;
+  /* TODO:RTUIT: Is %theme_name% necessary? */ }
+  body.%theme_name% #nav-bg {
+    background: %theme_color%; }
+
+#nav {
+  clear: both;
+  margin: 1.7em 0 1.7em;
+  white-space: nowrap; }
+  #nav a {
+    color: %white%;
+    display: inline-block;
+    font-size: %Classic.PC.SmallFontSize%;
+    height: 1.429em;
+    padding: .214em .714em 0; }
+    #nav a:hover, #nav a:focus {
+      text-decoration: none; }
+  #nav .inner {
+    bottom: 0;
+    display: none;
+    left: 1.1em;
+    position: absolute;
+    width: 100%;
+    z-index: 998;
+    /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+    #nav .inner a {
+      color: %darkgray%;
+      font-size: 2em;
+      height: 1.45em;
+      line-height: 1.1;
+      padding: 0; }
+    #nav .inner li {
+      margin-right: 1.8em; }
+    body.%theme_name% #nav .inner a:focus,
+    body.%theme_name% #nav .inner a:hover,
+    body.%theme_name% #nav .inner .current a {
+      color: %theme_color%; }
+  #nav li {
+    display: inline-block;
+    margin-right: .7em; }
+    #nav li.current > a,
+    #nav li.current h1 a, #nav li.default > a, #nav li.default h1 a {
+      background: %white%; }
+    #nav li.current .inner {
+      display: block; }
+  #nav .outer {
+    height: 2em;
+    margin: -2em auto 0;
+    left: -1.1em;
+    overflow: hidden;
+    position: relative;
+    width: 95.6em; }
+    #nav .outer.has-subnav {
+      height: 5.5em;
+      margin-bottom: -0.6em; }
+    #nav .outer > li > a,
+    #nav .outer > li > h1 {
+      font-weight: bold;
+      text-transform: uppercase; }
+    #nav .outer > li.current > a,
+    #nav .outer > li.current > h1 a, #nav .outer > li.default > a, #nav .outer > li.default > h1 a {
+      color: #666666; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+.pollcontainer.related, .pollcontainer.halfpane {
+  float: %Global.Left%;
+  clear: both; }
+
+.pollheading,
+.pollheading .heading {
+  overflow: hidden; }
+.related .pollheading .heading,
+.related .pollheading h2:first-child, .halfpane .pollheading .heading, .halfpane .pollheading h2:first-child {
+  float: %Global.Left%;
+  margin-bottom: 0; }
+
+.poll {
+  clear: both; }
+  .poll .hide {
+    display: none; }
+  .poll li {
+    list-style-type: none; }
+    .poll li .question {
+      color: %darkgray%; }
+      .poll li .question input {
+        float: %Global.Left%; }
+    .poll li:last-child .question, .poll li.last .question {
+      margin-bottom: 0; }
+    .poll li .result {
+      clear: both; }
+    .poll li .resultcontainer {
+      display: inline-block; }
+    .poll li .barcontainer {
+      background-color: %mediumgray%;
+      overflow: hidden; }
+      .poll li .barcontainer .bar {
+        float: %Global.Left%;
+        color: %white%;
+        height: 100%; }
+  .poll footer .votebtn {
+    border: none;
+    color: %white%; }
+  .poll footer .skiptoresult,
+  .poll footer .backtovoting {
+    float: %Global.Right%;
+    background-color: transparent;
+    border: none;
+    outline: 0; }
+    .poll footer .skiptoresult:hover,
+    .poll footer .backtovoting:hover {
+      text-decoration: underline;
+      cursor: pointer; }
+
+/* TODO:RTUIT: Is the body selector with %theme_name% necessary? */
+body.%theme_name% .pollcontainer .barcolor,
+body.%theme_name% .pollcontainer .votebtn {
+  background-color: %theme_color%; }
+body.%theme_name% .pollcontainer .skiptoresult,
+body.%theme_name% .pollcontainer .backtovoting,
+body.%theme_name% .pollcontainer .heading {
+  color: %theme_color%; }
+
+.pollcontainer.halfpane {
+  float: %Global.Left%; }
+
+.pollheading {
+  margin-bottom: 0.5em; }
+  .pollheading .heading {
+    margin-bottom: 0;
+    float: %Global.Left%;
+    padding-bottom: .077em; }
+    #maincontent .pollheading .heading {
+      font-size: %Classic.PC.MediumLargeFontSize%;
+      line-height: %Classic.PC.MediumLargeLineHeight%; }
+
+.poll .errormsg,
+.poll .firstvote {
+  margin-bottom: 1em; }
+.poll .skiptoresult,
+.poll .backtovoting,
+.poll .errormsg,
+.poll .firstvote {
+  color: %mediumgray%;
+  font-size: %Classic.PC.SmallFontSize%;
+  line-height: %Classic.PC.SmallLineHeight%; }
+.poll .forresulttext,
+.poll .bar,
+.poll .votebtn {
+  font-size: %Classic.PC.NormalFontSize%;
+  line-height: %Classic.PC.NormalLineHeight%; }
+.poll h3, .articlecontent > section > div.section .poll h3 {
+  font-size: %Classic.PC.Medium2FontSize%;
+  line-height: %Classic.PC.Medium2LineHeight%;
+  margin-bottom: .455em; }
+.related .poll li, .halfpane .poll li {
+  margin-bottom: 0; }
+.poll li .question {
+  margin-bottom: 1.5em; }
+  .poll li .question input {
+    margin: .4em .9em 0 0;
+    -webkit-appearance: radio; }
+  .poll li .question label {
+    display: block;
+    font-size: %Classic.PC.NormalFontSize%;
+    line-height: %Classic.PC.NormalLineHeight%;
+    max-width: 15.125em; }
+.poll li.last .question, .poll li:last-child .question {
+  margin-bottom: 0.9em; }
+.halfpane .poll li.last .question, .halfpane .poll li:last-child .question {
+  margin-bottom: 0.7em; }
+.poll li .resultcontainer {
+  width: 100%; }
+.poll li .barcontainer {
+  margin: .2em 0 .6em;
+  display: block;
+  width: 100%;
+  height: 1.8em; }
+  .poll li .barcontainer .bar {
+    padding-left: .25em; }
+.poll .responses {
+  color: %mediumgray%;
+  font-size: %Classic.PC.SmallFontSize%;
+  line-height: %Classic.PC.SmallLineHeight%;
+  margin-bottom: 0.714em; }
+.poll .responses {
+  color: %mediumgray%;
+  font-size: %Classic.PC.SmallFontSize%;
+  line-height: %Classic.PC.SmallLineHeight%;
+  margin-bottom: 0.714em; }
+.poll footer .votebtn {
+  height: 1.625em;
+  margin: 0;
+  min-width: 3.625em;
+  padding: 0 .75em;
+  float: %Global.Left%; }
+  .poll footer .votebtn:hover {
+    cursor: pointer; }
+    .poll footer .votebtn:hover[disabled="disabled"] {
+      cursor: default; }
+.poll footer .skiptoresult {
+  margin-top: .214em; }
+.poll footer .backtovoting,
+.poll footer .skiptoresult,
+.poll footer .votebtn {
+  padding: 0; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+.related {
+  /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+  .related .%theme_name% a,
+  .related .heading.%theme_name% {
+    color: %theme_color%; }
+  .related a {
+    color: %darkgray%; }
+    .related a:hover, .related a:focus {
+      text-decoration: none; }
+      .related a:hover .captiontitle,
+      .related a:hover .abstract p, .related a:focus .captiontitle, .related a:focus .abstract p {
+        text-decoration: underline; }
+  .related .abstract {
+    font-size: %Classic.PC.Small2FontSize%;
+    line-height: %Classic.PC.Small2LineHeight%;
+    color: %mediumgray%;
+    margin-top: .5em; }
+  #aside .related {
+    clear: both;
+    padding-bottom: 1em; }
+  .related .captiontitle {
+    font-size: %Classic.PC.NormalFontSize%;
+    line-height: %Classic.PC.NormalLineHeight%; }
+  .related .heading {
+    margin-bottom: .4em; }
+    .related .heading a:hover, .related .heading a:focus {
+      text-decoration: underline; }
+    .related .heading a:hover {
+      cursor: pointer; }
+    .related .heading a,
+    .related .heading > span {
+      font-size: %Classic.PC.MediumLargeFontSize%;
+      line-height: %Classic.PC.MediumLargeLineHeight%; }
+  .related header:first-child,
+  .related h2:first-child {
+    margin-bottom: .8em; }
+  .related img {
+    height: 7.6em;
+    margin-right: 1.2em; }
+    .related img,
+    .related img + figcaption {
+      display: inline-block;
+      width: 13.6em; }
+  .related figcaption {
+    position: relative;
+    top: -0.3em;
+    vertical-align: top; }
+  .related .imglinkabswithlinklist li,
+  .related li.text {
+    display: block;
+    font-size: 1em;
+    margin: 0 0 1.5em;
+    padding-left: 1.3em;
+    position: relative; }
+  .related .imglinkabs li.text .abstract {
+    display: none; }
+  .related .imglinkabswithlinklist .abstract,
+  .related .imglinkabswithlinklist img {
+    display: none; }
+  .related .imglinkabswithlinklist img + figcaption {
+    width: auto; }
+  .related .imglinkabswithlinklist li:first-child, .related .imglinkabswithlinklist li.mediaicon:first-child {
+    background: 0;
+    margin-left: 0;
+    padding-left: 0; }
+  .related .imglinkabswithlinklist li:first-child {
+    margin-bottom: 1.1em; }
+    .related .imglinkabswithlinklist li:first-child a {
+      color: %darkgray%;
+      display: inline-block; }
+    .related .imglinkabswithlinklist li:first-child .abstract {
+      display: block; }
+    .related .imglinkabswithlinklist li:first-child img {
+      display: inline-block; }
+      .related .imglinkabswithlinklist li:first-child img + figcaption {
+        width: 13.6em; }
+  .related li {
+    margin: 0 0 1.5em;
+    position: relative; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#search {
+  background-color: %white%;
+  border: .2em solid #999;
+  display: block;
+  height: 3.9em;
+  float: right;
+  margin-top: 3.6em;
+  padding: 0 0 0 .5em;
+  position: relative;
+  width: 61.4em; }
+  #search .binglogo {
+    display: block; }
+  #search .image,
+  #search .text {
+    border: 0;
+    float: right;
+    margin: 0; }
+    #search .image:hover,
+    #search .text:hover {
+      cursor: pointer; }
+  #search .image {
+    background: url("hash(/images/classic/search/binglogo_1x.png)") no-repeat 0 0;
+    height: 3.4em;
+    margin-right: .2em;
+    padding: 0;
+    position: relative;
+    top: .1em;
+    width: 5.6em; }
+  #search label {
+    display: none; }
+  #search #q {
+    background: 0;
+    border: 0;
+    -webkit-appearance: textarea;
+    float: left;
+    font-size: 1.8em;
+    font-weight: normal;
+    padding-top: .278em;
+    width: 20em; }
+    #search #q::-webkit-input-placeholder {
+      color: %white%; }
+    #search #q::-moz-placeholder {
+      color: %white%; }
+    #search #q:-ms-input-placeholder {
+      color: %white%; }
+    #search #q:focus {
+      outline: none; }
+    #search #q::-webkit-search-cancel-button {
+      display: none; }
+  #search .text {
+    font-size: %Classic.PC.NormalFontSize%;
+    line-height: %Classic.PC.NormalLineHeight%;
+    background: %bingorange%;
+    color: %white%;
+    font-weight: bold;
+    height: 2.188em;
+    padding: 0 .938em; }
+    #search .text::-moz-focus-inner {
+      border: 0;
+      padding: 0; }
+
+#search-scope {
+  position: absolute;
+  height: 2.3em;
+  left: -0.2em;
+  overflow: hidden;
+  top: -2.5em;
+  width: 61.4em; }
+  #search-scope a {
+    font-size: %Classic.PC.Small2FontSize%;
+    line-height: %Classic.PC.Small2LineHeight%;
+    color: #666666;
+    display: inline-block;
+    height: 1.917em;
+    margin: 0 .308em;
+    padding: .083em .333em .750em; }
+  #search-scope li {
+    display: inline-block;
+    vertical-align: top;
+    position: relative; }
+    #search-scope li:before {
+      color: #666666;
+      content: "|";
+      font-size: 1.4em;
+      right: .1em;
+      position: relative;
+      top: -0.1em; }
+    #search-scope li:first-child:before {
+      display: none; }
+    #search-scope li:first-child a {
+      margin-left: 0;
+      padding-left: 0; }
+    #search-scope li.selected span {
+      width: 0.7em;
+      height: 0.4em;
+      bottom: 0;
+      position: absolute;
+      margin-left: -0.35em;
+      left: 50%; }
+    #search-scope li.selected a {
+      font-weight: bold;
+      /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+      #search-scope li.selected a:hover {
+        text-decoration: none; }
+      body.%theme_name% #search-scope li.selected a {
+        color: %theme_color%; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#search .sa_as {
+  top: 3.7em;
+  z-index: 1000000; }
+#search .sw_b3 {
+  margin-left: -0.2em;
+  width: 61.7em !important; }
+#search .sa_drw li {
+  padding: 0; }
+#search .sa_hd,
+#search .sa_hd_first,
+#search .sa_sg {
+  font-size: 1em; }
+#search .sa_hd,
+#search .sa_hd_first {
+  margin: .357em .429em 0; }
+#search .sa_hd_first,
+#search .sa_om a,
+#search .sa_tm {
+  color: %mediumgray%;
+  font-size: %Classic.PC.SmallFontSize%;
+  line-height: %Classic.PC.SmallLineHeight%; }
+#search .sa_om {
+  line-height: 1;
+  padding: .3em 0 0 .3em; }
+#search .sa_tm {
+  padding: .286em .429em; }
+  #search .sa_tm strong {
+    font-weight: bold; }
+
+.social-signals {
+  height: 1.6em;
+  margin-top: 1em; }
+  .social-signals .bing,
+  .social-signals .breakingnews,
+  .social-signals .facebook,
+  .social-signals .twitter,
+  .social-signals .youtube {
+    display: inline-block;
+    height: 1.6em;
+    margin-right: .4em;
+    width: 1.6em; }
+  .social-signals .bing {
+  .social-signals span + time {
+    bottom: .143em;
+    margin-left: 0.6em; }
+  .social-signals time {
+    color: %mediumgray%;
+    font-size: %Classic.PC.SmallFontSize%;
+    line-height: %Classic.PC.SmallLineHeight%;
+    bottom: .4em;
+    position: relative; }
+
+.pollheading {
+  margin-bottom: 0.4em; }
+
+.poll footer .skiptoresult {
+  margin-top: .357em; }
+.poll footer .backtovoting {
+  margin-top: .143em; }
+
+#search-scope li.selected span {
+  height: .5em; }
+
+#search-scope {
+  top: -2.4em; }
+
+
+
+/* classic/landingpage/landingpage.classic.pc.ms.ie9.scss (C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Classic\landingPage\landingPage.classic.pc.ms.ie9.scss) */
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#aside {
+  float: right;
+  width: 30em; }
+
+#foot {
+  clear: both; }
+
+#main {
+  float: left;
+  width: 65.6em; }
+
+#toc {
+  display: none; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+.cluster {
+  list-style: none;
+  vertical-align: top;
+  display: inline-block;
+  margin-right: 1.2em;
+  width: 19.9em; }
+  .cluster li {
+    font-size: %Classic.PC.NormalFontSize%;
+    line-height: %Classic.PC.NormalLineHeight%;
+    display: block;
+    margin-bottom: 1em;
+    max-height: 2.43em;
+    overflow: hidden;
+    padding-left: .75em; }
+    .cluster li a {
+      color: %darkgray%;
+      display: inline-block; }
+  .cluster .heading {
+    font-size: %Classic.PC.MediumLargeFontSize%;
+    line-height: %Classic.PC.MediumLargeLineHeight%;
+    /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+    .cluster .heading,
+    .cluster .heading a,
+    .cluster .heading > span {
+      -ms-text-overflow: ellipsis;
+      -webkit-text-overflow: ellipsis;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      display: inline-block;
+      max-height: 1.346em;
+      width: 7.654em; }
+    body.%theme_name% .cluster .heading,
+    body.%theme_name% .cluster .heading a {
+      color: %theme_color%; }
+  .cluster li {
+    color: %mediumgray%;
+    font-size: %Classic.PC.SmallFontSize%;
+    line-height: %Classic.PC.SmallLineHeight%;
+    margin-bottom: .786em; }
+    .cluster li img {
+      margin: .5em 0; }
+    .cluster li p {
+      max-height: 2.429em;
+      overflow: hidden; }
+  .cluster figcaption {
+    font-size: 2em; }
+  .cluster .first {
+    background-image: none;
+    font-size: 1em;
+    margin-bottom: .9em;
+    max-height: none;
+    padding-left: 0; }
+    .cluster .first a {
+      line-height: 1.2; }
+    .cluster .first figcaption,
+    .cluster .first p {
+      font-size: 1.8em;
+      line-height: 1.136;
+      max-height: 2.278em;
+      padding-bottom: .056em;
+      overflow: hidden; }
+      .cluster .first figcaption:first-child,
+      .cluster .first p:first-child {
+        margin-top: .667em; }
+  .cluster.linkedimage figure:after {
+    bottom: .3em;
+    content: "";
+    display: inline-block;
+    height: 3em;
+    left: 0;
+    position: absolute;
+    width: 3em;
+    z-index: 2000; }
+  .cluster.linkedimage li {
+    background: 0;
+    font-size: 1em;
+    max-height: none;
+    padding-left: 0;
+    position: relative; }
+    .cluster.linkedimage li + li a {
+      font-size: %Classic.PC.Medium2FontSize%;
+      line-height: %Classic.PC.Medium2LineHeight%; }
+    .cluster.linkedimage li img {
+      margin: .4em 0; }
+  .cluster.linkedimage.video figure:after {
+    display: none; }
+  .cluster.linkedimage.video .videoicon {
+    margin-bottom: -0.2em; }
+    .cluster.linkedimage.video .videoicon img + span {
+      bottom: 1.8em;
+      height: 8.3em;
+      left: auto;
+      position: absolute;
+      right: 1.5em;
+      width: 8.3em; }
+  .cluster ul {
+    margin-bottom: 2.5em;
+    vertical-align: top; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#infopane + .contentlist {
+  margin-top: .4em; }
+.contentlist a {
+  display: block;
+  position: relative; }
+  .contentlist a:hover, .contentlist a:focus {
+    text-decoration: none; }
+.contentlist .hasimg {
+  min-height: 10.5em; }
+.contentlist h3 {
+  font-size: %Classic.PC.Medium2FontSize%;
+  line-height: %Classic.PC.Medium2LineHeight%;
+  margin-top: -0.136em; }
+.contentlist h3,
+.contentlist p {
+  color: %darkgray%; }
+  .contentlist h3:hover, .contentlist h3:focus,
+  .contentlist p:hover,
+  .contentlist p:focus {
+    text-decoration: underline; }
+.contentlist img {
+  float: %Global.Left%;
+  margin-right: 1.5em;
+  vertical-align: top; }
+.contentlist li {
+  clear: both;
+  display: block;
+  margin-bottom: 3em; }
+.contentlist p {
+  font-size: %Classic.PC.NormalFontSize%;
+  line-height: %Classic.PC.NormalLineHeight%;
+  margin-top: .313em; }
+.contentlist .mediaicon.hasimg span {
+  display: block;
+  height: 1.4em;
+  left: 19.4em;
+  position: absolute;
+  top: 8.6em;
+  width: 1.4em; }
+.contentlist .mediaicon.noimg h3 {
+  padding-left: .792em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+.ip {
+  display: inline-block;
+  height: 31.4em;
+  margin-bottom: 1.1em;
+  overflow: hidden;
+  position: relative;
+  width: 62.8em; }
+  .ip a {
+    color: %white%;
+    position: relative; }
+  .ip a,
+  .ip img {
+    display: inline-block;
+    height: 30.9em;
+    width: 62.8em; }
+  .ip .halfpane a {
+    background: %black%;
+    white-space: normal; }
+  .ip .halfpane h3 {
+    font-size: %Classic.PC.MediumLargeFontSize%;
+    line-height: %Classic.PC.MediumLargeLineHeight%;
+    max-height: 16.692em;
+    overflow: hidden;
+    padding: .615em 0 0 .769em;
+    width: 10.346em; }
+  .ip .halfpane h3,
+  .ip .halfpane p {
+    display: block;
+    vertical-align: top; }
+  .ip .halfpane h3,
+  .ip .halfpane img,
+  .ip .halfpane p {
+    float: left; }
+  .ip .halfpane img {
+    width: 30.9em; }
+  .ip .halfpane.noimage h3 {
+    width: 100%;
+    padding-right: .714em; }
+  .ip .halfpane.noimage p {
+    padding-left: 1.25em;
+    padding-right: 1.25em; }
+  .ip .halfpane p {
+    font-size: %Classic.PC.NormalFontSize%;
+    line-height: %Classic.PC.NormalLineHeight%;
+    background: transparent;
+    max-height: 5.75em;
+    width: 16.813em;
+    padding: .688em 0 0 1.25em;
+    position: static; }
+  .ip.invalid p {
+    bottom: 0; }
+  .ip li {
+    display: inline-block;
+    position: relative;
+    vertical-align: top;
+    width: 62.8em; }
+  .ip .noimage {
+    height: 30.9em;
+    /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+    .ip .noimage.%theme_name% {
+      background-color: %theme_color%; }
+    .ip .noimage p {
+      height: 12.2em;
+      max-height: none;
+      padding: .6em .7em;
+      top: 0; }
+  .ip p {
+    background: rgba(0, 0, 0, 0.8);
+    bottom: .2em;
+    font-size: 2.5em;
+    left: 0;
+    min-height: 1.64em;
+    max-height: 2.8em;
+    line-height: 1.1;
+    overflow: hidden;
+    padding: .24em .36em .4em;
+    position: absolute;
+    white-space: normal;
+    width: 100%; }
+  .ip ul {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap; }
+
+.cluster li.noimage p {
+  background: rgba(0, 0, 0, 0.3); }
+.ip li.noimage p {
+  background: rgba(0, 0, 0, 0.2); }
+
+.slidecount {
+  bottom: .5em;
+  display: table;
+  height: 0.5em;
+  opacity: .9;
+  position: absolute;
+  width: 62.8em;
+  z-index: 2;
+  /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+  .slidecount.%theme_name%,
+  .slidecount.%theme_name% .selected {
+    background-color: %theme_color%; }
+  .slidecount span {
+    background-color: rgba(255, 255, 255, 0.5);
+    border: solid transparent;
+      border-right-color: rgba(0, 0, 0, 0.6);
+      border-bottom-color: rgba(0, 0, 0, 0.6);
+      border-width: 0 .1em .1em 0;
+    display: table-cell;
+    height: .5em;
+    opacity: 1; }
+    .slidecount span:last-child {
+      border-right-color: transparent; }
+    .slidecount span.selected {
+      background-color: transparent; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#featured {
+  margin-left: -0.5em;
+  padding-left: 0.5em; }
+
+.cluster .mediaicon.first {
+  position: relative; }
+  .cluster .mediaicon.first img + p + span {
+    top: 8.5em;
+    z-index: 2; }
+.ip .mediaicon span {
+  bottom: 1.5em; }
+.ip .mediaicon.noimage p,
+.ip .mediaicon p {
+  padding-right: 1.4em; }
+.ip .mediaicon span, .cluster .mediaicon.first img + p + span {
+  height: 2.2em;
+  position: absolute;
+  right: 1em;
+  width: 2.2em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+#aside .pollcontainer.cluster {
+  margin-bottom: 2.8em;
+  width: 100%; }
+.pollcontainer.cluster .heading {
+  max-height: none;
+  white-space: normal;
+  width: auto; }
+.pollcontainer.cluster .pollheading {
+  margin-bottom: 0.8em; }
+.pollcontainer.cluster .errormsg {
+  font-size: %Classic.PC.NormalFontSize%;
+  line-height: %Classic.PC.NormalLineHeight%; }
+.pollcontainer.cluster .poll h3 {
+  font-size: 1.8em;
+  margin-bottom: .611em; }
+.pollcontainer.cluster .poll ol {
+  list-style: none;
+  font-size: 0.625em; }
+  .pollcontainer.cluster .poll ol li {
+    background: none;
+    padding: 0;
+    margin-bottom: 0;
+    max-height: none;
+    color: %darkgray%; }
+    .pollcontainer.cluster .poll ol li .skiptoresult,
+    .pollcontainer.cluster .poll ol li .backtovoting {
+      color: %mediumgray%;
+      font-size: %Classic.PC.SmallFontSize%;
+      line-height: %Classic.PC.SmallLineHeight%;
+      margin: .357em 0 0; }
+    .pollcontainer.cluster .poll ol li .question {
+      margin-bottom: 1.7em; }
+      .pollcontainer.cluster .poll ol li .question input {
+        margin: .2em 1em 0 0; }
+      .pollcontainer.cluster .poll ol li .question label {
+        max-height: 2.5em;
+        overflow: hidden; }
+    .pollcontainer.cluster .poll ol li.last .question, .pollcontainer.cluster .poll ol li:last-child .question {
+      margin-bottom: 0.8em; }
+.pollcontainer.cluster .poll .responses {
+  font-size: %Classic.PC.Small2FontSize%;
+  line-height: %Classic.PC.Small2LineHeight%; }
+
+.pollcontainer.cluster .pollheading {
+  margin-bottom: .7em; }
+.pollcontainer.cluster .poll ol li .question {
+  margin-bottom: 1.7em; }
+.pollcontainer.cluster .poll ol li .skiptoresult {
+  margin: .214em 0 .429em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+.ip .leftarrow {
+  left: 0; }
+  .ip .leftarrow::after {
+    left: 1.4em;
+    -moz-transform: rotate(-135deg);
+    -ms-transform: rotate(-135deg);
+    -webkit-transform: rotate(-135deg);
+    transform: rotate(-135deg); }
+.ip .rightarrow {
+  right: 0; }
+  .ip .rightarrow::after {
+    right: 1.4em;
+    -moz-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+    transform: rotate(45deg); }
+.ip .leftarrow,
+.ip .rightarrow {
+  background-color: rgba(153, 153, 153, 0.8);
+  display: inline-block;
+  overflow: hidden;
+  position: absolute;
+  text-indent: 100%;
+  white-space: nowrap;
+  z-index: 5001; }
+  .ip .leftarrow:focus,
+  .ip .rightarrow:focus {
+    outline: 0; }
+  .ip .leftarrow:hover,
+  .ip .rightarrow:hover {
+    background-color: #999; }
+  #maincontent .ip .leftarrow.fade, #maincontent
+  .ip .rightarrow.fade {
+    width: 0; }
+    #maincontent .ip .leftarrow.fade::after, #maincontent
+    .ip .rightarrow.fade::after {
+      display: none; }
+  .ip .leftarrow::after,
+  .ip .rightarrow::after {
+    border: solid 0.11em;
+      border-color: %white% %white% transparent transparent;
+    content: '';
+    position: absolute; }
+.ip .leftarrow,
+.ip .rightarrow {
+  height: 6.8em;
+  width: 4em; }
+  .ip .leftarrow::after,
+  .ip .rightarrow::after {
+    height: 2.13em;
+    top: 2.3em;
+    width: 2.13em; }
+
+/* Theme tokens */
+/* shades of gray */
+/* common interface colors */
+.videocataloglist {
+  /* TODO:RTUIT: Is the body selector with %theme_name% necessary? */ }
+  .videocataloglist a {
+    color: %mediumgray%; }
+  .videocataloglist .active .overlay {
+    display: inline-block; }
+  .videocataloglist .captiontitle {
+    color: %darkgray%;
+    margin: 0 0 .375em; }
+  .videocataloglist .duration {
+    margin-right: .583em; }
+  .videocataloglist .duration,
+  .videocataloglist time,
+  .videocataloglist .video-attribution {
+    font-size: %Classic.PC.Small2FontSize%;
+    line-height: %Classic.PC.Small2LineHeight%; }
+    .videocataloglist .duration:hover, .videocataloglist .duration:focus,
+    .videocataloglist time:hover,
+    .videocataloglist time:focus,
+    .videocataloglist .video-attribution:hover,
+    .videocataloglist .video-attribution:focus {
+      text-decoration: underline; }
+  #main .videocataloglist {
+    list-style: none;
+    margin: 0 -2.6em 1.6em 0; }
+    #main .videocataloglist img {
+      margin-bottom: .8em; }
+    #main .videocataloglist li {
+      display: inline-block;
+      margin-right: 2.5em;
+      vertical-align: top;
+      width: 13.6em; }
+      #main .videocataloglist li figure img {
+        width: 13.6em;
+        height: 7.6em; }
+      #main .videocataloglist li + li + li + li + li,
+      #main .videocataloglist li + li + li + li + li + li {
+        display: none; }
+  .videocataloglist .overlay {
+    font-size: %Classic.PC.ExtraSmallFontSize%;
+    line-height: %Classic.PC.ExtraSmallLineHeight%;
+    color: %white%;
+    display: none;
+    left: 0;
+    padding: .273em .455em .182em;
+    position: absolute;
+    text-transform: uppercase;
+    top: 5.273em;
+    width: 12.364em; }
+  body.%theme_name% .videocataloglist .overlay {
+    background: %theme_color%; }
+
+
+
+/* classic/channelhomepage/channelhomepage.classic.pc.ms.ie9.scss (C:\Projects\Workspace2\MSNMetro\Main\MetroSDK\MetroSDK\Content\Source\css\Classic\ChannelHomepage\ChannelHomepage.classic.pc.ms.ie9.scss) */
+
+

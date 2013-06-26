@@ -85,7 +85,6 @@ namespace Css.Tests.Css30
             const string FileName = @"datauri.css";
             var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
             Assert.IsNotNull(styleSheetNode);
-            Assert.IsNull(styleSheetNode.Dpi);
 
             var styleSheetRules = styleSheetNode.StyleSheetRules;
             Assert.IsNotNull(styleSheetRules);
@@ -101,7 +100,6 @@ namespace Css.Tests.Css30
             const string FileName = @"background.css";
             var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
             Assert.IsNotNull(styleSheetNode);
-            Assert.IsNull(styleSheetNode.Dpi);
 
             var styleSheetRules = styleSheetNode.StyleSheetRules;
             Assert.IsNotNull(styleSheetRules);
@@ -117,7 +115,6 @@ namespace Css.Tests.Css30
             const string FileName = @"border.css";
             var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
             Assert.IsNotNull(styleSheetNode);
-            Assert.IsNull(styleSheetNode.Dpi);
 
             var styleSheetRules = styleSheetNode.StyleSheetRules;
             Assert.IsNotNull(styleSheetRules);
@@ -133,7 +130,6 @@ namespace Css.Tests.Css30
             const string FileName = @"colors.css";
             var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
             Assert.IsNotNull(styleSheetNode);
-            Assert.IsNull(styleSheetNode.Dpi);
 
             var styleSheetRules = styleSheetNode.StyleSheetRules;
             Assert.IsNotNull(styleSheetRules);
@@ -149,26 +145,9 @@ namespace Css.Tests.Css30
             const string FileName = @"fontface.css";
             var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
             Assert.IsNotNull(styleSheetNode);
-            Assert.IsNull(styleSheetNode.Dpi);
 
             var styleSheetRules = styleSheetNode.StyleSheetRules;
             Assert.IsNotNull(styleSheetRules);
-            MinificationVerifier.VerifyMinification(BaseDirectory, FileName);
-            PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName);
-        }
-
-        /// <summary>A test for @-wg-dpi</summary>
-        [TestMethod]
-        [TestCategory(TestCategories.CssParser)]
-        public void Dpi()
-        {
-            const string FileName = @"dpi.css";
-            var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
-            Assert.IsNotNull(styleSheetNode);
-
-            // we should pick up the 2.4 value for the DPI
-            Assert.IsTrue(styleSheetNode.Dpi == 2.4);
-
             MinificationVerifier.VerifyMinification(BaseDirectory, FileName);
             PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName);
         }

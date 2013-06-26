@@ -16,6 +16,12 @@ namespace WebGrease
     /// <summary>The web grease log.</summary>
     public class LogManager
     {
+        /// <summary>
+        /// The message lock object to make sure we only send one message at a time.
+        /// Because the msbuild message handler seems to fail sometimes when using multiple threads.
+        /// </summary>
+        private static readonly object MessageLockObject = new object();
+
         /// <summary>Gets the information.</summary>
         private readonly Action<string, MessageImportance> information;
 
@@ -33,9 +39,6 @@ namespace WebGrease
 
         /// <summary>Gets the extended error.</summary>
         private readonly LogExtendedError extendedError;
-
-        /// <summary>The error happened event handler.</summary>
-        public event EventHandler ErrorOccurred;
 
         /// <summary>Initializes a new instance of the <see cref="LogManager"/> class.</summary>
         /// <param name="logInformation">The log information.</param>
@@ -69,6 +72,9 @@ namespace WebGrease
             this.HasExtendedErrorHandler = logExtendedError != null;
         }
 
+        /// <summary>The error happened event handler.</summary>
+        public event EventHandler ErrorOccurred;
+
         /// <summary>Gets or sets a value indicating whether treat warnings as errors.</summary>
         public bool TreatWarningsAsErrors { get; set; }
 
@@ -96,7 +102,10 @@ namespace WebGrease
             }
             else if (this.warning != null)
             {
-                this.warning(message);
+                lock (MessageLockObject)
+                {
+                    this.warning(message);
+                }
             }
         }
 
@@ -118,7 +127,10 @@ namespace WebGrease
             }
             else if (this.extendedWarning != null)
             {
-                this.extendedWarning(subcategory, errorCode, helpKeyword, file, lineNumber, columnNumber, endLineNumber, endColumnNumber, message);
+                lock (MessageLockObject)
+                {
+                    this.extendedWarning(subcategory, errorCode, helpKeyword, file, lineNumber, columnNumber, endLineNumber, endColumnNumber, message);
+                }
             }
         }
 
@@ -129,7 +141,10 @@ namespace WebGrease
             this.ErrorHasOccurred();
             if (this.errorMessage != null)
             {
-                this.errorMessage(message);
+                lock (MessageLockObject)
+                {
+                    this.errorMessage(message);
+                }
             }
         }
 
@@ -143,20 +158,26 @@ namespace WebGrease
             var bwe = exception as BuildWorkflowException;
             if (bwe != null && this.extendedError != null)
             {
-                this.extendedError(
-                    bwe.Subcategory,
-                    bwe.ErrorCode,
-                    bwe.HelpKeyword,
-                    bwe.File,
-                    bwe.LineNumber,
-                    bwe.ColumnNumber,
-                    bwe.EndLineNumber,
-                    bwe.EndColumnNumber,
-                    bwe.Message);
+                lock (MessageLockObject)
+                {
+                    this.extendedError(
+                        bwe.Subcategory,
+                        bwe.ErrorCode,
+                        bwe.HelpKeyword,
+                        bwe.File,
+                        bwe.LineNumber,
+                        bwe.ColumnNumber,
+                        bwe.EndLineNumber,
+                        bwe.EndColumnNumber,
+                        bwe.Message);
+                }
             }
             else if (this.error != null)
             {
-                this.error(exception, customMessage, file);
+                lock (MessageLockObject)
+                {
+                    this.error(exception, customMessage, file);
+                }
             }
         }
 
@@ -175,7 +196,10 @@ namespace WebGrease
             if (this.extendedError != null)
             {
                 this.ErrorHasOccurred();
-                this.extendedError(subcategory, errorCode, helpKeyword, file, lineNumber, columnNumber, endLineNumber, endColumnNumber, message);
+                lock (MessageLockObject)
+                {
+                    this.extendedError(subcategory, errorCode, helpKeyword, file, lineNumber, columnNumber, endLineNumber, endColumnNumber, message);
+                }
             }
         }
 
@@ -184,7 +208,10 @@ namespace WebGrease
         {
             if (this.ErrorOccurred != null)
             {
-                this.ErrorOccurred.Invoke(this, EventArgs.Empty);
+                lock (MessageLockObject)
+                {
+                    this.ErrorOccurred.Invoke(this, EventArgs.Empty);
+                }
             }
         }
     }

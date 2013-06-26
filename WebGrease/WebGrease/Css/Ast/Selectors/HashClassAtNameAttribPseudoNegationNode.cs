@@ -24,45 +24,52 @@ namespace WebGrease.Css.Ast.Selectors
         /// [ HASH | class | atname | attrib | pseudo ]</summary>
         /// <param name="hash">The hash.</param>
         /// <param name="cssClass">The css Class.</param>
+        /// <param name="replacementToken">The replacement token</param>
         /// <param name="atName">The at name selector.</param>
         /// <param name="attribNode">The attrib Node.</param>
         /// <param name="pseudoNode">The pseudo Node.</param>
         /// <param name="negationNode">The negation Node.</param>
-        public HashClassAtNameAttribPseudoNegationNode(string hash, string cssClass, string atName, AttribNode attribNode, PseudoNode pseudoNode, NegationNode negationNode)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Really needs refactoring, questioning if we even need all those checks.")]
+        public HashClassAtNameAttribPseudoNegationNode(string hash, string cssClass, string replacementToken, string atName, AttribNode attribNode, PseudoNode pseudoNode, NegationNode negationNode)
         {
+            // TODO: RTUIT: Maybe remove this and code like this in non-debug mode, seems this only happens when our parser/lexer is invalid?
+            // At least simplify this logic.
             if (!string.IsNullOrWhiteSpace(hash))
             {
-                if (!string.IsNullOrWhiteSpace(cssClass) || !string.IsNullOrWhiteSpace(atName) || attribNode != null || pseudoNode != null || negationNode != null)
+                if (!string.IsNullOrWhiteSpace(cssClass) || !string.IsNullOrWhiteSpace(atName) || !string.IsNullOrWhiteSpace(replacementToken) || attribNode != null || pseudoNode != null || negationNode != null)
                 {
                     throw new AstException(ExceptionMessage);
                 }
             }
-
-            if (!string.IsNullOrWhiteSpace(cssClass))
+            else if (!string.IsNullOrWhiteSpace(cssClass))
+            {
+                if (!string.IsNullOrWhiteSpace(replacementToken) || !string.IsNullOrWhiteSpace(atName) || attribNode != null || pseudoNode != null || negationNode != null)
+                {
+                    throw new AstException(ExceptionMessage);
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(replacementToken))
             {
                 if (!string.IsNullOrWhiteSpace(atName) || attribNode != null || pseudoNode != null || negationNode != null)
                 {
                     throw new AstException(ExceptionMessage);
                 }
             }
-
-            if (!string.IsNullOrWhiteSpace(atName))
+            else if (!string.IsNullOrWhiteSpace(atName))
             {
                 if (attribNode != null || pseudoNode != null || negationNode != null)
                 {
                     throw new AstException(ExceptionMessage);
                 }
             }
-
-            if (attribNode != null)
+            else if (attribNode != null)
             {
                 if (pseudoNode != null || negationNode != null)
                 {
                     throw new AstException(ExceptionMessage);
                 }
             }
-
-            if (pseudoNode != null)
+            else if (pseudoNode != null)
             {
                 if (negationNode != null)
                 {
@@ -71,6 +78,7 @@ namespace WebGrease.Css.Ast.Selectors
             }
 
             this.Hash = hash;
+            this.ReplacementToken = replacementToken;
             this.CssClass = cssClass;
             this.AtName = atName;
             this.AttribNode = attribNode;
@@ -80,6 +88,9 @@ namespace WebGrease.Css.Ast.Selectors
 
         /// <summary>Gets the hash.</summary>
         public string Hash { get; private set; }
+
+        /// <summary>Gets the replacement token.</summary>
+        public string ReplacementToken { get; private set; }
 
         /// <summary>Gets the Css Class.</summary>
         public string CssClass { get; private set; }

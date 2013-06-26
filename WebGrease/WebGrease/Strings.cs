@@ -21,6 +21,15 @@ namespace WebGrease
         /// <value>The CSS string.</value>
         internal const string Css = "css";
 
+        /// <summary>The dpi resource pivot key.</summary>
+        internal const string DpiResourcePivotKey = "dpi";
+
+        /// <summary>The themes resource pivot key.</summary>
+        internal const string ThemesResourcePivotKey = "themes";
+
+        /// <summary>The locales resource pivot key.</summary>
+        internal const string LocalesResourcePivotKey = "locales";
+
         /// <summary>
         /// Gets the CSS filter.
         /// </summary>

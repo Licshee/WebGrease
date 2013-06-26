@@ -9,12 +9,15 @@ namespace WebGrease
     using System;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
+    using System.Drawing;
+    using System.Drawing.Imaging;
     using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading;
+    using System.Threading.Tasks;
 
     using WebGrease.Activities;
     using WebGrease.Configuration;
@@ -27,6 +30,7 @@ namespace WebGrease
     /// Only very task specific values should be passed separately.
     /// It also contains all global functionality, like measuring, logging and caching.
     /// </summary>
+    [SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "Integral to all operations, expected to have lots of coupling.")]
     public class WebGreaseContext : IWebGreaseContext
     {
         /// <summary>The id parts delimiter.</summary>
@@ -36,9 +40,6 @@ namespace WebGrease
 
         /// <summary>The cached file hashes</summary>
         private static readonly IDictionary<string, Tuple<DateTime, long, string>> CachedFileHashes = new Dictionary<string, Tuple<DateTime, long, string>>(StringComparer.OrdinalIgnoreCase);
-
-        /// <summary>The file hash lock.</summary>
-        private static readonly object CachedFileHashLock = new object();
 
         /// <summary>The md5 hasher</summary>
         private static readonly ThreadLocal<MD5CryptoServiceProvider> Hasher = new ThreadLocal<MD5CryptoServiceProvider>(() => new MD5CryptoServiceProvider());
@@ -55,6 +56,9 @@ namespace WebGrease
 
         /// <summary>Per session in memory cache of available files.</summary>
         private readonly IDictionary<string, IDictionary<string, string>> availableFileCollections = new Dictionary<string, IDictionary<string, string>>();
+
+        /// <summary>The threaded measure results.</summary>
+        private readonly List<KeyValuePair<string, IEnumerable<TimeMeasureResult>>> threadedMeasureResults = new List<KeyValuePair<string, IEnumerable<TimeMeasureResult>>>();
 
         #endregion
 
@@ -73,6 +77,12 @@ namespace WebGrease
                 parentContext.Log.TreatWarningsAsErrors = configuration.Global.TreatWarningsAsErrors == true;
             }
 
+            var parentWebGreaseContext = parentContext as WebGreaseContext;
+            if (parentWebGreaseContext != null)
+            {
+                this.threadedMeasureResults = parentWebGreaseContext.threadedMeasureResults;
+            }
+
             this.Initialize(
                 configuration,
                 parentContext.Log,
@@ -85,14 +95,21 @@ namespace WebGrease
         /// <summary>Initializes a new instance of the <see cref="WebGreaseContext"/> class. The web grease context.</summary>
         /// <param name="configuration">The configuration</param>
         /// <param name="logManager">The log Manager.</param>
-        public WebGreaseContext(WebGreaseConfiguration configuration, LogManager logManager)
+        /// <param name="parentCacheSection">The parent Cache Section.</param>
+        /// <param name="preprocessingManager">The preprocessing Manager.</param>
+        public WebGreaseContext(WebGreaseConfiguration configuration, LogManager logManager, ICacheSection parentCacheSection = null, PreprocessingManager preprocessingManager = null)
         {
             var runStartTime = DateTimeOffset.Now;
             configuration.Validate();
             var timeMeasure = configuration.Measure ? new TimeMeasure() as ITimeMeasure : new NullTimeMeasure();
-            var cacheManager = configuration.CacheEnabled ? new CacheManager(configuration, logManager) as ICacheManager : new NullCacheManager();
-            var preprocessingManager = new PreprocessingManager(configuration, logManager, timeMeasure);
-            this.Initialize(configuration, logManager, cacheManager, preprocessingManager, runStartTime, timeMeasure);
+            var cacheManager = configuration.CacheEnabled ? new CacheManager(configuration, logManager, parentCacheSection) as ICacheManager : new NullCacheManager();
+            this.Initialize(
+                configuration,
+                logManager,
+                cacheManager,
+                preprocessingManager != null ? new PreprocessingManager(preprocessingManager) : new PreprocessingManager(configuration, logManager, timeMeasure),
+                runStartTime,
+                timeMeasure);
         }
 
         /// <summary>Initializes a new instance of the <see cref="WebGreaseContext"/> class. The web grease context.</summary>
@@ -130,6 +147,15 @@ namespace WebGrease
         /// <summary>Gets the session start time.</summary>
         public DateTimeOffset SessionStartTime { get; private set; }
 
+        /// <summary>Gets the threaded measure results.</summary>
+        public IEnumerable<KeyValuePair<string, IEnumerable<TimeMeasureResult>>> ThreadedMeasureResults
+        {
+            get
+            {
+                return this.threadedMeasureResults;
+            }
+        }
+
         #endregion
 
         #region Public Methods and Operators
@@ -163,14 +189,14 @@ namespace WebGrease
         }
 
         /// <summary>The temporary ignore.</summary>
-        /// <param name="contentPivot">The content Pivot.</param>
+        /// <param name="resourcePivotKey">The content Pivot.</param>
         /// <returns>The <see cref="bool"/>.</returns>
-        public bool TemporaryIgnore(ContentPivot contentPivot)
+        public bool TemporaryIgnore(IEnumerable<ResourcePivotKey> resourcePivotKey)
         {
             return
                 this.Configuration != null
                 && this.Configuration.Overrides != null
-                && this.Configuration.Overrides.ShouldIgnore(contentPivot);
+                && this.Configuration.Overrides.ShouldIgnore(resourcePivotKey);
         }
 
         /// <summary>The clean cache.</summary>
@@ -238,6 +264,25 @@ namespace WebGrease
             return this.SectionedAction(SectionIdParts.ContentHash).Execute(() => ComputeContentHash(value ?? string.Empty));
         }
 
+        /// <summary>The get bitmap hash.</summary>
+        /// <param name="bitmap">The bitmap.</param>
+        /// <param name="format"></param>
+        /// <returns>The <see cref="string"/>.</returns>
+        public string GetBitmapHash(Bitmap bitmap, ImageFormat format)
+        {
+            return this.SectionedAction(SectionIdParts.BitmapHash).Execute(() => ComputeBitmapHash(bitmap, format));
+        }
+
+        private static string ComputeBitmapHash(Bitmap bitmap, ImageFormat format)
+        {
+            using (var ms = new MemoryStream())
+            {
+                bitmap.Save(ms, format);
+                ms.Seek(0, SeekOrigin.Begin);
+                return BytesToHash(Hasher.Value.ComputeHash(ms));
+            }
+        }
+
         /// <summary>Gets the md5 hash for the content file.</summary>
         /// <param name="contentItem">The content file.</param>
         /// <returns>The MD5 hash.</returns>
@@ -252,38 +297,41 @@ namespace WebGrease
         /// <returns>The MD5 hash.</returns>
         public string GetFileHash(string filePath)
         {
+            string hash = null;
             var fi = new FileInfo(filePath);
-            if (!fi.Exists)
+            Safe.Lock(CachedFileHashes, () =>
             {
-                throw new FileNotFoundException("Could not find the file to create a hash for", filePath);
-            }
+                if (!fi.Exists)
+                {
+                    throw new FileNotFoundException("Could not find the file to create a hash for", filePath);
+                }
 
-            var uniqueId = fi.FullName;
+                var uniqueId = fi.FullName;
 
-            string hash;
-            if (this.sessionCachedFileHashes.TryGetValue(uniqueId, out hash))
-            {
-                // Found in current session cache, just return.
-                return hash;
-            }
+                if (this.sessionCachedFileHashes.TryGetValue(uniqueId, out hash))
+                {
+                    // Found in current session cache, just return.
+                    return;
+                }
 
-            lock (CachedFileHashLock)
-            {
                 Tuple<DateTime, long, string> cachedFileHash;
                 CachedFileHashes.TryGetValue(uniqueId, out cachedFileHash);
 
                 if (cachedFileHash != null && cachedFileHash.Item1 == fi.LastWriteTimeUtc && cachedFileHash.Item2 == fi.Length)
                 {
-                    // found in static cache, between sessions, and is up to dat, return.
-                    return cachedFileHash.Item3;
+                    // found in static cache, between sessions, and is up to date return.
+                    hash = cachedFileHash.Item3;
+                    return;
                 }
 
                 // either new, or has changed, recompute, and add to cached file hash
-                var computedFileHash = ComputeFileHash(fi.FullName);
-                CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, computedFileHash);
-                this.sessionCachedFileHashes[uniqueId] = computedFileHash;
-                return computedFileHash;
-            }
+                hash = ComputeFileHash(fi.FullName);
+
+                CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, hash);
+                this.sessionCachedFileHashes[uniqueId] = hash;
+            });
+
+            return hash;
         }
 
         /// <summary>Makes the path relative to the application root.</summary>
@@ -342,21 +390,13 @@ namespace WebGrease
                     sourceFile = Guid.NewGuid().ToString().Replace("-", string.Empty);
                 }
 
-                if (sourceContentItem.Pivots != null)
+                if (sourceContentItem.ResourcePivotKeys != null)
                 {
-                    var firstPivot = sourceContentItem.Pivots.FirstOrDefault();
+                    var firstPivot = sourceContentItem.ResourcePivotKeys.FirstOrDefault();
                     if (firstPivot != null)
                     {
                         var extension = Path.GetExtension(sourceFile);
-                        if (!firstPivot.Locale.IsNullOrWhitespace())
-                        {
-                            sourceFile = Path.ChangeExtension(sourceFile, "." + firstPivot.Locale + extension);
-                        }
-
-                        if (!firstPivot.Theme.IsNullOrWhitespace())
-                        {
-                            sourceFile = Path.ChangeExtension(sourceFile, "." + firstPivot.Theme + extension);
-                        }
+                        sourceFile = Path.ChangeExtension(sourceFile, "." + firstPivot + extension);
                     }
                 }
             }
@@ -369,6 +409,60 @@ namespace WebGrease
 
             sourceContentItem.WriteTo(sourceFile);
             return sourceFile;
+        }
+
+        /// <summary>The parallel for each call, that ensures valid multi threaded opeartions for webgrease calls.</summary>
+        /// <param name="idParts">The id parts.</param>
+        /// <param name="items">The items.</param>
+        /// <param name="parallelAction">The parallel action.</param>
+        /// <param name="serialAction">The serial action.</param>
+        /// <typeparam name="T">The type of items</typeparam>
+        public void ParallelForEach<T>(Func<T, string[]> idParts, IEnumerable<T> items, Func<IWebGreaseContext, T, ParallelLoopState, bool> parallelAction, Func<IWebGreaseContext, T, bool> serialAction = null)
+        {
+            var id = idParts(default(T));
+            this.SectionedAction(id).Execute(() =>
+            {
+                var serialLock = new object();
+                var parallelForEachItems = new List<Tuple<IWebGreaseContext, DelayedLogManager, T>>();
+                var done = 0;
+                foreach (var item in items)
+                {
+                    // TODO: Better name then item ToString?
+                    var delayedLogManager = new DelayedLogManager(this.Log, item.ToString());
+                    var threadContext = new WebGreaseContext(new WebGreaseConfiguration(this.Configuration), delayedLogManager.LogManager, this.Cache.CurrentCacheSection, this.Preprocessing);
+
+                    var success = true;
+                    if (serialAction != null)
+                    {
+                        success = serialAction(threadContext, item);
+                    }
+
+                    if (success)
+                    {
+                        parallelForEachItems.Add(new Tuple<IWebGreaseContext, DelayedLogManager, T>(threadContext, delayedLogManager, item));
+                    }
+                }
+
+                Parallel.ForEach(
+                    parallelForEachItems,
+                    (item, state) =>
+                    {
+                        var sectionId = ToStringId(idParts(item.Item3));
+                        parallelAction(item.Item1, item.Item3, state);
+                        var measureResult = item.Item1.Measure.GetResults();
+                        Safe.Lock(serialLock, () =>
+                        {
+                            this.threadedMeasureResults.AddRange(item.Item1.ThreadedMeasureResults);
+                            this.threadedMeasureResults.Add(new KeyValuePair<string, IEnumerable<TimeMeasureResult>>(sectionId, measureResult));
+                            item.Item2.Flush();
+                            done++;
+                            if (done == parallelForEachItems.Count - 1)
+                            {
+                                parallelForEachItems.ForEach(i => i.Item2.Flush());
+                            }
+                        });
+                    });
+            });
         }
 
         #endregion

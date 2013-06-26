@@ -5,9 +5,8 @@
 // --------------------------------------------------------------------------------------------------------------------
 namespace WebGrease
 {
+    using System;
     using System.Collections.Generic;
-
-    using WebGrease.Configuration;
 
     /// <summary>The null cache manager.</summary>
     internal class NullCacheManager : ICacheManager
@@ -16,6 +15,9 @@ namespace WebGrease
 
         /// <summary>The empty cache section.</summary>
         internal static readonly ICacheSection EmptyCacheSection = new NullCacheSection();
+
+        /// <summary>The empty read only cache sections.</summary>
+        private static readonly Dictionary<string, ReadOnlyCacheSection> EmptyReadOnlyCacheSections = new Dictionary<string, ReadOnlyCacheSection>();
 
         #endregion
 
@@ -31,9 +33,15 @@ namespace WebGrease
         }
 
         /// <summary>Gets the loaded cache sections.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Justification = "Null code")]
-        public IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections { get; private set; }
+        public IDictionary<string, ReadOnlyCacheSection> LoadedCacheSections
+        {
+            get
+            {
+                return EmptyReadOnlyCacheSections;
+            }
+        }
 
+        /// <summary>Gets the root cache path for this caching session.</summary>
         public string RootPath
         {
             get
@@ -47,12 +55,10 @@ namespace WebGrease
         #region Public Methods and Operators
 
         /// <summary>Begins a new cache section.</summary>
-        /// <param name="category">The category.</param>
-        /// <param name="contentItem">The result file.</param>
-        /// <param name="settings">The settings.</param>
-        /// <param name="cacheVaryByFileSet">The cache Vary By File Set.</param>
+        /// <param name="webGreaseSectionKey">The web Grease Section Key.</param>
+        /// <param name="autoLoad">The auto Load.</param>
         /// <returns>The <see cref="ICacheSection"/>.</returns>
-        public ICacheSection BeginSection(string category, ContentItem contentItem = null, object settings = null, IFileSet cacheVaryByFileSet = null)
+        public ICacheSection BeginSection(WebGreaseSectionKey webGreaseSectionKey, bool autoLoad = true)
         {
             return EmptyCacheSection;
         }
@@ -88,6 +94,11 @@ namespace WebGrease
         /// <param name="contentItem">The content file.</param>
         /// <returns>The cache file path.</returns>
         public string StoreInCache(string cacheCategory, ContentItem contentItem)
+        {
+            return null;
+        }
+
+        public IDisposable SingleUseLock()
         {
             return null;
         }

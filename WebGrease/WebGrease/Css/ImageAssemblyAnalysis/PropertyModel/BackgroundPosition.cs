@@ -149,12 +149,48 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <summary>
         /// Gets the horizontal term node
         /// </summary>
-        internal TermNode XTermNode { get; private set; }
+        private TermNode XTermNode { get; set; }
 
         /// <summary>
         /// Gets the vertical term node
         /// </summary>
-        internal TermNode YTermNode { get; private set; }
+        private TermNode YTermNode { get; set; }
+
+        /// <summary>Adds a node with new updatedX, updatedY to specify the background position</summary>
+        /// <param name="updatedX">The updated X</param>
+        /// <param name="updatedY">The updated Y</param>
+        /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
+        /// <param name="outputUnit">The output init (px/em/rem) </param>
+        /// <param name="outputUnitFactor">The factor which which to multiple the px value to get the output unit.</param>
+        /// <returns>The declaration node</returns>
+        internal static DeclarationNode CreateNewDeclaration(float? updatedX, float? updatedY, float webGreaseBackgroundDpi, string outputUnit, double outputUnitFactor)
+        {
+            if (updatedX == null || (updatedX == 0 && updatedY == 0))
+            {
+                return null;
+            }
+
+            // Create a new term for coordinate x
+            var calcX = (float?)Math.Round(((float)updatedX) * outputUnitFactor / webGreaseBackgroundDpi, 3);
+
+            var termNodeX = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(outputUnit), null, null, null);
+
+            var termWithOperatorNodes = new List<TermWithOperatorNode>();
+
+            // Create a new term with operator for coordinate y
+            if (updatedY != null && updatedY != 0)
+            {
+                var calcY = (float?)Math.Round(((float)updatedY) * outputUnitFactor / webGreaseBackgroundDpi, 3);
+                var termNodeY = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(outputUnit), null, null, null);
+                termWithOperatorNodes.Add(new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, termNodeY));
+            }
+
+            // Create a new expression
+            var expressionNode = new ExprNode(termNodeX, termWithOperatorNodes.AsReadOnly());
+
+            // Create a new declaration node
+            return new DeclarationNode(ImageAssembleConstants.BackgroundPosition, expressionNode, null);
+        }
 
         /// <summary>Adds the missing x, y to specify the background position</summary>
         /// <param name="updatedX">The updated X</param>
@@ -165,9 +201,9 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="indexY">The index at which Y should be inserted</param>
         /// <param name="newTermsWithOperators">The updated terms</param>
         /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
-        internal void AddingMissingXAndY(float? updatedX, float? updatedY, bool isXUpdated, bool isYUpdated, int indexX, int indexY, List<TermWithOperatorNode> newTermsWithOperators, double webGreaseBackgroundDpi)
+        internal void AddingMissingXAndY(float? updatedX, float? updatedY, bool isXUpdated, bool isYUpdated, int indexX, int indexY, List<TermWithOperatorNode> newTermsWithOperators, float webGreaseBackgroundDpi)
         {
-             // Per Css 2.1 - If only one value is specified, the second value is assumed to be 'center'
+            // Per Css 2.1 - If only one value is specified, the second value is assumed to be 'center'
             string operatorX = null;
             string operatorY = null;
 
@@ -197,42 +233,6 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 // Appends y just after the index where x coordinate was inserted.
                 newTermsWithOperators.Insert(indexY, new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, new TermNode(operatorY, finalY, null, null, null)));
             }
-        }
-
-        /// <summary>Adds a node with new updatedX, updatedY to specify the background position</summary>
-        /// <param name="updatedX">The updated X</param>
-        /// <param name="updatedY">The updated Y</param>
-        /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
-        /// <param name="outputUnit">The output init (px/em/rem) </param>
-        /// <param name="outputUnitFactor">The factor which which to multiple the px value to get the output unit.</param>
-        /// <returns>The declaration node</returns>
-        internal static DeclarationNode CreateNewDeclaration(float? updatedX, float? updatedY, double webGreaseBackgroundDpi, string outputUnit, double outputUnitFactor)
-        {
-            if (updatedX == null || (updatedX == 0 && updatedY == 0))
-            {
-                return null;
-            }
-
-            // Create a new term for coordinate x
-            var calcX = (float?)Math.Round(((double)updatedX) * outputUnitFactor / webGreaseBackgroundDpi, 3);
-
-            var termNodeX = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(outputUnit), null, null, null);
-
-            var termWithOperatorNodes = new List<TermWithOperatorNode>();
-
-            // Create a new term with operator for coordinate y
-            if (updatedY != null && updatedY != 0)
-            {
-                var calcY = (float?)Math.Round(((double)updatedY) * outputUnitFactor / webGreaseBackgroundDpi, 3);
-                var termNodeY = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(outputUnit), null, null, null);
-                termWithOperatorNodes.Add(new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, termNodeY));
-            }
-
-            // Create a new expression
-            var expressionNode = new ExprNode(termNodeX, termWithOperatorNodes.AsReadOnly());
-
-            // Create a new declaration node
-            return new DeclarationNode(ImageAssembleConstants.BackgroundPosition, expressionNode, null);
         }
 
         /// <summary>Verify that both the horizontal and vertical units are specified in px units</summary>
@@ -329,6 +329,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                         this.AssignY(termNode, null, SignInteger, Source.Bottom);
                         break;
                     default:
+                        // No default code since all possible enum values are being handled above.
                         break;
                 }
             }
@@ -400,7 +401,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="updatedX">The new X position</param>
         /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
         /// <returns>Returns true if term is updated</returns>
-        internal bool UpdateTermForX(TermNode termNode, out TermNode updatedTermNode, float? updatedX, double webGreaseBackgroundDpi)
+        internal bool UpdateTermForX(TermNode termNode, out TermNode updatedTermNode, float? updatedX, float webGreaseBackgroundDpi)
         {
             if (termNode == this.XTermNode)
             {
@@ -437,7 +438,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="updatedY">The new Y position</param>
         /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
         /// <returns>Returns true if term is updated</returns>
-        internal bool UpdateTermForY(TermNode termNode, out TermNode updatedTermNode, float? updatedY, double webGreaseBackgroundDpi)
+        internal bool UpdateTermForY(TermNode termNode, out TermNode updatedTermNode, float? updatedY, float webGreaseBackgroundDpi)
         {
             if (termNode == this.YTermNode)
             {
@@ -478,7 +479,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
         /// <param name="updatedY">The updated y</param>
         /// <param name="webGreaseBackgroundDpi">The webgrease background dpi to use</param>
         /// <returns>The new declaration node with updated values</returns>
-        internal DeclarationNode UpdateBackgroundPositionNode(float? updatedX, float? updatedY, double webGreaseBackgroundDpi)
+        internal DeclarationNode UpdateBackgroundPositionNode(float? updatedX, float? updatedY, float webGreaseBackgroundDpi)
         {
             if (this.DeclarationNode == null)
             {

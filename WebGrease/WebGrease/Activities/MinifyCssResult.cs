@@ -14,7 +14,7 @@ namespace WebGrease.Activities
         /// <param name="css">The css.</param>
         /// <param name="spritedImages">The sprited images.</param>
         /// <param name="hashedImages">The hashed images.</param>
-        public MinifyCssResult(ContentItem css, IEnumerable<ContentItem> spritedImages, IEnumerable<ContentItem> hashedImages)
+        public MinifyCssResult(IEnumerable<ContentItem> css, IEnumerable<ContentItem> spritedImages, IEnumerable<ContentItem> hashedImages)
         {
             this.Css = css;
             this.SpritedImages = spritedImages;
@@ -22,7 +22,7 @@ namespace WebGrease.Activities
         }
 
         /// <summary>Gets the css.</summary>
-        internal ContentItem Css { get; private set; }
+        internal IEnumerable<ContentItem> Css { get; private set; }
 
         /// <summary>Gets the sprited images.</summary>
         internal IEnumerable<ContentItem> SpritedImages { get; private set; }

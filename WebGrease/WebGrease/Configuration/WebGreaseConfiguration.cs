@@ -42,13 +42,14 @@ namespace WebGrease.Configuration
             this.ImageDirectoriesToHash = new List<string>();
             this.CssFileSets = new List<CssFileSet>();
             this.JSFileSets = new List<JSFileSet>();
-            this.DefaultLocales = new List<string>();
-            this.DefaultThemes = new List<string>();
+            this.DefaultDpi = new Dictionary<string, HashSet<float>>(StringComparer.OrdinalIgnoreCase);
             this.DefaultPreprocessing = new Dictionary<string, PreprocessingConfig>();
             this.DefaultJSMinification = new Dictionary<string, JsMinificationConfig>();
             this.DefaultSpriting = new Dictionary<string, CssSpritingConfig>();
             this.DefaultCssMinification = new Dictionary<string, CssMinificationConfig>();
             this.DefaultBundling = new Dictionary<string, BundlingConfig>();
+            this.DefaultCssResourcePivots = new ResourcePivotGroupCollection();
+            this.DefaultJsResourcePivots = new ResourcePivotGroupCollection();
             this.LoadedConfigurationFiles = new List<string>();
         }
 
@@ -67,6 +68,20 @@ namespace WebGrease.Configuration
         /// <param name="configurationFile">The configuration file.</param>
         internal WebGreaseConfiguration(WebGreaseConfiguration configuration, FileInfo configurationFile)
             : this(configurationFile, configuration.ConfigType, configuration.SourceDirectory, configuration.DestinationDirectory, configuration.LogsDirectory, configuration.ToolsTempDirectory, configuration.ApplicationRootDirectory, configuration.PreprocessingPluginPath)
+        {
+            this.CacheEnabled = configuration.CacheEnabled;
+            this.CacheRootPath = configuration.CacheRootPath;
+            this.CacheTimeout = configuration.CacheTimeout;
+            this.CacheUniqueKey = configuration.CacheUniqueKey;
+            this.Measure = configuration.Measure;
+            this.Overrides = configuration.Overrides;
+            this.ReportPath = configuration.ReportPath;
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="WebGreaseConfiguration"/> class.</summary>
+        /// <param name="configuration">The configuration.</param>
+        internal WebGreaseConfiguration(WebGreaseConfiguration configuration)
+            : this(configuration.ConfigType, configuration.SourceDirectory, configuration.DestinationDirectory, configuration.LogsDirectory, configuration.ToolsTempDirectory, configuration.ApplicationRootDirectory, configuration.PreprocessingPluginPath)
         {
             this.CacheEnabled = configuration.CacheEnabled;
             this.CacheRootPath = configuration.CacheRootPath;
@@ -112,9 +127,6 @@ namespace WebGrease.Configuration
         internal WebGreaseConfiguration(string configType, string sourceDirectory, string destinationDirectory, string logsDirectory, string toolsTempDirectory, string appRootDirectory = null, string preprocessingPluginPath = null)
             : this(configType, preprocessingPluginPath)
         {
-            Contract.Requires(!string.IsNullOrWhiteSpace(destinationDirectory));
-            Contract.Requires(!string.IsNullOrWhiteSpace(logsDirectory));
-
             this.SourceDirectory = sourceDirectory;
             this.DestinationDirectory = destinationDirectory;
             this.LogsDirectory = logsDirectory;
@@ -123,8 +135,15 @@ namespace WebGrease.Configuration
 
             this.IntermediateErrorDirectory = Path.Combine(this.ApplicationRootDirectory, "IntermediateErrorFiles");
 
-            Directory.CreateDirectory(destinationDirectory);
-            Directory.CreateDirectory(logsDirectory);
+            if (!string.IsNullOrWhiteSpace(destinationDirectory))
+            {
+                Directory.CreateDirectory(destinationDirectory);
+            }
+
+            if (!string.IsNullOrWhiteSpace(logsDirectory))
+            {
+                Directory.CreateDirectory(logsDirectory);
+            }
         }
 
         /// <summary>
@@ -213,6 +232,9 @@ namespace WebGrease.Configuration
         /// <summary>Gets or sets the value that determines if webgrease measures it tasks.</summary>
         internal bool Measure { get; set; }
 
+        /// <summary>Gets or sets the default output path format.</summary>
+        internal string DefaultOutputPathFormat { get; set; }
+
         /// <summary>
         /// Gets or sets the value that determines to use cache.
         /// </summary>
@@ -238,14 +260,17 @@ namespace WebGrease.Configuration
         /// <summary>Gets or sets the intermediate error directory.</summary>
         internal string IntermediateErrorDirectory { get; set; }
 
+        /// <summary>Gets or sets the dpi values</summary>
+        internal IDictionary<string, HashSet<float>> DefaultDpi { get; set; }
+
         /// <summary>Gets or sets the overrides.</summary>
         internal TemporaryOverrides Overrides { get; set; }
 
-        /// <summary>Gets or sets the default list of locales</summary>
-        private IList<string> DefaultLocales { get; set; }
+        /// <summary>Gets or sets the default resource pivots.</summary>
+        internal ResourcePivotGroupCollection DefaultCssResourcePivots { get; set; }
 
-        /// <summary>Gets or sets the default list of themes</summary>
-        private IList<string> DefaultThemes { get; set; }
+        /// <summary>Gets or sets the default resource pivots.</summary>
+        internal ResourcePivotGroupCollection DefaultJsResourcePivots { get; set; }
 
         /// <summary>Gets or sets the default JavaScript minification configuration</summary>
         private IDictionary<string, JsMinificationConfig> DefaultJSMinification { get; set; }
@@ -272,7 +297,7 @@ namespace WebGrease.Configuration
             if (!string.IsNullOrWhiteSpace(seperatedValues))
             {
                 // split it by semicolons, ignore empty entries, and add them to the list
-                foreach (var theme in seperatedValues.Split(Strings.SemicolonSeparator, StringSplitOptions.RemoveEmptyEntries))
+                foreach (var theme in seperatedValues.SafeSplitSemiColonSeperatedValue())
                 {
                     var trimmedValue = theme.Trim();
                     list.Add(action != null
@@ -383,13 +408,14 @@ namespace WebGrease.Configuration
                     new CssFileSet(
                         cssFileSetElement,
                         this.SourceDirectory,
-                        this.DefaultLocales,
                         this.DefaultCssMinification,
                         this.DefaultSpriting,
-                        this.DefaultThemes,
                         this.DefaultPreprocessing,
                         this.DefaultBundling,
+                        this.DefaultCssResourcePivots,
                         this.Global,
+                        this.DefaultOutputPathFormat,
+                        this.DefaultDpi,
                         configurationFile));
             }
 
@@ -399,11 +425,12 @@ namespace WebGrease.Configuration
                     new JSFileSet(
                         jsFileSetElement,
                         this.SourceDirectory,
-                        this.DefaultLocales,
                         this.DefaultJSMinification,
                         this.DefaultPreprocessing,
                         this.DefaultBundling,
+                        this.DefaultJsResourcePivots,
                         this.Global,
+                        this.DefaultOutputPathFormat,
                         configurationFile));
             }
         }
@@ -422,6 +449,8 @@ namespace WebGrease.Configuration
         /// <summary>Parses the settings xml element.</summary>
         /// <param name="settingsElement">The settings xml element.</param>
         /// <param name="configurationFile">The configuration file</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "Probably could use refactoring, but that would be a big change, todo for later.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Probably could use refactoring, but that would be a big change, todo for later.")]
         private void ParseSettings(XElement settingsElement, string configurationFile)
         {
             if (settingsElement == null)
@@ -430,11 +459,11 @@ namespace WebGrease.Configuration
             }
 
             ForEachConfigSourceElement(
-                settingsElement, 
-                configurationFile, 
+                settingsElement,
+                configurationFile,
                 (element, s) =>
                 {
-                    this.ParseSettings(element, s); 
+                    this.ParseSettings(element, s);
                     LoadedConfigurationFiles.Add(s);
                 });
 
@@ -456,8 +485,22 @@ namespace WebGrease.Configuration
                         AddSeperatedValues(this.ImageExtensions, settingValue);
                         break;
 
+                    case "Dpi":
+                        var dpi = settingValue.NullSafeAction(StringExtensions.SafeSplitSemiColonSeperatedValue)
+                            .Select(d => d.TryParseFloat())
+                            .Where(d => d != null)
+                            .Select(d => d.Value);
+
+                        var output = (string)settingElement.Attribute("output");
+                        this.DefaultDpi[output.AsNullIfWhiteSpace() ?? string.Empty] = new HashSet<float>(dpi);
+                        break;
+
                     case "TokensDirectory":
                         this.TokensDirectory = settingValue;
+                        break;
+
+                    case "OutputPathFormat":
+                        this.DefaultOutputPathFormat = settingValue;
                         break;
 
                     case "OverrideTokensDirectory":
@@ -466,14 +509,36 @@ namespace WebGrease.Configuration
 
                     case "Locales":
                         // get the default set of locales
-                        AddSeperatedValues(this.DefaultLocales, settingValue);
+                        this.DefaultCssResourcePivots.Set(
+                            Strings.LocalesResourcePivotKey,
+                            ResourcePivotApplyMode.ApplyAsStringReplace,
+                            settingValue.NullSafeAction(sv => sv.SafeSplitSemiColonSeperatedValue()));
+                        this.DefaultJsResourcePivots.Set(
+                            Strings.LocalesResourcePivotKey,
+                            ResourcePivotApplyMode.ApplyAsStringReplace,
+                            settingValue.NullSafeAction(sv => sv.SafeSplitSemiColonSeperatedValue()));
                         break;
 
                     case "Themes":
-                        // get the default set of locales
-                        AddSeperatedValues(this.DefaultThemes, settingValue);
+                        // get the default set of themes
+                        this.DefaultCssResourcePivots.Set(
+                            Strings.ThemesResourcePivotKey,
+                            ResourcePivotApplyMode.ApplyAsStringReplace,
+                            settingValue.NullSafeAction(sv => sv.SafeSplitSemiColonSeperatedValue()));
                         break;
 
+                    case "ResourcePivot":
+                        this.DefaultJsResourcePivots.Set(
+                            (string)settingElement.Attribute("key"),
+                            ((string)settingElement.Attribute("applyMode")).TryParseToEnum<ResourcePivotApplyMode>() ?? ResourcePivotApplyMode.ApplyAsStringReplace,
+                            ((string)settingElement).NullSafeAction(sv => sv.SafeSplitSemiColonSeperatedValue()));
+
+                        this.DefaultCssResourcePivots.Set(
+                            (string)settingElement.Attribute("key"),
+                            ((string)settingElement.Attribute("applyMode")).TryParseToEnum<ResourcePivotApplyMode>() ?? ResourcePivotApplyMode.ApplyAsStringReplace,
+                            ((string)settingElement).NullSafeAction(sv => sv.SafeSplitSemiColonSeperatedValue()));
+
+                        break;
                     case "Bundling":
                         // get and the default CSS minification configuration
                         this.DefaultBundling.AddNamedConfig(new BundlingConfig(settingElement));

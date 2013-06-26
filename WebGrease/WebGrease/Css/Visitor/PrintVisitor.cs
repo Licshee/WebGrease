@@ -352,6 +352,11 @@ namespace WebGrease.Css.Visitor
             {
                 _printerFormatter.Append(hashClassAtNameAttribPseudoNegationNode.AtName);
             }
+            else if (!string.IsNullOrWhiteSpace(hashClassAtNameAttribPseudoNegationNode.ReplacementToken))
+            {
+                // TODO: REPLACECSSTOKENONPRINT
+                _printerFormatter.Append(hashClassAtNameAttribPseudoNegationNode.ReplacementToken);
+            }
             else if (hashClassAtNameAttribPseudoNegationNode.AttribNode != null)
             {
                 hashClassAtNameAttribPseudoNegationNode.AttribNode.Accept(this);
@@ -562,6 +567,8 @@ namespace WebGrease.Css.Visitor
 
             // property ':'
             _printerFormatter.WriteIndent();
+            
+            // TODO: REPLACECSSTOKENONPRINT
             _printerFormatter.Append(declarationNode.Property);
             _printerFormatter.Append(CssConstants.Colon);
 
@@ -622,6 +629,11 @@ namespace WebGrease.Css.Visitor
             {
                 // append for: | STRING S* | IDENT S* | URI S*
                 _printerFormatter.Append(termNode.StringBasedValue);
+            }
+            else if (!string.IsNullOrWhiteSpace(termNode.ReplacementTokenBasedValue))
+            {
+                // TODO: REPLACECSSTOKENONPRINT
+                _printerFormatter.Append(termNode.ReplacementTokenBasedValue);
             }
             else if (!string.IsNullOrWhiteSpace(termNode.Hexcolor))
             {

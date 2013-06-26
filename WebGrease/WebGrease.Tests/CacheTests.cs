@@ -2,6 +2,8 @@
 
 namespace Microsoft.WebGrease.Tests
 {
+    using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Xml.Linq;
@@ -14,6 +16,7 @@ namespace Microsoft.WebGrease.Tests
     using global::WebGrease;
     using global::WebGrease.Activities;
     using global::WebGrease.Build;
+    using global::WebGrease.Configuration;
     using global::WebGrease.Extensions;
     using global::WebGrease.Tests;
 
@@ -41,7 +44,7 @@ namespace Microsoft.WebGrease.Tests
             });
 
             var lastImgPath = string.Empty;
-            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt)=>allPreExecute(wgt, "output_ih1"),
+            ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih1"),
                 buildTask =>
                 {
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.ImageHash));
@@ -59,7 +62,7 @@ namespace Microsoft.WebGrease.Tests
                     var imgPathNo = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_SomeOtherColor.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
                     Assert.IsNull(imgPathNo);
                 });
-            
+
             // new output path
             ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih2"),
                 buildTask =>
@@ -100,7 +103,7 @@ namespace Microsoft.WebGrease.Tests
 
             // Delete image source
             File.Delete(Path.Combine(testRoot, "input\\images\\core\\msnlogo\\MSN_Blue.gif"));
-            
+
             // Delete the static log as well, needs to because the build it is set to incremental.
             File.Delete(Path.Combine(testRoot, "output_ih2\\statics\\images_log.xml"));
             ExecuteBuildTask(TaskName, testRoot, ConfigType, (wgt) => allPreExecute(wgt, "output_ih2"),
@@ -109,7 +112,7 @@ namespace Microsoft.WebGrease.Tests
                     Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.ImageHash));
                     var imgPath = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Blue.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
                     Assert.IsNull(imgPath);
-                    
+
                     var imgPath2 = GetHashedFile(buildTask, "images", "/Images/Core/msnLogo/MSN_Green.gif", Path.Combine(buildTask.RootOutputPath, "sc\\css\\"));
                     Assert.IsNotNull(imgPath2);
                     Assert.IsTrue(File.Exists(imgPath2));
@@ -193,7 +196,7 @@ namespace Microsoft.WebGrease.Tests
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Spriting, SectionIdParts.Assembly), "Should be doing sprite assembling");
 
                         Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity));
-                        Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Parse));
+                        Assert.IsTrue(HasExecuted(buildTask, "CssParser", "Antlr"));
 
                         // Css
                         var outputscss = outputscss1 = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
@@ -246,7 +249,7 @@ namespace Microsoft.WebGrease.Tests
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.CssFileSet), "Second run should do nothing at all, but has processed a css file set.");
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.JsFileSet), "Second run should do nothing at all, but has processed a js file set.");
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Process));
-                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Parse));
+                Assert.IsFalse(HasExecuted(buildTask, "CssParser", "Antlr"));
                 var outputscss2 = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 var outputjs2 = GetOutputContent(buildTask, "js", "test1", "generic-generic");
 
@@ -261,7 +264,7 @@ namespace Microsoft.WebGrease.Tests
             {
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"));
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyJsActivity, SectionIdParts.Process));
-                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Parse));
+                Assert.IsFalse(HasExecuted(buildTask, "CssParser", "Antlr"));
 
                 var outputscss2 = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 var outputjs2 = GetOutputContent(buildTask, "js", "test1", "generic-generic");
@@ -366,7 +369,7 @@ namespace Microsoft.WebGrease.Tests
             File.WriteAllText(cssgenericgenericresxfile, File.ReadAllText(cssgenericgenericresxfile).Replace("<value>generic-generic</value>", "<value>generic-generic.updated</value>"));
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be css minifying again for the changed css.");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Process), "Should be css minifying again for the changed css.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsTrue(outputscss.Contains(".tokentest{background-image:url('locale:generic-generic.updated'),url('theme:theme1.updated')"));
             });
@@ -379,7 +382,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should run");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be running minifycss again for changed sass.");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Process), "Should be running minifycss again for changed sass.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsTrue(outputscss.Contains(".addedscss1"));
             });
@@ -391,7 +394,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should run");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be running minifycss again for changed sass.");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Process), "Should be running minifycss again for changed sass.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsTrue(outputscss.Contains(".addedimports3"));
             });
@@ -427,7 +430,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should run");
-                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should not be running minifycss again since it is the same as it was before we added it (2 actions above).");
+                Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Process), "Should not be running minifycss again since it is the same as it was before we added it (2 actions above).");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsFalse(outputscss.Contains(".imports2scss"));
             });
@@ -440,7 +443,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude"), "Sass should run");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be running minifycss again for changed sass.");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Process), "Should be running minifycss again for changed sass.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsTrue(outputscss.Contains(".test1includecss2a"));
             });
@@ -451,7 +454,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude"), "Sass should run");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be running minifycss again for changed sass.");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Process), "Should be running minifycss again for changed sass.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsTrue(outputscss.Contains(".test1includecssfile2"));
             });
@@ -463,7 +466,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude"), "Sass should run");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be running minifycss again for changed sass.");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Process), "Should be running minifycss again for changed sass.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsTrue(outputscss.Contains(".test1includecssfile3"));
             });
@@ -475,7 +478,7 @@ namespace Microsoft.WebGrease.Tests
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "WgInclude"), "Sass should run");
-                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity), "Should be running minifycss again for changed sass.");
+                Assert.IsTrue(HasExecuted(buildTask, SectionIdParts.MinifyCssActivity, SectionIdParts.Process), "Should be running minifycss again for changed sass.");
                 var outputscss = GetOutputContent(buildTask, "css", "test1", "generic-generic", "Theme1");
                 Assert.IsFalse(outputscss.Contains(".test1includecssfile3"));
                 Assert.IsFalse(outputscss.Contains(".test1includecssfile2"));
@@ -494,6 +497,15 @@ namespace Microsoft.WebGrease.Tests
 
         private static string GetOutputFile(WebGreaseTask postExecuteBuildTask, string type, string name, string locale, string theme = null)
         {
+            if (theme != null)
+            {
+                var hf = GetHashedFile(postExecuteBuildTask, type, "/" + type + "/msnblue/" + locale + "/" + theme + "/" + name + "." + type);
+                if (hf != null)
+                {
+                    return hf;
+                }
+            }
+
             var file = "/" + locale + "/" + type + "/";
             if (theme != null)
             {
@@ -532,6 +544,110 @@ namespace Microsoft.WebGrease.Tests
         private static bool HasExecuted(WebGreaseTask postExecuteBuildTask, int exactCount, params string[] idParts)
         {
             return postExecuteBuildTask.MeasureResults.Count(tm => tm.Name.Equals(string.Join(".", idParts))) == exactCount;
+        }
+
+        [TestMethod]
+        public void CacheMultiThreadedMinifyCssActivityTest()
+        {
+            var testRoot = GetTestRoot(@"WebGrease.Tests\CacheMultiThreadedMinifyCssActivityTest");
+
+            var fileTypeFilter = new[] { "*.png", "*.jpg", "*.gif" };
+            var config = new WebGreaseConfiguration(string.Empty, testRoot, testRoot, testRoot, testRoot, testRoot)
+                             {
+                                 CacheEnabled = true,
+                                 CacheRootPath = testRoot
+                             };
+
+            var context = new WebGreaseContext(config) as IWebGreaseContext;
+
+            var imageHasher = new FileHasherActivity(context)
+                                  {
+                                      DestinationDirectory = testRoot,
+                                      CreateExtraDirectoryLevelFromHashes = true,
+                                      ShouldPreserveSourceDirectoryStructure = false,
+                                      LogFileName = "image_log.xml",
+                                      FileType = FileTypes.Image,
+                                      FileTypeFilter = string.Join(";", fileTypeFilter)
+                                  };
+
+
+            var relativeFile = "landingPage.tmx.pc.ms.css";
+
+            var dpiValues = new List<float>();
+            var dpiResources = new Dictionary<string, IDictionary<string, string>>();
+            for (int i = 0; i < 5; i++)
+            {
+                var dpi = i / 10f;
+                dpiValues.Add(dpi);
+                var dpiName = EverythingActivity.DpiToResolutionName(dpi);
+                dpiResources.Add(dpiName, new Dictionary<string, string> { { "Dpi", "{0}".InvariantFormat(dpi) } });
+            }
+
+            var resourcePivotKeys = new List<ResourcePivotKey>();
+
+            var mergedResources = new Dictionary<string, IDictionary<string, IDictionary<string, string>>>();
+            var images = new[] { "image1.png", "image2.jpg", "image3.png", "image4.jpg" };
+            var images2 = new[] { "image5.jpg", "image6.jpg", "image7.png", "image8.png", "image9.png" };
+            var images3 = new[] { "image3.png", "image5.jpg", "image4.jpg", "image6.jpg" };
+
+            AddResource("ResourceA", resourcePivotKeys, mergedResources, images);
+            AddResource("ResourceB", resourcePivotKeys, mergedResources, images2);
+            AddResource("ResourceC", resourcePivotKeys, mergedResources, images3);
+
+            var absoluteFile = Path.Combine(testRoot, relativeFile);
+
+            var minifyCssActivity = new MinifyCssActivity(context)
+                                        {
+                                            SourceFile = absoluteFile,
+                                            ImagesOutputDirectory = testRoot,
+                                            Dpi = new HashSet<float>(dpiValues),
+                                            DpiResources = dpiResources,
+                                            MergedResources = mergedResources,
+                                            MissingImageUrl = "missingimage.png",
+                                            ImageDirectories = new[] { testRoot }.ToList(),
+                                            ImageExtensions = fileTypeFilter,
+                                            ShouldAssembleBackgroundImages = true,
+                                            ShouldMinify = true,
+                                            ShouldOptimize = true,
+                                            ShouldMergeMediaQueries = true,
+                                            ShouldExcludeProperties = true,
+                                            ShouldValidateForLowerCase = false
+                                        };
+
+            var cssContent = ContentItem.FromFile(absoluteFile, relativeFile, null, resourcePivotKeys.ToArray());
+            var cssResult = minifyCssActivity.Process(cssContent, imageHasher);
+            Assert.IsNotNull(cssResult);
+
+            Assert.IsNotNull(cssResult.Css);
+            Assert.AreNotEqual(cssResult.Css.Count(), 0);
+            Assert.IsFalse(cssResult.Css.Any(c => c == null));
+
+            Assert.IsNotNull(cssResult.HashedImages);
+            Assert.AreNotEqual(cssResult.HashedImages.Count(), 0);
+            Assert.IsFalse(cssResult.HashedImages.Any(c => c == null));
+
+            Assert.IsNotNull(cssResult.SpritedImages);
+            Assert.AreNotEqual(cssResult.SpritedImages.Count(), 0);
+            Assert.IsFalse(cssResult.SpritedImages.Any(c => c == null));
+        }
+
+        private static void AddResource(string groupKey, List<ResourcePivotKey> resourcePivotKeys, Dictionary<string, IDictionary<string, IDictionary<string, string>>> mergedResources, string[] images)
+        {
+            var resources = new Dictionary<string, IDictionary<string, string>>();
+            for (int i = 0; i < 4; i++)
+            {
+                var resourceName = groupKey + "{0}".InvariantFormat(i);
+                resourcePivotKeys.Add(new ResourcePivotKey(groupKey, resourceName));
+                resources.Add(
+                    resourceName,
+                    new Dictionary<string, string>
+                    {
+                        { groupKey + "Value", "{0}".InvariantFormat(i % 3) }, 
+                        { groupKey + "Image", images[i % (images.Length - 1)] }
+                    });
+            }
+
+            mergedResources.Add(groupKey, resources);
         }
 
         [TestMethod]
@@ -722,7 +838,7 @@ namespace Microsoft.WebGrease.Tests
             // TODO: Assert folder output1 == output2
         }
 
-        private static void DirectoryMatch(string path1, string path2, Func<string, string> logFileChange)
+        internal static void DirectoryMatch(string path1, string path2, Func<string, string> logFileChange)
         {
             foreach (var file1 in Directory.GetFiles(path1))
             {
@@ -787,13 +903,11 @@ namespace Microsoft.WebGrease.Tests
 
         private static void ExecuteBuildTask(string activity, string rootFolderForTest, string configType, Action<WebGreaseTask> preExecute, Action<WebGreaseTask> postExecute)
         {
+            var errors = new List<string>();
             var buildEngineMock = new Mock<IBuildEngine>();
             buildEngineMock
                 .Setup(bem => bem.LogErrorEvent(It.IsAny<BuildErrorEventArgs>()))
-                .Callback((BuildErrorEventArgs e) =>
-                    {
-                        throw new Exception("!!! [Error]:" + e.Message + " at line [" + e.LineNumber + "] of file [" + e.File + "]");
-                    });
+                .Callback((BuildErrorEventArgs e) => errors.Add("!!! [Error]:" + e.Message + " at line [" + e.LineNumber + "] of file [" + e.File + "]"));
 
             buildEngineMock
                 .Setup(bem => bem.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()))
@@ -834,6 +948,12 @@ namespace Microsoft.WebGrease.Tests
 
             var result = buildTask.Execute();
 
+
+            foreach (var error in errors)
+            {
+                Trace.Write(error);
+            }
+
             if (postExecute != null)
             {
                 postExecute(buildTask);
@@ -841,7 +961,7 @@ namespace Microsoft.WebGrease.Tests
 
             if (!result)
             {
-                Assert.Fail("No result.");
+                Assert.Fail("Failed, see test log for details.");
             }
         }
 
