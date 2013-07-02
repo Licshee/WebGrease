@@ -118,9 +118,16 @@ main
 //    [ [ ruleset | media | page | keyframes ] [ CDO S* | CDC S* ]* ]*
 //  ;
 styleSheet
-    : ((CHARSET_SYM STRING SEMICOLON)? styleimport* namespace* styleSheetrules*)
-    -> ^(STYLESHEET ^(CHARSET ^(STRINGBASEDVALUE STRING))? ^(IMPORTS styleimport*)? ^(NAMESPACES namespace*)? styleSheetrules*)
+    : ((CHARSET_SYM STRING SEMICOLON)? styleimport* namespace* styleSheetRulesOrComment*)
+    -> ^(STYLESHEET ^(CHARSET ^(STRINGBASEDVALUE STRING))? ^(IMPORTS styleimport*)? ^(NAMESPACES namespace*)? styleSheetRulesOrComment*)  
     ;
+
+///styleSheetRulesOrComment
+styleSheetRulesOrComment
+	: IMPORTANT_COMMENTS 
+	  | styleSheetrules
+	;
+	
 
 // import
 //  : IMPORT_SYM S*
@@ -236,8 +243,8 @@ unary_operator
 //  : IDENT S*
 //  ;
 property
-    : (STAR)? IDENT
-    -> ^(PROPERTY STAR? IDENT)
+    : (STAR)? IDENT IMPORTANT_COMMENTS*
+    -> ^(PROPERTY STAR? IDENT IMPORTANT_COMMENTS*)
     ;
 
 // ruleset
@@ -248,8 +255,9 @@ ruleset
     : selectors_group
     CURLY_BEGIN
     (declaration SEMICOLON?)*
+	IMPORTANT_COMMENTS*
     CURLY_END
-    -> ^(RULESET selectors_group ^(DECLARATIONS declaration*)?)
+    -> ^(RULESET selectors_group ^(DECLARATIONS declaration*)? IMPORTANT_COMMENTS*)
     ;
 
 // selectors_group
@@ -451,8 +459,8 @@ atname
 //  : property ':' S* expr prio?
 //  ;
 declaration
-    : property COLON expr prio?
-    -> ^(DECLARATION property expr prio?)
+    : IMPORTANT_COMMENTS* property COLON expr prio? 
+    -> ^(DECLARATION IMPORTANT_COMMENTS* property expr prio? )
     ;
 
 stringoruri
@@ -478,8 +486,8 @@ prio
 //  : term [ operator? term ]*
 //  ;
 expr
-    : term (termwithoperator)*
-    -> ^(EXPR term ^(TERMWITHOPERATORS termwithoperator*)?)
+    : IMPORTANT_COMMENTS* term (termwithoperator)* 
+    -> ^(EXPR IMPORTANT_COMMENTS* term ^(TERMWITHOPERATORS termwithoperator*)?)
     ;
 
 termwithoperator
@@ -488,21 +496,26 @@ termwithoperator
     ;
 
 term
-    : (unary_operator? (t = NUMBER | t = PERCENTAGE | t = LENGTH | t = RELATIVELENGTH | t = ANGLE | t = TIME | t = FREQ | t = RESOLUTION | t = SPEECH))
-    -> ^(TERM unary_operator? ^(NUMBERBASEDVALUE $t))
-    | URI
-    -> ^(TERM ^(URIBASEDVALUE URI))
-    | (exp = (MSIE_EXPRESSION { $exp = TrimMsieExpression($MSIE_EXPRESSION.text); }))
-    -> ^(TERM ^(STRINGBASEDVALUE $exp))
-    | IDENT
-    -> ^(TERM ^(IDENTBASEDVALUE IDENT))
-    | STRING
-    -> ^(TERM ^(STRINGBASEDVALUE STRING))
-    | hash
-    -> ^(TERM ^(HEXBASEDVALUE hash))
-    | function
-    -> ^(TERM function)
+    : (unary_operator? (t = NUMBER | t = PERCENTAGE | t = LENGTH | t = RELATIVELENGTH | t = ANGLE | t = TIME | t = FREQ | t = RESOLUTION | t = SPEECH) ) IMPORTANT_COMMENTS*
+    -> ^(TERM unary_operator? ^(NUMBERBASEDVALUE $t) IMPORTANT_COMMENTS*)
+    | URI IMPORTANT_COMMENTS*
+    -> ^(TERM ^(URIBASEDVALUE URI) IMPORTANT_COMMENTS*)
+    | (exp = (MSIE_EXPRESSION { $exp = TrimMsieExpression($MSIE_EXPRESSION.text); }))IMPORTANT_COMMENTS*
+    -> ^(TERM ^(STRINGBASEDVALUE $exp) IMPORTANT_COMMENTS*)
+    | IDENT IMPORTANT_COMMENTS*
+    -> ^(TERM ^(IDENTBASEDVALUE IDENT) IMPORTANT_COMMENTS*)
+    | STRING IMPORTANT_COMMENTS*
+    -> ^(TERM ^(STRINGBASEDVALUE STRING) IMPORTANT_COMMENTS*)
+    | hash IMPORTANT_COMMENTS*
+    -> ^(TERM ^(HEXBASEDVALUE hash) IMPORTANT_COMMENTS*)
+    | function IMPORTANT_COMMENTS*
+    -> ^(TERM function IMPORTANT_COMMENTS*)
     ;
+
+fragment number_based_value
+	: (t = NUMBER | t = PERCENTAGE | t = LENGTH | t = RELATIVELENGTH | t = ANGLE | t = TIME | t = FREQ | t = RESOLUTION | t = SPEECH) 
+	;
+
 
 hash
     : HASH_IDENT

@@ -185,6 +185,9 @@ namespace WebGrease.Css.Visitor
                                                          _printerFormatter.AppendLine(CssConstants.Semicolon);
                                                      }
                                                  });
+            //Visit Important CommentNodes 
+            rulesetNode.Comments.ForEach(comment => comment.Accept(this));
+
             _printerFormatter.DecrementIndentLevel();
 
             // End the declarations with a line
@@ -556,6 +559,12 @@ namespace WebGrease.Css.Visitor
                 return null;
             }
 
+            //importantComments first
+            foreach (var comment in declarationNode.Comments)
+            {
+                comment.Accept(this);
+            }
+
             // declaration
             // : property ':' S* expr prio?
             // ;
@@ -584,6 +593,12 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitExprNode(ExprNode exprNode)
         {
+            //comments
+            foreach (var comment in exprNode.Comments)
+            {
+                comment.Accept(this);
+            }
+
             // expr
             // : term [ operator? term ]*
             // ;
@@ -635,7 +650,23 @@ namespace WebGrease.Css.Visitor
                 termNode.FunctionNode.Accept(this);
             }
 
+            foreach (var comment in termNode.Comments)
+            {
+                comment.Accept(this);
+            }
+
             return termNode;
+        }
+
+        /// <summary>
+        /// The <see cref=" ImportantCommentNode"/> visit implementation
+        /// </summary>
+        /// <param name="commentNode">ImportantCommentNode to visit</param>
+        /// <returns>he modified AST node if modified otherwise the original node</returns>
+        public override AstNode VisitImportantCommentNode(ImportantCommentNode commentNode)
+        {
+            _printerFormatter.Append(commentNode.Text);
+            return base.VisitImportantCommentNode(commentNode);
         }
 
         /// <summary>The <see cref="TermWithOperatorNode"/> visit implementation</summary>

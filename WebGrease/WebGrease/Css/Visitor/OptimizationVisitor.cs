@@ -144,7 +144,7 @@ namespace WebGrease.Css.Visitor
 
             // Convert dictionary to list
             var resultDeclarations = targetDeclarations.Values.Cast<DeclarationNode>().ToList();
-            return new RulesetNode(destinationRuleset.SelectorsGroupNode, resultDeclarations.AsReadOnly());
+            return new RulesetNode(destinationRuleset.SelectorsGroupNode, resultDeclarations.AsReadOnly(),sourceRuleset.Comments);
         }
 
         /// <summary>The add declaration.</summary>
@@ -244,7 +244,7 @@ namespace WebGrease.Css.Visitor
 
             var dictionary = UniqueDeclarations(rulesetNode);
             var resultDeclarations = dictionary.Values.Cast<DeclarationNode>().ToList();
-            return new RulesetNode(rulesetNode.SelectorsGroupNode, resultDeclarations.AsReadOnly());
+            return new RulesetNode(rulesetNode.SelectorsGroupNode, resultDeclarations.AsReadOnly(), rulesetNode.Comments);
         }
 
         /// <summary>Gets merged node dictionary for the given stylesheet rule nodes.</summary>

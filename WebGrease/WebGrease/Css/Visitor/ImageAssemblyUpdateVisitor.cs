@@ -120,7 +120,7 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitRulesetNode(RulesetNode rulesetNode)
         {
-            return new RulesetNode(rulesetNode.SelectorsGroupNode, this.UpdateDeclarations(rulesetNode.Declarations, rulesetNode));
+            return new RulesetNode(rulesetNode.SelectorsGroupNode, this.UpdateDeclarations(rulesetNode.Declarations, rulesetNode), rulesetNode.Comments);
         }
 
         /// <summary>The <see cref="MediaNode"/> visit implementation</summary>
@@ -254,7 +254,7 @@ namespace WebGrease.Css.Visitor
         /// <returns>new declaration node</returns>
         private static DeclarationNode CreateDebugDeclarationComment(string propertyName, string propertyValue)
         {
-            return new DeclarationNode("/* " + propertyName, new ExprNode(new TermNode(string.Empty, null, propertyValue + "; */", null, null), null), string.Empty);
+            return new DeclarationNode("/* " + propertyName, new ExprNode(new TermNode(string.Empty, null, propertyValue + "; */", null, null, null), null, null), string.Empty, null);
         }
 
         /// <summary>Updates the list of declarations with the updated value from
@@ -446,11 +446,13 @@ namespace WebGrease.Css.Visitor
                 calcWidth.CssUnitValue(this.outputUnit),
                 null,
                 null,
+                null,
                 null);
 
             var heightTermNode = new TermNode(
                 calcHeight.UnaryOperator(),
                 calcHeight.CssUnitValue(this.outputUnit),
+                null,
                 null,
                 null,
                 null);
@@ -465,7 +467,8 @@ namespace WebGrease.Css.Visitor
                     ImageAssembleConstants.BackgroundSize,
                     new ExprNode(
                         widthTermNode,
-                        termWithOperatorNodes.ToSafeReadOnlyCollection()),
+                        termWithOperatorNodes.ToSafeReadOnlyCollection(), null),
+                        null,
                         null);
 
             return new[] 

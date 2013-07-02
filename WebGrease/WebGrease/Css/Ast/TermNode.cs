@@ -12,7 +12,10 @@
 
 namespace WebGrease.Css.Ast
 {
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using Visitor;
+
 
     /// <summary>term
     /// unary_operator?
@@ -27,7 +30,8 @@ namespace WebGrease.Css.Ast
         /// <param name="hexColor">Hexadecimal color code</param>
         /// <param name="functionNode">Function object</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "string", Justification = "Css value description.")]
-        public TermNode(string unaryOperator, string numberBasedValue, string stringBasedValue, string hexColor, FunctionNode functionNode)
+        public TermNode(string unaryOperator, string numberBasedValue, string stringBasedValue,
+            string hexColor, FunctionNode functionNode, ReadOnlyCollection<ImportantCommentNode> comments)
         {
             // Validity Checks
             // Besides the optional unary_operator, only one value can exist for the remaing arguments the rest need to be null
@@ -87,7 +91,11 @@ namespace WebGrease.Css.Ast
             this.StringBasedValue = stringBasedValue;
             this.Hexcolor = hexColor;
             this.FunctionNode = functionNode;
+            this.Comments = comments ?? (new List<ImportantCommentNode>()).AsReadOnly();
         }
+
+        public ReadOnlyCollection<ImportantCommentNode> Comments { get; private set; }
+
 
         /// <summary>
         /// Gets Unary Operatior

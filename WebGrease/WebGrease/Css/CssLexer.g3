@@ -299,9 +299,19 @@ WS
     : WS_FRAGMENT+ { $channel = Hidden; }
     ;
 
+fragment EMPTY_COMMENT 
+	: '/**/'
+	;
+
 COMMENTS
-    : '/*' .* '*/' { $channel = Hidden; }
+	options {greedy=false;}
+    : EMPTY_COMMENT { $channel = Hidden; }
+	| '/*' ~('!') (.)*  '*/' { $channel = Hidden; }
     ;
+
+IMPORTANT_COMMENTS
+	: '/*!' (.)*  '*/'
+	;
 
 fragment NMSTART
     : LETTER

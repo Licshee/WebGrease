@@ -1,0 +1,7 @@
+div
+{
+    color: white;	
+    background: red;	
+	/* regular comment */
+}
+/*! this is comment outside of ruleset*/

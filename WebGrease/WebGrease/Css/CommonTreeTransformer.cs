@@ -115,6 +115,10 @@ namespace WebGrease.Css
                 {
                     ruleSetMediaPageNodes.Add(CreateDocumentQueryNode(styleSheetChild));
                 }
+                else if (styleSheetChild.Type.Equals(CssParser.IMPORTANT_COMMENTS))
+                {
+                    ruleSetMediaPageNodes.Add(CreateStyleSheetRulesOrCommentNode(styleSheetChild));
+                }
             }
 
             return ruleSetMediaPageNodes.AsReadOnly();
@@ -159,6 +163,17 @@ namespace WebGrease.Css
                 return null;
             }).ToSafeReadOnlyCollection();
         }
+
+        /// <summary>
+        /// Create StyleSheetRulesOrCommentNode
+        /// </summary>
+        /// <param name="commentTree"> Common tree as a comment</param>
+        /// <returns>StyleSheetRulesOrCommentNode</returns>
+        private static StyleSheetRuleOrCommentNode CreateStyleSheetRulesOrCommentNode(CommonTree commentTree)
+        {
+            return new StyleSheetRuleOrCommentNode(new ImportantCommentNode(commentTree.Text), true);
+        }
+
 
         /// <summary>Creates the media query node.</summary>
         /// <param name="mediaQueryTree">The media query tree.</param>
@@ -218,7 +233,22 @@ namespace WebGrease.Css
 
             return new RulesetNode(
                 CreateSelectorsGroupNode(rulesetTree.GrandChildren(T(CssParser.SELECTORS_GROUP))),
-                CreateDeclarationNodes(rulesetTree.GrandChildren(T(CssParser.DECLARATIONS))).ToSafeReadOnlyCollection());
+                CreateDeclarationNodes(rulesetTree.GrandChildren(T(CssParser.DECLARATIONS))).ToSafeReadOnlyCollection(),
+                CreateImportantCommentNodes(rulesetTree));
+        }
+
+        private static ReadOnlyCollection<ImportantCommentNode> CreateImportantCommentNodes(CommonTree commonTree)
+        {
+            Contract.Requires(!commonTree.Equals(null));
+            List<ImportantCommentNode> comments = new List<ImportantCommentNode>();
+            foreach (var child in commonTree.Children)
+            {
+                if (child.Type.Equals(CssParser.IMPORTANT_COMMENTS))
+                {
+                    comments.Add(new ImportantCommentNode(child.Text));
+                }
+            }
+            return comments.AsReadOnly();
         }
 
         /// <summary>Creates the media nodes.</summary>
@@ -296,7 +326,7 @@ namespace WebGrease.Css
                 declaration => new DeclarationNode(
                     string.Join(string.Empty, declaration.GrandChildren(T(CssParser.PROPERTY)).Select(_ => _.Text)),
                     CreateExpressionNode(declaration.Children(T(CssParser.EXPR)).FirstOrDefault()),
-                    declaration.Children(T(CssParser.IMPORTANT)).FirstChildText()));
+                    declaration.Children(T(CssParser.IMPORTANT)).FirstChildText(), CreateImportantCommentNodes(declaration)));
         }
 
         /// <summary>Creates the expression node</summary>
@@ -311,7 +341,8 @@ namespace WebGrease.Css
 
             return new ExprNode(
                 CreateTermNode(exprTree.Children(T(CssParser.TERM)).FirstOrDefault()),
-                CreateTermWithOperatorsNode(exprTree.GrandChildren(T(CssParser.TERMWITHOPERATORS))).ToSafeReadOnlyCollection());
+                CreateTermWithOperatorsNode(exprTree.GrandChildren(T(CssParser.TERMWITHOPERATORS))).ToSafeReadOnlyCollection(),
+                CreateImportantCommentNodes(exprTree));
         }
 
         /// <summary>Creates the term with operator nodes.</summary>
@@ -363,7 +394,10 @@ namespace WebGrease.Css
             var hexBasedNode = termTree.Children(T(CssParser.HEXBASEDVALUE)).FirstOrDefault();
             var hexBasedValue = hexBasedNode != null ? hexBasedNode.Children(T(CssParser.HASHIDENTIFIER)).FirstChildText() : null;
 
-            return new TermNode(unaryOperator, numberBasedValue, uriStringOrIdentBasedValue, hexBasedValue, CreateFunctionNode(termTree.Children(T(CssParser.FUNCTIONBASEDVALUE)).FirstOrDefault()));
+            //Comments
+            var comments = CreateImportantCommentNodes(termTree);
+
+            return new TermNode(unaryOperator, numberBasedValue, uriStringOrIdentBasedValue, hexBasedValue, CreateFunctionNode(termTree.Children(T(CssParser.FUNCTIONBASEDVALUE)).FirstOrDefault()), comments);
         }
 
         /// <summary>Creates the function node.</summary>

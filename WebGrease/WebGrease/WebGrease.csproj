@@ -172,6 +172,8 @@
     <Compile Include="Ajax\JavaScript\StatementStartVisitor.cs" />
     <Compile Include="Configuration\GlobalConfig.cs" />
     <Compile Include="Configuration\INamedConfig.cs" />
+    <Compile Include="Css\Ast\ImportantCommentNode.cs" />
+    <Compile Include="Css\Ast\StyleSheetRuleOrCommentNode.cs" />
     <Compile Include="DelayedLogManager.cs" />
     <Compile Include="Cache\CacheFileCategories.cs" />
     <Compile Include="Activities\CssLocalizationActivity.cs" />

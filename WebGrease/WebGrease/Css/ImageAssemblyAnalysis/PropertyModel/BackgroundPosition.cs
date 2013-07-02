@@ -188,14 +188,14 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             if (!isXUpdated)
             {
                 // This means that the coordinates were missing in the original declaration, add a new set
-                newTermsWithOperators.Insert(indexX, new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, new TermNode(operatorX, finalX, null, null, null)));
+                newTermsWithOperators.Insert(indexX, new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, new TermNode(operatorX, finalX, null, null, null, null)));
                 indexY = indexX + 1;
             }
 
             if (!isYUpdated)
             {
                 // Appends y just after the index where x coordinate was inserted.
-                newTermsWithOperators.Insert(indexY, new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, new TermNode(operatorY, finalY, null, null, null)));
+                newTermsWithOperators.Insert(indexY, new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, new TermNode(operatorY, finalY, null, null, null, null)));
             }
         }
 
@@ -216,7 +216,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             // Create a new term for coordinate x
             var calcX = (float?)Math.Round(((double)updatedX) * outputUnitFactor / webGreaseBackgroundDpi, 3);
 
-            var termNodeX = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(outputUnit), null, null, null);
+            var termNodeX = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(outputUnit), null, null, null, null);
 
             var termWithOperatorNodes = new List<TermWithOperatorNode>();
 
@@ -224,15 +224,15 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             if (updatedY != null && updatedY != 0)
             {
                 var calcY = (float?)Math.Round(((double)updatedY) * outputUnitFactor / webGreaseBackgroundDpi, 3);
-                var termNodeY = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(outputUnit), null, null, null);
+                var termNodeY = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(outputUnit), null, null, null, null);
                 termWithOperatorNodes.Add(new TermWithOperatorNode(ImageAssembleConstants.SingleSpace, termNodeY));
             }
 
             // Create a new expression
-            var expressionNode = new ExprNode(termNodeX, termWithOperatorNodes.AsReadOnly());
+            var expressionNode = new ExprNode(termNodeX, termWithOperatorNodes.AsReadOnly(), null);
 
             // Create a new declaration node
-            return new DeclarationNode(ImageAssembleConstants.BackgroundPosition, expressionNode, null);
+            return new DeclarationNode(ImageAssembleConstants.BackgroundPosition, expressionNode, null, null);
         }
 
         /// <summary>Verify that both the horizontal and vertical units are specified in px units</summary>
@@ -416,7 +416,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                         3);
 
                     // Create a term with new x
-                    updatedTermNode = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(this.outputUnit), null, null, null);
+                    updatedTermNode = new TermNode(calcX.UnaryOperator(), calcX.CssUnitValue(this.outputUnit), null, null, null, null);
                 }
                 else
                 {
@@ -453,7 +453,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                         3);
 
                     // Create a term with new y
-                    updatedTermNode = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(this.outputUnit), null, null, null);
+                    updatedTermNode = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(this.outputUnit), null, null, null,null);
                 }
                 else
                 {
