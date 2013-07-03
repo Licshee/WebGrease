@@ -15,37 +15,43 @@ namespace WebGrease.Css.Ast
     using System.Text;
 
     /// <summary>
-    /// StyleSheetRuleOrCommentNode
+    /// StyleSheetRuleOrCommentNode.
     /// </summary>
     public class StyleSheetRuleOrCommentNode : StyleSheetRuleNode
     {
         /// <summary>
-        /// The StylesheetRuleOrCommentNode
+        /// The StylesheetRuleOrCommentNode.
         /// </summary>
-        /// <param name="comment"> Important comment node</param>
+        /// <param name="comment"> Important comment node.</param>
         /// <param name="isComment"> Whether it is comment or not.</param>
         public StyleSheetRuleOrCommentNode(ImportantCommentNode comment, bool isComment)
         {
             this.ImportantCommentNode = comment;
-            IsCommentNode = isComment;
+            this.IsCommentNode = isComment;
         }
 
         /// <summary>
-        /// Get the comment node if it is comment
+        /// Gets the comment node if it is comment.
         /// </summary>
         public ImportantCommentNode ImportantCommentNode { get; private set; }
 
         /// <summary>
-        /// Whether the class is comment or style sheet
+        /// Gets whether the class is comment or style sheet.
         /// </summary>
         public bool IsCommentNode { get; set; }
 
+        /// <summary>
+        /// The Accept implementation.
+        /// </summary>
+        /// <param name="nodeVisitor">The visitor to visit.</param>
+        /// <returns>The modified StylesheetRuleOrComment.</returns>
         public override AstNode Accept(Visitor.NodeVisitor nodeVisitor)
         {
-            if (IsCommentNode)
+            if (this.IsCommentNode)
             {
                 return new StyleSheetRuleOrCommentNode((ImportantCommentNode)this.ImportantCommentNode.Accept(nodeVisitor), true);
             }
+
             return base.Accept(nodeVisitor);
         }
     }
