@@ -486,7 +486,7 @@ prio
 //  : term [ operator? term ]*
 //  ;
 expr
-    : IMPORTANT_COMMENTS* term (termwithoperator)* 
+	:IMPORTANT_COMMENTS* term (termwithoperator)* 
     -> ^(EXPR IMPORTANT_COMMENTS* term ^(TERMWITHOPERATORS termwithoperator*)?)
     ;
 
