@@ -512,11 +512,6 @@ term
     -> ^(TERM function IMPORTANT_COMMENTS*)
     ;
 
-fragment number_based_value
-	: (t = NUMBER | t = PERCENTAGE | t = LENGTH | t = RELATIVELENGTH | t = ANGLE | t = TIME | t = FREQ | t = RESOLUTION | t = SPEECH) 
-	;
-
-
 hash
     : HASH_IDENT
     -> ^(HASHIDENTIFIER HASH_IDENT)

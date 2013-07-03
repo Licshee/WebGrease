@@ -120,7 +120,7 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitRulesetNode(RulesetNode rulesetNode)
         {
-            return new RulesetNode(rulesetNode.SelectorsGroupNode, this.UpdateDeclarations(rulesetNode.Declarations, rulesetNode), rulesetNode.Comments);
+            return new RulesetNode(rulesetNode.SelectorsGroupNode, this.UpdateDeclarations(rulesetNode.Declarations, rulesetNode), rulesetNode.ImportantComments);
         }
 
         /// <summary>The <see cref="MediaNode"/> visit implementation</summary>

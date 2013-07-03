@@ -186,7 +186,7 @@ namespace WebGrease.Css.Visitor
                                                      }
                                                  });
             //Visit Important CommentNodes 
-            rulesetNode.Comments.ForEach(comment => comment.Accept(this));
+            rulesetNode.ImportantComments.ForEach(comment => comment.Accept(this));
 
             _printerFormatter.DecrementIndentLevel();
 
@@ -560,7 +560,7 @@ namespace WebGrease.Css.Visitor
             }
 
             //importantComments first
-            foreach (var comment in declarationNode.Comments)
+            foreach (var comment in declarationNode.ImportantComments)
             {
                 comment.Accept(this);
             }
@@ -594,7 +594,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitExprNode(ExprNode exprNode)
         {
             //comments
-            foreach (var comment in exprNode.Comments)
+            foreach (var comment in exprNode.ImportantComments)
             {
                 comment.Accept(this);
             }
@@ -650,7 +650,7 @@ namespace WebGrease.Css.Visitor
                 termNode.FunctionNode.Accept(this);
             }
 
-            foreach (var comment in termNode.Comments)
+            foreach (var comment in termNode.ImportantComments)
             {
                 comment.Accept(this);
             }

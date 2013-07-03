@@ -28,21 +28,21 @@ namespace WebGrease.Css.Ast
         /// <summary>Initializes a new instance of the RulesetNode class</summary>
         /// <param name="selectorsGroupNode">Selectors group node.</param>
         /// <param name="declarations">The list of declarations.</param>
-        public RulesetNode(SelectorsGroupNode selectorsGroupNode, ReadOnlyCollection<DeclarationNode> declarations, ReadOnlyCollection<ImportantCommentNode> comments)
+        public RulesetNode(SelectorsGroupNode selectorsGroupNode, ReadOnlyCollection<DeclarationNode> declarations, ReadOnlyCollection<ImportantCommentNode> importantComments)
         {
             Contract.Requires(selectorsGroupNode != null);
 
             // Member Initialization
             this.SelectorsGroupNode = selectorsGroupNode;
             this.Declarations = declarations ?? new List<DeclarationNode>(0).AsReadOnly();
-            this.Comments = comments ?? new List<ImportantCommentNode>(0).AsReadOnly();
+            this.ImportantComments = importantComments ?? new List<ImportantCommentNode>(0).AsReadOnly();
         }
 
         /// <summary>
         /// Gets the important comments
         /// </summary>
         /// <value>The ImportantCommentNodes</value>
-        public ReadOnlyCollection<ImportantCommentNode> Comments { get; private set; }
+        public ReadOnlyCollection<ImportantCommentNode> ImportantComments { get; private set; }
 
 
         /// <summary>

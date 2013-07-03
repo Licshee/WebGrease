@@ -139,7 +139,7 @@ namespace WebGrease.Css.Visitor
                             new SelectorsGroupNode(
                                 new ReadOnlyCollection<SelectorNode>(selectorNodes)), 
                             rulesetNode.Declarations,
-                            rulesetNode.Comments);
+                            rulesetNode.ImportantComments);
                     }
                 }
 

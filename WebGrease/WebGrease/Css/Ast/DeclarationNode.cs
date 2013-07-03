@@ -23,7 +23,7 @@ namespace WebGrease.Css.Ast
         /// <param name="property">Delcaration Property</param>
         /// <param name="exprNode">Expression objecy</param>
         /// <param name="prio">Priority string</param>
-        public DeclarationNode(string property, ExprNode exprNode, string prio, ReadOnlyCollection<ImportantCommentNode> comments)
+        public DeclarationNode(string property, ExprNode exprNode, string prio, ReadOnlyCollection<ImportantCommentNode> importantComments)
         {
             Contract.Requires(!string.IsNullOrWhiteSpace(property));
             Contract.Requires(exprNode != null);
@@ -32,7 +32,7 @@ namespace WebGrease.Css.Ast
             this.Property = property;
             this.ExprNode = exprNode;
             this.Prio = prio ?? string.Empty;
-            this.Comments = comments ?? new List<ImportantCommentNode>().AsReadOnly();
+            this.ImportantComments = importantComments ?? new List<ImportantCommentNode>().AsReadOnly();
 
         }
 
@@ -40,7 +40,7 @@ namespace WebGrease.Css.Ast
         /// Gets the list of Important Comment Nodes
         /// This comments is in the beggining of the declaration
         /// </summary>
-        public ReadOnlyCollection<ImportantCommentNode> Comments { get; private set; }
+        public ReadOnlyCollection<ImportantCommentNode> ImportantComments { get; private set; }
 
         /// <summary>
         /// Gets the Property value
