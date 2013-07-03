@@ -23,21 +23,20 @@ namespace WebGrease.Css.Ast
         /// <summary>Initializes a new instance of the ExprNode class</summary>
         /// <param name="termNode">Term object</param>
         /// <param name="termsWithOperators">Terms with Operators</param>
-        public ExprNode(TermNode termNode, ReadOnlyCollection<TermWithOperatorNode> termsWithOperators, ReadOnlyCollection<ImportantCommentNode> comments)
+        public ExprNode(TermNode termNode, ReadOnlyCollection<TermWithOperatorNode> termsWithOperators, ReadOnlyCollection<ImportantCommentNode> importantComments)
         {
             Contract.Requires(termNode != null);
 
             this.TermNode = termNode;
             this.TermsWithOperators = termsWithOperators ?? (new List<TermWithOperatorNode>()).AsReadOnly();
-            this.Comments = comments ?? (new List<ImportantCommentNode>()).AsReadOnly();
+            this.ImportantComments = importantComments ?? (new List<ImportantCommentNode>()).AsReadOnly();
         }
 
         /// <summary>
         /// Gets list of comment nodes
         /// </summary>
         /// <value>ImportantCommentNodes List</value>
-        public ReadOnlyCollection<ImportantCommentNode> Comments { get; private set; }
-
+        public ReadOnlyCollection<ImportantCommentNode> ImportantComments { get; private set; }
 
         /// <summary>
         /// Gets the TermNode value

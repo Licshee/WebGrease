@@ -55,9 +55,8 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitRulesetNode(RulesetNode rulesetNode)
         {
             return new RulesetNode(
-                rulesetNode.SelectorsGroupNode, 
-                rulesetNode.Declarations.Select(declarationNode => (DeclarationNode)declarationNode.Accept(this)).ToSafeReadOnlyCollection(),
-                rulesetNode.Comments);
+                rulesetNode.SelectorsGroupNode,
+                rulesetNode.Declarations.Select(declarationNode => (DeclarationNode)declarationNode.Accept(this)).ToSafeReadOnlyCollection(), rulesetNode.ImportantComments);
         }
 
         /// <summary>The <see cref="MediaNode"/> visit implementation</summary>
@@ -116,7 +115,7 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitDeclarationNode(DeclarationNode declarationNode)
         {
-            return new DeclarationNode(declarationNode.Property, (ExprNode)declarationNode.ExprNode.Accept(this), declarationNode.Prio, declarationNode.Comments);
+            return new DeclarationNode(declarationNode.Property, (ExprNode)declarationNode.ExprNode.Accept(this), declarationNode.Prio, declarationNode.ImportantComments);
         }
 
         /// <summary>The <see cref="Ast.ExprNode"/> visit implementation</summary>
@@ -127,7 +126,7 @@ namespace WebGrease.Css.Visitor
             return new ExprNode(
                 (TermNode)exprNode.TermNode.Accept(this), 
                 exprNode.TermsWithOperators.Select(termWithOperatorNode => (TermWithOperatorNode)termWithOperatorNode.Accept(this)).ToSafeReadOnlyCollection(),
-                exprNode.Comments);
+                exprNode.ImportantComments);
         }
 
         /// <summary>The <see cref="Ast.FunctionNode"/> visit implementation</summary>
@@ -166,7 +165,7 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitTermNode(TermNode termNode)
         {
-            return new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode, termNode.Comments);
+            return new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode, termNode.ImportantComments);
         }
 
         /// <summary>The <see cref="Ast.TermWithOperatorNode"/> visit implementation</summary>

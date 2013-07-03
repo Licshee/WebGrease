@@ -1,11 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using WebGrease.Css.Visitor;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="ImportantCommentNode.cs" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The important comment node.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace WebGrease.Css.Ast
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using WebGrease.Css.Visitor;
+
+    /// <summary>
+    /// The important Comment Node 
+    /// </summary>
     public sealed class ImportantCommentNode : AstNode
     {
         /// <summary>

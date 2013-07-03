@@ -117,7 +117,7 @@ namespace WebGrease.Css
                 }
                 else if (styleSheetChild.Type.Equals(CssParser.IMPORTANT_COMMENTS))
                 {
-                    ruleSetMediaPageNodes.Add(CreateStyleSheetRulesOrCommentNode(styleSheetChild));
+                    ruleSetMediaPageNodes.Add(new StyleSheetRuleOrCommentNode(new ImportantCommentNode(styleSheetChild.Text), true));
                 }
             }
 
@@ -163,17 +163,6 @@ namespace WebGrease.Css
                 return null;
             }).ToSafeReadOnlyCollection();
         }
-
-        /// <summary>
-        /// Create StyleSheetRulesOrCommentNode
-        /// </summary>
-        /// <param name="commentTree"> Common tree as a comment</param>
-        /// <returns>StyleSheetRulesOrCommentNode</returns>
-        private static StyleSheetRuleOrCommentNode CreateStyleSheetRulesOrCommentNode(CommonTree commentTree)
-        {
-            return new StyleSheetRuleOrCommentNode(new ImportantCommentNode(commentTree.Text), true);
-        }
-
 
         /// <summary>Creates the media query node.</summary>
         /// <param name="mediaQueryTree">The media query tree.</param>
@@ -237,6 +226,11 @@ namespace WebGrease.Css
                 CreateImportantCommentNodes(rulesetTree));
         }
 
+        /// <summary>
+        /// Create importantComment Nodes
+        /// </summary>
+        /// <param name="commonTree"> the parent of list of the comment trees</param>
+        /// <returns>The list of comment nodes</returns>
         private static ReadOnlyCollection<ImportantCommentNode> CreateImportantCommentNodes(CommonTree commonTree)
         {
             Contract.Requires(!commonTree.Equals(null));
@@ -248,6 +242,7 @@ namespace WebGrease.Css
                     comments.Add(new ImportantCommentNode(child.Text));
                 }
             }
+
             return comments.AsReadOnly();
         }
 
@@ -326,7 +321,8 @@ namespace WebGrease.Css
                 declaration => new DeclarationNode(
                     string.Join(string.Empty, declaration.GrandChildren(T(CssParser.PROPERTY)).Select(_ => _.Text)),
                     CreateExpressionNode(declaration.Children(T(CssParser.EXPR)).FirstOrDefault()),
-                    declaration.Children(T(CssParser.IMPORTANT)).FirstChildText(), CreateImportantCommentNodes(declaration)));
+                    declaration.Children(T(CssParser.IMPORTANT)).FirstChildText(), 
+                    CreateImportantCommentNodes(declaration)));
         }
 
         /// <summary>Creates the expression node</summary>

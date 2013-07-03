@@ -1,22 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="StyleSheetRuleOrCommentNode.cs" company="Microsoft">
+//   Copyright Microsoft Corporation, all rights reserved
+// </copyright>
+// <summary>
+//   The stylesheetruleorcommentnode.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace WebGrease.Css.Ast
 {
-    class StyleSheetRuleOrCommentNode : StyleSheetRuleNode
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+
+    /// <summary>
+    /// StyleSheetRuleOrCommentNode
+    /// </summary>
+    public class StyleSheetRuleOrCommentNode : StyleSheetRuleNode
     {
+        /// <summary>
+        /// The StylesheetRuleOrCommentNode
+        /// </summary>
+        /// <param name="comment"> Important comment node</param>
+        /// <param name="isComment"> Whether it is comment or not.</param>
         public StyleSheetRuleOrCommentNode(ImportantCommentNode comment, bool isComment)
         {
-            this.CommentNode = comment;
+            this.ImportantCommentNode = comment;
             IsCommentNode = isComment;
         }
 
         /// <summary>
         /// Get the comment node if it is comment
         /// </summary>
-        public ImportantCommentNode CommentNode { get; private set; }
+        public ImportantCommentNode ImportantCommentNode { get; private set; }
 
         /// <summary>
         /// Whether the class is comment or style sheet
@@ -27,7 +44,7 @@ namespace WebGrease.Css.Ast
         {
             if (IsCommentNode)
             {
-                return new StyleSheetRuleOrCommentNode((ImportantCommentNode)this.CommentNode.Accept(nodeVisitor), true);
+                return new StyleSheetRuleOrCommentNode((ImportantCommentNode)this.ImportantCommentNode.Accept(nodeVisitor), true);
             }
             return base.Accept(nodeVisitor);
         }

@@ -78,7 +78,7 @@ namespace WebGrease.Css.Visitor
                 hexColor = hexColor.ToLowerInvariant();
             }
 
-            return new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, hexColor, funcNode, termNode.Comments);
+            return new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, hexColor, funcNode, termNode.ImportantComments);
         }
 
         /// <summary>
