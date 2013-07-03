@@ -16,32 +16,31 @@ namespace WebGrease.Css.Ast
     using WebGrease.Css.Visitor;
 
     /// <summary>
-    /// The important Comment Node 
+    /// The important Comment Node. 
     /// </summary>
     public sealed class ImportantCommentNode : AstNode
     {
         /// <summary>
-        /// Initializes the new instance of ImportantCommentNode
+        /// Initializes the new instance of ImportantCommentNode.
         /// </summary>
-        /// <param name="text">the actual text of the important comment</param>
+        /// <param name="text">The actual text of the important comment.</param>
         public ImportantCommentNode(string text)
         {
             this.Text = text;
         }
 
         /// <summary>
-        /// Gets the text of the comment
+        /// Gets the text of the comment.
         /// </summary>
-        /// <value> the actual text of the comment </value>
+        /// <value>The actual text of the comment.</value>
         public string Text { get; private set; }
 
-        /// <summary>Defines an accept operation</summary>
-        /// <param name="nodeVisitor">The visitor to invoke</param>
-        /// <returns>The modified AST node if modified otherwise the original node</returns>
+        /// <summary>Defines an accept operation.</summary>
+        /// <param name="nodeVisitor">The visitor to invoke.</param>
+        /// <returns>The modified AST node if modified otherwise the original node.</returns>
         public override AstNode Accept(NodeVisitor nodeVisitor)
         {
             return nodeVisitor.VisitImportantCommentNode(this);
         }
     }
 }
-
