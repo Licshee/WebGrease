@@ -83,7 +83,7 @@ namespace Microsoft.Ajax.Utilities
         ResourceReferenceMustBeConstant = 1280, // "Resource reference must be single constant value"
         AmbiguousNamedFunctionExpression = 1281, // "Ambiguous named function expression"
         ConditionalCompilationTooComplex = 1282, // "Conditiona compilation structure too complex"
-		UnterminatedAspNetBlock = 1283, // Unterminated asp.net block.
+        UnterminatedAspNetBlock = 1283, // Unterminated asp.net block.
         MisplacedFunctionDeclaration = 1284, // function declaration other than where SourceElements are expected
         OctalLiteralsDeprecated = 1285, // octal literal encountered; possible cross-browser issues
         FunctionNameMustBeIdentifier = 1286, // function names must be a single identifier
@@ -110,8 +110,9 @@ namespace Microsoft.Ajax.Utilities
         DuplicateCatch = 1308, // variable declaration duplicates catch error name
         SuspectEquality = 1309, // suspect equality comparison
         SemicolonInsertion = 1310, // semicolon insertion
+        ArrayLiteralTrailingComma = 1311, // array literal trailing commas has cross-browser difference
 
-        //5000 - 6000 JScript errors that can occur during execution. Typically (also) used in "throw new JScriptException".
+        //5000 - 6000 JScript errors that can occur during execution. 
         IllegalAssignment = 5008, // "Illegal assignment"
         RegExpSyntax = 5017, // "Syntax error in regular expression"
         UncaughtException = 5022, // "Exception thrown and not caught"

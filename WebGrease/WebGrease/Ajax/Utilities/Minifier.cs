@@ -114,51 +114,49 @@ namespace Microsoft.Ajax.Utilities
 
             try
             {
-                if (codeSettings != null && codeSettings.PreprocessOnly)
+                var preprocessOnly = codeSettings != null && codeSettings.PreprocessOnly;
+                var sb = new StringBuilder();
+                using (var stringWriter = new StringWriter(sb, CultureInfo.InvariantCulture))
                 {
-                    // just run through the preprocessor only
-                    crunched = parser.PreprocessOnly(codeSettings);
-                }
-                else
-                {
+                    if (preprocessOnly)
+                    {
+                        parser.EchoWriter = stringWriter;
+                    }
+
                     // parse the input
                     var scriptBlock = parser.Parse(codeSettings);
-                    if (scriptBlock != null)
+                    if (scriptBlock != null && !preprocessOnly)
                     {
                         // we'll return the crunched code
                         if (codeSettings != null && codeSettings.Format == JavaScriptFormat.JSON)
                         {
                             // we're going to use a different output visitor -- one
                             // that specifically returns valid JSON.
-                            var sb = new StringBuilder();
-                            using (var stringWriter = new StringWriter(sb, CultureInfo.InvariantCulture))
+                            if (!JSONOutputVisitor.Apply(stringWriter, scriptBlock))
                             {
-                                if (!JSONOutputVisitor.Apply(stringWriter, scriptBlock))
-                                {
-                                    m_errorList.Add(new ContextError(
-                                        true,
-                                        0,
-                                        null,
-                                        null,
-                                        null,
-                                        this.FileName,
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        JScript.InvalidJSONOutput));
-                                }
+                                m_errorList.Add(new ContextError(
+                                    true,
+                                    0,
+                                    null,
+                                    null,
+                                    null,
+                                    this.FileName,
+                                    0,
+                                    0,
+                                    0,
+                                    0,
+                                    JScript.InvalidJSONOutput));
                             }
-
-                            crunched = sb.ToString();
                         }
                         else
                         {
                             // just use the normal output visitor
-                            crunched = scriptBlock.ToCode();
+                            OutputVisitor.Apply(stringWriter, scriptBlock, codeSettings);
                         }
                     }
                 }
+
+                crunched = sb.ToString();
             }
             catch (Exception e)
             {

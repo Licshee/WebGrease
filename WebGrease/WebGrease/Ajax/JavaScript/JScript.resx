@@ -417,4 +417,7 @@
   <data name="SemicolonInsertion" xml:space="preserve">
     <value>Semicolon insertion rules applied</value>
   </data>
+  <data name="ArrayLiteralTrailingComma" xml:space="preserve">
+    <value>Trailing comma in array literal; cross-browser difference</value>
+  </data>
 </root>

@@ -292,7 +292,6 @@
     <Compile Include="Ajax\JavaScript\ReorderScopeVisitor.cs" />
     <Compile Include="Ajax\JavaScript\ResolutionVisitor.cs" />
     <Compile Include="Ajax\JavaScript\return.cs" />
-    <Compile Include="Ajax\JavaScript\scannerexception.cs" />
     <Compile Include="Ajax\JavaScript\ScriptSharpSourceMap.cs" />
     <Compile Include="Ajax\JavaScript\SourceMapFactory.cs" />
     <Compile Include="Ajax\JavaScript\switch.cs" />

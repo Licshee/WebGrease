@@ -1262,5 +1262,11 @@ namespace Microsoft.Ajax.Utilities
         /// as a final minification step (if it doesn't create more bytes)
         /// </summary>
         UnfoldCommaExpressionStatements             = 0x0004000000000000,
+
+        /// <summary>
+        /// Whether to convert [a,b,c].length to 3 (if all items are constants)
+        /// and "123".length to 3 
+        /// </summary>
+        EvaluateLiteralLengths                      = 0x0008000000000000,
     }
 }
