@@ -559,7 +559,7 @@ namespace WebGrease.Css.Visitor
                 return null;
             }
 
-            //importantComments first
+            //Important Comments first
             foreach (var comment in declarationNode.ImportantComments)
             {
                 comment.Accept(this);
@@ -593,6 +593,7 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitExprNode(ExprNode exprNode)
         {
+
             //comments
             foreach (var comment in exprNode.ImportantComments)
             {
