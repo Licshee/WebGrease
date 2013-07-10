@@ -30,7 +30,21 @@ namespace WebGrease.Css.Ast
             this.TermNode = termNode;
             this.TermsWithOperators = termsWithOperators ?? (new List<TermWithOperatorNode>()).AsReadOnly();
             this.ImportantComments = importantComments ?? (new List<ImportantCommentNode>()).AsReadOnly();
+            this.Binary = false;
         }
+
+        public ExprNode(TermNode termNode, ReadOnlyCollection<TermWithOperatorNode> termsWithOperators, ReadOnlyCollection<ImportantCommentNode> importantComments, bool binary)
+            : this(termNode, termsWithOperators, importantComments)
+        {
+            // Whether this term is inside Binary Expression.
+            this.Binary = binary;
+        }
+
+        /// <summary>
+        /// Gets the Binary value
+        /// Determines Whether this expr is inside Binary Expression.
+        /// </summary>
+        public bool Binary { get; private set; }
 
         /// <summary>
         /// Gets list of comment nodes

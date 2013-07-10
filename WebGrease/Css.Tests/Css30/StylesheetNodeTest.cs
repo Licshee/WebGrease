@@ -3239,7 +3239,7 @@ namespace Css.Tests.Css30
             termWithOperator = termWithOperators[1];
             Assert.IsNotNull(termWithOperator);
             term = termWithOperator.TermNode;
-            Assert.AreEqual(term.UnaryOperator, "-");
+            Assert.AreEqual(term.UnaryOperator, "- ");
             Assert.AreEqual(term.NumberBasedValue, "2");
 
             termWithOperator = termWithOperators[2];
@@ -3247,7 +3247,7 @@ namespace Css.Tests.Css30
             Assert.AreEqual(termWithOperator.TermNode.NumberBasedValue, "1em");
 
             termWithOperator = termWithOperators[3];
-            Assert.IsTrue(termWithOperator.TermNode.UnaryOperator == "-");
+            Assert.IsTrue(termWithOperator.TermNode.UnaryOperator == "- ");
             Assert.AreEqual(termWithOperator.TermNode.NumberBasedValue, "2");
 
             termWithOperator = termWithOperators[4];

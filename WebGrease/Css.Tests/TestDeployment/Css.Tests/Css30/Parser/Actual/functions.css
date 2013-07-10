@@ -2,7 +2,7 @@
   float: left;
   margin: 1em;
   border: solid 1px;
-  width: calc(100%/3 - 2*1em - 2*1px);
+  width: calc(100%/3 -2*1em -2*1px);
 }
 
 p {
@@ -22,6 +22,6 @@ blockquote {
 }
 
 /* these are from jQuery UI files, supported by VSTeam, even though proprietary IE-only */
-.ui-helper-zfix { filter:Alpha(Opacity=0); }
+.ui-helper-zfix { filter:Alpha(Opacity = 0); }
 
 .ui-datepicker-cover { filter: mask();}

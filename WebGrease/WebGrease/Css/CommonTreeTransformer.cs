@@ -341,6 +341,24 @@ namespace WebGrease.Css
                 CreateImportantCommentNodes(exprTree));
         }
 
+        /// <summary>Creates the expression node</summary>
+        /// <param name="exprTree">The expression tree.</param>
+        /// <param name="binary"> Wether expression is inside a function.</param>
+        /// <returns>The expression node.</returns>
+        private static ExprNode CreateExpressionNode(CommonTree exprTree, bool binary)
+        {
+            if (exprTree == null)
+            {
+                return null;
+            }
+
+            return new ExprNode(
+                CreateTermNode(exprTree.Children(T(CssParser.TERM)).FirstOrDefault()),
+                CreateTermWithOperatorsNode(exprTree.GrandChildren(T(CssParser.TERMWITHOPERATORS)), binary).ToSafeReadOnlyCollection(),
+                CreateImportantCommentNodes(exprTree),
+                binary);
+        }
+
         /// <summary>Creates the term with operator nodes.</summary>
         /// <param name="termWithOperatorTreeNodes">The term with operator tree.</param>
         /// <returns>The list of term with operators.</returns>
@@ -350,7 +368,22 @@ namespace WebGrease.Css
             {
                 // Operator
                 var op = termWithOperatorNode.Children(T(CssParser.OPERATOR)).FirstChildText();
+
                 return new TermWithOperatorNode(op, CreateTermNode(termWithOperatorNode.Children(T(CssParser.TERM)).FirstOrDefault()));
+            });
+        }
+
+        /// <summary>Creates the term with operator nodes.</summary>
+        /// <param name="termWithOperatorTreeNodes">The term with operator tree.</param>
+        /// <returns>The list of term with operators.</returns>
+        private static IEnumerable<TermWithOperatorNode> CreateTermWithOperatorsNode(IEnumerable<CommonTree> termWithOperatorTreeNodes, bool binary)
+        {
+            return termWithOperatorTreeNodes.Select(termWithOperatorNode =>
+            {
+                // Operator
+                var op = termWithOperatorNode.Children(T(CssParser.OPERATOR)).FirstChildText();
+
+                return new TermWithOperatorNode(op, CreateTermNode(termWithOperatorNode.Children(T(CssParser.TERM)).FirstOrDefault(), binary));
             });
         }
 
@@ -369,7 +402,6 @@ namespace WebGrease.Css
 
             // Number based value
             var numberBasedValue = termTree.Children(T(CssParser.NUMBERBASEDVALUE)).FirstChildText();
-
 
             // Url based value
             var uriStringOrIdentBasedValue = StringOrUriBasedValue(termTree.Children(T(CssParser.URIBASEDVALUE)).FirstChildText());
@@ -396,6 +428,18 @@ namespace WebGrease.Css
             return new TermNode(unaryOperator, numberBasedValue, uriStringOrIdentBasedValue, hexBasedValue, CreateFunctionNode(termTree.Children(T(CssParser.FUNCTIONBASEDVALUE)).FirstOrDefault()), comments);
         }
 
+        /// <summary>Creates the term node.</summary>
+        /// <param name="termTree">The term tree.</param>
+        /// <param name="binary">The Binary value</param>
+        /// <returns>The term node.</returns>
+        private static TermNode CreateTermNode(CommonTree termTree, bool binary)
+        {
+            TermNode termNode = CreateTermNode(termTree);
+            termNode.Binary = binary;
+
+            return termNode;
+        }
+
         /// <summary>Creates the function node.</summary>
         /// <param name="functionTree">The function tree.</param>
         /// <returns>The function node.</returns>
@@ -408,7 +452,7 @@ namespace WebGrease.Css
 
             return new FunctionNode(
                 functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText(),
-                CreateExpressionNode(functionTree.Children(T(CssParser.EXPR)).FirstOrDefault()));
+                CreateExpressionNode(functionTree.Children(T(CssParser.EXPR)).FirstOrDefault(), true));
         }
 
         /// <summary>Creates the selector nodes.</summary>

@@ -453,7 +453,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                         3);
 
                     // Create a term with new y
-                    updatedTermNode = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(this.outputUnit), null, null, null,null);
+                    updatedTermNode = new TermNode(calcY.UnaryOperator(), calcY.CssUnitValue(this.outputUnit), null, null, null, null);
                 }
                 else
                 {
