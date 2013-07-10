@@ -450,9 +450,14 @@ namespace WebGrease.Css
                 return null;
             }
 
+            //Determine the function should allow binary operator
+            bool binary = functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("calc")
+                || functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("min")
+                || functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("max");
+
             return new FunctionNode(
                 functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText(),
-                CreateExpressionNode(functionTree.Children(T(CssParser.EXPR)).FirstOrDefault(), true));
+                CreateExpressionNode(functionTree.Children(T(CssParser.EXPR)).FirstOrDefault(), binary));
         }
 
         /// <summary>Creates the selector nodes.</summary>
