@@ -17,9 +17,10 @@ namespace WebGrease.ImageAssemble
     using System.Drawing.Imaging;
     using System.Runtime.InteropServices;
 
+    using WebGrease.Extensions;
+
     /// <summary>The color quantizer.</summary>
-    [SuppressMessage("Microsoft.Naming", "CA1704", Justification = "This code has been used as it is for Color Quantization.")]
-    internal unsafe class ColorQuantizer
+    public static class ColorQuantizer
     {
         #region Quantize methods
 
@@ -27,7 +28,7 @@ namespace WebGrease.ImageAssemble
         /// <param name="image">The image.</param>
         /// <param name="bitmapPixelFormat">The bitmap pixel format.</param>
         /// <returns></returns>
-        internal static Bitmap Quantize(Image image, PixelFormat bitmapPixelFormat)
+        public static Bitmap Quantize(Image image, PixelFormat bitmapPixelFormat)
         {
             // use dither by default
             return Quantize(image, bitmapPixelFormat, true);
@@ -38,27 +39,47 @@ namespace WebGrease.ImageAssemble
         /// <param name="pixelFormat">The pixel format.</param>
         /// <param name="useDither">The use dither.</param>
         /// <returns></returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "bitmapOptimized is a return object that should be disposed by the caller of this method.")]
-        internal static Bitmap Quantize(Image image, PixelFormat pixelFormat, bool useDither)
+        public static Bitmap Quantize(Image image, PixelFormat pixelFormat, bool useDither)
         {
-            // create an octree
-            var octree = new Octree(pixelFormat);
+            var tryBitmap = image as Bitmap;
+            if (tryBitmap != null && tryBitmap.PixelFormat == PixelFormat.Format32bppArgb)
+            {
+                // the image passed to us is ALREADY a bitmap in the right format. No need to create
+                // a copy and work from there.
+                return DoQuantize(tryBitmap, pixelFormat, useDither);
+            }
+            else
+            {
+                // we use these values a lot
+                var width = image.Width;
+                var height = image.Height;
+                var sourceRect = Rectangle.FromLTRB(0, 0, width, height);
 
+                // create a 24-bit rgb version of the source image
+                using (var bitmapSource = new Bitmap(width, height, PixelFormat.Format32bppArgb))
+                {
+                    using (var grfx = Graphics.FromImage(bitmapSource))
+                    {
+                        grfx.DrawImage(image, sourceRect, 0, 0, width, height, GraphicsUnit.Pixel);
+                    }
+
+                    return DoQuantize(bitmapSource, pixelFormat, useDither);
+                }
+            }
+        }
+
+        private static Bitmap DoQuantize(Bitmap bitmapSource, PixelFormat pixelFormat, bool useDither)
+        {
             // we use these values a lot
-            var width = image.Width;
-            var height = image.Height;
+            var width = bitmapSource.Width;
+            var height = bitmapSource.Height;
             var sourceRect = Rectangle.FromLTRB(0, 0, width, height);
 
-            // create a 24-bit rgb version of the source image
-            using (var bitmapSource = new Bitmap(width, height, PixelFormat.Format32bppArgb))
+            Bitmap bitmapOptimized = null;
+            try
             {
-                using (var grfx = Graphics.FromImage(bitmapSource))
-                {
-                    grfx.DrawImage(image, sourceRect, 0, 0, width, height, GraphicsUnit.Pixel);
-                }
-
                 // create a bitmap with the same dimensions and the desired format
-                var bitmapOptimized = new Bitmap(width, height, pixelFormat);
+                bitmapOptimized = new Bitmap(width, height, pixelFormat);
 
                 // lock the bits of the source image for reading.
                 // we will need to write if we do the dither.
@@ -71,29 +92,33 @@ namespace WebGrease.ImageAssemble
                 {
                     // perform the first pass, which generates the octree data
 
-                    // get a byte* to the first line. if stride is positive, it points to the first
-                    // line; if negative, it points to the LAST line
-                    var pRow = bitmapDataSource.Stride > 0 ? (byte*)bitmapDataSource.Scan0.ToPointer() : (byte*)bitmapDataSource.Scan0.ToPointer() + bitmapDataSource.Stride * (height - 1);
-                    var stride = (uint)Math.Abs(bitmapDataSource.Stride);
+                    // create an octree
+                    var octree = new Octree(pixelFormat);
+
+                    // stride might be negative, indicating inverted row order.
+                    // allocate a managed buffer for the pixel data, and copy it from the unmanaged pointer.
+                    var strideSource = Math.Abs(bitmapDataSource.Stride);
+                    var sourceDataBuffer = new byte[strideSource * height];
+                    Marshal.Copy(bitmapDataSource.Scan0, sourceDataBuffer, 0, sourceDataBuffer.Length);
 
                     // we could skip every other row and/or every other column when sampling the colors
                     // of the source image, rather than hitting every other pixel. It doesn't seem to
                     // degrade the resulting image too much. But it doesn't really help the performance
                     // too much because the majority of the time seems to be spent in other places.
 
-                    // for every other row
+                    // for every row
+                    int rowStartSource = 0;
                     for (var ndxRow = 0; ndxRow < height; ndxRow += 1)
                     {
                         // for each column
                         for (var ndxCol = 0; ndxCol < width; ndxCol += 1)
                         {
                             // add the color (4 bytes per pixel - ARGB)
-                            var pPixel = (Pixel*)(pRow + ndxCol * 4);
-                            octree.AddColor(pPixel);
+                            var pixel = GetSourcePixel(sourceDataBuffer, rowStartSource, ndxCol);
+                            octree.AddColor(pixel);
                         }
 
-                        // next row
-                        pRow += stride;
+                        rowStartSource += strideSource;
                     }
 
                     // get the optimized colors
@@ -101,9 +126,13 @@ namespace WebGrease.ImageAssemble
 
                     // set the palette from the octree
                     var palette = bitmapOptimized.Palette;
-                    for (var ndx = 0; ndx < colors.Length; ++ndx)
+                    for (var ndx = 0; ndx < palette.Entries.Length; ++ndx)
                     {
-                        palette.Entries[ndx] = colors[ndx];
+                        // use the colors we calculated
+                        // for the rest, just set to transparent
+                        palette.Entries[ndx] = (ndx < colors.Length)
+                            ? colors[ndx]
+                            : Color.Transparent;
                     }
 
                     bitmapOptimized.Palette = palette;
@@ -113,35 +142,33 @@ namespace WebGrease.ImageAssemble
                     var bitmapDataOutput = bitmapOptimized.LockBits(sourceRect, ImageLockMode.ReadWrite, pixelFormat);
                     try
                     {
+                        // create a managed array for the destination bytes given the desired color depth
+                        // and marshal the unmanaged data to the managed array
+                        var strideOutput = Math.Abs(bitmapDataOutput.Stride);
+                        var bitmapOutputBuffer = new byte[strideOutput * height];
+
                         // for each source pixel, compute the appropriate color index
-                        // get a byte* to the first line. if stride is positive, it points to the first
-                        // line; if negative, it points to the LAST line
-                        var pRowSource = bitmapDataSource.Stride > 0 ? (byte*)bitmapDataSource.Scan0.ToPointer() : (byte*)bitmapDataSource.Scan0.ToPointer() + bitmapDataSource.Stride * (height - 1);
-                        var strideSource = (uint)Math.Abs(bitmapDataSource.Stride);
-
-                        var pRowOutput = bitmapDataOutput.Stride > 0 ? (byte*)bitmapDataOutput.Scan0.ToPointer() : (byte*)bitmapDataOutput.Scan0.ToPointer() + bitmapDataOutput.Stride * (height - 1);
-                        var strideOutput = (uint)Math.Abs(bitmapDataOutput.Stride);
-
-                        // for each row
+                        rowStartSource = 0;
+                        var rowStartOutput = 0;
                         for (var ndxRow = 0; ndxRow < height; ++ndxRow)
                         {
                             // for each column
                             for (var ndxCol = 0; ndxCol < width; ++ndxCol)
                             {
-                                // point to the proper pixel
-                                var pPixel = (Pixel*)pRowSource + ndxCol;
+                                // get the source color
+                                var pixel = GetSourcePixel(sourceDataBuffer, rowStartSource, ndxCol);
 
                                 // get the closest palette index
-                                var paletteIndex = octree.GetPaletteIndex(pPixel);
+                                var paletteIndex = octree.GetPaletteIndex(pixel);
 
                                 // if we want to dither and this isn't the transparent pixel
-                                if (useDither && pPixel->A != 0)
+                                if (useDither && pixel.Alpha != 0)
                                 {
                                     // calculate the error
                                     var paletteColor = colors[paletteIndex];
-                                    var deltaRed = pPixel->R - paletteColor.R;
-                                    var deltaGreen = pPixel->G - paletteColor.G;
-                                    var deltaBlue = pPixel->B - paletteColor.B;
+                                    var deltaRed = pixel.Red - paletteColor.R;
+                                    var deltaGreen = pixel.Green - paletteColor.G;
+                                    var deltaBlue = pixel.Blue - paletteColor.B;
 
                                     // propagate the dither error. 
                                     // we'll use a standard Floyd-Steinberg matrix (1/16):
@@ -152,99 +179,65 @@ namespace WebGrease.ImageAssemble
                                     // make sure we're not on the right-hand edge
                                     if (ndxCol + 1 < width)
                                     {
-                                        var pDither = pPixel + 1;
-                                        pDither->R = ChannelAdjustment(pDither->R, (deltaRed * 7) >> 4);
-                                        pDither->G = ChannelAdjustment(pDither->G, (deltaGreen * 7) >> 4);
-                                        pDither->B = ChannelAdjustment(pDither->B, (deltaBlue * 7) >> 4);
+                                        DitherSourcePixel(sourceDataBuffer, rowStartSource, ndxCol + 1, deltaRed, deltaGreen, deltaBlue, 7);
                                     }
 
                                     // make sure we're not already on the bottom row
                                     if (ndxRow + 1 < height)
                                     {
-                                        // point pDither to the pixel directly below the current pixel and to the left one
-                                        var pDither = (Pixel*)(pRowSource + strideSource) + ndxCol - 1;
+                                        var nextRow = rowStartSource + strideSource;
 
                                         // make sure we're not on the left-hand column
                                         if (ndxCol > 0)
                                         {
                                             // down one row, but back one pixel
-                                            pDither->R = ChannelAdjustment(pDither->R, (deltaRed * 3) >> 4);
-                                            pDither->G = ChannelAdjustment(pDither->G, (deltaGreen * 3) >> 4);
-                                            pDither->B = ChannelAdjustment(pDither->B, (deltaBlue * 3) >> 4);
+                                            DitherSourcePixel(sourceDataBuffer, nextRow, ndxCol - 1, deltaRed, deltaGreen, deltaBlue, 3);
                                         }
 
                                         // pixel directly below us
-                                        ++pDither;
-                                        pDither->R = ChannelAdjustment(pDither->R, (deltaRed * 5) >> 4);
-                                        pDither->G = ChannelAdjustment(pDither->G, (deltaGreen * 5) >> 4);
-                                        pDither->B = ChannelAdjustment(pDither->B, (deltaBlue * 5) >> 4);
+                                        DitherSourcePixel(sourceDataBuffer, nextRow, ndxCol, deltaRed, deltaGreen, deltaBlue, 5);
 
                                         // make sure we're not on the right-hand column
                                         if (ndxCol + 1 < width)
                                         {
                                             // down one row, but right one pixel
-                                            ++pDither;
-                                            pDither->R = ChannelAdjustment(pDither->R, deltaRed >> 4);
-                                            pDither->G = ChannelAdjustment(pDither->G, deltaGreen >> 4);
-                                            pDither->B = ChannelAdjustment(pDither->B, deltaBlue >> 4);
+                                            DitherSourcePixel(sourceDataBuffer, nextRow, ndxCol + 1, deltaRed, deltaGreen, deltaBlue, 1);
                                         }
                                     }
                                 }
 
                                 // set the bitmap index based on the format
-                                byte* pOutput;
-                                byte currentByte;
-                                byte mask;
                                 switch (pixelFormat)
                                 {
                                     case PixelFormat.Format8bppIndexed:
-
                                         // each byte is a palette index
-                                        pOutput = pRowOutput + ndxCol;
-                                        *pOutput = (byte)paletteIndex;
+                                        bitmapOutputBuffer[rowStartOutput + ndxCol] = (byte)paletteIndex;
                                         break;
 
                                     case PixelFormat.Format4bppIndexed:
-
                                         // each byte contains two pixels
-                                        pOutput = pRowOutput + (ndxCol >> 1);
-                                        currentByte = *pOutput;
-                                        if ((ndxCol & 1) == 1)
-                                        {
-                                            // lower nibble
-                                            *pOutput = (byte)((currentByte & 0xf0) | (paletteIndex & 0x0f));
-                                        }
-                                        else
-                                        {
-                                            // upper nibble
-                                            *pOutput = (byte)((currentByte & 0x0f) | (paletteIndex << 4));
-                                        }
-
+                                        bitmapOutputBuffer[rowStartOutput + (ndxCol >> 1)] |= ((ndxCol & 1) == 1)
+                                            ? (byte)(paletteIndex & 0x0f) // lower nibble
+                                            : (byte)(paletteIndex << 4);  // upper nibble
                                         break;
 
                                     case PixelFormat.Format1bppIndexed:
-
                                         // each byte contains eight pixels
-                                        pOutput = pRowOutput + (ndxCol >> 3);
-                                        currentByte = *pOutput;
-                                        mask = (byte)(0x80 >> (ndxCol & 0x07));
-                                        if (paletteIndex == 0)
+                                        if (paletteIndex != 0)
                                         {
-                                            *pOutput = (byte)(currentByte & (mask ^ 0xff));
-                                        }
-                                        else
-                                        {
-                                            *pOutput = (byte)(currentByte | mask);
+                                            bitmapOutputBuffer[rowStartOutput + (ndxCol >> 3)] |= (byte)(0x80 >> (ndxCol & 0x07));
                                         }
 
                                         break;
                                 }
                             }
 
-                            // next row
-                            pRowSource += strideSource;
-                            pRowOutput += strideOutput;
+                            rowStartSource += strideSource;
+                            rowStartOutput += strideOutput;
                         }
+
+                        // now copy the calculated pixel bytes from the managed array to the unmanaged bitmap
+                        Marshal.Copy(bitmapOutputBuffer, 0, bitmapDataOutput.Scan0, bitmapOutputBuffer.Length);
                     }
                     finally
                     {
@@ -257,9 +250,41 @@ namespace WebGrease.ImageAssemble
                     bitmapSource.UnlockBits(bitmapDataSource);
                     bitmapDataSource = null;
                 }
-
-                return bitmapOptimized;
             }
+            catch (Exception)
+            {
+                // if any exception is thrown, dispose of the bitmap object
+                // we've been working on before we rethrow and bail
+                if (bitmapOptimized != null)
+                {
+                    bitmapOptimized.Dispose();
+                }
+
+                throw;
+            }
+
+            // caller is responsible for disposing of this bitmap!
+            return bitmapOptimized;
+        }
+
+        private static void DitherSourcePixel(byte[] buffer, int rowStart, int col, int deltaRed, int deltaGreen, int deltaBlue, int weight)
+        {
+            var colorIndex = rowStart + col * 4;
+            buffer[colorIndex + 2] = ChannelAdjustment(buffer[colorIndex + 2], (deltaRed * weight) >> 4);
+            buffer[colorIndex + 1] = ChannelAdjustment(buffer[colorIndex + 1], (deltaGreen * weight) >> 4);
+            buffer[colorIndex] = ChannelAdjustment(buffer[colorIndex], (deltaBlue * weight) >> 4);
+        }
+
+        private static Pixel GetSourcePixel(byte[] buffer, int rowStart, int col)
+        {
+            var colorIndex = rowStart + col * 4;
+            return new Pixel
+            {
+                Alpha = buffer[colorIndex + 3],
+                Red = buffer[colorIndex + 2],
+                Green = buffer[colorIndex + 1],
+                Blue = buffer[colorIndex]
+            };
         }
 
         #endregion
@@ -270,10 +295,7 @@ namespace WebGrease.ImageAssemble
         /// <returns>The channel adjustment.</returns>
         private static byte ChannelAdjustment(byte current, int offset)
         {
-            var sum = current + offset;
-            if (sum <= 0) return 0;
-            if (sum >= 255) return 255;
-            return (byte)sum;
+            return (byte)Math.Min(255, Math.Max(0, current + offset));
         }
 
         #region Octree class
@@ -339,22 +361,22 @@ namespace WebGrease.ImageAssemble
 
             /// <summary>Add the given pixel color to the octree</summary>
             /// <param name="pPixel">points to the pixel color we want to add</param>
-            internal void AddColor(Pixel* pPixel)
+            internal void AddColor(Pixel pixel)
             {
                 // if the A value is non-zero (ignore the transparent color)
-                if (pPixel->A > 0)
+                if (pixel.Alpha > 0)
                 {
                     // if we have a previous node and this color is the same as the last...
-                    if (this.m_lastNode != null && pPixel->ARGB == this.m_lastArgb)
+                    if (this.m_lastNode != null && pixel.ARGB == this.m_lastArgb)
                     {
                         // just add this color to the same last node
-                        this.m_lastNode.AddColor(pPixel);
+                        this.m_lastNode.AddColor(pixel);
                     }
                     else
                     {
                         // just start at the root. If a new color is added,
                         // add one to the count (otherwise 0).
-                        this.m_colorCount += this.m_root.AddColor(pPixel) ? 1 : 0;
+                        this.m_colorCount += this.m_root.AddColor(pixel) ? 1 : 0;
                     }
                 }
                 else
@@ -371,15 +393,15 @@ namespace WebGrease.ImageAssemble
             /// method by computing the least distance to each color in the palette array.</summary>
             /// <param name="pPixel">pointer to the pixel color we want to look up</param>
             /// <returns>index of the palette entry we want to use for this color</returns>
-            internal int GetPaletteIndex(Pixel* pPixel)
+            internal int GetPaletteIndex(Pixel pixel)
             {
                 var paletteIndex = 0;
 
                 // transparent is always the first entry, so if this is transparent,
                 // don't do anything.
-                if (pPixel->A > 0)
+                if (pixel.Alpha > 0)
                 {
-                    paletteIndex = this.m_root.GetPaletteIndex(pPixel);
+                    paletteIndex = this.m_root.GetPaletteIndex(pixel);
 
                     // returns -1 if this value isn't in the octree.
                     if (paletteIndex < 0)
@@ -392,9 +414,9 @@ namespace WebGrease.ImageAssemble
                             var paletteColor = this.m_palette[ndx];
 
                             // calculate the delta for each channel
-                            var deltaRed = pPixel->R - paletteColor.R;
-                            var deltaGreen = pPixel->G - paletteColor.G;
-                            var deltaBlue = pPixel->B - paletteColor.B;
+                            var deltaRed = pixel.Red - paletteColor.R;
+                            var deltaGreen = pixel.Green - paletteColor.G;
+                            var deltaBlue = pixel.Blue - paletteColor.B;
 
                             // calculate the distance-squared by summing each channel's square
                             var distance = deltaRed * deltaRed + deltaGreen * deltaGreen + deltaBlue * deltaBlue;
@@ -412,7 +434,6 @@ namespace WebGrease.ImageAssemble
 
             /// <summary>Return a color palette for the computed octree</summary>
             /// <returns></returns>
-            [SuppressMessage("Microsoft.Globalization", "CA1305", Justification = "This code has been used as it is for Color Quantization.")]
             internal Color[] GetPaletteColors()
             {
                 // if we haven't already computed it, compute it now
@@ -452,11 +473,7 @@ namespace WebGrease.ImageAssemble
                         }
                     }
 
-                    Debug.WriteLine(string.Format(
-                        "Reduced from {0} colors to {1}",
-                        numColorsBefore,
-                        this.m_colorCount
-                                        ));
+                    Debug.WriteLine("Reduced from {0} colors to {1}".InvariantFormat(numColorsBefore, this.m_colorCount));
 
                     if (reductionLevel == 0 && !this.m_hasTransparent)
                     {
@@ -479,7 +496,7 @@ namespace WebGrease.ImageAssemble
                         // add the transparent color if we need it
                         if (this.m_hasTransparent)
                         {
-                            this.m_palette[++paletteIndex] = Color.FromArgb(0, 0, 0, 0);
+                            this.m_palette[paletteIndex++] = Color.Transparent;
                         }
 
                         // have the nodes insert their leaf colors
@@ -607,7 +624,7 @@ namespace WebGrease.ImageAssemble
                 /// down the appropriate child</summary>
                 /// <param name="pPixel">color to add</param>
                 /// <returns>true if a new color was added to the octree</returns>
-                internal bool AddColor(Pixel* pPixel)
+                internal bool AddColor(Pixel pixel)
                 {
                     var colorAdded = false;
                     if (this.m_isLeaf)
@@ -617,18 +634,18 @@ namespace WebGrease.ImageAssemble
                         colorAdded = ++this.m_pixelCount == 1;
 
                         // add the color to the running sum for this node
-                        this.m_redSum += pPixel->R;
-                        this.m_greenSum += pPixel->G;
-                        this.m_blueSum += pPixel->B;
+                        this.m_redSum += pixel.Red;
+                        this.m_greenSum += pixel.Green;
+                        this.m_blueSum += pixel.Blue;
 
                         // set the last node so we can quickly process adjacent pixels
                         // with the same color
-                        this.m_octree.SetLastNode(this, pPixel->ARGB);
+                        this.m_octree.SetLastNode(this, pixel.ARGB);
                     }
                     else
                     {
                         // get the index at this level for the rgb values
-                        var childIndex = this.GetChildIndex(pPixel);
+                        var childIndex = this.GetChildIndex(pixel);
 
                         // if there is no child, add one now to the next level
                         if (this.m_childNodes[childIndex] == null)
@@ -637,7 +654,7 @@ namespace WebGrease.ImageAssemble
                         }
 
                         // recurse...
-                        colorAdded = this.m_childNodes[childIndex].AddColor(pPixel);
+                        colorAdded = this.m_childNodes[childIndex].AddColor(pixel);
                     }
 
                     return colorAdded;
@@ -649,7 +666,7 @@ namespace WebGrease.ImageAssemble
                 /// original image when the octree was formed in pass 1</summary>
                 /// <param name="pPixel">source color to look up</param>
                 /// <returns>palette index to use</returns>
-                internal int GetPaletteIndex(Pixel* pPixel)
+                internal int GetPaletteIndex(Pixel pixel)
                 {
                     var paletteIndex = -1;
                     if (this.m_isLeaf)
@@ -660,11 +677,11 @@ namespace WebGrease.ImageAssemble
                     else
                     {
                         // get the index at this level for the rgb values
-                        var childIndex = this.GetChildIndex(pPixel);
+                        var childIndex = this.GetChildIndex(pixel);
                         if (this.m_childNodes[childIndex] != null)
                         {
                             // recurse...
-                            paletteIndex = this.m_childNodes[childIndex].GetPaletteIndex(pPixel);
+                            paletteIndex = this.m_childNodes[childIndex].GetPaletteIndex(pixel);
                         }
                     }
 
@@ -736,15 +753,15 @@ namespace WebGrease.ImageAssemble
                 /// Depends on which level this node is in.</summary>
                 /// <param name="pPixel">color pixel to compute</param>
                 /// <returns>child index (0-7)</returns>
-                private int GetChildIndex(Pixel* pPixel)
+                private int GetChildIndex(Pixel pixel)
                 {
                     // lvl: 0 1 2 3 4 5 6 7
                     // bit: 7 6 5 4 3 2 1 0
                     var shift = 7 - this.m_level;
                     int mask = s_levelMasks[this.m_level];
-                    return ((pPixel->R & mask) >> shift - 2) |
-                           ((pPixel->G & mask) >> shift - 1) |
-                           ((pPixel->B & mask) >> shift);
+                    return ((pixel.Red & mask) >> shift - 2) |
+                           ((pixel.Green & mask) >> shift - 1) |
+                           ((pixel.Blue & mask) >> shift);
                 }
             }
 
@@ -753,31 +770,31 @@ namespace WebGrease.ImageAssemble
 
         #endregion
 
-        #region Pixel structure for quick access to ARGB image bytes
+        #region Pixel class for ARGB values
 
         /// <summary>structure of a Format32bppArgb pixel in memory</summary>
-        [StructLayout(LayoutKind.Explicit)]
-        private struct Pixel
+        private class Pixel
         {
-            /// <summary>The b.</summary>
-            [FieldOffset(0)]
-            internal byte B;
+            /// <summary>The blue</summary>
+            public byte Blue { get; set; }
 
-            /// <summary>The g.</summary>
-            [FieldOffset(1)]
-            internal byte G;
+            /// <summary>The green</summary>
+            public byte Green { get; set; }
 
-            /// <summary>The r.</summary>
-            [FieldOffset(2)]
-            internal byte R;
+            /// <summary>The red</summary>
+            public byte Red { get; set; }
 
-            /// <summary>The a.</summary>
-            [FieldOffset(3)]
-            internal readonly byte A;
+            /// <summary>The alpha</summary>
+            public byte Alpha { get; set; }
 
-            /// <summary>The argb.</summary>
-            [FieldOffset(0)]
-            internal readonly int ARGB;
+            /// <summary>The argb combination</summary>
+            public int ARGB
+            {
+                get
+                {
+                    return Alpha << 24 | Red << 16 | Green << 8 | Blue;
+                }
+            }
         }
         #endregion
     }
