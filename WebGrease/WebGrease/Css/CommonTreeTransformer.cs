@@ -390,7 +390,7 @@ namespace WebGrease.Css
             var hexBasedNode = termTree.Children(T(CssParser.HEXBASEDVALUE)).FirstOrDefault();
             var hexBasedValue = hexBasedNode != null ? hexBasedNode.Children(T(CssParser.HASHIDENTIFIER)).FirstChildText() : null;
 
-            //Comments
+            // Comments
             var comments = CreateImportantCommentNodes(termTree);
 
             return new TermNode(unaryOperator, numberBasedValue, uriStringOrIdentBasedValue, hexBasedValue, CreateFunctionNode(termTree.Children(T(CssParser.FUNCTIONBASEDVALUE)).FirstOrDefault()), comments);
