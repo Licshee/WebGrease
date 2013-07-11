@@ -343,9 +343,9 @@ namespace WebGrease.Css
 
         /// <summary>Creates the expression node</summary>
         /// <param name="exprTree">The expression tree.</param>
-        /// <param name="binary"> Wether expression is inside a function.</param>
+        /// <param name="isBinary"> Wether expression is inside a function.</param>
         /// <returns>The expression node.</returns>
-        private static ExprNode CreateExpressionNode(CommonTree exprTree, bool binary)
+        private static ExprNode CreateExpressionNode(CommonTree exprTree, bool isBinary)
         {
             if (exprTree == null)
             {
@@ -354,9 +354,8 @@ namespace WebGrease.Css
 
             return new ExprNode(
                 CreateTermNode(exprTree.Children(T(CssParser.TERM)).FirstOrDefault()),
-                CreateTermWithOperatorsNode(exprTree.GrandChildren(T(CssParser.TERMWITHOPERATORS)), binary).ToSafeReadOnlyCollection(),
-                CreateImportantCommentNodes(exprTree),
-                binary);
+                CreateTermWithOperatorsNode(exprTree.GrandChildren(T(CssParser.TERMWITHOPERATORS)), isBinary).ToSafeReadOnlyCollection(),
+                CreateImportantCommentNodes(exprTree));
         }
 
         /// <summary>Creates the term with operator nodes.</summary>
@@ -435,7 +434,7 @@ namespace WebGrease.Css
         private static TermNode CreateTermNode(CommonTree termTree, bool binary)
         {
             TermNode termNode = CreateTermNode(termTree);
-            termNode.Binary = binary;
+            termNode.IsBinary = binary;
 
             return termNode;
         }
@@ -452,13 +451,13 @@ namespace WebGrease.Css
 
             //Determine the function should allow binary operator
             // Calc, min, max are valid function that supports binary operator
-            bool binary = functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("calc")
+            bool isBinary = functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("calc")
                 || functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("min")
                 || functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("max");
 
             return new FunctionNode(
                 functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText(),
-                CreateExpressionNode(functionTree.Children(T(CssParser.EXPR)).FirstOrDefault(), binary));
+                CreateExpressionNode(functionTree.Children(T(CssParser.EXPR)).FirstOrDefault(), isBinary));
         }
 
         /// <summary>Creates the selector nodes.</summary>

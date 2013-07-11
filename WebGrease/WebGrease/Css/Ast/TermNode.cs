@@ -92,7 +92,7 @@ namespace WebGrease.Css.Ast
             this.Hexcolor = hexColor;
             this.FunctionNode = functionNode;
             this.ImportantComments = importantComments ?? (new List<ImportantCommentNode>()).AsReadOnly();
-            this.Binary = false;
+            this.IsBinary = false;
         }
 
         /// <summary>Initializes a new instance of the TermNode class</summary>
@@ -103,11 +103,11 @@ namespace WebGrease.Css.Ast
         /// <param name="functionNode">Function object</param>
         /// <param name="binary">Whether this term is inside Binary Expression.</param>
         public TermNode(string unaryOperator, string numberBasedValue, string stringBasedValue,
-            string hexColor, FunctionNode functionNode, ReadOnlyCollection<ImportantCommentNode> importantComments, bool binary)
+            string hexColor, FunctionNode functionNode, ReadOnlyCollection<ImportantCommentNode> importantComments, bool isBinary)
             :this(unaryOperator, numberBasedValue, stringBasedValue, hexColor, functionNode, importantComments)
         {
             // Whether this term is inside Binary Expression.
-            this.Binary = binary;
+            this.IsBinary = isBinary;
         }
         /// <summary>
         /// Gets The Comments
@@ -119,7 +119,7 @@ namespace WebGrease.Css.Ast
         /// Gets the Binary value
         /// Determines Whether this term is inside Binary Expression.
         /// </summary>
-        public bool Binary { get; set; }
+        public bool IsBinary { get; set; }
 
         /// <summary>
         /// Gets Unary Operator
@@ -134,7 +134,7 @@ namespace WebGrease.Css.Ast
         { 
             get 
             {
-                if (Binary && !string.IsNullOrWhiteSpace(unaryOperator) && (unaryOperator=="-" || unaryOperator =="+"))
+                if (IsBinary && !string.IsNullOrWhiteSpace(unaryOperator) && (unaryOperator=="-" || unaryOperator =="+"))
                 {
                     return unaryOperator+ " ";
                 }
