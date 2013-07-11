@@ -559,7 +559,7 @@ namespace WebGrease.Css.Visitor
                 return null;
             }
 
-            //Important Comments first
+            // Important Comments first
             foreach (var comment in declarationNode.ImportantComments)
             {
                 comment.Accept(this);
