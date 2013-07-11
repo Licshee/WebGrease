@@ -594,7 +594,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitExprNode(ExprNode exprNode)
         {
 
-            //comments
+            // Comments
             foreach (var comment in exprNode.ImportantComments)
             {
                 comment.Accept(this);
