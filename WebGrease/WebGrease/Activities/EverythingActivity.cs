@@ -984,8 +984,7 @@ namespace WebGrease.Activities
         /// <param name="contentItem">The content item.</param>
         /// <param name="ex">exception caught</param>
         /// <param name="file">File being processed that caused the error.</param>
-        /// <param name="message">message to be shown (instead of Exception.Message)</param>
-        private void HandleError(ContentItem contentItem, Exception ex, string file = null, string message = null)
+        private void HandleError(ContentItem contentItem, Exception ex, string file = null)
         {
             if (ex.InnerException is BuildWorkflowException)
             {
@@ -993,10 +992,13 @@ namespace WebGrease.Activities
             }
 
             var bwe = ex as BuildWorkflowException;
-            if (contentItem != null && bwe != null)
+            if (contentItem != null)
             {
-                bwe.File = this.context.EnsureErrorFileOnDisk(bwe.File, contentItem);
-                ex = bwe;
+                file = this.context.EnsureErrorFileOnDisk(bwe != null ? bwe.File : file, contentItem);
+                if (bwe != null)
+                {
+                    bwe.File = file;
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(file) && (bwe == null || bwe.File.IsNullOrWhitespace()))
@@ -1004,19 +1006,19 @@ namespace WebGrease.Activities
                 this.context.Log.Error(null, string.Format(CultureInfo.InvariantCulture, ResourceStrings.ErrorsInFileFormat, file), file);
             }
 
-            this.context.Log.Error(ex, message);
+            this.context.Log.Error(ex, ex.ToString());
 
             var aggEx = ex as AggregateException;
             if (aggEx != null)
             {
                 foreach (var innerException in aggEx.InnerExceptions)
                 {
-                    this.HandleError(contentItem, innerException, file, message);
+                    this.HandleError(contentItem, innerException);
                 }
             }
             else if (ex.InnerException != null)
             {
-                this.HandleError(contentItem, ex.InnerException, file, message);
+                this.HandleError(contentItem, ex.InnerException);
             }
         }
     }

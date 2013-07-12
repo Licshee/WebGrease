@@ -25,21 +25,6 @@ namespace WebGrease.ImageAssemble
 
     using WebGrease.Extensions;
 
-    /// <summary>Packing type of Assembled image.</summary>
-    internal enum SpritePackingType
-    {
-        /// <summary>
-        /// Tiles Images vertically
-        /// </summary>
-        Vertical = 0,
-
-
-        /// <summary>
-        /// Tiles Images horizontally
-        /// </summary>
-        Horizontal
-    }
-
     /// <summary>Provides the base implementation for Assembling image,
     /// which can be overridden by child classes.
     /// <remarks>
@@ -48,22 +33,17 @@ namespace WebGrease.ImageAssemble
     /// </summary>
     internal abstract class ImageAssembleBase
     {
+        /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
 
+        /// <summary>Initializes a new instance of the <see cref="ImageAssembleBase"/> class.</summary>
+        /// <param name="context">The context.</param>
         public ImageAssembleBase(IWebGreaseContext context)
         {
             this.context = context;
         }
 
         #region Properties
-
-        /// <summary>
-        /// Gets Image Format
-        /// </summary>
-        internal abstract ImageFormat Format
-        {
-            get;
-        }
 
         /// <summary>
         /// Gets Image Format
@@ -128,6 +108,15 @@ namespace WebGrease.ImageAssemble
             get;
             set;
         }
+
+        /// <summary>
+        /// Gets Image Format
+        /// </summary>
+        protected abstract ImageFormat Format
+        {
+            get;
+        }
+
         #endregion
 
         #region Public Methods
@@ -136,8 +125,9 @@ namespace WebGrease.ImageAssemble
         /// Images are combined using Octree based quantizer + dithering algorithm.
         /// Images are also packed in rectangle using Nuclex Rectangle Packer algorithm.</summary>
         /// <param name="inputImages">The input Images.</param>
+        /// <returns>The <see cref="bool"/>. True if something was assembled, false if not.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all on purpose.")]
-        internal virtual void Assemble(Dictionary<InputImage, Bitmap> inputImages)
+        internal virtual bool Assemble(List<BitmapContainer> inputImages)
         {
             Bitmap newImage = null;
             try
@@ -163,23 +153,17 @@ namespace WebGrease.ImageAssemble
 
                     if (newImage != null)
                     {
-                        // Hash the saved file using MD5 hashing algorithm
-                        var hash = this.context.GetBitmapHash(newImage, this.Format);
-
-                        this.AssembleFileName = this.HashImage(hash);
-
-                        var targetFileInfo = new FileInfo(this.AssembleFileName);
-                        Safe.FileLock(targetFileInfo, () =>
-                        {
-                            if (!targetFileInfo.Exists)
-                            {
-                                this.SaveImage(newImage);
-                            }
-                        }); 
-
-                        // Add the sprite image size to the imagemap output element.
-                        this.ImageXmlMap.UpdateSize(this.AssembleFileName, newImage.Width, newImage.Height);
+                        this.SaveAndHashImage(newImage, newImage.Width, newImage.Height);
+                        return true;
                     }
+                }
+                else if (inputImages.Any())
+                {
+                    // Pass through, used for image by themselves or images that should be hashed but not sprited.
+                    var image = inputImages.First();
+                    this.ImageXmlMap.AppendToXml(image.InputImage.AbsoluteImagePath, this.AssembleFileName, image.Width, image.Height, 0, 0, "passthrough", true, image.InputImage.Position);
+                    image.BitmapAction(bitmap => this.SaveAndHashImage(image.Bitmap, image.Width, image.Height));
+                    return true;
                 }
             }
             catch (OutOfMemoryException ex)
@@ -196,19 +180,20 @@ namespace WebGrease.ImageAssemble
                 this.context.Log.Error(ex);
                 try
                 {
-                    Safe.FileLock(new FileInfo(this.AssembleFileName), () =>
-                    {
-                        // First delete the invalid file, if it exists
-                        if (File.Exists(this.AssembleFileName))
+                    Safe.FileLock(
+                        new FileInfo(this.AssembleFileName),
+                        () =>
                         {
-                            File.Delete(this.AssembleFileName);
-                        }
-                    });
+                            // First delete the invalid file, if it exists
+                            if (File.Exists(this.AssembleFileName))
+                            {
+                                File.Delete(this.AssembleFileName);
+                            }
+                        });
                 }
                 catch (Exception)
                 {
                 }
-
 
                 throw;
             }
@@ -219,6 +204,33 @@ namespace WebGrease.ImageAssemble
                     newImage.Dispose();
                 }
             }
+
+            return false;
+        }
+
+        /// <summary>Saves and hashed the bitmap.</summary>
+        /// <param name="bitmap">The bitmap.</param>
+        /// <param name="width">The width.</param>
+        /// <param name="height">The height.</param>
+        private void SaveAndHashImage(Bitmap bitmap, int width, int height)
+        {
+            var hash = this.context.GetBitmapHash(bitmap, this.Format);
+
+            this.AssembleFileName = this.HashImage(hash);
+
+            var targetFileInfo = new FileInfo(this.AssembleFileName);
+            Safe.FileLock(
+                targetFileInfo,
+                () =>
+                    {
+                        if (!targetFileInfo.Exists)
+                        {
+                            this.SaveImage(bitmap);
+                        }
+                    });
+
+            // Add the sprite image size to the imagemap output element.
+            this.ImageXmlMap.UpdateSize(this.AssembleFileName, width, height);
         }
 
         #endregion
@@ -244,7 +256,7 @@ namespace WebGrease.ImageAssemble
                 // Image is save to the same file from where it was created. (ref: http://msdn.microsoft.com/en-us/library/9t4syfhh.aspx)
                 // This exception is thrown also if access is denied to the path.
                 // Handle this condition and throw a custom exception with actual exception as inner exception.
-                var imageException = new ImageAssembleException(string.Format(System.Globalization.CultureInfo.CurrentUICulture, ImageAssembleStrings.ImageSaveExternalExceptionMessage, this.AssembleFileName), ex);
+                var imageException = new ImageAssembleException(string.Format(CultureInfo.CurrentUICulture, ImageAssembleStrings.ImageSaveExternalExceptionMessage, this.AssembleFileName), ex);
                 throw imageException;
             }
         }
@@ -285,7 +297,7 @@ namespace WebGrease.ImageAssemble
         }
 
         /// <summary>Hashes the Assembled Image using MD5 hash algorithm</summary>
-        /// <param name="hash"></param>
+        /// <param name="hash">The Hash</param>
         protected string HashImage(string hash)
         {
             var fileInfo = new FileInfo(this.AssembleFileName);
@@ -317,27 +329,18 @@ namespace WebGrease.ImageAssemble
         /// <param name="pixelFormat">Nullable PixelFormat.</param>
         /// <returns>Assembled image.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Legacy Code, Fix TODO")]
-        protected virtual Bitmap PackHorizontal(Dictionary<InputImage, Bitmap> originalBitmaps, bool useLogging, PixelFormat? pixelFormat)
+        protected Bitmap PackHorizontal(List<BitmapContainer> originalBitmaps, bool useLogging, PixelFormat? pixelFormat)
         {
-            var maxHeight = originalBitmaps.Values.Max(c => c.Height);
-            var totalWidth = originalBitmaps.Values.Sum(c => c.Width);
-
-            // Add padding
-            totalWidth += originalBitmaps.Count * this.PaddingBetweenImages;
+            var maxHeight = originalBitmaps.Max(c => c.Height);
+            var totalWidth = originalBitmaps.Sum(c => c.Width) + (originalBitmaps.Count * this.PaddingBetweenImages);
 
             // New bitmap will have width as sum of all widths and heigh as max height
-            Bitmap newImage;
-            if (pixelFormat != null)
-            {
-                newImage = new Bitmap(totalWidth, maxHeight, (PixelFormat)pixelFormat);
-            }
-            else
-            {
-                newImage = new Bitmap(totalWidth, maxHeight);
-            }
+            var newImage = pixelFormat != null
+                                  ? new Bitmap(totalWidth, maxHeight, (PixelFormat)pixelFormat)
+                                  : new Bitmap(totalWidth, maxHeight);
 
             // Sort images descending by Height
-            var result = originalBitmaps.OrderByDescending(entry => entry.Value.Height);
+            var result = originalBitmaps.OrderByDescending(entry => entry.Height);
 
             using (var graphics = Graphics.FromImage(newImage))
             {
@@ -351,22 +354,20 @@ namespace WebGrease.ImageAssemble
 
                 foreach (var entry in result)
                 {
-                    var image = entry.Value;
-                    graphics.DrawImage(image, new Rectangle(xpoint, 0, image.Width, image.Height));
-
+                    entry.BitmapAction(bitmap => graphics.DrawImage(bitmap, new Rectangle(xpoint, 0, entry.Width, entry.Height)));
 
                     // Log to XmlMap if logging enabled
                     if (useLogging)
                     {
-                        this.ImageXmlMap.AppendToXml(entry.Key.AbsoluteImagePath, this.AssembleFileName, image.Width, image.Height, xpoint * -1, 0, null, addOutputNode, entry.Key.Position);
+                        this.ImageXmlMap.AppendToXml(entry.InputImage.AbsoluteImagePath, this.AssembleFileName, entry.Width, entry.Height, xpoint * -1, 0, null, addOutputNode, entry.InputImage.Position);
                         addOutputNode = false;
-                        foreach (var duplicateImagePath in entry.Key.DuplicateImagePaths)
+                        foreach (var duplicateImagePath in entry.InputImage.DuplicateImagePaths)
                         {
-                            this.ImageXmlMap.AppendToXml(duplicateImagePath, this.AssembleFileName, image.Width, image.Height, xpoint * -1, 0, "duplicate", addOutputNode, entry.Key.Position);
+                            this.ImageXmlMap.AppendToXml(duplicateImagePath, this.AssembleFileName, entry.Width, entry.Height, xpoint * -1, 0, "duplicate", addOutputNode, entry.InputImage.Position);
                         }
                     }
 
-                    xpoint += image.Width + this.PaddingBetweenImages;
+                    xpoint += entry.Width + this.PaddingBetweenImages;
                 }
             }
 
@@ -379,27 +380,21 @@ namespace WebGrease.ImageAssemble
         /// <param name="pixelFormat">Nullable PixelFormat.</param>
         /// <returns>Assembled image.</returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Legacy Code, Fix TODO")]
-        protected virtual Bitmap PackVertical(Dictionary<InputImage, Bitmap> originalBitmaps, bool useLogging, PixelFormat? pixelFormat)
+        protected Bitmap PackVertical(List<BitmapContainer> originalBitmaps, bool useLogging, PixelFormat? pixelFormat)
         {
-            var maxWidth = originalBitmaps.Values.Max(c => c.Width);
-            var totalHeight = originalBitmaps.Values.Sum(c => c.Height);
+            var maxWidth = originalBitmaps.Max(c => c.Width);
+            var totalHeight = originalBitmaps.Sum(c => c.Height);
 
             // Add padding
             totalHeight += originalBitmaps.Count * this.PaddingBetweenImages;
 
             // New bitmap will have width as max width and heigh as sum of all heights
-            Bitmap spriteImage;
-            if (pixelFormat != null)
-            {
-                spriteImage = new Bitmap(maxWidth, totalHeight, (PixelFormat)pixelFormat);
-            }
-            else
-            {
-                spriteImage = new Bitmap(maxWidth, totalHeight);
-            }
+            var spriteImage = pixelFormat != null
+                                     ? new Bitmap(maxWidth, totalHeight, (PixelFormat)pixelFormat)
+                                     : new Bitmap(maxWidth, totalHeight);
 
             // Sort images descending by width
-            var result = originalBitmaps.OrderByDescending(entry => entry.Value.Width);
+            var result = originalBitmaps.OrderByDescending(entry => entry.Width);
 
             using (var graphics = Graphics.FromImage(spriteImage))
             {
@@ -415,7 +410,6 @@ namespace WebGrease.ImageAssemble
                 {
                     // Horizontal position for the image in vertical sprite changes as per market (LTR/RTL) .
                     var xpoint = 0;
-                    var currentImage = entry.Value;
 
                     // When not set explicitly, Image position is Left. This case is possible in two scenarios:
                     // 1. In LTR markets, the image to be sprited is Left aligned in CSS (normal scenario).
@@ -425,10 +419,10 @@ namespace WebGrease.ImageAssemble
                     // 1. In LTR markets, the image to be sprited is Right aligned in CSS. 
                     // 2. In RTL markets, the image to be sprited is Right aligned in CSS (normal scenario).
                     // When any of above occurs, render the image on right side in sprite (horizontal position = Sprite Image Width - Current Image Width).
-                    switch (entry.Key.Position)
+                    switch (entry.InputImage.Position)
                     {
                         case ImagePosition.Right:
-                            xpoint = spriteImage.Width - currentImage.Width;
+                            xpoint = spriteImage.Width - entry.Width;
                             break;
                         case ImagePosition.Center:
 
@@ -438,26 +432,26 @@ namespace WebGrease.ImageAssemble
                             // e.g 
                             // 3.5 will become 4
                             // 4.5 will become 5
-                            xpoint = (spriteImage.Width - currentImage.Width + 1) / 2;
+                            xpoint = (spriteImage.Width - entry.Width + 1) / 2;
                             break;
                         default:
                             break;
                     }
 
-                    graphics.DrawImage(currentImage, new Rectangle(xpoint, ypoint, currentImage.Width, currentImage.Height));
+                    entry.BitmapAction(bitmap => graphics.DrawImage(bitmap, new Rectangle(xpoint, ypoint, entry.Width, entry.Height)));
 
                     // Log to XmlMap if logging enabled
                     if (useLogging)
                     {
-                        this.ImageXmlMap.AppendToXml(entry.Key.AbsoluteImagePath, this.AssembleFileName, currentImage.Width, currentImage.Height, xpoint * -1, ypoint * -1, null, addOutputNode, entry.Key.Position);
+                        this.ImageXmlMap.AppendToXml(entry.InputImage.AbsoluteImagePath, this.AssembleFileName, entry.Width, entry.Height, xpoint * -1, ypoint * -1, null, addOutputNode, entry.InputImage.Position);
                         addOutputNode = false;
-                        foreach (var duplicateImagePath in entry.Key.DuplicateImagePaths)
+                        foreach (var duplicateImagePath in entry.InputImage.DuplicateImagePaths)
                         {
-                            this.ImageXmlMap.AppendToXml(duplicateImagePath, this.AssembleFileName, currentImage.Width, currentImage.Height, xpoint * -1, ypoint * -1, "duplicate", addOutputNode, entry.Key.Position);
+                            this.ImageXmlMap.AppendToXml(duplicateImagePath, this.AssembleFileName, entry.Width, entry.Height, xpoint * -1, ypoint * -1, "duplicate", addOutputNode, entry.InputImage.Position);
                         }
                     }
 
-                    ypoint += currentImage.Height + this.PaddingBetweenImages;
+                    ypoint += entry.Height + this.PaddingBetweenImages;
                 }
             }
 

@@ -25,20 +25,11 @@ namespace WebGrease.ImageAssemble
 
         #endregion
 
+        /// <summary>Initializes a new instance of the <see cref="PhotoAssemble"/> class.</summary>
+        /// <param name="context">The context.</param>
         public PhotoAssemble(IWebGreaseContext context)
             : base(context)
         {
-        }
-
-        /// <summary>
-        /// Gets image type
-        /// </summary>
-        internal override ImageFormat Format
-        {
-            get
-            {
-                return ImageFormat.Jpeg;
-            }
         }
 
         /// <summary>
@@ -63,12 +54,23 @@ namespace WebGrease.ImageAssemble
             }
         }
 
+        /// <summary>
+        /// Gets image type
+        /// </summary>
+        protected override ImageFormat Format
+        {
+            get
+            {
+                return ImageFormat.Jpeg;
+            }
+        }
+
         /// <summary>Optimizes the image quality for JPEG files while saving it.</summary>
         /// <param name="newImage">Image to be saved.</param>
         protected override void SaveImage(Bitmap newImage)
         {
             const string MimeType = "image/jpeg";
-            ImageCodecInfo encoder = null;
+            ImageCodecInfo encoder;
 
             // Get ImageCodecInfo for JPEG Image
             var encoders = ImageCodecInfo.GetImageEncoders();

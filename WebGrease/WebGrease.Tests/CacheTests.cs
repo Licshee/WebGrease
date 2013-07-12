@@ -324,7 +324,7 @@ namespace Microsoft.WebGrease.Tests
             // ----------------------------------------------------------------------------------------
             // Change one of the sprited images and see if it runs again
             var msnLogoGreenMobile = Path.Combine(inputImagesRoot, "MSN_Logo_green_Mobile.png");
-            File.Copy(msnLogoGreenMobile, msnLogoMobile, true);
+            Safe.FileLock(new FileInfo(msnLogoMobile), () => File.Copy(msnLogoGreenMobile, msnLogoMobile, true));
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should not be run");
@@ -342,6 +342,7 @@ namespace Microsoft.WebGrease.Tests
             var img2 = Path.Combine(inputImagesRoot, "nosprite2.png");
 
             File.Copy(img2, img1, true);
+            Safe.FileLock(new FileInfo(img1), () => File.Copy(msnLogoGreenMobile, msnLogoMobile, true));
             ExecuteBuildTask(TaskName, testRoot, ConfigType, allPreExecute, buildTask =>
             {
                 Assert.IsFalse(HasExecuted(buildTask, SectionIdParts.Preprocessing, SectionIdParts.Process, "Sass"), "Sass should not be run");

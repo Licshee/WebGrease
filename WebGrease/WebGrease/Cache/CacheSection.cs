@@ -124,11 +124,18 @@ namespace WebGrease
         /// <summary>The load.</summary>
         public void Load()
         {
-            var fileName = new FileInfo(this.absolutePath);
-            if (fileName.Exists)
+            try
             {
-                this.cachedSection = ReadOnlyCacheSection.Load(fileName.FullName, this.context);
-                this.isUnsaved = this.cachedSection != null;
+                var fileName = new FileInfo(this.absolutePath);
+                if (fileName.Exists)
+                {
+                    this.cachedSection = ReadOnlyCacheSection.Load(fileName.FullName, this.context);
+                    this.isUnsaved = this.cachedSection != null;
+                }
+            }
+            catch (PathTooLongException ex)
+            {
+                throw new BuildWorkflowException("Path to long: {0}".InvariantFormat(this.absolutePath), ex);
             }
         }
 

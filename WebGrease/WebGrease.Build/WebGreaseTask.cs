@@ -13,7 +13,6 @@ namespace WebGrease.Build
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Threading.Tasks;
 
     using Activities;
 
@@ -50,6 +49,9 @@ namespace WebGrease.Build
 
         /// <summary>Gets or sets the path to the configuration files to use.</summary>
         public string ConfigurationPath { get; set; }
+
+        /// <summary>Gets or sets the value that indicates ifit should check all subdirectories for configuration as well.</summary>
+        public bool ConfigurationPathRecursive { get; set; }
 
         /// <summary>Gets or sets the root output folder</summary>
         public string RootOutputPath { get; set; }
@@ -131,72 +133,76 @@ namespace WebGrease.Build
             var logManager = this.CreateLogManager();
 
             var globalContext = this.CreateSessionContext(logManager);
-            using (globalContext.Cache.SingleUseLock())
+            if (globalContext.Configuration.Overrides != null && globalContext.Configuration.Overrides.SkipAll)
             {
-                if (globalContext.Configuration.Overrides != null && globalContext.Configuration.Overrides.SkipAll)
-                {
-                    logManager.Information("WebGrease Skipping because of SkipAll in webgrease override file.");
-                    return true;
-                }
-
-                if (this.CleanDestination)
-                {
-                    globalContext.CleanDestination();
-                }
-
-                var fileTypesToExecuteParallel = this.FileType == FileTypes.All ? new[] { FileTypes.JS, FileTypes.CSS | FileTypes.Image } : new[] { this.FileType };
-
-                if (this.CleanCache)
-                {
-                    globalContext.CleanCache();
-                }
-
-                if (Directory.Exists(globalContext.Configuration.IntermediateErrorDirectory))
-                {
-                    Directory.Delete(globalContext.Configuration.IntermediateErrorDirectory, true);
-                }
-
-                var totalSuccess = true;
-                globalContext.ParallelForEach(
-                    item => new[] { SectionIdParts.WebGreaseBuildTaskSession, item.ToString() },
-                    fileTypesToExecuteParallel,
-                    (threadContext, item, state) =>
-                    {
-                        logManager.Information("Starting WebGrease thread for " + item);
-                        var success = this.Execute(item, activity.Value, this.ConfigurationPath, threadContext);
-                        totalSuccess &= totalSuccess;
-                        return success;
-                    },
-                    (threadContext, item) =>
-                    {
-                        if (this.CleanCache)
-                        {
-                            threadContext.CleanCache(logManager);
-                        }
-
-                        return true;
-                    });
-
-                var threadedAndGroupedMeasureResults = globalContext
-                    .ThreadedMeasureResults
-                    .GroupBy(mr => mr.Key)
-                    .Select(g => new Tuple<string, bool, IEnumerable<TimeMeasureResult>>(
-                        g.Key + (g.HasAtLeast(2) ? " - Multi-Threaded" : string.Empty),
-                        g.HasAtLeast(2),
-                        g.SelectMany(l => l.Value)
-                            .GroupBy(l => l.Name)
-                            .Select(l => new TimeMeasureResult
-                                        {
-                                            IdParts = WebGreaseContext.ToIdParts(l.Key),
-                                            Count = l.Sum(c => c.Count),
-                                            Duration = l.Sum(c => c.Duration)
-                                        })));
-
-                this.FinalizeMeasure(totalSuccess, threadedAndGroupedMeasureResults, logManager, start, activity, globalContext.Configuration);
-
-                logManager.Information("WebGrease done");
-                return totalSuccess && !this.hasErrors;
+                logManager.Information("WebGrease Skipping because of SkipAll in webgrease override file.");
+                return true;
             }
+
+            var totalSuccess = true;
+
+            globalContext.Cache.LockedFileCacheAction(
+                "{0}\r\nWebGrease Running for Configuration Folder: {1}".InvariantFormat(DateTime.UtcNow, this.ConfigurationPath),
+                () =>
+                {
+                    if (this.CleanDestination)
+                    {
+                        globalContext.CleanDestination();
+                    }
+
+                    var fileTypesToExecuteParallel = this.FileType == FileTypes.All ? new[] { FileTypes.JS, FileTypes.CSS | FileTypes.Image } : new[] { this.FileType };
+
+                    if (this.CleanCache)
+                    {
+                        globalContext.CleanCache();
+                    }
+
+                    if (Directory.Exists(globalContext.Configuration.IntermediateErrorDirectory))
+                    {
+                        Directory.Delete(globalContext.Configuration.IntermediateErrorDirectory, true);
+                    }
+
+                    globalContext.ParallelForEach(
+                        item => new[] { SectionIdParts.WebGreaseBuildTaskSession, item.ToString() },
+                        fileTypesToExecuteParallel,
+                        (threadContext, item, state) =>
+                        {
+                            logManager.Information("Starting WebGrease thread for " + item);
+                            var success = this.Execute(item, activity.Value, this.ConfigurationPath, threadContext);
+                            totalSuccess &= totalSuccess;
+                            return success;
+                        },
+                        (threadContext, item) =>
+                        {
+                            if (this.CleanCache)
+                            {
+                                threadContext.CleanCache(logManager);
+                            }
+
+                            return true;
+                        });
+
+                    var threadedAndGroupedMeasureResults = globalContext
+                        .ThreadedMeasureResults
+                        .GroupBy(mr => mr.Key)
+                        .Select(g => new Tuple<string, bool, IEnumerable<TimeMeasureResult>>(
+                            g.Key + (g.HasAtLeast(2) ? " - Multi-Threaded" : string.Empty),
+                            g.HasAtLeast(2),
+                            g.SelectMany(l => l.Value)
+                                .GroupBy(l => l.Name)
+                                .Select(l => new TimeMeasureResult
+                                            {
+                                                IdParts = WebGreaseContext.ToIdParts(l.Key),
+                                                Count = l.Sum(c => c.Count),
+                                                Duration = l.Sum(c => c.Duration)
+                                            })));
+
+                    this.FinalizeMeasure(totalSuccess, threadedAndGroupedMeasureResults, logManager, start, activity, globalContext.Configuration);
+
+                    logManager.Information("WebGrease done");
+                });
+
+            return totalSuccess && !this.hasErrors;
         }
 
         /// <summary>The get file sets.</summary>
@@ -225,10 +231,12 @@ namespace WebGrease.Build
         /// <param name="activity">The activity</param>
         /// <param name="fileType">The file types</param>
         /// <param name="measure">If it should measure.</param>
+        /// <param name="fullPathToConfigFiles">The full Path To Config Files.</param>
         /// <returns>The success.</returns>
-        private static Tuple<bool, int> ExecuteConfigFile(IWebGreaseContext sessionContext, string configFile, ActivityName activity, FileTypes fileType, bool measure)
+        private static Tuple<bool, int> ExecuteConfigFile(IWebGreaseContext sessionContext, string configFile, ActivityName activity, FileTypes fileType, bool measure, string fullPathToConfigFiles)
         {
             var configFileStart = DateTimeOffset.Now;
+
             var configFileInfo = new FileInfo(configFile);
 
             // Creates the context specific to the configuration file
@@ -282,6 +290,7 @@ namespace WebGrease.Build
         /// <param name="logManager">The log manager.</param>
         /// <param name="start">The start time of the current run..</param>
         /// <param name="activity">The current activity name.</param>
+        /// <param name="configuration">The configuration.</param>
         private void FinalizeMeasure(bool success, IEnumerable<Tuple<string, bool, IEnumerable<TimeMeasureResult>>> activityResults, LogManager logManager, DateTimeOffset start, ActivityName? activity, WebGreaseConfiguration configuration)
         {
             if (this.Measure && success && activityResults.Any())
@@ -332,10 +341,10 @@ namespace WebGrease.Build
                 {
                     var sessionCacheData = sessionCacheSection.GetCacheData<SessionCacheData>(CacheFileCategories.SolutionCacheConfig);
 
-                    var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = SearchOption.TopDirectoryOnly }.GetFiles();
+                    var inputFiles = new InputSpec { Path = fullPathToConfigFiles, IsOptional = true, SearchOption = this.ConfigurationPathRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly }.GetFiles();
                     var contentTypeSuccess = sessionContext
                         .SectionedAction(contentTypeSectionId)
-                        .MakeCachable(new { activity, inputFiles, sessionContext.Configuration }, isSkipable: activity == ActivityName.Bundle)
+                        .MakeCachable(new { activity, inputFiles, sessionContext.Configuration }, activity == ActivityName.Bundle)
                         .Execute(contentTypeCacheSection =>
                             {
                                 var success = true;
@@ -344,7 +353,7 @@ namespace WebGrease.Build
                                     // get a list of the files in the configuration folder
                                     foreach (var configFile in inputFiles)
                                     {
-                                        var executeConfigFileResult = ExecuteConfigFile(sessionContext, configFile, activity, fileType, this.Measure);
+                                        var executeConfigFileResult = ExecuteConfigFile(sessionContext, configFile, activity, fileType, this.Measure, fullPathToConfigFiles);
                                         success &= executeConfigFileResult.Item1;
                                         availableFileSetsForFileType += executeConfigFileResult.Item2;
                                         GC.Collect();

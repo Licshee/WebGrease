@@ -98,9 +98,12 @@ namespace WebGrease
             return null;
         }
 
-        public IDisposable SingleUseLock()
+        /// <summary>The locked file cache action.</summary>
+        /// <param name="lockFileContent">The lock file content.</param>
+        /// <param name="action">The action.</param>
+        public void LockedFileCacheAction(string lockFileContent, Action action)
         {
-            return null;
+            action();
         }
 
         #endregion

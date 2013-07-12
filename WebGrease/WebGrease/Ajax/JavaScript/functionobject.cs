@@ -252,4 +252,12 @@ namespace Microsoft.Ajax.Utilities
             return (argumentField == targetArgumentField);
         }
     }
+
+    public enum FunctionType
+    {
+        Declaration,
+        Expression,
+        Getter,
+        Setter
+    }
 }

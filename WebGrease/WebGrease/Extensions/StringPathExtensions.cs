@@ -151,6 +151,11 @@ namespace WebGrease.Extensions
                 return absolutePath;
             }
 
+            if (absolutePath.Equals(relativeTo, StringComparison.OrdinalIgnoreCase))
+            {
+                return string.Empty;
+            }
+
             relativeTo = relativeTo.EnsureEndSeparator();
             return new Uri(relativeTo).MakeRelativeUri(new Uri(absolutePath)).ToString().Replace("/", @"\");
         }

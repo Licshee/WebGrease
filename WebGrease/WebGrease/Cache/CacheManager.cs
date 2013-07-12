@@ -19,7 +19,7 @@ namespace WebGrease
         #region Fields
 
         /// <summary>The lock file name.</summary>
-        private const string LockFileName = "webgrease.caching.lock";
+        internal const string LockFileName = "webgrease.caching.lock";
 
         /// <summary>The first.</summary>
         private static readonly IList<string> First = new List<string>();
@@ -65,22 +65,99 @@ namespace WebGrease
                 cacheRoot = Path.Combine(configuration.SourceDirectory, cacheRoot);
             }
 
-            this.cacheRootPath = Path.Combine(cacheRoot, configuration.CacheUniqueKey ?? string.Empty);
+            this.cacheRootPath = GetCacheUniquePath(cacheRoot, configuration.CacheUniqueKey);
 
             if (!Directory.Exists(this.cacheRootPath))
             {
                 Directory.CreateDirectory(this.cacheRootPath);
             }
 
-            Safe.Lock(First, () =>
-            {
-                // Only log this once when multi threading.
-                if (First.Contains(this.cacheRootPath))
+            Safe.Lock(
+                First,
+                () =>
                 {
-                    First.Add(this.cacheRootPath);
-                    logManager.Information("Cache enabled using cache path: {0}".InvariantFormat(this.cacheRootPath));
-                }
-            });
+                    // Only log this once when multi threading.
+                    if (First.Contains(this.cacheRootPath))
+                    {
+                        First.Add(this.cacheRootPath);
+                        logManager.Information("Cache enabled using cache path: {0}".InvariantFormat(this.cacheRootPath));
+                    }
+                });
+        }
+
+        /// <summary>The locked file cache action.</summary>
+        /// <param name="lockFileContent">The lock file content.</param>
+        /// <param name="action">The action.</param>
+        public void LockedFileCacheAction(string lockFileContent, Action action)
+        {
+            var cacheLockFile = Path.Combine(this.RootPath, LockFileName);
+            var success = Safe.WriteToFileStream(
+                cacheLockFile,
+                fs =>
+                    {
+                        var sr = new StreamWriter(fs);
+                        sr.Write(lockFileContent);
+                        sr.Flush();
+                        action();
+                        sr.Write("\r\nDone");
+                        sr.Flush();
+                    });
+
+            if (!success)
+            {
+                throw new BuildWorkflowException("Could not get a unique lock on cache lock file: {0}".InvariantFormat(cacheLockFile));
+            }
+        }
+
+        /// <summary>The get cache unique path.</summary>
+        /// <param name="cacheRoot">The cache root.</param>
+        /// <param name="cacheUniqueKey">The cache Unique Key.</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        private static string GetCacheUniquePath(string cacheRoot, string cacheUniqueKey)
+        {
+            string cachePath = null;
+            var uniqueKey = cacheUniqueKey ?? string.Empty;
+            var mapFilePath = Path.Combine(cacheRoot, "cachefoldermap.txt");
+            var success = Safe.WriteToFileStream(
+                    mapFilePath,
+                    fs =>
+                    {
+                        var items = new Dictionary<string, string>();
+                        var sr = new StreamReader(fs);
+                        items = sr.ReadToEnd().FromJson<Dictionary<string, string>>() ?? items;
+
+                        string uniqueValue;
+                        if (!items.TryGetValue(uniqueKey, out uniqueValue))
+                        {
+                            var i = 0;
+                            do
+                            {
+                                uniqueValue = "CF{0}".InvariantFormat(++i);
+                            }
+                            while (items.ContainsValue(uniqueValue));
+
+                            items.Add(uniqueKey, uniqueValue);
+                            fs.Seek(0, SeekOrigin.Begin);
+                            var sw = new StreamWriter(fs);
+                            var newContent = items.ToJson();
+                            sw.Write(newContent);
+                            sw.Flush();
+                        }
+
+                        cachePath = Path.Combine(cacheRoot, uniqueValue);
+                    });
+
+            if (!success)
+            {
+                throw new BuildWorkflowException("Could not get a unique lock on: {0}".InvariantFormat(mapFilePath));
+            }
+
+            if (string.IsNullOrWhiteSpace(cachePath) || cachePath == cacheRoot)
+            {
+                throw new BuildWorkflowException("Could not find a valid cache folder in: {0}".InvariantFormat(cacheRoot));
+            }
+
+            return cachePath;
         }
 
         #endregion
@@ -166,7 +243,7 @@ namespace WebGrease
             }
 #endif
             if (this.CurrentCacheSection == cacheSection)
-            { 
+            {
                 this.currentCacheSection = cacheSection.Parent;
             }
         }
@@ -205,11 +282,6 @@ namespace WebGrease
             contentItem.WriteTo(absoluteCacheFilePath);
 
             return absoluteCacheFilePath;
-        }
-
-        public IDisposable SingleUseLock()
-        {
-            return CacheFileLockObject.TryCreate(Path.Combine(this.cacheRootPath, LockFileName));
         }
 
         #endregion

@@ -19,11 +19,7 @@ namespace Microsoft.Ajax.Utilities
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Globalization;
     using System.IO;
-    using System.Runtime.Serialization;
-    using System.Security;
-    using System.Security.Permissions;
     using System.Text;
     using System.Text.RegularExpressions;
 
@@ -324,40 +320,32 @@ namespace Microsoft.Ajax.Utilities
                         // get the first token
                         NextToken();
 
-                        try
+                        switch (Settings.CssType)
                         {
-                            switch (Settings.CssType)
-                            {
-                                case CssType.FullStyleSheet:
-                                    // parse a style sheet!
-                                    ParseStylesheet();
-                                    break;
+                            case CssType.FullStyleSheet:
+                                // parse a style sheet!
+                                ParseStylesheet();
+                                break;
 
-                                case CssType.DeclarationList:
-                                    SkipIfSpace();
-                                    ParseDeclarationList(false);
-                                    break;
+                            case CssType.DeclarationList:
+                                SkipIfSpace();
+                                ParseDeclarationList(false);
+                                break;
 
-                                default:
-                                    Debug.Fail("UNEXPECTED CSS TYPE");
-                                    goto case CssType.FullStyleSheet;
-                            }
-
-                            if (!m_scanner.EndOfFile)
-                            {
-                                string errorMessage = CssStrings.ExpectedEndOfFile;
-                                throw new CssScannerException(
-                                    (int)CssErrorCode.ExpectedEndOfFile,
-                                    0,
-                                    m_currentToken.Context.Start.Line,
-                                    m_currentToken.Context.Start.Char,
-                                    errorMessage);
-                            }
+                            default:
+                                Debug.Fail("UNEXPECTED CSS TYPE");
+                                goto case CssType.FullStyleSheet;
                         }
-                        catch (CssException exc)
+
+                        if (!m_scanner.EndOfFile)
                         {
-                            // show the error
-                            OnCssError(exc);
+                            OnCssError(new CssException(
+                                (int)CssErrorCode.ExpectedEndOfFile,
+                                CssStrings.ScannerSubsystem,
+                                0,
+                                m_currentToken.Context.Start.Line,
+                                m_currentToken.Context.Start.Char,
+                                CssStrings.ExpectedEndOfFile));
                         }
 
                         // get the crunched string and dump the string builder
@@ -1306,147 +1294,127 @@ namespace Microsoft.Ajax.Utilities
             var parsed = Parsed.Empty;
             while (!m_scanner.EndOfFile)
             {
-                try
+                // check the line length before each new declaration -- if we're past the threshold, start a new line
+                if (m_lineLength >= Settings.LineBreakThreshold)
                 {
-                    // check the line length before each new declaration -- if we're past the threshold, start a new line
-                    if (m_lineLength >= Settings.LineBreakThreshold)
+                    AddNewLine();
+                }
+
+                Parsed parsedDecl = ParseDeclaration();
+                if (parsed == Parsed.Empty && parsedDecl != Parsed.Empty)
+                {
+                    parsed = parsedDecl;
+                }
+
+                // if we are allowed to have margin at-keywords in this block, and
+                // we didn't find a declaration, check to see if it's a margin
+                var parsedMargin = false;
+                if (allowMargins && parsedDecl == Parsed.Empty)
+                {
+                    parsedMargin = ParseMargin() == Parsed.True;
+                }
+
+                // if we parsed a margin, we DON'T expect there to be a semi-colon.
+                // if we didn't parse a margin, then there better be either a semicolon or a closing brace.
+                if (!parsedMargin)
+                {
+                    if ((CurrentTokenType != TokenType.Character
+                        || (CurrentTokenText != ";" && CurrentTokenText != "}"))
+                        && !m_scanner.EndOfFile)
                     {
-                        AddNewLine();
+                        ReportError(0, CssErrorCode.ExpectedSemicolonOrClosingBrace, CurrentTokenText);
+
+                        // we'll get here if we decide to ignore the error and keep trudging along. But we still
+                        // need to skip to the end of the declaration.
+                        SkipToEndOfDeclaration();
+                    }
+                }
+
+                // if we're at the end, close it out
+                if (m_scanner.EndOfFile)
+                {
+                    // if we want to force a terminating semicolon, add it now
+                    if (Settings.TermSemicolons)
+                    {
+                        Append(';');
+                    }
+                }
+                else if (CurrentTokenText == "}")
+                {
+                    // if we want terminating semicolons but the source
+                    // didn't have one (evidenced by a non-empty declaration)...
+                    if (Settings.TermSemicolons && parsedDecl == Parsed.True)
+                    {
+                        // ...then add one now.
+                        Append(';');
                     }
 
-                    Parsed parsedDecl = ParseDeclaration();
-                    if (parsed == Parsed.Empty && parsedDecl != Parsed.Empty)
+                    break;
+                }
+                else if (CurrentTokenText == ";")
+                {
+                    // token is a semi-colon
+                    // if we always want to add the semicolons, add it now
+                    if (Settings.TermSemicolons)
                     {
-                        parsed = parsedDecl;
+                        Append(';');
+                        SkipSpace();
                     }
-
-                    // if we are allowed to have margin at-keywords in this block, and
-                    // we didn't find a declaration, check to see if it's a margin
-                    var parsedMargin = false;
-                    if (allowMargins && parsedDecl == Parsed.Empty)
+                    else
                     {
-                        parsedMargin = ParseMargin() == Parsed.True;
-                    }
+                        // we have a semicolon, but we don't know if we can
+                        // crunch it out or not. If the NEXT token is a closing brace, then
+                        // we can crunch out the semicolon.
+                        // PROBLEM: if there's a significant comment AFTER the semicolon, then the 
+                        // comment gets output before we output the semicolon, which could
+                        // reverse the intended code.
 
-                    // if we parsed a margin, we DON'T expect there to be a semi-colon.
-                    // if we didn't parse a margin, then there better be either a semicolon or a closing brace.
-                    if (!parsedMargin)
-                    {
-                        if ((CurrentTokenType != TokenType.Character
-                          || (CurrentTokenText != ";" && CurrentTokenText != "}"))
-                          && !m_scanner.EndOfFile)
+                        // skip any whitespace to see if we need to add a semicolon
+                        // to the end, or if we can crunch it out, but use a special function
+                        // that doesn't send any comments to the stream yet -- it batches them
+                        // up and returns them (if any)
+                        string comments = NextSignificantToken();
+
+                        if (m_scanner.EndOfFile)
                         {
-                            ReportError(0, CssErrorCode.ExpectedSemicolonOrClosingBrace, CurrentTokenText);
-
-                            // we'll get here if we decide to ignore the error and keep trudging along. But we still
-                            // need to skip to the end of the declaration.
-                            SkipToEndOfDeclaration();
-                        }
-                    }
-
-                    // if we're at the end, close it out
-                    if (m_scanner.EndOfFile)
-                    {
-                        // if we want to force a terminating semicolon, add it now
-                        if (Settings.TermSemicolons)
-                        {
-                            Append(';');
-                        }
-                    }
-                    else if (CurrentTokenText == "}")
-                    {
-                        // if we want terminating semicolons but the source
-                        // didn't have one (evidenced by a non-empty declaration)...
-                        if (Settings.TermSemicolons && parsedDecl == Parsed.True)
-                        {
-                            // ...then add one now.
-                            Append(';');
-                        }
-
-                        break;
-                    }
-                    else if (CurrentTokenText == ";")
-                    {
-                        // token is a semi-colon
-                        // if we always want to add the semicolons, add it now
-                        if (Settings.TermSemicolons)
-                        {
-                            Append(';');
-                            SkipSpace();
-                        }
-                        else
-                        {
-                            // we have a semicolon, but we don't know if we can
-                            // crunch it out or not. If the NEXT token is a closing brace, then
-                            // we can crunch out the semicolon.
-                            // PROBLEM: if there's a significant comment AFTER the semicolon, then the 
-                            // comment gets output before we output the semicolon, which could
-                            // reverse the intended code.
-
-                            // skip any whitespace to see if we need to add a semicolon
-                            // to the end, or if we can crunch it out, but use a special function
-                            // that doesn't send any comments to the stream yet -- it batches them
-                            // up and returns them (if any)
-                            string comments = NextSignificantToken();
-
-                            if (m_scanner.EndOfFile)
-                            {
-                                // if we have an EOF after the semicolon and no comments, then we don't want
-                                // to output anything else.
-                                if (comments.Length > 0)
-                                {
-                                    // but if we have comments after the semicolon....
-                                    // if there's a non-empty comment, it might be a significant hack, so add the semi-colon just in case.
-                                    if (comments != "/* */" && comments != "/**/")
-                                    {
-                                        Append(';');
-                                    }
-
-                                    // and comments always end on a new line
-                                    Append(comments);
-                                    m_outputNewLine = true;
-                                    m_lineLength = 0;
-                                }
-                                break;
-                            }
-                            else if (CurrentTokenType != TokenType.Character
-                              || (CurrentTokenText != "}" && CurrentTokenText != ";")
-                              || (comments.Length > 0 && comments != "/* */" && comments != "/**/"))
-                            {
-                                // if the significant token after the 
-                                // semicolon is not a cosing brace, then we'll add the semicolon.
-                                // if there are two semi-colons in a row, don't add it because we'll double it.
-                                // if there's a non-empty comment, it might be a significant hack, so add the semi-colon just in case.
-                                Append(';');
-                            }
-
-                            // now that we've possibly added our semi-colon, we're safe
-                            // to add any comments we may have found before the current token
+                            // if we have an EOF after the semicolon and no comments, then we don't want
+                            // to output anything else.
                             if (comments.Length > 0)
                             {
-                                Append(comments);
+                                // but if we have comments after the semicolon....
+                                // if there's a non-empty comment, it might be a significant hack, so add the semi-colon just in case.
+                                if (comments != "/* */" && comments != "/**/")
+                                {
+                                    Append(';');
+                                }
 
                                 // and comments always end on a new line
+                                Append(comments);
                                 m_outputNewLine = true;
                                 m_lineLength = 0;
                             }
+                            break;
                         }
-                    }
-                }
-                catch (CssException e)
-                {
-                    // show the error
-                    OnCssError(e);
-
-                    // skip to the end of the declaration
-                    SkipToEndOfDeclaration();
-                    if (CurrentTokenType != TokenType.None)
-                    {
-                        if (Settings.TermSemicolons
-                          || CurrentTokenType != TokenType.Character
-                          || (CurrentTokenText != "}" && CurrentTokenText != ";"))
+                        else if (CurrentTokenType != TokenType.Character
+                            || (CurrentTokenText != "}" && CurrentTokenText != ";")
+                            || (comments.Length > 0 && comments != "/* */" && comments != "/**/"))
                         {
+                            // if the significant token after the 
+                            // semicolon is not a cosing brace, then we'll add the semicolon.
+                            // if there are two semi-colons in a row, don't add it because we'll double it.
+                            // if there's a non-empty comment, it might be a significant hack, so add the semi-colon just in case.
                             Append(';');
+                        }
+
+                        // now that we've possibly added our semi-colon, we're safe
+                        // to add any comments we may have found before the current token
+                        if (comments.Length > 0)
+                        {
+                            Append(comments);
+
+                            // and comments always end on a new line
+                            m_outputNewLine = true;
+                            m_lineLength = 0;
                         }
                     }
                 }
@@ -1615,79 +1583,67 @@ namespace Microsoft.Ajax.Utilities
 
                 while (!m_scanner.EndOfFile)
                 {
-                    try
+                    if (CurrentTokenType != TokenType.Character
+                        || (CurrentTokenText != "," && CurrentTokenText != "{"))
                     {
-                        if (CurrentTokenType != TokenType.Character
-                          || (CurrentTokenText != "," && CurrentTokenText != "{"))
-                        {
-                            ReportError(0, CssErrorCode.ExpectedCommaOrOpenBrace, CurrentTokenText);
-                            SkipToEndOfStatement();
-                            AppendCurrent();
-                            SkipSpace();
-                            break;
-                        }
-                        if (CurrentTokenText == "{")
-                        {
-                            // REVIEW: IE6 has an issue where the "first-letter" and "first-line" 
-                            // pseudo-classes need to be separated from the opening curly-brace 
-                            // of the following rule set by a space or it doesn't get picked up. 
-                            // So if the last-outputted word was "first-letter" or "first-line",
-                            // add a space now (since we know the next character at this point 
-                            // is the opening brace of a rule-set).
-                            // Maybe some day this should be removed or put behind an "IE6-compat" switch.
-                            if (m_lastOutputString == "first-letter" || m_lastOutputString == "first-line")
-                            {
-                                Append(' ');
-                            }
-
-                            // don't allow margin at-keywords
-                            parsed = ParseDeclarationBlock(false);
-                            break;
-                        }
-
-                        Append(',');
-
-                        // check the line length before each new declaration -- if we're past the threshold, start a new line
-                        if (m_lineLength >= Settings.LineBreakThreshold)
-                        {
-                            AddNewLine();
-                        }
-                        else if (Settings.OutputMode == OutputMode.MultipleLines)
+                        ReportError(0, CssErrorCode.ExpectedCommaOrOpenBrace, CurrentTokenText);
+                        SkipToEndOfStatement();
+                        AppendCurrent();
+                        SkipSpace();
+                        break;
+                    }
+                    if (CurrentTokenText == "{")
+                    {
+                        // REVIEW: IE6 has an issue where the "first-letter" and "first-line" 
+                        // pseudo-classes need to be separated from the opening curly-brace 
+                        // of the following rule set by a space or it doesn't get picked up. 
+                        // So if the last-outputted word was "first-letter" or "first-line",
+                        // add a space now (since we know the next character at this point 
+                        // is the opening brace of a rule-set).
+                        // Maybe some day this should be removed or put behind an "IE6-compat" switch.
+                        if (m_lastOutputString == "first-letter" || m_lastOutputString == "first-line")
                         {
                             Append(' ');
                         }
 
-                        SkipSpace();
-
-                        if (ParseSelector() != Parsed.True)
-                        {
-                            if (CurrentTokenType == TokenType.Character && CurrentTokenText == "{")
-                            {
-                                // the author ended the last selector with a comma, but didn't include
-                                // the next selector before starting the declaration block. Or maybe it's there,
-                                // but commented out. Still okay, but flag a style warning.
-                                ReportError(4, CssErrorCode.ExpectedSelector, CurrentTokenText);
-                                continue;
-                            }
-                            else
-                            {
-                                // not something we know about -- skip the whole statement
-                                ReportError(0, CssErrorCode.ExpectedSelector, CurrentTokenText);
-                                SkipToEndOfStatement();
-                            }
-                            AppendCurrent();
-                            SkipSpace();
-                            break;
-                        }
+                        // don't allow margin at-keywords
+                        parsed = ParseDeclarationBlock(false);
+                        break;
                     }
-                    catch (CssException e)
-                    {
-                        OnCssError(e);
 
-                        // skip to end of statement and keep on trucking
-                        SkipToEndOfStatement();
+                    Append(',');
+
+                    // check the line length before each new declaration -- if we're past the threshold, start a new line
+                    if (m_lineLength >= Settings.LineBreakThreshold)
+                    {
+                        AddNewLine();
+                    }
+                    else if (Settings.OutputMode == OutputMode.MultipleLines)
+                    {
+                        Append(' ');
+                    }
+
+                    SkipSpace();
+
+                    if (ParseSelector() != Parsed.True)
+                    {
+                        if (CurrentTokenType == TokenType.Character && CurrentTokenText == "{")
+                        {
+                            // the author ended the last selector with a comma, but didn't include
+                            // the next selector before starting the declaration block. Or maybe it's there,
+                            // but commented out. Still okay, but flag a style warning.
+                            ReportError(4, CssErrorCode.ExpectedSelector, CurrentTokenText);
+                            continue;
+                        }
+                        else
+                        {
+                            // not something we know about -- skip the whole statement
+                            ReportError(0, CssErrorCode.ExpectedSelector, CurrentTokenText);
+                            SkipToEndOfStatement();
+                        }
                         AppendCurrent();
                         SkipSpace();
+                        break;
                     }
                 }
             }
@@ -4347,8 +4303,9 @@ namespace Microsoft.Ajax.Utilities
             //        4 == this is just not right
 
             string message = CssStrings.ResourceManager.GetString(errorNumber.ToString(), CssStrings.Culture).FormatInvariant(arguments);
-            CssParserException exc = new CssParserException(
+            var exc = new CssException(
                 (int)errorNumber,
+                CssStrings.ParserSubsystem,
                 severity,
                 (context != null) ? context.Start.Line : 0,
                 (context != null) ? context.Start.Char : 0,
@@ -4383,7 +4340,7 @@ namespace Microsoft.Ajax.Utilities
                             exception.Severity,
                             GetSeverityString(exception.Severity), 
                             errorCode,
-                            exception.HelpLink,
+                            null,
                             FileContext, 
                             exception.Line, 
                             exception.Char, 
@@ -4505,123 +4462,29 @@ namespace Microsoft.Ajax.Utilities
     /// <summary>
     /// Base class for exceptions thrown by the parser or the scanner
     /// </summary>
-    [Serializable]
-    public class CssException : Exception
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix", Justification = "backwards-compatibility for public class name")]
+    public sealed class CssException
     {
-        private string m_originator;
-        public string Originator { get { return m_originator; } }
+        public string Originator { get; private set; }
 
-        private int m_severity;
-        public int Severity { get { return m_severity; } }
+        public int Severity { get; private set; }
 
-        private int m_line;
-        public int Line { get { return m_line; } }
+        public int Line { get; private set; }
 
-        private int m_char;
-        public int Char { get { return m_char; } }
+        public int Char { get; private set; }
 
-        private int m_error;
-        public int Error { get { return m_error; } }
+        public int Error { get; private set; }
+
+        public string Message { get; private set; }
 
         internal CssException(int errorNum, string source, int severity, int line, int pos, string message)
-            : base(message)
         {
-            m_error = errorNum;
-            m_originator = source;
-            m_severity = severity;
-            m_line = line;
-            m_char = pos;
-        }
-
-        internal CssException(int errorNum, string source, int severity, int line, int pos, string message, Exception innerException)
-            : base(message, innerException)
-        {
-            m_error = errorNum;
-            m_originator = source;
-            m_severity = severity;
-            m_line = line;
-            m_char = pos;
-        }
-        public CssException()
-        {
-        }
-
-        public CssException(string message)
-            : base(message)
-        {
-        }
-
-        public CssException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-
-        protected CssException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-            // make sure parameters are not null
-            if (info == null)
-            {
-                throw new ArgumentNullException("info");
-            }
-
-            // base class already called, now get out custom fields
-            m_originator = info.GetString("originator");
-            m_severity = info.GetInt32("severity");
-            m_line = info.GetInt32("line");
-            m_char = info.GetInt32("char");
-        }
-
-        [SecurityCritical]
-        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
-        public override void GetObjectData(
-           SerializationInfo info, StreamingContext context)
-        {
-            // make sure parameters are not null
-            if (info == null)
-            {
-                throw new ArgumentNullException("info");
-            }
-
-            // call base class
-            base.GetObjectData(info, context);
-
-            // output our custom fields
-            info.AddValue("originator", m_originator);
-            info.AddValue("severity", m_severity);
-            info.AddValue("line", m_line);
-            info.AddValue("char", m_char);
-        }
-    }
-
-    [Serializable]
-    public sealed class CssParserException : CssException
-    {
-        private static readonly string s_originator = CssStrings.ParserSubsystem;
-
-        internal CssParserException(int error, int severity, int line, int pos, string message)
-            : base(error, s_originator, severity, line, pos, message)
-        {
-        }
-
-        public CssParserException()
-            : base((int)CssErrorCode.UnknownError, s_originator, 1, 0, 0, CssStrings.UnknownError)
-        {
-        }
-
-        public CssParserException(string message)
-            : base((int)CssErrorCode.UnknownError, s_originator, 1, 0, 0, message)
-        {
-        }
-
-        public CssParserException(string message, Exception innerException)
-            : base((int)CssErrorCode.UnknownError, s_originator, 1, 0, 0, message, innerException)
-        {
-        }
-
-        private CssParserException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
+            Error = errorNum;
+            Originator = source;
+            Severity = severity;
+            Line = line;
+            Char = pos;
+            Message = message;
         }
     }
 

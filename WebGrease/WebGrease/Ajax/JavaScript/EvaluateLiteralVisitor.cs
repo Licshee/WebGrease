@@ -2006,9 +2006,9 @@ namespace Microsoft.Ajax.Utilities
                             && m_parser.Settings.IsModificationAllowed(TreeModifications.EvaluateLiteralJoins))
                         {
                             // this is a call to join with zero or one argument (no more)
-                            // see if the root is an array literal
+                            // see if the root is an array literal that has no issues
                             var arrayLiteral = member.Root as ArrayLiteral;
-                            if (arrayLiteral != null)
+                            if (arrayLiteral != null && !arrayLiteral.MayHaveIssues)
                             {
                                 // it is -- make sure the separator is either not specified or is a constant
                                 ConstantWrapper separator = null;
@@ -2247,6 +2247,43 @@ namespace Microsoft.Ajax.Utilities
                         {
                             // ignore any invalid cast exceptions
                         }
+                    }
+                }
+            }
+        }
+
+        public override void Visit(Member node)
+        {
+            if (node != null)
+            {
+                // depth-first
+                base.Visit(node);
+
+                if (string.CompareOrdinal(node.Name, "length") == 0
+                    && m_parser.Settings.IsModificationAllowed(TreeModifications.EvaluateLiteralLengths))
+                {
+                    // if we create a constant, we'll replace the current node with it
+                    ConstantWrapper length = null;
+
+                    ArrayLiteral arrayLiteral;
+                    var constantWrapper = node.Root as ConstantWrapper;
+                    if (constantWrapper != null)
+                    {
+                        if (constantWrapper.PrimitiveType == PrimitiveType.String && !constantWrapper.MayHaveIssues)
+                        {
+                            length = new ConstantWrapper(constantWrapper.ToString().Length, PrimitiveType.Number, node.Context, node.Parser);
+                        }
+                    }
+                    else if ((arrayLiteral = node.Root as ArrayLiteral) != null && !arrayLiteral.MayHaveIssues)
+                    {
+                        // get the count of items in the array literal, create a constant wrapper from it, and
+                        // replace this node with it
+                        length = new ConstantWrapper(arrayLiteral.Elements.Count, PrimitiveType.Number, node.Context, node.Parser);
+                    }
+
+                    if (length != null)
+                    {
+                        node.Parent.ReplaceChild(node, length);
                     }
                 }
             }

@@ -20,7 +20,7 @@ namespace WebGrease
         /// Upping this number will basically invalidate any of the existingcache files users of webgrease have on their box. 
         /// Whenever we change caching logic/structure we should change/up this value.
         /// </summary>
-        private const string CacheSectionFileVersionKey = "1.0.10";
+        private const string CacheSectionFileVersionKey = "1.0.11";
 
         /// <summary>The delimiter.</summary>
         private const string Delimiter = "|";

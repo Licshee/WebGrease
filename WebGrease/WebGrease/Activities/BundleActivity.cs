@@ -38,32 +38,34 @@ namespace WebGrease.Activities
         /// <returns>If the execution was successfull.</returns>
         internal bool Execute(IEnumerable<IFileSet> fileSets)
         {
-            var assembler = new AssemblerActivity(this.context);
-            this.BundleFileSets(assembler, fileSets.OfType<JSFileSet>(), FileTypes.JS);
-            this.BundleFileSets(assembler, fileSets.OfType<CssFileSet>(), FileTypes.CSS);
-            return true;
+            var result = true;
+            result &= this.BundleFileSets(fileSets.OfType<JSFileSet>(), FileTypes.JS);
+            result &= this.BundleFileSets(fileSets.OfType<CssFileSet>(), FileTypes.CSS);
+            return result;
         }
 
         /// <summary>The bundle file sets.</summary>
-        /// <param name="assembler">The assembler.</param>
         /// <param name="fileSets">The file sets.</param>
         /// <param name="fileType">The file type.</param>
-        private void BundleFileSets(AssemblerActivity assembler, IEnumerable<IFileSet> fileSets, FileTypes fileType)
+        /// <returns>The <see cref="bool"/>.</returns>
+        private bool BundleFileSets(IEnumerable<IFileSet> fileSets, FileTypes fileType)
         {
             if (fileSets.Any())
             {
                 var varBySettings = new { fileSets, fileType, this.context.Configuration };
-                this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString())
+                return this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString())
                     .MakeCachable(varBySettings, isSkipable: true)
                     .RestoreFromCacheAction(this.RestoreBundleFromCache)
                     .Execute(cacheSection =>
                     {
                         this.context.Log.Information("Begin {0} bundle pipeline".InvariantFormat(fileType));
-                        this.Bundle(assembler, fileSets, fileType);
+                        var result = this.Bundle(fileSets, fileType);
                         this.context.Log.Information("End {0} bundle pipeline".InvariantFormat(fileType));
-                        return true;
+                        return result;
                     });
             }
+
+            return true;
         }
 
         /// <summary>The restore bundle from cache.</summary>
@@ -77,11 +79,16 @@ namespace WebGrease.Activities
         }
 
         /// <summary>The bundle.</summary>
-        /// <param name="assembler">The assembler.</param>
         /// <param name="fileSets">The file sets.</param>
         /// <param name="fileType">The file type</param>
-        private void Bundle(AssemblerActivity assembler, IEnumerable<IFileSet> fileSets, FileTypes fileType)
+        /// <returns>The <see cref="bool"/>.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "Extension methods are being counted as class coupling.")]
+        private bool Bundle(IEnumerable<IFileSet> fileSets, FileTypes fileType)
         {
+            var success = true;
+
+            var sessionContext = this.context;
+
             // processing pipeline per file set in the config
             foreach (var fileSet in fileSets)
             {
@@ -94,7 +101,7 @@ namespace WebGrease.Activities
                     var outputFile = Path.Combine(this.context.Configuration.DestinationDirectory, fileSet.Output);
                     var preprocessingConfig = fileSet.Preprocessing.GetNamedConfig(configType);
 
-                    this.context.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString(), SectionIdParts.Process)
+                    success &= sessionContext.SectionedAction(SectionIdParts.BundleActivity, fileType.ToString(), SectionIdParts.Process)
                         .MakeCachable(fileSet, new { bundleConfig, preprocessingConfig }, true)
                         .RestoreFromCacheAction(this.RestoreBundleFromCache)
                         .Execute(fileSetCacheSection =>
@@ -107,6 +114,7 @@ namespace WebGrease.Activities
                                 return true;
                             }
 
+                            var assembler = new AssemblerActivity(sessionContext);
                             assembler.OutputFile = outputFile;
                             assembler.Inputs.Clear();
                             assembler.PreprocessingConfig = preprocessingConfig;
@@ -117,8 +125,10 @@ namespace WebGrease.Activities
 
                             return true;
                         });
+                    }
                 }
-            }
+
+            return success;
         }
     }
 }

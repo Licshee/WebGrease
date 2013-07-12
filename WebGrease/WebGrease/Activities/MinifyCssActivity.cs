@@ -10,6 +10,7 @@
 namespace WebGrease.Activities
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
@@ -159,9 +160,9 @@ namespace WebGrease.Activities
 
             var cssContent = contentItem.Content;
 
-            var minifiedContentItems = new List<ContentItem>();
-            var hashedImageContentItems = new List<ContentItem>();
-            var spritedImageContentItems = new List<ContentItem>();
+            var minifiedContentItems = new BlockingCollection<ContentItem>();
+            var hashedImageContentItems = new BlockingCollection<ContentItem>();
+            var spritedImageContentItems = new BlockingCollection<ContentItem>();
             var mergedResources = ResourcePivotActivity.GetUsedGroupedResources(cssContent, this.MergedResources);
 
             var dpiValues = this.Dpi;
@@ -239,7 +240,7 @@ namespace WebGrease.Activities
                                 {
                                     var hashResult = HashImages(processedCssContent, imageHasher, cacheSection, threadContext, this.availableSourceImages, this.MissingImageUrl);
                                     processedCssContent = hashResult.Item1;
-                                    Safe.Lock(hashedImageContentItems, () => hashedImageContentItems.AddRange(hashResult.Item2));
+                                    hashedImageContentItems.AddRange(hashResult.Item2);
                                 }
 
                                 minifiedContentItem = ContentItem.FromContent(processedCssContent, this.DestinationFile, null, pivot.NewContentResourcePivotKeys);
@@ -268,55 +269,6 @@ namespace WebGrease.Activities
                 minifiedContentItems,
                 spritedImageContentItems.DistinctBy(hi => hi.RelativeContentPath).ToArray(),
                 hashedImageContentItems.DistinctBy(hi => hi.RelativeContentPath).ToArray());
-        }
-
-        /// <summary>The get minify css pivots.</summary>
-        /// <param name="contentItem">The content item.</param>
-        /// <param name="dpiValues">The dpi values.</param>
-        /// <param name="mergedResources">The merged resources.</param>
-        /// <param name="allDpiResources">The all Dpi Resources.</param>
-        /// <returns>The pivots of the css to minify</returns>
-        private static IEnumerable<MinifyCssPivot> GetMinifyCssPivots(ContentItem contentItem, IEnumerable<float> dpiValues, Dictionary<ResourcePivotKey[], IDictionary<string, IDictionary<string, string>>> mergedResources, IDictionary<string, IDictionary<string, string>> allDpiResources)
-        {
-            var contentResourcePivotKeys = contentItem.ResourcePivotKeys ?? new ResourcePivotKey[] { };
-
-            var dpiPivots = dpiValues.Select(
-                dpi =>
-                {
-                    var dpiResolutionName = EverythingActivity.DpiToResolutionName(dpi);
-                    IDictionary<string, string> dpiResources = null;
-                    if (allDpiResources != null)
-                    {
-                        allDpiResources.TryGetValue(dpiResolutionName, out dpiResources);
-                    }
-
-                    var dpiResourcePivotKey = new ResourcePivotKey(Strings.DpiResourcePivotKey, dpiResolutionName);
-
-                    return new { dpi, dpiResolutionName, dpiResourcePivotKey, dpiResources };
-                });
-
-            // Make sure we do dpi each before pivot to make it optimal when parallel 
-            var pivots = mergedResources.SelectMany(
-                mergedResourceValues =>
-                {
-                    var mergedResource = mergedResourceValues.Value.Values.ToList();
-                    return dpiPivots.Select(
-                        dpiPivot =>
-                        {
-                            var dpiSpecificMergedResources = mergedResource.ToList();
-                            if (dpiPivot.dpiResources != null)
-                            {
-                                dpiSpecificMergedResources.Add(dpiPivot.dpiResources);
-                            }
-
-                            return new MinifyCssPivot(
-                                dpiSpecificMergedResources,
-                                contentResourcePivotKeys.Concat(mergedResourceValues.Key).Concat(new[] { dpiPivot.dpiResourcePivotKey }).ToArray(),
-                                dpiPivot.dpi);
-                        });
-                });
-
-            return pivots;
         }
 
         /// <summary>The execute.</summary>
@@ -432,6 +384,121 @@ namespace WebGrease.Activities
             });
         }
 
+        /// <summary>The get minify css pivots.</summary>
+        /// <param name="contentItem">The content item.</param>
+        /// <param name="dpiValues">The dpi values.</param>
+        /// <param name="mergedResources">The merged resources.</param>
+        /// <param name="allDpiResources">The all Dpi Resources.</param>
+        /// <returns>The pivots of the css to minify</returns>
+        private static IEnumerable<MinifyCssPivot> GetMinifyCssPivots(ContentItem contentItem, IEnumerable<float> dpiValues, Dictionary<ResourcePivotKey[], IDictionary<string, IDictionary<string, string>>> mergedResources, IDictionary<string, IDictionary<string, string>> allDpiResources)
+        {
+            var contentResourcePivotKeys = contentItem.ResourcePivotKeys ?? new ResourcePivotKey[] { };
+
+            var dpiPivots = dpiValues.Select(
+                dpi =>
+                    {
+                        var dpiResolutionName = EverythingActivity.DpiToResolutionName(dpi);
+                        IDictionary<string, string> dpiResources = null;
+                        if (allDpiResources != null)
+                        {
+                            allDpiResources.TryGetValue(dpiResolutionName, out dpiResources);
+                        }
+
+                        var dpiResourcePivotKey = new ResourcePivotKey(Strings.DpiResourcePivotKey, dpiResolutionName);
+
+                        return new { dpi, dpiResolutionName, dpiResourcePivotKey, dpiResources };
+                    });
+
+            // Make sure we do dpi each before pivot to make it optimal when parallel 
+            var pivots = mergedResources.SelectMany(
+                mergedResourceValues =>
+                    {
+                        var mergedResource = mergedResourceValues.Value.Values.ToList();
+                        return dpiPivots.Select(
+                            dpiPivot =>
+                                {
+                                    var dpiSpecificMergedResources = mergedResource.ToList();
+                                    if (dpiPivot.dpiResources != null)
+                                    {
+                                        dpiSpecificMergedResources.Add(dpiPivot.dpiResources);
+                                    }
+
+                                    return new MinifyCssPivot(
+                                        dpiSpecificMergedResources,
+                                        contentResourcePivotKeys.Concat(mergedResourceValues.Key).Concat(new[] { dpiPivot.dpiResourcePivotKey }).ToArray(),
+                                        dpiPivot.dpi);
+                                });
+                    });
+
+            return pivots;
+        }
+
+        /// <summary>Applies the css resource visitors.</summary>
+        /// <param name="stylesheetNode">The stylesheet node.</param>
+        /// <param name="resources">The resources.</param>
+        /// <param name="threadContext">The thread Context.</param>
+        /// <returns>The processed node.</returns>
+        private static AstNode ApplyResources(AstNode stylesheetNode, IEnumerable<IDictionary<string, string>> resources, IWebGreaseContext threadContext)
+        {
+            if (resources.Any())
+            {
+                threadContext.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.ResourcesResolution)
+                             .Execute(() => { stylesheetNode = stylesheetNode.Accept(new ResourceResolutionVisitor(resources)); });
+            }
+
+            return stylesheetNode;
+        }
+
+        /// <summary>The restore sprited images from cache.</summary>
+        /// <param name="mapXmlFile">The map xml file.</param>
+        /// <param name="cacheSection">The cache section.</param>
+        /// <param name="results">The results.</param>
+        /// <param name="destinationDirectory">The destination Directory.</param>
+        /// <param name="imageAssembleScanDestinationFile">The image Assemble Scan Destination File.</param>
+        /// <returns>The <see cref="bool"/>.</returns>
+        private static ImageLog RestoreSpritedImagesFromCache(string mapXmlFile, ICacheSection cacheSection, BlockingCollection<ContentItem> results, string destinationDirectory, string imageAssembleScanDestinationFile)
+        {
+            // restore log file, is required by next step in applying sprites to the css.
+            var spriteLogFileContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.SpriteLogFile).FirstOrDefault();
+            if (spriteLogFileContentItem == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(imageAssembleScanDestinationFile))
+            {
+                var spriteLogFileXmlContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.SpriteLogFileXml).FirstOrDefault();
+                if (spriteLogFileXmlContentItem != null)
+                {
+                    spriteLogFileXmlContentItem.WriteTo(mapXmlFile);
+                }
+            }
+
+            var imageLog = spriteLogFileContentItem.Content.FromJson<ImageLog>(true);
+
+            // Restore images
+            var spritedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedSpriteImage);
+            spritedImageContentItems.ForEach(sici => sici.WriteToContentPath(destinationDirectory));
+            results.AddRange(spritedImageContentItems);
+
+            return imageLog;
+        }
+
+        /// <summary>The get relative sprite cache key.</summary>
+        /// <param name="imageReferencesToAssemble">The image references to assemble</param>
+        /// <param name="threadContext">The thread Context.</param>
+        /// <returns>The unique cache key.</returns>
+        private static string GetRelativeSpriteCacheKey(IEnumerable<InputImage> imageReferencesToAssemble, IWebGreaseContext threadContext)
+        {
+            return string.Join(
+                ">",
+                imageReferencesToAssemble.Select(ir =>
+                                                 "{0}|{1}|{2}".InvariantFormat(
+                                                     threadContext.MakeRelativeToApplicationRoot(ir.AbsoluteImagePath),
+                                                     ir.Position,
+                                                     string.Join(":", ir.DuplicateImagePaths.Select(threadContext.MakeRelativeToApplicationRoot)))));
+        }
+
         /// <summary>Gets the unique object for all the settings, used for determining unique cache id.</summary>
         /// <param name="imageHasher">The image Hasher.</param>
         /// <param name="resourcePivotKeys">The resource Pivot Keys.</param>
@@ -470,7 +537,7 @@ namespace WebGrease.Activities
         /// <param name="spritedImageContentItems">The sprited image content items.</param>
         /// <param name="threadContext">The thread Context.</param>
         /// <returns>The processed node.</returns>
-        private AstNode ApplySpriting(AstNode stylesheetNode, float dpi, List<ContentItem> spritedImageContentItems, IWebGreaseContext threadContext)
+        private AstNode ApplySpriting(AstNode stylesheetNode, float dpi, BlockingCollection<ContentItem> spritedImageContentItems, IWebGreaseContext threadContext)
         {
             if (this.ShouldAssembleBackgroundImages)
             {
@@ -537,29 +604,13 @@ namespace WebGrease.Activities
             return stylesheetNode;
         }
 
-        /// <summary>Applies the css resource visitors.</summary>
-        /// <param name="stylesheetNode">The stylesheet node.</param>
-        /// <param name="resources">The resources.</param>
-        /// <param name="threadContext">The thread Context.</param>
-        /// <returns>The processed node.</returns>
-        private static AstNode ApplyResources(AstNode stylesheetNode, IEnumerable<IDictionary<string, string>> resources, IWebGreaseContext threadContext)
-        {
-            if (resources.Any())
-            {
-                threadContext.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.ResourcesResolution)
-                    .Execute(() => { stylesheetNode = stylesheetNode.Accept(new ResourceResolutionVisitor(resources)); });
-            }
-
-            return stylesheetNode;
-        }
-
         /// <summary>Assembles the background images</summary>
         /// <param name="stylesheetNode">the style sheet node</param>
         /// <param name="dpi">The dpi.</param>
         /// <param name="threadContext">The thread Context.</param>
-        /// <param name="spritedImageContentItems"></param>
+        /// <param name="spritedImageContentItems">The sprited Image Content Items.</param>
         /// <returns>The stylesheet node with the sprited images aplied.</returns>
-        private AstNode SpriteBackgroundImages(AstNode stylesheetNode, float dpi, IWebGreaseContext threadContext, List<ContentItem> spritedImageContentItems)
+        private AstNode SpriteBackgroundImages(AstNode stylesheetNode, float dpi, IWebGreaseContext threadContext, BlockingCollection<ContentItem> spritedImageContentItems)
         {
             // The image assembly is a 3 step process:
             // 1. Scan the Css followed by Pretty Print
@@ -621,9 +672,9 @@ namespace WebGrease.Activities
         /// <param name="mapXmlFile">The map xml file</param>
         /// <param name="imageAssemblyAnalysisLog">The image Assembly Analysis Log.</param>
         /// <param name="threadContext">The thread Context.</param>
-        /// <param name="spritedImageContentItems"></param>
+        /// <param name="spritedImageContentItems">The sprited Image Content Items.</param>
         /// <returns>The <see cref="ImageLog"/>.</returns>
-        private ImageLog SpriteImageFromLog(ImageAssemblyScanOutput scanOutput, string mapXmlFile, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, IWebGreaseContext threadContext, List<ContentItem> spritedImageContentItems)
+        private ImageLog SpriteImageFromLog(ImageAssemblyScanOutput scanOutput, string mapXmlFile, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog, IWebGreaseContext threadContext, BlockingCollection<ContentItem> spritedImageContentItems)
         {
             if (scanOutput == null || !scanOutput.ImageReferencesToAssemble.Any())
             {
@@ -670,7 +721,7 @@ namespace WebGrease.Activities
             ImageAssemblyAnalysisLog imageAssemblyAnalysisLog,
             IEnumerable<InputImage> imageReferencesToAssemble,
             ICacheSection cacheSection,
-            ICollection<ContentItem> results,
+            BlockingCollection<ContentItem> results,
             IWebGreaseContext threadContext)
         {
             if (!Directory.Exists(this.ImagesOutputDirectory))
@@ -708,61 +759,11 @@ namespace WebGrease.Activities
             foreach (var spritedFile in imageLog.InputImages.Select(il => il.OutputFilePath).Distinct())
             {
                 var spritedImageContentItem = ContentItem.FromFile(spritedFile, spritedFile.MakeRelativeToDirectory(destinationDirectory));
-                Safe.Lock(results, () => results.Add(spritedImageContentItem));
+                results.Add(spritedImageContentItem);
                 cacheSection.AddResult(spritedImageContentItem, CacheFileCategories.HashedSpriteImage);
             }
 
             return imageLog;
-        }
-
-        /// <summary>The restore sprited images from cache.</summary>
-        /// <param name="mapXmlFile">The map xml file.</param>
-        /// <param name="cacheSection">The cache section.</param>
-        /// <param name="results">The results.</param>
-        /// <param name="destinationDirectory">The destination Directory.</param>
-        /// <param name="imageAssembleScanDestinationFile">The image Assemble Scan Destination File.</param>
-        /// <returns>The <see cref="bool"/>.</returns>
-        private static ImageLog RestoreSpritedImagesFromCache(string mapXmlFile, ICacheSection cacheSection, List<ContentItem> results, string destinationDirectory, string imageAssembleScanDestinationFile)
-        {
-            // restore log file, is required by next step in applying sprites to the css.
-            var spriteLogFileContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.SpriteLogFile).FirstOrDefault();
-            if (spriteLogFileContentItem == null)
-            {
-                return null;
-            }
-
-            if (!string.IsNullOrWhiteSpace(imageAssembleScanDestinationFile))
-            {
-                var spriteLogFileXmlContentItem = cacheSection.GetCachedContentItems(CacheFileCategories.SpriteLogFileXml).FirstOrDefault();
-                if (spriteLogFileXmlContentItem != null)
-                {
-                    spriteLogFileXmlContentItem.WriteTo(mapXmlFile);
-                }
-            }
-
-            var imageLog = spriteLogFileContentItem.Content.FromJson<ImageLog>(true);
-
-            // Restore images
-            var spritedImageContentItems = cacheSection.GetCachedContentItems(CacheFileCategories.HashedSpriteImage);
-            spritedImageContentItems.ForEach(sici => sici.WriteToContentPath(destinationDirectory));
-            Safe.Lock(results, () => results.AddRange(spritedImageContentItems));
-
-            return imageLog;
-        }
-
-        /// <summary>The get relative sprite cache key.</summary>
-        /// <param name="imageReferencesToAssemble">The image references to assemble</param>
-        /// <param name="threadContext">The thread Context.</param>
-        /// <returns>The unique cache key.</returns>
-        private static string GetRelativeSpriteCacheKey(IEnumerable<InputImage> imageReferencesToAssemble, IWebGreaseContext threadContext)
-        {
-            return string.Join(
-                ">",
-                imageReferencesToAssemble.Select(ir =>
-                        "{0}|{1}|{2}".InvariantFormat(
-                            threadContext.MakeRelativeToApplicationRoot(ir.AbsoluteImagePath),
-                            ir.Position,
-                            string.Join(":", ir.DuplicateImagePaths.Select(threadContext.MakeRelativeToApplicationRoot)))));
         }
 
         /// <summary>Scans the css for the image path references</summary>

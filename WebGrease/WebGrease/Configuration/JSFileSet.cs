@@ -30,6 +30,18 @@ namespace WebGrease.Configuration
             this.Validation = new Dictionary<string, JSValidationConfig>(StringComparer.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>
+        /// A string that represents the current object.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
+        public override string ToString()
+        {
+            return "[JsFileSet:{0}]".InvariantFormat(this.Output);
+        }
+
         /// <summary>Initializes a new instance of the <see cref="JSFileSet"/> class.</summary>
         /// <param name="jsFileSetElement">config element containing info for a set of js files</param>
         /// <param name="sourceDirectory">The base directory.</param>

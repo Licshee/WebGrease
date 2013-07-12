@@ -76,11 +76,22 @@ namespace WebGrease.Configuration
         /// <summary>Gets the dpi values specific for this output.</summary>
         internal HashSet<float> Dpi { get; private set; }
 
-
         /// <summary>
         /// Gets the dictionary of spriting configurations.
         /// </summary>
         internal IDictionary<string, CssSpritingConfig> ImageSpriting { get; private set; }
+
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>
+        /// A string that represents the current object.
+        /// </returns>
+        /// <filterpriority>2</filterpriority>
+        public override string ToString()
+        {
+            return "[CssFileSet:{0}]".InvariantFormat(this.Output);
+        }
 
         /// <summary>Loads the settings from the elements.</summary>
         /// <param name="fileSetElements">The elements.</param>

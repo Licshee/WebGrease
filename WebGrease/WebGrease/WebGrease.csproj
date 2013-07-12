@@ -54,7 +54,7 @@
     <CodeContractsRuntimeCheckingLevel>Full</CodeContractsRuntimeCheckingLevel>
     <CodeContractsReferenceAssembly>DoNotBuild</CodeContractsReferenceAssembly>
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
   </PropertyGroup>
@@ -95,7 +95,7 @@
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
     <DocumentationFile>
     </DocumentationFile>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
     <NoWarn>
@@ -107,7 +107,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseAndSigned|AnyCPU'">
     <OutputPath>bin\ReleaseAndSigned\</OutputPath>
     <DefineConstants>TRACE;SIGNED</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <DebugType>pdbonly</DebugType>
@@ -173,11 +173,13 @@
     <Compile Include="Activities\MinifyCssResult.cs" />
     <Compile Include="Ajax\JavaScript\StatementStartVisitor.cs" />
     <Compile Include="Cache\CacheFileLockException.cs" />
-    <Compile Include="Cache\CacheFileLockObject.cs" />
     <Compile Include="Configuration\FileSetBase.cs" />
     <Compile Include="Configuration\GlobalConfig.cs" />
     <Compile Include="Configuration\INamedConfig.cs" />
-    <Compile Include="Configuration\ResourcePivot.cs" />
+    <Compile Include="Configuration\ResourcePivotGroupCollection.cs" />
+    <Compile Include="Configuration\ResourcePivotApplyMode.cs" />
+    <Compile Include="Configuration\ResourcePivotGroup.cs" />
+    <Compile Include="Configuration\ResourcePivotKey.cs" />
     <Compile Include="Css\Visitor\ResourceResolutionVisitor.cs" />
     <Compile Include="DelayedLogManager.cs" />
     <Compile Include="Cache\CacheFileCategories.cs" />
@@ -295,7 +297,6 @@
     <Compile Include="Ajax\JavaScript\ReorderScopeVisitor.cs" />
     <Compile Include="Ajax\JavaScript\ResolutionVisitor.cs" />
     <Compile Include="Ajax\JavaScript\return.cs" />
-    <Compile Include="Ajax\JavaScript\scannerexception.cs" />
     <Compile Include="Ajax\JavaScript\ScriptSharpSourceMap.cs" />
     <Compile Include="Ajax\JavaScript\SourceMapFactory.cs" />
     <Compile Include="Ajax\JavaScript\switch.cs" />
@@ -351,6 +352,9 @@
     <Compile Include="Extensions\JsonExtensions.cs" />
     <Compile Include="Extensions\StringPathExtensions.cs" />
     <Compile Include="ICachableWebGreaseSection.cs" />
+    <Compile Include="ImageAssemble\BitmapContainer.cs" />
+    <Compile Include="ImageAssemble\ImageType.cs" />
+    <Compile Include="ImageAssemble\SpritePackingType.cs" />
     <Compile Include="IWebGreaseSection.cs" />
     <Compile Include="IWebGreaseContext.cs" />
     <Compile Include="LogManager.cs" />

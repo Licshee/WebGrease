@@ -17,9 +17,7 @@
 namespace Microsoft.Ajax.Utilities
 {
     using System;
-    using System.Globalization;
     using System.IO;
-    using System.Runtime.Serialization;
     using System.Text;
     using System.Text.RegularExpressions;
 
@@ -51,11 +49,13 @@ namespace Microsoft.Ajax.Utilities
 
         private CssContext m_context;
 
-        private static Regex s_leadingZeros = new Regex("^0*([0-9]+?)$", RegexOptions.Compiled);
+        private static Regex s_leadingZeros = new Regex("^0*([0-9]+?)$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private static Regex s_trailingZeros = new Regex("^([0-9]+?)0*$", RegexOptions.Compiled);
-		
-		public bool AllowEmbeddedAspNetBlocks { get; set; }
+        private static Regex s_trailingZeros = new Regex("^([0-9]+?)0*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static Regex s_sourceDirective = new Regex(@"#SOURCE\s+(?<line>\d+)\s+(?<col>\d+)\s+(?<path>.*)\s*\*/", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+
+        public bool AllowEmbeddedAspNetBlocks { get; set; }
 
         public bool GotEndOfLine { get; set; }
 
@@ -281,11 +281,43 @@ namespace Microsoft.Ajax.Utilities
                     }
                     NextChar();
                 }
+
                 if (!terminated)
                 {
                     ReportError(0, CssErrorCode.UnterminatedComment);
                 }
-                token = new CssToken(TokenType.Comment, sb.ToString(), m_context);
+                
+                var comment = sb.ToString();
+                if (string.Compare(comment, 2, "/#SOURCE", 0, 8, StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    // found our special comment: /*/#SOURCE line col path */
+                    var match = s_sourceDirective.Match(comment);
+                    if (match != null)
+                    {
+                        int line, column;
+                        if (int.TryParse(match.Result("${line}"), out line)
+                            && int.TryParse(match.Result("${col}"), out column))
+                        {
+                            // we got a proper line, column, and non-blank path. reset our context
+                            // with the new line and column.
+                            this.OnContextChange(
+                                match.Result("${path}"),
+                                line,
+                                column);
+
+                            // now, this is weird. by AjaxMin convention, there should be NOTHING after this comment
+                            // but whitespace and a single line-terminator. So we will skip EVERYTHING after this comment up
+                            // to the first line-terminator, and then eat that first line-terminator. So it's possible to
+                            // completely ignore code by putting it between this multiline comment and the end of its line.
+                            SkipToNextLineWithoutUpdate();
+
+                            // return null so this token gets skipped
+                            return null;
+                        }
+                    }
+                }
+
+                token = new CssToken(TokenType.Comment, comment, m_context);
             }
             else if (m_currentChar == '/')
             {
@@ -341,29 +373,7 @@ namespace Microsoft.Ajax.Utilities
                                         this.OnContextChange(fileContext, line, column);
 
                                         // START SPECIAL PROCESSING
-                                        // don't use NextChar here because that method updates the line/col position.
-                                        // at this stage, we are processing a directive, and we may have set the line/col
-                                        // that we're supposed to be at for the start of the next line. So make SURE we
-                                        // don't update lin/col until we get to the next line.
-                                        // skip anything remaining up to a line terminator
-                                        while (m_currentChar != '\n' && m_currentChar != '\r')
-                                        {
-                                            DirectiveNextChar();
-                                        }
-
-                                        // then skip a SINGLE line terminator without advancing the line
-                                        // (although a \r\n pair is a single line terminator)
-                                        if (m_currentChar == '\n' || m_currentChar == '\f')
-                                        {
-                                            DirectiveNextChar();
-                                        }
-                                        else if (m_currentChar == '\r')
-                                        {
-                                            if (DirectiveNextChar() == '\n')
-                                            {
-                                                DirectiveNextChar();
-                                            }
-                                        }
+                                        SkipToNextLineWithoutUpdate();
 
                                         // return null here so we don't fall through and return a / character.
                                         return null;
@@ -393,6 +403,33 @@ namespace Microsoft.Ajax.Utilities
             }
 
             return token;
+        }
+
+        private void SkipToNextLineWithoutUpdate()
+        {
+            // don't use NextChar here because that method updates the line/col position.
+            // at this stage, we have processed a directive, and we may have set the line/col
+            // that we're supposed to be at for the start of the next line. So make SURE we
+            // don't update line/col until we get to the next line.
+            // skip anything remaining up to a line terminator
+            while (m_currentChar != '\n' && m_currentChar != '\r')
+            {
+                DirectiveNextChar();
+            }
+
+            // then skip a SINGLE line terminator without advancing the line
+            // (although a \r\n pair is a single line terminator)
+            if (m_currentChar == '\n' || m_currentChar == '\f')
+            {
+                DirectiveNextChar();
+            }
+            else if (m_currentChar == '\r')
+            {
+                if (DirectiveNextChar() == '\n')
+                {
+                    DirectiveNextChar();
+                }
+            }
         }
 
         private CssToken ScanAspNetBlock()
@@ -1957,8 +1994,9 @@ namespace Microsoft.Ajax.Utilities
             //        4 == this is just not right
 
             string message = CssStrings.ResourceManager.GetString(error.ToString(), CssStrings.Culture).FormatInvariant(args);
-            OnScannerError(new CssScannerException(
+            OnScannerError(new CssException(
                 (int)error,
+                CssStrings.ScannerSubsystem,
                 severity,
                 m_context.End.Line,
                 m_context.End.Char,
@@ -1968,7 +2006,7 @@ namespace Microsoft.Ajax.Utilities
 
         public event EventHandler<CssScannerErrorEventArgs> ScannerError;
 
-        protected void OnScannerError(CssScannerException exc)
+        protected void OnScannerError(CssException exc)
         {
             if (ScannerError != null)
             {
@@ -1990,42 +2028,11 @@ namespace Microsoft.Ajax.Utilities
         #endregion
     }
 
-    [Serializable]
-    public sealed class CssScannerException : CssException
-    {
-        private static readonly string s_originator = CssStrings.ScannerSubsystem;
-
-        internal CssScannerException(int error, int severity, int line, int pos, string message)
-            : base(error, s_originator, severity, line, pos, message)
-        {
-        }
-
-        public CssScannerException()
-            : base((int)CssErrorCode.UnknownError, s_originator, 1, 0, 0, CssStrings.UnknownError)
-        {
-        }
-
-        public CssScannerException(string message)
-            : base((int)CssErrorCode.UnknownError, s_originator, 1, 0, 0, message)
-        {
-        }
-
-        public CssScannerException(string message, Exception innerException)
-            : base((int)CssErrorCode.UnknownError, s_originator, 1, 0, 0, message, innerException)
-        {
-        }
-
-        private CssScannerException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-    }
-
     internal class CssScannerErrorEventArgs : EventArgs
     {
-        public CssScannerException Exception { get; private set; }
+        public CssException Exception { get; private set; }
 
-        public CssScannerErrorEventArgs(CssScannerException exc)
+        public CssScannerErrorEventArgs(CssException exc)
         {
             Exception = exc;
         }

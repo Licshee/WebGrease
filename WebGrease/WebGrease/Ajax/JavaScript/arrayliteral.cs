@@ -35,6 +35,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public bool MayHaveIssues { get; set; }
+
         public ArrayLiteral(Context context, JSParser parser)
             : base(context, parser)
         {

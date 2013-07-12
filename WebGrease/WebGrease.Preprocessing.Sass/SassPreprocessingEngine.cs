@@ -46,7 +46,7 @@ namespace WebGrease.Preprocessing.Sass
         /// <summary>
         /// The execution parameters for sass
         /// </summary>
-        private const string SassExecuteParametersFormat = "{0} \"{1}\" \"{2}\"  --load-path \"{3}\" --";
+        private const string SassExecuteParametersFormat = "{0} \"{1}\" \"{2}\"  --load-path \"{3}\" --cache-location \"{4}\"";
 
         /// <summary>
         /// The filename for the sass executable.
@@ -421,6 +421,8 @@ namespace WebGrease.Preprocessing.Sass
                 {
                     context.Log.Information("Sassing: {0}".InvariantFormat(relativeFilename));
 
+                    var cachePath = Path.Combine(context.Cache.RootPath ?? Path.GetTempPath(), ".sass.cache");
+
                     // Determine all the file and paths
                     var targetFile = new FileInfo(Path.Combine(Directory.GetCurrentDirectory(), fullFileName));
                     var resultFile = Path.ChangeExtension(targetFile.FullName, ".css");
@@ -428,7 +430,7 @@ namespace WebGrease.Preprocessing.Sass
                     var rubyFilename = new FileInfo(Path.Combine(rubyRootPath, RubyExecutable));
 
                     // Create a new process object with all the execute information
-                    var processStartInfo = new ProcessStartInfo(rubyFilename.FullName, SassExecuteParametersFormat.InvariantFormat(SassFile, targetFile, resultFile, targetFolder)) { WorkingDirectory = rubyFilename.DirectoryName ?? string.Empty, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
+                    var processStartInfo = new ProcessStartInfo(rubyFilename.FullName, SassExecuteParametersFormat.InvariantFormat(SassFile, targetFile, resultFile, targetFolder, cachePath)) { WorkingDirectory = rubyFilename.DirectoryName ?? string.Empty, RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
                     using (var proc = new Process { StartInfo = processStartInfo })
                     {
                         // Start the process

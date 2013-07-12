@@ -309,9 +309,9 @@
                 {
                     foreach (var entry in separatedList)
                     {
-                        if (entry.Value != null)
+                        if (entry.Bitmap != null)
                         {
-                            entry.Value.Dispose();
+                            entry.Bitmap.Dispose();
                         }
                     }
                 }
@@ -331,7 +331,7 @@
                 var inputImageList = ArgumentParser.ConvertToInputImageList(imagePaths.ToArray());
                 ImageAssembleGenerator_Accessor.AssembleImages(inputImageList.AsReadOnly(), SpritePackingType_Accessor.Vertical, string.Empty, mapFileName, false, new WebGreaseContext(new WebGreaseConfiguration()));
                 Assert.IsTrue(ValidateImageGenerationFromLog(mapFileName));
-                var separatedList = new Dictionary<InputImage_Accessor, Bitmap>();
+                var separatedList = new List<BitmapContainer_Accessor>();
                 foreach(var inputImage in inputImageList)
                 {
                     Bitmap bitmap = null;
@@ -344,7 +344,7 @@
                         bitmap = null;
                     }
 
-                    separatedList.Add(inputImage, bitmap);
+                    separatedList.Add(new BitmapContainer_Accessor(inputImage) { Bitmap = bitmap });
                 }
 
                 ImageAssembleBaseTest.ValidateLogFile(separatedList, "combine.png", packingType);
@@ -371,12 +371,12 @@
         /// <summary>The compare lists.</summary>
         /// <param name="separatedList">The separated list.</param>
         /// <param name="expectedFileNames">The expected file names.</param>
-        private static void CompareLists(Dictionary<InputImage, Bitmap> separatedList, string[] expectedFileNames)
+        private static void CompareLists(List<BitmapContainer> separatedList, string[] expectedFileNames)
         {
             Assert.AreEqual(separatedList.Count, expectedFileNames.Length);
 
             var expectedFileNameList = expectedFileNames.ToList();
-            var fileNameList = separatedList.Select(entry => entry.Key.AbsoluteImagePath).ToList();
+            var fileNameList = separatedList.Select(entry => entry.InputImage.AbsoluteImagePath).ToList();
 
             fileNameList.Sort();
             expectedFileNameList.Sort();

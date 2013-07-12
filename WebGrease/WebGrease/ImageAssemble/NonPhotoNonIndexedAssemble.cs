@@ -21,20 +21,11 @@ namespace WebGrease.ImageAssemble
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704", Justification = "By Design")]
     internal class NonphotoNonindexedAssemble : ImageAssembleBase
     {
+        /// <summary>Initializes a new instance of the <see cref="NonphotoNonindexedAssemble"/> class.</summary>
+        /// <param name="context">The context.</param>
         public NonphotoNonindexedAssemble(IWebGreaseContext context)
             : base(context)
         {
-        }
-
-        /// <summary>
-        /// Gets image type
-        /// </summary>
-        internal override ImageFormat Format
-        {
-            get
-            {
-                return ImageFormat.Png;
-            }
         }
 
         /// <summary>
@@ -59,6 +50,17 @@ namespace WebGrease.ImageAssemble
             }
         }
 
+        /// <summary>
+        /// Gets image type
+        /// </summary>
+        protected override ImageFormat Format
+        {
+            get
+            {
+                return ImageFormat.Png;
+            }
+        }
+
         /// <summary>Run the optimizer after saving.</summary>
         /// <param name="newImage">Image to be saved</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2122:DoNotIndirectlyExposeMethodsWithLinkDemands", Justification = "Invokes LCA approved tool OptiPNG.exe. This is by design.")]
@@ -69,14 +71,6 @@ namespace WebGrease.ImageAssemble
                 base.SaveImage(newImage);
                 this.OptimizeImage();
             }
-        }
-
-        /// <summary>Run the optimizer after passing through the image.</summary>
-        /// <param name="image">Bitmap for image to pass through</param>
-        /// <param name="inputImage">InputImage for image to pass through</param>
-        protected virtual void PassThroughImage(Bitmap image, InputImage inputImage)
-        {
-            this.OptimizeImage();
         }
     }
 }

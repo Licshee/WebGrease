@@ -85,6 +85,10 @@ namespace WebGrease.Extensions
 
         #endregion
 
+        /// <summary>The add input specs.</summary>
+        /// <param name="inputSpecs">The input specs.</param>
+        /// <param name="sourceDirectory">The source directory.</param>
+        /// <param name="element">The element.</param>
         internal static void AddInputSpecs(this IList<InputSpec> inputSpecs, string sourceDirectory, XElement element)
         {
             foreach (var inputElement in element.Descendants())

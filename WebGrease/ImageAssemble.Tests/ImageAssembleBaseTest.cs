@@ -68,22 +68,22 @@
             log.AppendPadding("0");
             target.ImageXmlMap = log;
             Bitmap actual = null;
-            Dictionary<InputImage_Accessor, Bitmap> data = null;
+            List<BitmapContainer_Accessor> data = null;
             try
             {
                 data = GenerateData(WebGrease.ImageAssemble.ImageType_Accessor.NonphotoIndexed);
                 Assert.IsTrue(data.Count > 0);
                 actual = target.PackHorizontal(data, true, null);
-                int totalWidth = data.Values.Sum(bmp => bmp.Width);
-                int maxHeight = data.Values.Max(bmp => bmp.Height);
+                int totalWidth = data.Sum(bmp => bmp.Width);
+                int maxHeight = data.Max(bmp => bmp.Height);
                 Assert.AreEqual(totalWidth, actual.Width);
                 Assert.AreEqual(maxHeight, actual.Height);
             }
             finally
             {
-                foreach (KeyValuePair<InputImage_Accessor, Bitmap> entry in data)
+                foreach (var entry in data)
                 {
-                    entry.Value.Dispose();
+                    entry.Bitmap.Dispose();
                 }
 
                 if (actual != null)
@@ -103,15 +103,15 @@
             Bitmap actual = null;
             var log = new ImageMap_Accessor("ReplaceLog.xml");
             var target = new NonphotoIndexedAssemble_Accessor(new WebGreaseContext(new WebGreaseConfiguration())) { AssembleFileName = "combine.png", ImageXmlMap = log };
-            Dictionary<InputImage_Accessor, Bitmap> data = null;
+            List<BitmapContainer_Accessor> data = null;
 
             try
             {
-                data = GenerateData(WebGrease.ImageAssemble.ImageType_Accessor.NonphotoIndexed);
+                data = GenerateData(ImageType_Accessor.NonphotoIndexed);
                 Assert.IsTrue(data.Count > 0);
                 actual = target.PackVertical(data, true, null);
-                var maxWidth = data.Values.Max(bmp => bmp.Width);
-                var totalHeight = data.Values.Sum(bmp => bmp.Height);
+                var maxWidth = data.Max(bmp => bmp.Width);
+                var totalHeight = data.Sum(bmp => bmp.Height);
                 Assert.AreEqual(maxWidth, actual.Width);
                 Assert.AreEqual(totalHeight, actual.Height);
             }
@@ -121,7 +121,7 @@
                 {
                     foreach (var entry in data)
                     {
-                        entry.Value.Dispose();
+                        entry.Bitmap.Dispose();
                     }
                 }
 
@@ -175,7 +175,7 @@
                 log.AppendPadding("0");
                 nonphotoNonindexedAccessor.ImageXmlMap = log;
                 nonphotoNonindexedAccessor.AssembleFileName = "Combine.png";
-                Dictionary<InputImage_Accessor, Bitmap> pngData = GenerateData(WebGrease.ImageAssemble.ImageType_Accessor.NonphotoNonindexed);
+                var pngData = GenerateData(ImageType_Accessor.NonphotoNonindexed);
                 originalImage = nonphotoNonindexedAccessor.PackVertical(pngData, true, null);
                 nonphotoNonindexedAccessor.SaveImage(originalImage);
                 Assert.IsTrue(File.Exists(nonphotoNonindexedAccessor.AssembleFileName));
@@ -205,7 +205,7 @@
                 log.AppendPadding("0");
                 nonphotoIndexedAccessor.ImageXmlMap = log;
                 nonphotoIndexedAccessor.AssembleFileName = "Combine.png";
-                Dictionary<InputImage_Accessor, Bitmap> gifData = GenerateData(WebGrease.ImageAssemble.ImageType_Accessor.NonphotoIndexed);
+                var gifData = GenerateData(ImageType_Accessor.NonphotoIndexed);
                 originalImage = nonphotoIndexedAccessor.PackVertical(gifData, true, null);
                 nonphotoIndexedAccessor.SaveImage(originalImage);
                 Assert.IsTrue(File.Exists(nonphotoIndexedAccessor.AssembleFileName));
@@ -302,42 +302,43 @@
 
         #region Private Helper Methods
 
-        private static Dictionary<InputImage_Accessor, Bitmap> GenerateData(IEnumerable<ImageType_Accessor> imageTypes)
+        private static List<BitmapContainer_Accessor> GenerateData(IEnumerable<ImageType_Accessor> imageTypes)
         {
-            var data = new Dictionary<InputImage_Accessor, Bitmap>();
+            var data = new List<BitmapContainer_Accessor>();
             foreach (var images in from imageType in imageTypes let images = Enumerable.Empty<string>() let imagesPath = Path.Combine(Environment.CurrentDirectory, "InputImages", "new", imageType.ToString()) select Directory.GetFiles(imagesPath))
             {
                 LoadData(data, images);
             }
+
             return data;
         }
 
-        private static Dictionary<InputImage_Accessor, Bitmap> GenerateData(ImageType_Accessor imageType)
+        private static List<BitmapContainer_Accessor> GenerateData(ImageType_Accessor imageType)
         {
             ImageType_Accessor[] imageTypes = { imageType };
             return GenerateData(imageTypes);
         }
 
-        private static void LoadData(IDictionary<InputImage_Accessor, Bitmap> data, IEnumerable<string> files)
+        private static void LoadData(List<BitmapContainer_Accessor> data, IEnumerable<string> files)
         {
             foreach (var path in files)
             {
                 var inputImage = new InputImage_Accessor(path);
                 var bitmap = (Bitmap)Image.FromFile(path);
-                data.Add(inputImage, bitmap);
+                data.Add(new BitmapContainer_Accessor(inputImage) { bitmap = bitmap });
             }
         }
 
-        public static void ValidateLogFile(Dictionary<InputImage_Accessor, Bitmap> inputImages, string assembleFileName, SpritePackingType_Accessor packingType)
+        public static void ValidateLogFile(List<BitmapContainer_Accessor> inputImages, string assembleFileName, SpritePackingType_Accessor packingType)
         {
             Assert.IsTrue(File.Exists("ReplaceLog.xml"));
             var doc = new XmlDocument();
             doc.Load("ReplaceLog.xml");
             Assert.IsNotNull(doc);
 
-            foreach (KeyValuePair<InputImage_Accessor, Bitmap> entry in inputImages)
+            foreach (var entry in inputImages)
             {
-                InputImage_Accessor file = entry.Key;
+                InputImage_Accessor file = entry.InputImage;
                 XmlNodeList nodes = doc.SelectNodes("//images/output/input/originalfile[.='" + file.AbsoluteImagePath.ToLowerInvariant() + "']");
                 Assert.IsNotNull(nodes);
                 Assert.AreEqual(1, nodes.Count, "There should be exactly one row exist for an image file in map Xml log file.");

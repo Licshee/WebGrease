@@ -55,7 +55,10 @@ namespace WebGrease
         /// <returns>The cache file path.</returns>
         string StoreInCache(string cacheCategory, ContentItem contentItem);
 
-        IDisposable SingleUseLock();
+        /// <summary>The locked file cache action.</summary>
+        /// <param name="lockFileContent">The lock file content.</param>
+        /// <param name="action">The action.</param>
+        void LockedFileCacheAction(string lockFileContent, Action action);
 
         #endregion
     }

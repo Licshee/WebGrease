@@ -73,11 +73,6 @@ namespace WebGrease
         /// <returns>The hash for the string value..</returns>
         string GetValueHash(string value);
 
-        /// <summary>The get content hash.</summary>
-        /// <param name="contentItem">The content.</param>
-        /// <returns>The <see cref="string"/>.</returns>
-        string GetContentItemHash(ContentItem contentItem);
-
         /// <summary>The get file hash.</summary>
         /// <param name="filePath">The file path.</param>
         /// <returns>The <see cref="string"/>.</returns>

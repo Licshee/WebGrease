@@ -205,7 +205,7 @@ namespace WebGrease
         {
             var cachePath = this.Cache.RootPath;
             (logManager ?? this.Log).Information("Cleaning Cache: {0}".InvariantFormat(cachePath), MessageImportance.High);
-            this.CleanDirectory(cachePath);
+            this.CleanDirectory(cachePath, new[] { CacheManager.LockFileName });
         }
 
         /// <summary>The clean destination.</summary>
@@ -266,20 +266,14 @@ namespace WebGrease
 
         /// <summary>The get bitmap hash.</summary>
         /// <param name="bitmap">The bitmap.</param>
-        /// <param name="format"></param>
+        /// <param name="format">The format</param>
         /// <returns>The <see cref="string"/>.</returns>
+        [SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity", Justification = "Lock is to prevent thread issues, according to msdn doc should work this way.")]
         public string GetBitmapHash(Bitmap bitmap, ImageFormat format)
         {
-            return this.SectionedAction(SectionIdParts.BitmapHash).Execute(() => ComputeBitmapHash(bitmap, format));
-        }
-
-        private static string ComputeBitmapHash(Bitmap bitmap, ImageFormat format)
-        {
-            using (var ms = new MemoryStream())
+            lock (bitmap)
             {
-                bitmap.Save(ms, format);
-                ms.Seek(0, SeekOrigin.Begin);
-                return BytesToHash(Hasher.Value.ComputeHash(ms));
+                return this.SectionedAction(SectionIdParts.BitmapHash).Execute(() => ComputeBitmapHash(bitmap, format));
             }
         }
 
@@ -299,37 +293,39 @@ namespace WebGrease
         {
             string hash = null;
             var fi = new FileInfo(filePath);
-            Safe.Lock(CachedFileHashes, () =>
-            {
-                if (!fi.Exists)
+            Safe.Lock(
+                CachedFileHashes,
+                () =>
                 {
-                    throw new FileNotFoundException("Could not find the file to create a hash for", filePath);
-                }
+                    if (!fi.Exists)
+                    {
+                        throw new FileNotFoundException("Could not find the file to create a hash for", filePath);
+                    }
 
-                var uniqueId = fi.FullName;
+                    var uniqueId = fi.FullName;
 
-                if (this.sessionCachedFileHashes.TryGetValue(uniqueId, out hash))
-                {
-                    // Found in current session cache, just return.
-                    return;
-                }
+                    if (this.sessionCachedFileHashes.TryGetValue(uniqueId, out hash))
+                    {
+                        // Found in current session cache, just return.
+                        return;
+                    }
 
-                Tuple<DateTime, long, string> cachedFileHash;
-                CachedFileHashes.TryGetValue(uniqueId, out cachedFileHash);
+                    Tuple<DateTime, long, string> cachedFileHash;
+                    CachedFileHashes.TryGetValue(uniqueId, out cachedFileHash);
 
-                if (cachedFileHash != null && cachedFileHash.Item1 == fi.LastWriteTimeUtc && cachedFileHash.Item2 == fi.Length)
-                {
-                    // found in static cache, between sessions, and is up to date return.
-                    hash = cachedFileHash.Item3;
-                    return;
-                }
+                    if (cachedFileHash != null && cachedFileHash.Item1 == fi.LastWriteTimeUtc && cachedFileHash.Item2 == fi.Length)
+                    {
+                        // found in static cache, between sessions, and is up to date return.
+                        hash = cachedFileHash.Item3;
+                        return;
+                    }
 
-                // either new, or has changed, recompute, and add to cached file hash
-                hash = ComputeFileHash(fi.FullName);
+                    // either new, or has changed, recompute, and add to cached file hash
+                    hash = ComputeFileHash(fi.FullName);
 
-                CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, hash);
-                this.sessionCachedFileHashes[uniqueId] = hash;
-            });
+                    CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, hash);
+                    this.sessionCachedFileHashes[uniqueId] = hash;
+                });
 
             return hash;
         }
@@ -450,17 +446,19 @@ namespace WebGrease
                         var sectionId = ToStringId(idParts(item.Item3));
                         parallelAction(item.Item1, item.Item3, state);
                         var measureResult = item.Item1.Measure.GetResults();
-                        Safe.Lock(serialLock, () =>
-                        {
-                            this.threadedMeasureResults.AddRange(item.Item1.ThreadedMeasureResults);
-                            this.threadedMeasureResults.Add(new KeyValuePair<string, IEnumerable<TimeMeasureResult>>(sectionId, measureResult));
-                            item.Item2.Flush();
-                            done++;
-                            if (done == parallelForEachItems.Count - 1)
+                        Safe.Lock(
+                            serialLock,
+                            () =>
                             {
-                                parallelForEachItems.ForEach(i => i.Item2.Flush());
-                            }
-                        });
+                                this.threadedMeasureResults.AddRange(item.Item1.ThreadedMeasureResults);
+                                this.threadedMeasureResults.Add(new KeyValuePair<string, IEnumerable<TimeMeasureResult>>(sectionId, measureResult));
+                                item.Item2.Flush();
+                                done++;
+                                if (done == parallelForEachItems.Count - 1)
+                                {
+                                    parallelForEachItems.ForEach(i => i.Item2.Flush());
+                                }
+                            });
                     });
             });
         }
@@ -512,6 +510,54 @@ namespace WebGrease
             }
         }
 
+        /// <summary>The del tree method, deletes a directory and all its sub files/directories.</summary>
+        /// <param name="directory">The directory.</param>
+        /// <param name="filesToIgnore">The files to ignore when deleting.</param>
+        /// <returns>If a files was ignored.</returns>
+        private static bool DelTree(string directory, string[] filesToIgnore)
+        {
+            var fileWasSkipped = false;
+            var files = Directory.GetFiles(directory);
+            foreach (var file in files)
+            {
+                if (filesToIgnore == null || !filesToIgnore.Any(fti => file.EndsWith(fti, StringComparison.OrdinalIgnoreCase)))
+                {
+                    File.Delete(file);
+                }
+                else
+                {
+                    fileWasSkipped = true;
+                }
+            }
+
+            var subDirectories = Directory.GetDirectories(directory);
+            foreach (var subDirectory in subDirectories)
+            {
+                fileWasSkipped |= DelTree(subDirectory, filesToIgnore);
+            }
+
+            if (!fileWasSkipped)
+            {
+                Directory.Delete(directory);
+            }
+
+            return fileWasSkipped;
+        }
+
+        /// <summary>The compute bitmap hash.</summary>
+        /// <param name="bitmap">The bitmap.</param>
+        /// <param name="format">The format.</param>
+        /// <returns>The <see cref="string"/>.</returns>
+        private static string ComputeBitmapHash(Bitmap bitmap, ImageFormat format)
+        {
+            using (var ms = new MemoryStream())
+            {
+                bitmap.Save(ms, format);
+                ms.Seek(0, SeekOrigin.Begin);
+                return BytesToHash(Hasher.Value.ComputeHash(ms));
+            }
+        }
+
         /// <summary>The bytes to hash.</summary>
         /// <param name="hash">The hash.</param>
         /// <returns>The <see cref="string"/>.</returns>
@@ -523,17 +569,21 @@ namespace WebGrease
 
         /// <summary>The clean directory.</summary>
         /// <param name="directory">The directory.</param>
+        /// <param name="filesToIgnore">The files to ignore when deleting.</param>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Catch all on purpose, hide any file system exceptions, make sure they don't stop the webgrease run.")]
-        private void CleanDirectory(string directory)
+        private void CleanDirectory(string directory, string[] filesToIgnore = null)
         {
             try
             {
                 if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
                 {
-                    Directory.Delete(directory, true);
+                    DelTree(directory, filesToIgnore);
                 }
 
-                Directory.CreateDirectory(directory);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
             }
             catch (Exception ex)
             {

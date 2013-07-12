@@ -15,10 +15,6 @@
 // limitations under the License.
 
 using System;
-using System.Globalization;
-using System.Runtime.Serialization;
-using System.Security;
-using System.Security.Permissions;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -37,49 +33,26 @@ namespace Microsoft.Ajax.Utilities
     //  2- Update JScript.resx with the US English error message
     //  3- Update Severity.
     //-------------------------------------------------------------------------------------------------------
-    [Serializable]
-    public class JScriptException : Exception
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix", Justification = "backwards-compatibility for public class name")]
+    public sealed class JScriptException
     {
         #region private fields
 
-        [NonSerialized]
         private Context m_context;
-
-        private string m_valueObject;
-        private bool m_isError;
-        private JSError m_errorCode;
-        private bool m_canRecover = true;
-        private string m_fileContext;
 
         #endregion
 
         #region public properties
 
-        public string FileContext
-        {
-            get
-            {
-                return m_fileContext;
-            }
-        }
+        public string FileContext { get; private set; }
 
-        public bool CanRecover
-        {
-            get { return m_canRecover; }
-            set { m_canRecover = value; }
-        }
+        public bool CanRecover { get; set; }
 
-        public bool IsError
-        {
-            get { return m_isError; }
-            set { m_isError = value; }
-        }
+        public bool IsError { get; set; }
 
-        public string Value
-        {
-            get { return m_valueObject; }
-            set { m_valueObject = value; }
-        }
+        public string Value { get; set; }
+
+        public JSError ErrorCode { get; private set; }
 
         public int StartColumn
         {
@@ -228,16 +201,16 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public override String Message
+        public string Message
         {
             get
             {
-                string code = m_errorCode.ToString();
-                if (m_valueObject != null)
+                string code = ErrorCode.ToString();
+                if (Value != null)
                 {
-                    return (m_errorCode == JSError.DuplicateName)
-                        ? JScript.ResourceManager.GetString(code, JScript.Culture).FormatInvariant(m_valueObject)
-                        : m_valueObject;
+                    return (ErrorCode == JSError.DuplicateName)
+                        ? JScript.ResourceManager.GetString(code, JScript.Culture).FormatInvariant(Value)
+                        : Value;
                 }
 
                 // special case some errors with contextual information
@@ -246,16 +219,11 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public JSError ErrorCode
-        {
-            get { return m_errorCode; }
-        }
-
         public int Severity
         {
             get
             {
-                return GetSeverity(m_errorCode);
+                return GetSeverity(ErrorCode);
             }
         }
 
@@ -263,57 +231,13 @@ namespace Microsoft.Ajax.Utilities
 
         #region constructors
 
-        public JScriptException() : this(JSError.UncaughtException, null) { }
-        public JScriptException(string message) : this(message, null) { }
-        public JScriptException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-            m_valueObject = message;
-            m_context = null;
-            m_fileContext = null;
-            m_errorCode = JSError.UncaughtException;
-            SetHResult();
-        }
-
         internal JScriptException(JSError errorNumber, Context context)
         {
-            m_valueObject = null;
+            Value = null;
             m_context = (context == null ? null : context.Clone());
-            m_fileContext = (context == null ? null : context.Document.FileContext);
-            m_errorCode = errorNumber;
-            SetHResult();
-        }
-
-        protected JScriptException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-            if (info == null)
-            {
-                throw new ArgumentException(JScript.InternalCompilerError);
-            }
-
-            m_valueObject = info.GetString("Value");
-            m_isError = info.GetBoolean("IsError");
-            m_errorCode = (JSError)info.GetInt32("JSError");
-            m_canRecover = info.GetBoolean("CanRecover");
-            m_fileContext = info.GetString("FileContext");
-        }
-
-        #endregion
-
-        #region public methods
-
-        [SecurityCritical] 
-        [SecurityPermissionAttribute(SecurityAction.Demand, SerializationFormatter = true)]
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            if (info == null) throw new ArgumentNullException("info");
-            base.GetObjectData(info, context);
-            info.AddValue("Value", m_valueObject);
-            info.AddValue("IsError", m_isError);
-            info.AddValue("JSError", (int)m_errorCode);
-            info.AddValue("CanRecover", m_canRecover);
-            info.AddValue("FileContext", m_fileContext);
+            FileContext = (context == null ? null : context.Document.FileContext);
+            ErrorCode = errorNumber;
+            CanRecover = true;
         }
 
         #endregion
@@ -340,6 +264,7 @@ namespace Microsoft.Ajax.Utilities
                 case JSError.StrictComparisonIsAlwaysTrueOrFalse:
                     return 1;
 
+                case JSError.ArrayLiteralTrailingComma:
                 case JSError.DuplicateCatch:
                 case JSError.DuplicateConstantDeclaration:
                 case JSError.DuplicateLexicalDeclaration:
@@ -376,16 +301,6 @@ namespace Microsoft.Ajax.Utilities
         }
 
         #endregion
-
-        #region private methods
-
-        private void SetHResult()
-        {
-            this.HResult = //unchecked((int)(0x800A0000 + (int)m_errorCode));
-                -2146828288 + (int)m_errorCode;
-        }
-
-        #endregion
     }
 
     public class JScriptExceptionEventArgs : EventArgs
@@ -407,13 +322,11 @@ namespace Microsoft.Ajax.Utilities
         }
     }
 
-    [Serializable]
-    public class UndefinedReferenceException : Exception
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix", Justification = "backwards-compatibility for public class name")]
+    public sealed class UndefinedReferenceException
     {
-        [NonSerialized]
         private Context m_context;
 
-        [NonSerialized]
         private Lookup m_lookup;
         public AstNode LookupNode
         {
@@ -472,35 +385,6 @@ namespace Microsoft.Ajax.Utilities
             m_context = context;
         }
 
-        public UndefinedReferenceException() : base() { }
-        public UndefinedReferenceException(string message) : base(message) { }
-        public UndefinedReferenceException(string message, Exception innerException) : base(message, innerException) { }
-
-        protected UndefinedReferenceException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-            if (info == null)
-            {
-                throw new ArgumentNullException("info");
-            }
-            m_name = info.GetString("name");
-            m_type = (ReferenceType)Enum.Parse(typeof(ReferenceType), info.GetString("type"));
-        }
-
-        [SecurityCritical] 
-        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            if (info == null)
-            {
-                throw new ArgumentNullException("info");
-            }
-
-            base.GetObjectData(info, context);
-            info.AddValue("name", m_name);
-            info.AddValue("type", m_type.ToString());
-        }
-
         public override string ToString()
         {
             return m_name;
@@ -509,12 +393,11 @@ namespace Microsoft.Ajax.Utilities
 
     public class UndefinedReferenceEventArgs : EventArgs
     {
-        private UndefinedReferenceException m_exception;
-        public UndefinedReferenceException Exception { get { return m_exception; } }
+        public UndefinedReferenceException Exception { get; private set; }
 
         public UndefinedReferenceEventArgs(UndefinedReferenceException exception)
         {
-            m_exception = exception;
+            Exception = exception;
         }
     }
 }

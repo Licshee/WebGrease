@@ -20,7 +20,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
-using System.Runtime.Serialization;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -90,6 +89,12 @@ namespace Microsoft.Ajax.Utilities
         private int m_breakRecursion;// = 0;
         private int m_severity;
 
+        /// <summary>
+        /// Gets or sets a TextWriter instance to which raw preprocessed input will be
+        /// written when Parse is called.
+        /// </summary>
+        public TextWriter EchoWriter { get; set; }
+
         public event EventHandler<JScriptExceptionEventArgs> CompilerError;
         public event EventHandler<UndefinedReferenceEventArgs> UndefinedReference;
 
@@ -146,7 +151,7 @@ namespace Microsoft.Ajax.Utilities
                         se.Severity,
                         GetSeverityString(se.Severity),
                         errorCode,
-                        se.HelpLink,
+                        null,
                         se.FileContext,
                         se.Line,
                         se.Column,
@@ -289,10 +294,12 @@ namespace Microsoft.Ajax.Utilities
         #region pre-process only
 
         /// <summary>
+        /// Obsolete - set the PreprocessOnly property on the CodeSettings class to true and call Parse method.
         /// Preprocess the input only - don't generate an AST tree or do any other code analysis, just return the processed code as a string. 
         /// </summary>
         /// <param name="settings">settings to use in the scanner</param>
         /// <returns>the source as processed by the preprocessor</returns>
+        [Obsolete("Set EchoWriter property to and call Parse method with PreprocessOnly property on the CodeSettings object set to true", true)]
         public string PreprocessOnly(CodeSettings settings)
         {
             // create an empty string builder
@@ -312,135 +319,23 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         /// <param name="settings">settings to use in the scanner</param>
         /// <param name="outputStream">output stream to which to write the processed source</param>
+        [Obsolete("Set EchoWriter property to and call Parse method with PreprocessOnly property on the CodeSettings object set to true", true)]
         public void PreprocessOnly(CodeSettings settings, TextWriter outputStream)
         {
             if (outputStream != null)
             {
-                // initialize the scanner
-                // make sure the RawTokens setting is on so that the scanner
-                // just returns everything (after doing preprocessor evaluations)
-                InitializeScanner(settings);
+                EchoWriter = outputStream;
+                Parse(settings);
+                EchoWriter = null;
 
-                // get the first token, which might be a regular expression
-                // (since it makes no sense to start off script with a divide-operator)
-                var scanRegExp = true;
-                var tokenContext = m_scanner.ScanNextToken(scanRegExp);
-
-                // until we hit the end of the file...
-                int lastEndPosition = tokenContext.EndPosition;
-                while (tokenContext.Token != JSToken.EndOfFile)
+                if (m_settings.TermSemicolons)
                 {
-                    // just output the token and grab the next one.
-                    // but skip preprocessor directives!
-                    if (tokenContext.Token != JSToken.PreprocessorDirective)
-                    {
-                        outputStream.Write(tokenContext.Code);
-                    }
-
-                    // if this the kind of token we want to know about the next time, then save it
-                    switch (tokenContext.Token)
-                    {
-                        case JSToken.WhiteSpace:
-                        case JSToken.EndOfLine:
-                        case JSToken.AspNetBlock:
-                        case JSToken.SingleLineComment:
-                        case JSToken.MultipleLineComment:
-                        case JSToken.PreprocessorDirective:
-                        case JSToken.ConditionalCompilationOn:
-                        case JSToken.ConditionalCompilationSet:
-                        case JSToken.ConditionalCompilationIf:
-                        case JSToken.ConditionalCompilationElseIf:
-                        case JSToken.ConditionalCompilationElse:
-                        case JSToken.ConditionalCompilationEnd:
-                            // don't change the regexp flag for these tokens
-                            break;
-
-                        default:
-                            scanRegExp = RegExpCanFollow(tokenContext.Token);
-                            break;
-                    }
-
-                    tokenContext = m_scanner.ScanNextToken(scanRegExp);
-                    if (!m_scanner.IsEndOfFile && tokenContext.EndPosition == lastEndPosition)
-                    {
-                        // didn't get anything, but not at the end of the file. infinite loop?
-                        tokenContext.HandleError(JSError.ApplicationError, true);
-                        break;
-                    }
-                    else
-                    {
-                        lastEndPosition = tokenContext.EndPosition;
-                    }
+                    // if we want to make sure this file has a terminating semicolon, start a new line
+                    // (to make sure any single-line comments are terminated) and output a semicolon
+                    // followed by another line break.
+                    outputStream.WriteLine();
+                    outputStream.WriteLine(';');
                 }
-            }
-        }
-
-        private static bool RegExpCanFollow(JSToken previousToken)
-        {
-            switch (previousToken)
-            {
-                case JSToken.Do:
-                case JSToken.Return:
-                case JSToken.Throw:
-                case JSToken.LeftCurly:
-                case JSToken.Semicolon:
-                case JSToken.LeftParenthesis:
-                case JSToken.LeftBracket:
-                case JSToken.ConditionalIf:
-                case JSToken.Colon:
-                case JSToken.Comma:
-                case JSToken.Case:
-                case JSToken.Else:
-                case JSToken.EndOfLine:
-                case JSToken.RightCurly:
-                case JSToken.LogicalNot:
-                case JSToken.BitwiseNot:
-                case JSToken.Delete:
-                case JSToken.Void:
-                case JSToken.New:
-                case JSToken.TypeOf:
-                case JSToken.Increment:
-                case JSToken.Decrement:
-                case JSToken.Plus:
-                case JSToken.Minus:
-                case JSToken.LogicalOr:
-                case JSToken.LogicalAnd:
-                case JSToken.BitwiseOr:
-                case JSToken.BitwiseXor:
-                case JSToken.BitwiseAnd:
-                case JSToken.Equal:
-                case JSToken.NotEqual:
-                case JSToken.StrictEqual:
-                case JSToken.StrictNotEqual:
-                case JSToken.GreaterThan:
-                case JSToken.LessThan:
-                case JSToken.LessThanEqual:
-                case JSToken.GreaterThanEqual:
-                case JSToken.LeftShift:
-                case JSToken.RightShift:
-                case JSToken.UnsignedRightShift:
-                case JSToken.Multiply:
-                case JSToken.Divide:
-                case JSToken.Modulo:
-                case JSToken.InstanceOf:
-                case JSToken.In:
-                case JSToken.Assign:
-                case JSToken.PlusAssign:
-                case JSToken.MinusAssign:
-                case JSToken.MultiplyAssign:
-                case JSToken.DivideAssign:
-                case JSToken.BitwiseAndAssign:
-                case JSToken.BitwiseOrAssign:
-                case JSToken.BitwiseXorAssign:
-                case JSToken.ModuloAssign:
-                case JSToken.LeftShiftAssign:
-                case JSToken.RightShiftAssign:
-                case JSToken.UnsignedRightShiftAssign:
-                case JSToken.None:
-                    return true;
-
-                default:
-                    return false;
             }
         }
 
@@ -470,69 +365,79 @@ namespace Microsoft.Ajax.Utilities
             // start of a new module
             m_newModule = true;
 
-            Block scriptBlock;
-            Block returnBlock;
-            switch (m_settings.SourceMode)
+            Block scriptBlock = null;
+            Block returnBlock = null;
+            try
             {
-                case JavaScriptSourceMode.Program:
-                    // simply parse a block of statements
-                    returnBlock = scriptBlock = ParseStatements();
-                    break;
-                    
-                case JavaScriptSourceMode.Expression:
-                    // create a block, get the first token, add in the parse of a single expression, 
-                    // and we'll go fron there.
-                    returnBlock = scriptBlock = new Block(CurrentPositionContext(), this);
-                    GetNextToken();
-                    try
-                    {
-                        var expr = ParseExpression();
-                        if (expr != null)
+                switch (m_settings.SourceMode)
+                {
+                    case JavaScriptSourceMode.Program:
+                        // simply parse a block of statements
+                        returnBlock = scriptBlock = ParseStatements();
+                        break;
+
+                    case JavaScriptSourceMode.Expression:
+                        // create a block, get the first token, add in the parse of a single expression, 
+                        // and we'll go fron there.
+                        returnBlock = scriptBlock = new Block(CurrentPositionContext(), this);
+                        GetNextToken();
+                        try
                         {
-                            scriptBlock.Append(expr);
-                            scriptBlock.UpdateWith(expr.Context);
+                            var expr = ParseExpression();
+                            if (expr != null)
+                            {
+                                scriptBlock.Append(expr);
+                                scriptBlock.UpdateWith(expr.Context);
+                            }
                         }
-                    }
-                    catch (EndOfFileException)
-                    {
-                        Debug.WriteLine("EOF");
-                    }
-                    break;
-
-                case JavaScriptSourceMode.EventHandler:
-                    // we're going to create the global block, add in a function expression with a single
-                    // parameter named "event", and then we're going to parse the input as the body of that
-                    // function expression. We're going to resolve the global block, but only return the body
-                    // of the function.
-                    scriptBlock = new Block(null, this);
-
-                    var parameters = new AstNodeList(null, this);
-                    parameters.Append(new ParameterDeclaration(null, this)
+                        catch (EndOfStreamException)
                         {
-                            Name = "event",
-                            RenameNotAllowed = true
-                        });
+                            Debug.WriteLine("EOF");
+                        }
+                        break;
 
-                    var funcExpression = new FunctionObject(null, this)
-                        {
-                            FunctionType = FunctionType.Expression, 
-                            ParameterDeclarations = parameters
-                        };
-                    scriptBlock.Append(funcExpression);
+                    case JavaScriptSourceMode.EventHandler:
+                        // we're going to create the global block, add in a function expression with a single
+                        // parameter named "event", and then we're going to parse the input as the body of that
+                        // function expression. We're going to resolve the global block, but only return the body
+                        // of the function.
+                        scriptBlock = new Block(null, this);
 
-                    returnBlock = ParseStatements();
-                    funcExpression.Body = returnBlock;
-                    break;
+                        var parameters = new AstNodeList(null, this);
+                        parameters.Append(new ParameterDeclaration(null, this)
+                            {
+                                Name = "event",
+                                RenameNotAllowed = true
+                            });
 
-                default:
-                    Debug.Fail("Unexpected source mode enumeration");
-                    return null;
+                        var funcExpression = new FunctionObject(null, this)
+                            {
+                                FunctionType = FunctionType.Expression,
+                                ParameterDeclarations = parameters
+                            };
+                        scriptBlock.Append(funcExpression);
+                        funcExpression.Body = returnBlock = ParseStatements();
+                        break;
+
+                    default:
+                        Debug.Fail("Unexpected source mode enumeration");
+                        return null;
+                }
+            }
+            catch (RecoveryTokenException)
+            {
+                // this should never happen but let's make SURE we don't expose our
+                // private exception object to the outside world
+                m_currentToken.HandleError(JSError.ApplicationError, true);
             }
 
-            // resolve everything
-            ResolutionVisitor.Apply(scriptBlock, GlobalScope, m_settings);
+            if (scriptBlock != null)
+            {
+                // resolve everything
+                ResolutionVisitor.Apply(scriptBlock, GlobalScope, m_settings);
+            }
 
-            if (scriptBlock != null && Settings.MinifyCode)
+            if (scriptBlock != null && Settings.MinifyCode && !Settings.PreprocessOnly)
             {
                 // this visitor doesn't just reorder scopes. It also combines the adjacent var variables,
                 // unnests blocks, identifies prologue directives, and sets the strict mode on scopes. 
@@ -573,7 +478,7 @@ namespace Microsoft.Ajax.Utilities
                 GlobalScope.ValidateGeneratedNames();
             }
 
-            if (returnBlock.Parent != null)
+            if (returnBlock != null && returnBlock.Parent != null)
             {
                 returnBlock.Parent = null;
             }
@@ -719,14 +624,8 @@ namespace Microsoft.Ajax.Utilities
                 }
 
             }
-            catch (EndOfFileException)
+            catch (EndOfStreamException)
             {
-            }
-            catch (ScannerException se)
-            {
-                // a scanner exception implies that the end of file has been reached with an error.
-                // Mark the end of file as the error location
-                EOFError(se.Error);
             }
 
             program.UpdateWith(CurrentPositionContext());
@@ -798,7 +697,7 @@ namespace Microsoft.Ajax.Utilities
                 {
                     case JSToken.EndOfFile:
                         EOFError(JSError.ErrorEndOfFile);
-                        throw new EndOfFileException(); // abort parsing, get back to the main parse routine
+                        throw new EndOfStreamException(); // abort parsing, get back to the main parse routine
                     case JSToken.Semicolon:
                         // make an empty statement
                         statement = new EmptyStatement(m_currentToken.Clone(), this);
@@ -3587,7 +3486,7 @@ namespace Microsoft.Ajax.Utilities
                     body.Context.UpdateWith(m_currentToken);
                     fncCtx.UpdateWith(m_currentToken);
                 }
-                catch (EndOfFileException)
+                catch (EndOfStreamException)
                 {
                     // if we get an EOF here, we never had a chance to find the closing curly-brace
                     fncCtx.HandleError(JSError.UnclosedFunction, true);
@@ -4462,19 +4361,14 @@ namespace Microsoft.Ajax.Utilities
 
                 case JSToken.Divide:
                     // could it be a regexp?
-                    String source = m_scanner.ScanRegExp();
-                    if (source != null)
+                    ast = ScanRegularExpression();
+                    if (ast != null)
                     {
-                        // parse the flags (if any)
-                        String flags = m_scanner.ScanRegExpFlags();
-                        // create the literal
-                        ast = new RegExpLiteral(m_currentToken.Clone(), this)
-                            {
-                                Pattern = source,
-                                PatternSwitches = flags
-                            };
+                        // yup -- we're done here
                         break;
                     }
+
+                    // nope -- go to the default branch
                     goto default;
 
                 // expression
@@ -4517,6 +4411,7 @@ namespace Microsoft.Ajax.Utilities
                     Context listCtx = m_currentToken.Clone();
                     GetNextToken();
                     AstNodeList list = new AstNodeList(CurrentPositionContext(), this);
+                    var hasTrailingCommas = false;
                     while (JSToken.RightBracket != m_currentToken.Token)
                     {
                         if (JSToken.Comma != m_currentToken.Token)
@@ -4539,7 +4434,8 @@ namespace Microsoft.Ajax.Utilities
                                 {
                                     // we have a comma -- skip it after adding it as a terminator
                                     // on the previous expression
-                                    expression.IfNotNull(e => e.TerminatingContext = m_currentToken.Clone());
+                                    var commaContext = m_currentToken.Clone();
+                                    expression.IfNotNull(e => e.TerminatingContext = commaContext);
                                     GetNextToken();
 
                                     // if the next token is the closing brackets, then we need to
@@ -4548,7 +4444,12 @@ namespace Microsoft.Ajax.Utilities
                                     // TECHNICALLY, that puts an extra item into the array for most modern browsers, but not ALL.
                                     if (m_currentToken.Token == JSToken.RightBracket)
                                     {
+                                        hasTrailingCommas = true;
                                         list.Append(new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.Clone(), this));
+
+                                        // throw a cross-browser warning about trailing commas
+                                        commaContext.HandleError(JSError.ArrayLiteralTrailingComma);
+                                        break;
                                     }
                                 }
                             }
@@ -4561,7 +4462,8 @@ namespace Microsoft.Ajax.Utilities
                                     listCtx.UpdateWith(CurrentPositionContext());
                                     exc._partiallyComputedNode = new ArrayLiteral(listCtx, this)
                                         {
-                                            Elements = list
+                                            Elements = list,
+                                            MayHaveIssues = true
                                         };
                                     throw;
                                 }
@@ -4579,9 +4481,10 @@ namespace Microsoft.Ajax.Utilities
                         else
                         {
                             // comma -- missing array item in the list
+                            var commaContext = m_currentToken.Clone();
                             list.Append(new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.Clone(), this)
                                 {
-                                    TerminatingContext = m_currentToken.Clone()
+                                    TerminatingContext = commaContext
                                 });
 
                             // skip over the comma
@@ -4592,14 +4495,21 @@ namespace Microsoft.Ajax.Utilities
                             // TECHNICALLY, that puts an extra item into the array for most modern browsers, but not ALL.
                             if (m_currentToken.Token == JSToken.RightBracket)
                             {
+                                hasTrailingCommas = true;
                                 list.Append(new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.Clone(), this));
+
+                                // throw a cross-browser warning about trailing commas
+                                commaContext.HandleError(JSError.ArrayLiteralTrailingComma);
+                                break;
                             }
                         }
                     }
+
                     listCtx.UpdateWith(m_currentToken);
                     ast = new ArrayLiteral(listCtx, this)
                         {
-                            Elements = list
+                            Elements = list,
+                            MayHaveIssues = hasTrailingCommas
                         };
                     break;
 
@@ -5391,46 +5301,52 @@ namespace Microsoft.Ajax.Utilities
         //---------------------------------------------------------------------------------------
         private void GetNextToken()
         {
-            try
+            if (m_useCurrentForNext)
             {
-                if (m_useCurrentForNext)
+                // we just want to keep using the current token.
+                // but don't get into an infinite loop -- after a while,
+                // give up and grab the next token from the scanner anyway
+                m_useCurrentForNext = false;
+                if (m_breakRecursion++ > 10)
                 {
-                    // we just want to keep using the current token.
-                    // but don't get into an infinite loop -- after a while,
-                    // give up and grab the next token from the scanner anyway
-                    m_useCurrentForNext = false;
-                    if (m_breakRecursion++ > 10)
-                    {
-                        m_currentToken = ScanNextToken();
-                    }
-                }
-                else
-                {
-                    m_goodTokensProcessed++;
-                    m_breakRecursion = 0;
-
-                    // the scanner reuses the same context object for performance,
-                    // so if we ever mean to hold onto it later, we need to clone it.
                     m_currentToken = ScanNextToken();
                 }
             }
-            catch (ScannerException e)
+            else
             {
-                if (e.Error != JSError.NoCommentEnd)
-                {
-                    // rethrow anything that isn't an unterminated comment
-                    throw;
-                }
-                else
-                {
-                    m_currentToken.Token = JSToken.EndOfFile;
-                    m_currentToken.HandleError(JSError.NoCommentEnd);
-                }
+                m_goodTokensProcessed++;
+                m_breakRecursion = 0;
+
+                // the scanner reuses the same context object for performance,
+                // so if we ever mean to hold onto it later, we need to clone it.
+                m_currentToken = ScanNextToken();
             }
+        }
+
+        private AstNode ScanRegularExpression()
+        {
+            var source = m_scanner.ScanRegExp();
+            if (source != null)
+            {
+                // parse the flags (if any)
+                var flags = m_scanner.ScanRegExpFlags();
+
+                // create the regexp node and return it 
+                return new RegExpLiteral(m_currentToken.Clone(), this)
+                {
+                    Pattern = source,
+                    PatternSwitches = flags
+                };
+            }
+
+            // if we get here, there isn't a regular expression at the current position
+            return null;
         }
 
         private Context ScanNextToken()
         {
+            EchoWriter.IfNotNull(w => { if (m_currentToken.Token != JSToken.None) w.Write(m_currentToken.Code); });
+
             m_newModule = false;
             m_foundEndOfLine = false;
             m_importantComments.Clear();
@@ -5459,6 +5375,8 @@ namespace Microsoft.Ajax.Utilities
                     }
                 }
 
+                // if we are preprocess-only, then don't output any preprocessor directive tokens
+                EchoWriter.IfNotNull(w => { if (!Settings.PreprocessOnly || nextToken.Token != JSToken.PreprocessorDirective) w.Write(nextToken.Code); });
                 nextToken = m_scanner.ScanNextToken(false);
             }
 
@@ -5616,10 +5534,10 @@ namespace Microsoft.Ajax.Utilities
                 if (++m_tokensSkipped > c_MaxSkippedTokenNumber)
                 {
                     m_currentToken.HandleError(JSError.TooManyTokensSkipped);
-                    throw new EndOfFileException();
+                    throw new EndOfStreamException();
                 }
                 if (JSToken.EndOfFile == m_currentToken.Token)
-                    throw new EndOfFileException();
+                    throw new EndOfStreamException();
             }
 
             m_useCurrentForNext = true;
@@ -5662,158 +5580,109 @@ namespace Microsoft.Ajax.Utilities
         {
             return (-1 != IndexOfToken(tokens, exc._token));
         }
-    }
 
-    // helper classes
-    //***************************************************************************************
-    //
-    //***************************************************************************************
-    [Serializable]
-    public class ParserException : Exception
-    {
-        private static string s_errorMsg = JScript.JSParserException;
+        // helper classes
+        //***************************************************************************************
+        //
+        //***************************************************************************************
 
-        public ParserException() : base(s_errorMsg) { }
-        public ParserException(string message) : base(message) { }
-        public ParserException(string message, Exception innerException) : base(message, innerException) { }
-
-        protected ParserException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-    }
-
-    [Serializable]
-    public class UnexpectedTokenException : ParserException
-    {
-        public UnexpectedTokenException() : base() { }
-        public UnexpectedTokenException(string message) : base(message) { }
-        public UnexpectedTokenException(string message, Exception innerException) : base(message, innerException) { }
-        protected UnexpectedTokenException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-    }
-
-    [Serializable]
-    public class EndOfFileException : ParserException
-    {
-        public EndOfFileException() : base() { }
-        public EndOfFileException(string message) : base(message) { }
-        public EndOfFileException(string message, Exception innerException) : base(message, innerException) { }
-        protected EndOfFileException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-    }
-
-    [Serializable]
-    internal class RecoveryTokenException : ParserException
-    {
-        internal JSToken _token;
-        internal AstNode _partiallyComputedNode;
-
-        internal RecoveryTokenException(JSToken token, AstNode partialAST)
-            : base()
+        // this is a private exception used by the parser to handle syntax errors and partially-computed
+        // AST nodes. It will never make it outside the parser, so forget about serializing and proper constructors,
+        // and being public to begin with. We KNOW this will never get out because we have a try/catch in the
+        // Parse method that will catch any strays that happen to make it out and throw a syntax error.
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1064:ExceptionsShouldBePublic")]
+        private sealed class RecoveryTokenException : Exception
         {
-            _token = token;
-            _partiallyComputedNode = partialAST;
-        }
+            internal JSToken _token;
+            internal AstNode _partiallyComputedNode;
 
-        protected RecoveryTokenException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-    }
+            internal RecoveryTokenException() { }
 
-    //***************************************************************************************
-    // NoSkipTokenSet
-    //
-    //  This class is a possible implementation of the no skip token set. It relies on the
-    //  fact that the array passed in are static. Should you change it, this implementation
-    //  should change as well.
-    //  It keeps a linked list of token arrays that are passed in during parsing, on error
-    //  condition the list is traversed looking for a matching token. If a match is found
-    //  the token should not be skipped and an exception is thrown to let the proper
-    //  rule deal with the token
-    //***************************************************************************************
-    internal class NoSkipTokenSet
-    {
-        private List<JSToken[]> m_tokenSetList;
-
-        internal NoSkipTokenSet()
-        {
-            m_tokenSetList = new List<JSToken[]>();
-        }
-
-        internal void Add(JSToken[] tokens)
-        {
-            m_tokenSetList.Add(tokens);
-        }
-
-        internal void Remove(JSToken[] tokens)
-        {
-            bool wasRemoved = m_tokenSetList.Remove(tokens);
-            Debug.Assert(wasRemoved, "Token set not in no-skip list");
-        }
-
-        internal bool HasToken(JSToken token)
-        {
-            foreach (JSToken[] tokenSet in m_tokenSetList)
+            internal RecoveryTokenException(JSToken token, AstNode partialAST)
+                : base()
             {
-                for (int ndx = 0; ndx < tokenSet.Length; ++ndx)
+                _token = token;
+                _partiallyComputedNode = partialAST;
+            }
+        }
+
+        //***************************************************************************************
+        // NoSkipTokenSet
+        //
+        //  This class is a possible implementation of the no skip token set. It relies on the
+        //  fact that the array passed in are static. Should you change it, this implementation
+        //  should change as well.
+        //  It keeps a linked list of token arrays that are passed in during parsing, on error
+        //  condition the list is traversed looking for a matching token. If a match is found
+        //  the token should not be skipped and an exception is thrown to let the proper
+        //  rule deal with the token
+        //***************************************************************************************
+        private class NoSkipTokenSet
+        {
+            private List<JSToken[]> m_tokenSetList;
+
+            internal NoSkipTokenSet()
+            {
+                m_tokenSetList = new List<JSToken[]>();
+            }
+
+            internal void Add(JSToken[] tokens)
+            {
+                m_tokenSetList.Add(tokens);
+            }
+
+            internal void Remove(JSToken[] tokens)
+            {
+                bool wasRemoved = m_tokenSetList.Remove(tokens);
+                Debug.Assert(wasRemoved, "Token set not in no-skip list");
+            }
+
+            internal bool HasToken(JSToken token)
+            {
+                foreach (JSToken[] tokenSet in m_tokenSetList)
                 {
-                    if (tokenSet[ndx] == token)
+                    for (int ndx = 0; ndx < tokenSet.Length; ++ndx)
                     {
-                        return true;
+                        if (tokenSet[ndx] == token)
+                        {
+                            return true;
+                        }
                     }
                 }
+                return false;
             }
-            return false;
+
+            // list of static no skip token set for specifc rules
+            internal static readonly JSToken[] s_ArrayInitNoSkipTokenSet = new JSToken[] { JSToken.RightBracket, JSToken.Comma };
+            internal static readonly JSToken[] s_BlockConditionNoSkipTokenSet = new JSToken[] { JSToken.RightParenthesis, JSToken.LeftCurly, JSToken.EndOfLine };
+            internal static readonly JSToken[] s_BlockNoSkipTokenSet = new JSToken[] { JSToken.RightCurly };
+            internal static readonly JSToken[] s_BracketToken = new JSToken[] { JSToken.RightBracket };
+            internal static readonly JSToken[] s_CaseNoSkipTokenSet = new JSToken[] { JSToken.Case, JSToken.Default, JSToken.Colon, JSToken.EndOfLine };
+            internal static readonly JSToken[] s_DoWhileBodyNoSkipTokenSet = new JSToken[] { JSToken.While };
+            internal static readonly JSToken[] s_EndOfLineToken = new JSToken[] { JSToken.EndOfLine };
+            internal static readonly JSToken[] s_EndOfStatementNoSkipTokenSet = new JSToken[] { JSToken.Semicolon, JSToken.EndOfLine };
+            internal static readonly JSToken[] s_ExpressionListNoSkipTokenSet = new JSToken[] { JSToken.Comma };
+            internal static readonly JSToken[] s_FunctionDeclNoSkipTokenSet = new JSToken[] { JSToken.RightParenthesis, JSToken.LeftCurly, JSToken.Comma };
+            internal static readonly JSToken[] s_IfBodyNoSkipTokenSet = new JSToken[] { JSToken.Else };
+            internal static readonly JSToken[] s_MemberExprNoSkipTokenSet = new JSToken[] { JSToken.LeftBracket, JSToken.LeftParenthesis, JSToken.AccessField };
+            internal static readonly JSToken[] s_NoTrySkipTokenSet = new JSToken[] { JSToken.Catch, JSToken.Finally };
+            internal static readonly JSToken[] s_ObjectInitNoSkipTokenSet = new JSToken[] { JSToken.RightCurly, JSToken.Comma };
+            internal static readonly JSToken[] s_ParenExpressionNoSkipToken = new JSToken[] { JSToken.RightParenthesis };
+            internal static readonly JSToken[] s_ParenToken = new JSToken[] { JSToken.RightParenthesis };
+            internal static readonly JSToken[] s_PostfixExpressionNoSkipTokenSet = new JSToken[] { JSToken.Increment, JSToken.Decrement };
+            internal static readonly JSToken[] s_StartStatementNoSkipTokenSet = new JSToken[]{JSToken.LeftCurly,
+                                                                                               JSToken.Var,
+                                                                                               JSToken.Const,
+                                                                                               JSToken.If,
+                                                                                               JSToken.For,
+                                                                                               JSToken.Do,
+                                                                                               JSToken.While,
+                                                                                               JSToken.With,
+                                                                                               JSToken.Switch,
+                                                                                               JSToken.Try};
+            internal static readonly JSToken[] s_SwitchNoSkipTokenSet = new JSToken[] { JSToken.Case, JSToken.Default };
+            internal static readonly JSToken[] s_TopLevelNoSkipTokenSet = new JSToken[] { JSToken.Function };
+            internal static readonly JSToken[] s_VariableDeclNoSkipTokenSet = new JSToken[] { JSToken.Comma, JSToken.Semicolon };
         }
-
-        // list of static no skip token set for specifc rules
-        internal static readonly JSToken[] s_ArrayInitNoSkipTokenSet = new JSToken[]{JSToken.RightBracket,
-                                                                                           JSToken.Comma};
-        internal static readonly JSToken[] s_BlockConditionNoSkipTokenSet = new JSToken[]{JSToken.RightParenthesis,
-                                                                                           JSToken.LeftCurly,
-                                                                                           JSToken.EndOfLine};
-        internal static readonly JSToken[] s_BlockNoSkipTokenSet = new JSToken[] { JSToken.RightCurly };
-        internal static readonly JSToken[] s_BracketToken = new JSToken[] { JSToken.RightBracket };
-        internal static readonly JSToken[] s_CaseNoSkipTokenSet = new JSToken[]{JSToken.Case,
-                                                                                           JSToken.Default,
-                                                                                           JSToken.Colon,
-                                                                                           JSToken.EndOfLine};
-        internal static readonly JSToken[] s_DoWhileBodyNoSkipTokenSet = new JSToken[] { JSToken.While };
-        internal static readonly JSToken[] s_EndOfLineToken = new JSToken[] { JSToken.EndOfLine };
-        internal static readonly JSToken[] s_EndOfStatementNoSkipTokenSet = new JSToken[]{JSToken.Semicolon,
-                                                                                           JSToken.EndOfLine};
-        internal static readonly JSToken[] s_ExpressionListNoSkipTokenSet = new JSToken[] { JSToken.Comma };
-        internal static readonly JSToken[] s_FunctionDeclNoSkipTokenSet = new JSToken[]{JSToken.RightParenthesis,
-                                                                                           JSToken.LeftCurly,
-                                                                                           JSToken.Comma};
-        internal static readonly JSToken[] s_IfBodyNoSkipTokenSet = new JSToken[] { JSToken.Else };
-        internal static readonly JSToken[] s_MemberExprNoSkipTokenSet = new JSToken[]{JSToken.LeftBracket,
-                                                                                           JSToken.LeftParenthesis,
-                                                                                           JSToken.AccessField};
-        internal static readonly JSToken[] s_NoTrySkipTokenSet = new JSToken[]{JSToken.Catch,
-                                                                                           JSToken.Finally};
-        internal static readonly JSToken[] s_ObjectInitNoSkipTokenSet = new JSToken[]{JSToken.RightCurly,
-                                                                                           JSToken.Comma};
-        internal static readonly JSToken[] s_ParenExpressionNoSkipToken = new JSToken[] { JSToken.RightParenthesis };
-        internal static readonly JSToken[] s_ParenToken = new JSToken[] { JSToken.RightParenthesis };
-        internal static readonly JSToken[] s_PostfixExpressionNoSkipTokenSet = new JSToken[]{JSToken.Increment,
-                                                                                           JSToken.Decrement};
-        internal static readonly JSToken[] s_StartStatementNoSkipTokenSet = new JSToken[]{JSToken.LeftCurly,
-                                                                                           JSToken.Var,
-                                                                                           JSToken.Const,
-                                                                                           JSToken.If,
-                                                                                           JSToken.For,
-                                                                                           JSToken.Do,
-                                                                                           JSToken.While,
-                                                                                           JSToken.With,
-                                                                                           JSToken.Switch,
-                                                                                           JSToken.Try};
-        internal static readonly JSToken[] s_SwitchNoSkipTokenSet = new JSToken[]{JSToken.Case,
-                                                                                           JSToken.Default};
-        internal static readonly JSToken[] s_TopLevelNoSkipTokenSet = new JSToken[]{JSToken.Function};
-        internal static readonly JSToken[] s_VariableDeclNoSkipTokenSet = new JSToken[]{JSToken.Comma,
-                                                                                           JSToken.Semicolon};
-    }
-
-    public enum FunctionType
-    {
-        Declaration,
-        Expression,
-        Getter,
-        Setter
     }
 }

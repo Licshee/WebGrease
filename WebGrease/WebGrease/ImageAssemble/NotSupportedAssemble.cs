@@ -1,5 +1,5 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
-// <copyright file="PhotoAssemble.cs" company="Microsoft">
+// <copyright file="NotSupportedAssemble.cs" company="Microsoft">
 //   Copyright Microsoft Corporation, all rights reserved
 // </copyright>
 // <summary>
@@ -10,26 +10,16 @@
 namespace WebGrease.ImageAssemble
 {
     using System.Collections.Generic;
-    using System.Drawing;
     using System.Drawing.Imaging;
 
     /// <summary>This class assembles JPEG images</summary>
     internal class NotSupportedAssemble : ImageAssembleBase
     {
+        /// <summary>Initializes a new instance of the <see cref="NotSupportedAssemble"/> class.</summary>
+        /// <param name="context">The context.</param>
         public NotSupportedAssemble(IWebGreaseContext context)
             : base(context)
         {
-        }
-
-        /// <summary>
-        /// Gets image type
-        /// </summary>
-        internal override ImageFormat Format
-        {
-            get
-            {
-                return ImageFormat.Bmp;
-            }
         }
 
         /// <summary>
@@ -54,15 +44,29 @@ namespace WebGrease.ImageAssemble
             }
         }
 
+        /// <summary>
+        /// Gets image type
+        /// </summary>
+        protected override ImageFormat Format
+        {
+            get
+            {
+                return ImageFormat.Bmp;
+            }
+        }
+
         /// <summary>For image types that are not supported, write a separate entry in the image map
         /// since we are not assembling these images.</summary>
         /// <param name="inputImages">The input Images.</param>
-        internal override void Assemble(Dictionary<InputImage, Bitmap> inputImages)
+        /// <returns>The <see cref="bool"/>. True if something was assembled, false if not.</returns>
+        internal override bool Assemble(List<BitmapContainer> inputImages)
         {
             foreach (var entry in inputImages)
             {
-                this.ImageXmlMap.AppendToXml(entry.Key.AbsoluteImagePath, "Not supported");
+                this.ImageXmlMap.AppendToXml(entry.InputImage.AbsoluteImagePath, "Not supported");
             }
+
+            return false;
         }
     }
 }

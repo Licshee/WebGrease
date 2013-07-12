@@ -67,7 +67,15 @@ namespace WebGrease.Configuration
         /// <param name="configuration">The configuration.</param>
         /// <param name="configurationFile">The configuration file.</param>
         internal WebGreaseConfiguration(WebGreaseConfiguration configuration, FileInfo configurationFile)
-            : this(configurationFile, configuration.ConfigType, configuration.SourceDirectory, configuration.DestinationDirectory, configuration.LogsDirectory, configuration.ToolsTempDirectory, configuration.ApplicationRootDirectory, configuration.PreprocessingPluginPath)
+            : this(
+                configurationFile, 
+                configuration.ConfigType, 
+                configuration.SourceDirectory,
+                configuration.DestinationDirectory,
+                configuration.LogsDirectory,
+                configuration.ToolsTempDirectory, 
+                configuration.ApplicationRootDirectory, 
+                configuration.PreprocessingPluginPath)
         {
             this.CacheEnabled = configuration.CacheEnabled;
             this.CacheRootPath = configuration.CacheRootPath;

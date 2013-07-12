@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------------------------------
-// <copyright file="DictionaryExtensions.cs" company="Microsoft Corporation">
+// <copyright file="EnumerableExtensions.cs" company="Microsoft Corporation">
 //   Copyright Microsoft Corporation, all rights reserved.
 // </copyright>
 // <summary>
@@ -11,6 +11,7 @@ namespace WebGrease.Extensions
 {
     using System;
     using System.Collections;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
@@ -70,6 +71,15 @@ namespace WebGrease.Extensions
         internal static void AddRange<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, IEnumerable<KeyValuePair<TKey, TValue>> range)
         {
             range.ForEach(dictionary.Add);
+        }
+
+        /// <summary>Adds the AddRange method for the thread safe BlockingCollection object.</summary>
+        /// <param name="collection">The blocking collection.</param>
+        /// <param name="range">The items to add.</param>
+        /// <typeparam name="TValue">The Type of the items in the collection.</typeparam>
+        internal static void AddRange<TValue>(this BlockingCollection<TValue> collection, IEnumerable<TValue> range)
+        {
+            range.ForEach(collection.Add);
         }
 
         #endregion

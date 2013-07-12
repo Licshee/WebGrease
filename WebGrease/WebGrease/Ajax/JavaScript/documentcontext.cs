@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -70,7 +71,7 @@ namespace Microsoft.Ajax.Utilities
             {
                 if (!m_parser.OnCompilerError(error))
                 {
-                    throw new EndOfFileException(); // this exception terminates the parser
+                    throw new EndOfStreamException(); // this exception terminates the parser
                 }
             }
         }

@@ -20,6 +20,7 @@ namespace WebGrease.ImageAssemble
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Threading;
 
     using Css.ImageAssemblyAnalysis;
 
@@ -29,6 +30,17 @@ namespace WebGrease.ImageAssemble
     /// <summary>Factory class that invokes appropriate Assemble type to assemble images.</summary>
     internal static class ImageAssembleGenerator
     {
+        /// <summary>The maximum amount of times to try and load a bitmap.</summary>
+        private const int MaxRetryCount = 4;
+
+        /// <summary>The milliseconds to sleep between each and every retry load of a bitmap from a file.</summary>
+        private const int RetrySleepMilliseconds = 500;
+
+        /// <summary>
+        /// Default Padding value
+        /// </summary>
+        private const int DefaultPadding = 50;
+
         /// <summary>Invokes Assemble method of appropriate Image Assembler depending upon
         /// the type of images to be Assembled.</summary>
         /// <param name="inputImages">List of InputImage</param>
@@ -63,89 +75,195 @@ namespace WebGrease.ImageAssemble
         {
             // deduping is optional.  CssPipelineTask already has deduping built into it, so it skips deduping in ImageAssembleTool.
             var inputImagesDeduped = dedup ? DedupImages(inputImages, context) : inputImages;
-            var separatedLists = SeparateByImageType(inputImagesDeduped, forcedImageType);
 
-#if DEBUG
-            foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))
-            {
-                Console.WriteLine();
-                Console.WriteLine(Enum.GetName(typeof(ImageType), imageType));
-                foreach (var entry in separatedLists[imageType])
-                {
-                    Console.WriteLine(entry.Key.OriginalImagePath);
-                }
-            }
-#endif
-
-            var padding = imagePadding ?? DefaultPadding;
             var xmlMap = new ImageMap(mapFileName);
-            var registeredAssemblers = RegisterAvailableAssemblers(context);
-            Dictionary<InputImage, Bitmap> separatedList = null;
-            foreach (var registeredAssembler in registeredAssemblers)
-            {
-                try
+
+            Safe.LockFiles(
+                inputImages.Select(ii => new FileInfo(ii.AbsoluteImagePath)).ToArray(), 
+                () =>
                 {
-                    // Set Image orientation as passed
-                    registeredAssembler.PackingType = packingType;
-
-                    // Set Xml Image Xml Map 
-                    registeredAssembler.ImageXmlMap = xmlMap;
-
-                    xmlMap.AppendPadding(padding.ToString(CultureInfo.InvariantCulture));
-                    registeredAssembler.PaddingBetweenImages = padding;
-
-                    // Set PNG Optimizer tool path for PngAssemble
-                    registeredAssembler.OptimizerToolCommand = pngOptimizerToolCommand;
-
-                    // Assemble images of this type
-                    separatedList = separatedLists[registeredAssembler.Type];
-
-                    if (separatedList.HasAtLeast(2))
+                    var separatedLists = SeparateByImageType(inputImagesDeduped, forcedImageType);
+#if DEBUG
+                foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(Enum.GetName(typeof(ImageType), imageType));
+                    foreach (var entry in separatedLists[imageType])
                     {
-                        // Set Assembled Image Name
-                        registeredAssembler.AssembleFileName = GenerateAssembleFileName(separatedList.Keys, assembleFileFolder)
-                                                               + registeredAssembler.DefaultExtension;
-
-                        registeredAssembler.Assemble(separatedList);
+                        Console.WriteLine(entry.Key.OriginalImagePath);
                     }
                 }
-                finally
-                {
-                    if (separatedList != null && separatedList.HasAtLeast(2))
+#endif
+                    var padding = imagePadding ?? DefaultPadding;
+                    var registeredAssemblers = RegisterAvailableAssemblers(context);
+                    List<BitmapContainer> separatedList = null;
+                    foreach (var registeredAssembler in registeredAssemblers)
                     {
-                        foreach (var entry in separatedList)
+                        var assembled = false;
+                        try
                         {
-                            if (entry.Value != null)
-                            {
-                                if (imageAssemblyAnalysisLog != null)
-                                {
-                                    imageAssemblyAnalysisLog.UpdateSpritedImage(registeredAssembler.Type, entry.Key.OriginalImagePath, registeredAssembler.AssembleFileName);
-                                }
+                            // Set Image orientation as passed
+                            registeredAssembler.PackingType = packingType;
 
-                                context.Cache.CurrentCacheSection.AddSourceDependency(entry.Key.AbsoluteImagePath);
-                                entry.Value.Dispose();
+                            // Set Xml Image Xml Map 
+                            registeredAssembler.ImageXmlMap = xmlMap;
+
+                            xmlMap.AppendPadding(padding.ToString(CultureInfo.InvariantCulture));
+                            registeredAssembler.PaddingBetweenImages = padding;
+
+                            // Set PNG Optimizer tool path for PngAssemble
+                            registeredAssembler.OptimizerToolCommand = pngOptimizerToolCommand;
+
+                            // Assemble images of this type
+                            separatedList = separatedLists[registeredAssembler.Type];
+
+                            if (separatedList.Any())
+                            {
+                                // Set Assembled Image Name
+                                registeredAssembler.AssembleFileName = GenerateAssembleFileName(separatedList.Select(s => s.InputImage), assembleFileFolder)
+                                                                        + registeredAssembler.DefaultExtension;
+
+                                assembled = registeredAssembler.Assemble(separatedList);
+                            }
+                        }
+                        finally
+                        {
+                            if (assembled)
+                            {
+                                foreach (var entry in separatedList)
+                                {
+                                    if (entry.Bitmap != null)
+                                    {
+                                        if (imageAssemblyAnalysisLog != null)
+                                        {
+                                            imageAssemblyAnalysisLog.UpdateSpritedImage(registeredAssembler.Type, entry.InputImage.OriginalImagePath, registeredAssembler.AssembleFileName);
+                                        }
+
+                                        context.Cache.CurrentCacheSection.AddSourceDependency(entry.InputImage.AbsoluteImagePath);
+                                        entry.Bitmap.Dispose();
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
 
-            var notSupportedList = separatedLists[ImageType.NotSupported];
-            if (notSupportedList != null && notSupportedList.Count > 0)
-            {
-                var message = new StringBuilder("The following files were not assembled because their formats are not supported:");
+                    var notSupportedList = separatedLists[ImageType.NotSupported];
+                    if (notSupportedList != null && notSupportedList.Count > 0)
+                    {
+                        var message = new StringBuilder("The following files were not assembled because their formats are not supported:");
+                        foreach (var entry in notSupportedList)
+                        {
+                            message.Append(" " + entry.InputImage.OriginalImagePath);
+                        }
+
 #if DEBUG
-                foreach (var entry in notSupportedList)
-                {
-                    message.Append(" " + entry.Key.OriginalImagePath);
-                }
-
                 Console.WriteLine(message.ToString());
 #endif
-                throw new ImageAssembleException(message.ToString());
+                        throw new ImageAssembleException(message.ToString());
+                    }
+                });
+            
+            return xmlMap;
+        }
+
+        /// <summary>Separates the list of input images into 4 lists based on type of image:
+        /// (1) Not supported
+        /// (2) Photo
+        /// (3) Nonphoto, Nonindexed
+        /// (4) Nonphoto, Indexed
+        /// Returns a Dictionary indexed by image type.  Each entry is a Dictionary of InputImage, Bitmap pairs.
+        /// All images that can't be read into a Bitmap and all images that have multiple frames (including animated GIF) go
+        /// in the "not supported" list.
+        /// All images of type JPEG or EXIF go into the "photo" list.
+        /// All other images go into the "nonphoto, nonindexed" or "nonphoto, indexed" lists.
+        /// The ones that are indexed or indexable (i.e. can be losslessly converted to indexed format) go into the 
+        /// "nonphoto, indexed" list.
+        /// The remaining bitmaps go into the "nonphoto, nonindexed" list.</summary>
+        /// <param name="inputImages">list of input images to separate</param>
+        /// <param name="forcedImageType">The forced image type to override detection.</param>
+        /// <returns>separate lists per image type</returns>
+        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Legacy Code")]
+        internal static Dictionary<ImageType, List<BitmapContainer>> SeparateByImageType(IEnumerable<InputImage> inputImages, ImageType? forcedImageType = null)
+        {
+            var separatedLists = new Dictionary<ImageType, List<BitmapContainer>>();
+            foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))
+            {
+                separatedLists[imageType] = new List<BitmapContainer>();
             }
 
-            return xmlMap;
+            foreach (var inputImage in inputImages)
+            {
+#if DEBUG
+                Console.WriteLine(inputImage.OriginalImagePath);
+#endif
+                var bitmapContainer = new BitmapContainer(inputImage);
+                bitmapContainer.BitmapAction(b =>
+                {
+                    bitmapContainer.Bitmap = LoadBitmapFromDisk(inputImage.AbsoluteImagePath);
+
+                    if (bitmapContainer.Bitmap == null)
+                    {
+                        separatedLists[ImageType.NotSupported].Add(bitmapContainer);
+                        return;
+                    }
+
+                    if (forcedImageType != null)
+                    {
+                        separatedLists[forcedImageType.Value].Add(bitmapContainer);
+                    }
+                    else if (IsPhoto(bitmapContainer.Bitmap))
+                    {
+                        separatedLists[ImageType.Photo].Add(bitmapContainer);
+                    }
+                    else
+                    {
+                        if (IsMultiframe(bitmapContainer.Bitmap))
+                        {
+                            separatedLists[ImageType.NotSupported].Add(bitmapContainer);
+                        }
+                        else if (IsIndexed(bitmapContainer.Bitmap) || IsIndexable(bitmapContainer.Bitmap))
+                        {
+                            separatedLists[ImageType.NonphotoIndexed].Add(bitmapContainer);
+                        }
+                        else
+                        {
+                            separatedLists[ImageType.NonphotoNonindexed].Add(bitmapContainer);
+                        }
+                    }
+                });
+            }
+
+            return separatedLists;
+        }
+
+        /// <summary>
+        /// The loads bitmap from disk.
+        /// Will retry a few times if the OutOfMemoryException is thrown, GDI will throw this message for no good reason when used in multiple threads.
+        /// </summary>
+        /// <param name="absoluteImagePath">The absolute image path.</param>
+        /// <param name="retryCount">The retry count.</param>
+        /// <returns>The <see cref="Bitmap"/>.</returns>
+        private static Bitmap LoadBitmapFromDisk(string absoluteImagePath, int retryCount = 0)
+        {
+            Bitmap image;
+            try
+            {
+                 image = Image.FromFile(absoluteImagePath) as Bitmap;
+            }
+            catch (OutOfMemoryException)
+            {
+                if (retryCount < MaxRetryCount)
+                {
+                    // Image.FromFile will throw this error 'randomly' when used in multi-threaded execution for 2 file that is already loaded somewhere.
+                    // In the future we should lock on each and every image for each run and for hashing , but in the meantime this solves the issue 99% of the time.
+                    Thread.Sleep(RetrySleepMilliseconds);
+                    return LoadBitmapFromDisk(absoluteImagePath, ++retryCount);
+                }
+
+                throw;
+            }
+
+            return image;
         }
 
         /// <summary>Registers available Image Assemblers.</summary>
@@ -291,78 +409,6 @@ namespace WebGrease.ImageAssemble
             return bitmap.GetFrameCount(dimension) > 1;
         }
 
-        /// <summary>Separates the list of input images into 4 lists based on type of image:
-        /// (1) Not supported
-        /// (2) Photo
-        /// (3) Nonphoto, Nonindexed
-        /// (4) Nonphoto, Indexed
-        /// Returns a Dictionary indexed by image type.  Each entry is a Dictionary of InputImage, Bitmap pairs.
-        /// All images that can't be read into a Bitmap and all images that have multiple frames (including animated GIF) go
-        /// in the "not supported" list.
-        /// All images of type JPEG or EXIF go into the "photo" list.
-        /// All other images go into the "nonphoto, nonindexed" or "nonphoto, indexed" lists.
-        /// The ones that are indexed or indexable (i.e. can be losslessly converted to indexed format) go into the 
-        /// "nonphoto, indexed" list.
-        /// The remaining bitmaps go into the "nonphoto, nonindexed" list.</summary>
-        /// <param name="inputImages">list of input images to separate</param>
-        /// <param name="forcedImageType">The forced image type to override detection.</param>
-        /// <returns>separate lists per image type</returns>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Legacy Code")]
-        internal static Dictionary<ImageType, Dictionary<InputImage, Bitmap>> SeparateByImageType(ReadOnlyCollection<InputImage> inputImages, ImageType? forcedImageType = null)
-        {
-            var separatedLists = new Dictionary<ImageType, Dictionary<InputImage, Bitmap>>();
-            foreach (ImageType imageType in Enum.GetValues(typeof(ImageType)))
-            {
-                separatedLists[imageType] = new Dictionary<InputImage, Bitmap>();
-            }
-
-            foreach (var inputImage in inputImages)
-            {
-                Bitmap bitmap = null;
-#if DEBUG
-                Console.WriteLine(inputImage.OriginalImagePath);
-#endif
-                try
-                {
-                    bitmap = (Bitmap)Image.FromFile(inputImage.AbsoluteImagePath);
-                }
-                catch
-                {
-                    bitmap = null;
-                }
-
-                if (bitmap == null)
-                {
-                    separatedLists[ImageType.NotSupported].Add(inputImage, bitmap);
-                }
-                else if (forcedImageType != null)
-                {
-                    separatedLists[forcedImageType.Value].Add(inputImage, bitmap);
-                }
-                else if (IsPhoto(bitmap))
-                {
-                    separatedLists[ImageType.Photo].Add(inputImage, bitmap);
-                }
-                else
-                {
-                    if (IsMultiframe(bitmap))
-                    {
-                        separatedLists[ImageType.NotSupported].Add(inputImage, bitmap);
-                    }
-                    else if (IsIndexed(bitmap) || IsIndexable(bitmap))
-                    {
-                        separatedLists[ImageType.NonphotoIndexed].Add(inputImage, bitmap);
-                    }
-                    else
-                    {
-                        separatedLists[ImageType.NonphotoNonindexed].Add(inputImage, bitmap);
-                    }
-                }
-            }
-
-            return separatedLists;
-        }
-
         /// <summary>Removes duplicate images</summary>
         /// <param name="inputImages">list of input images to dedup</param>
         /// <param name="context">The webgrease context</param>
@@ -375,7 +421,7 @@ namespace WebGrease.ImageAssemble
             {
                 if (!File.Exists(inputImage.AbsoluteImagePath))
                 {
-                    throw new FileNotFoundException("Could not find image to sprite: {0}".InvariantFormat(inputImage.AbsoluteImagePath), inputImage.AbsoluteImagePath);    
+                    throw new FileNotFoundException("Could not find image to sprite: {0}".InvariantFormat(inputImage.AbsoluteImagePath), inputImage.AbsoluteImagePath);
                 }
 
                 var imageHashString = context.GetFileHash(inputImage.AbsoluteImagePath) + "." + inputImage.Position;
@@ -396,26 +442,5 @@ namespace WebGrease.ImageAssemble
 
             return inputImagesDeduped.AsReadOnly();
         }
-
-        /// <summary>
-        /// Default Padding value
-        /// </summary>
-        internal const int DefaultPadding = 50;
-    }
-
-    /// <summary>Type of image</summary>
-    internal enum ImageType
-    {
-        /// <summary>The not supported.</summary>
-        NotSupported,
-
-        /// <summary>The photo.</summary>
-        Photo,
-
-        /// <summary>The nonphoto nonindexed.</summary>
-        NonphotoNonindexed,
-
-        /// <summary>The nonphoto indexed.</summary>
-        NonphotoIndexed,
     }
 }

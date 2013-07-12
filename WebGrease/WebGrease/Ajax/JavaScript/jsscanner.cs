@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Text;
 
 namespace Microsoft.Ajax.Utilities
@@ -2092,7 +2093,7 @@ namespace Microsoft.Ajax.Utilities
             m_currentToken.EndPosition = m_currentPosition;
             m_currentToken.EndLinePosition = m_startLinePosition;
             m_currentToken.EndLineNumber = m_currentLine;
-            throw new ScannerException(JSError.NoCommentEnd);
+            m_currentToken.HandleError(JSError.NoCommentEnd, true);
         }
 
         private void SkipBlanks()
@@ -2563,7 +2564,7 @@ namespace Microsoft.Ajax.Utilities
                             contextError.HandleError(string.CompareOrdinal(endStrings[0], "#ENDDEBUG") == 0 
                                 ? JSError.NoEndDebugDirective 
                                 : JSError.NoEndIfDirective);
-                            throw new ScannerException(JSError.ErrorEndOfFile);
+                            throw new EndOfStreamException();
                         }
 
                         break;
