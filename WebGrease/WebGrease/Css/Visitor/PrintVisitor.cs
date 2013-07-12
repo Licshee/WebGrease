@@ -628,6 +628,10 @@ namespace WebGrease.Css.Visitor
             // append for: unary_operator?
             // TODO - Shall we remove the '+' operator here?
             _printerFormatter.Append(termNode.UnaryOperator);
+            if (termNode.IsBinary && !string.IsNullOrWhiteSpace(termNode.UnaryOperator) && (termNode.UnaryOperator.Equals("-") || termNode.UnaryOperator.Equals("+")))
+            {
+                _printerFormatter.Append(" ");
+            }
 
             // append for: [ NUMBER S* | PERCENTAGE S* | LENGTH S* | EMS S* | EXS S* | ANGLE S* | TIME S* | FREQ S* ]
             if (!string.IsNullOrWhiteSpace(termNode.NumberBasedValue))

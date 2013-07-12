@@ -30,8 +30,39 @@ namespace WebGrease.Css.Ast
             this.TermNode = termNode;
             this.TermsWithOperators = termsWithOperators ?? (new List<TermWithOperatorNode>()).AsReadOnly();
             this.ImportantComments = importantComments ?? (new List<ImportantCommentNode>()).AsReadOnly();
+            this.UsesBinary = false;
         }
-        
+
+        public ExprNode(TermNode termNode, ReadOnlyCollection<TermWithOperatorNode> termsWithOperators, ReadOnlyCollection<ImportantCommentNode> importantComments, bool usesBinary)
+            : this(termNode, termsWithOperators, importantComments)
+        {
+            this.UsesBinary = usesBinary;
+        }
+
+        /// <summary>
+        /// Gets wether the expr is binary or not.
+        /// </summary>
+        private bool usesBinary;
+
+        /// <summary>
+        /// Gets wether the expr is binary or not.
+        /// </summary>
+        public bool UsesBinary
+        {
+            get
+            {
+                return this.usesBinary;
+            }
+            set
+            {
+                this.usesBinary = value;
+                foreach (var termWithOperators in this.TermsWithOperators)
+                {
+                    termWithOperators.UsesBinary = value;
+                }
+            }
+        }
+
         /// <summary>
         /// Gets list of comment nodes
         /// </summary>

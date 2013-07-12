@@ -122,33 +122,10 @@ namespace WebGrease.Css.Ast
         public bool IsBinary { get; set; }
 
         /// <summary>
-        /// Gets Unary Operator
-        /// </summary>
-        private string unaryOperator;
-
-        /// <summary>
         /// Gets Unary Operatior
         /// </summary>
         /// <value>Unary Operator</value>
-        public string UnaryOperator 
-        { 
-            get 
-            {
-                if (IsBinary && !string.IsNullOrWhiteSpace(unaryOperator) && (unaryOperator=="-" || unaryOperator =="+"))
-                {
-                    return unaryOperator+ " ";
-                }
-                else
-                {
-                    return unaryOperator;
-                }
-            }
-
-            private set
-            {
-                this.unaryOperator=value;
-            }
-        }
+        public string UnaryOperator { get; private set; }            
 
         /// <summary>
         /// Gets Number base value

@@ -35,6 +35,27 @@ namespace WebGrease.Css.Ast
         }
 
         /// <summary>
+        /// Gets whether the termWithOperator is binary or not.
+        /// </summary>
+        private bool usesBinary;
+
+        /// <summary>
+        /// Gets whether the termWithOperator is binary or not.
+        /// </summary>
+        public bool UsesBinary
+        {
+            get
+            {
+                return this.usesBinary;
+            }
+            set
+            {
+                this.usesBinary = value;
+                this.TermNode.IsBinary = value;
+            }
+        }
+
+        /// <summary>
         /// Gets the Operator string
         /// </summary>
         /// <value>Operator string</value>
