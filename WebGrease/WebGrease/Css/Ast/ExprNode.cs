@@ -33,12 +33,6 @@ namespace WebGrease.Css.Ast
             this.UsesBinary = false;
         }
 
-        public ExprNode(TermNode termNode, ReadOnlyCollection<TermWithOperatorNode> termsWithOperators, ReadOnlyCollection<ImportantCommentNode> importantComments, bool usesBinary)
-            : this(termNode, termsWithOperators, importantComments)
-        {
-            this.UsesBinary = usesBinary;
-        }
-
         /// <summary>
         /// Gets wether the expr is binary or not.
         /// </summary>

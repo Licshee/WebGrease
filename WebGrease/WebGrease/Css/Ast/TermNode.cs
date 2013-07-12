@@ -95,20 +95,6 @@ namespace WebGrease.Css.Ast
             this.IsBinary = false;
         }
 
-        /// <summary>Initializes a new instance of the TermNode class</summary>
-        /// <param name="unaryOperator">Unary Operator</param>
-        /// <param name="numberBasedValue">Number based value</param>
-        /// <param name="stringBasedValue">String based value</param>
-        /// <param name="hexColor">Hexadecimal color code</param>
-        /// <param name="functionNode">Function object</param>
-        /// <param name="binary">Whether this term is inside Binary Expression.</param>
-        public TermNode(string unaryOperator, string numberBasedValue, string stringBasedValue,
-            string hexColor, FunctionNode functionNode, ReadOnlyCollection<ImportantCommentNode> importantComments, bool isBinary)
-            :this(unaryOperator, numberBasedValue, stringBasedValue, hexColor, functionNode, importantComments)
-        {
-            // Whether this term is inside Binary Expression.
-            this.IsBinary = isBinary;
-        }
         /// <summary>
         /// Gets The Comments
         /// </summary>
