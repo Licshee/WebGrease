@@ -10,6 +10,7 @@
 
 namespace WebGrease.Css.Ast
 {
+    using System;
     using System.Diagnostics.Contracts;
     using Visitor;
 
@@ -30,7 +31,6 @@ namespace WebGrease.Css.Ast
             {
                 this.ExprNode.UsesBinary = usesBinary();
             }
-
         }
 
         /// <summary>
@@ -50,7 +50,12 @@ namespace WebGrease.Css.Ast
         /// Gets the list of valid names of the function that allows binary operator. 
         /// </summary>
         /// <value> The list of valid names of the function that allows binary operators.</value>
-        private static string[] binaryOpererableFunctionNames= new string[]{ "-webkit-calc", "calc", "min", "max"};
+        private static string[] BinaryOpererableFunctionNames = new string[] { "-webkit-calc", "calc", "min", "max" };
+
+        /// <summary>
+        /// Gets the array of possible binary operators
+        /// </summary>
+        public static string[] BinaryOperators = new string[] { "-", "+" };
 
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
@@ -66,15 +71,17 @@ namespace WebGrease.Css.Ast
         /// <returns>Boolean value indicating if this function should allow binary operator.</returns>
         private bool usesBinary()
         {
-            foreach (var name in binaryOpererableFunctionNames)
-            {
-                if (this.FunctionName.Equals(name))
-                {
-                    return true;
-                }
-            }
+            return Array.IndexOf(BinaryOpererableFunctionNames, this.FunctionName) > -1;
+        }
 
-            return false;
+        /// <summary>
+        /// Determines if the operator is binary operator
+        /// </summary>
+        /// <param name="binaryOperator">Operator to check</param>
+        /// <returns>Whether the operator is binary or not.</returns>
+        public static bool isBinaryOperator(string binaryOperator)
+        {
+            return Array.IndexOf(BinaryOperators, binaryOperator) > -1;
         }
 
     }
