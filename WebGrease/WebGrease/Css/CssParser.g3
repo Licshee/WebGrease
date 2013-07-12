@@ -228,7 +228,7 @@ pseudo_page
 //  : '/' S* | ',' S* | '*' S*
 //  ;
 operator
-    : FORWARD_SLASH | COMMA | STAR | EQUALS
+    : FORWARD_SLASH | COMMA | STAR | EQUALS 
     ;
 
 // unary_operator
@@ -485,14 +485,14 @@ prio
 // expr
 //  : term [ operator? term ]*
 //  ;
-expr
-	:IMPORTANT_COMMENTS* term (termwithoperator)* 
+expr	
+	: IMPORTANT_COMMENTS* term (termwithoperator)* 
     -> ^(EXPR IMPORTANT_COMMENTS* term ^(TERMWITHOPERATORS termwithoperator*)?)
     ;
 
 termwithoperator
-    : operator? term
-    -> ^(TERMWITHOPERATOR ^(OPERATOR operator)? term)
+	: operator? term
+    -> ^(TERMWITHOPERATOR ^(OPERATOR operator)? term)	
     ;
 
 term

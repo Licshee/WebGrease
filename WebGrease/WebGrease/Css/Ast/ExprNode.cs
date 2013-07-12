@@ -31,7 +31,7 @@ namespace WebGrease.Css.Ast
             this.TermsWithOperators = termsWithOperators ?? (new List<TermWithOperatorNode>()).AsReadOnly();
             this.ImportantComments = importantComments ?? (new List<ImportantCommentNode>()).AsReadOnly();
         }
-
+        
         /// <summary>
         /// Gets list of comment nodes
         /// </summary>
