@@ -68,6 +68,8 @@ namespace WebGrease.Css.Visitor
             else
             {
                 rulesetHashKeysDictionary.Add(primaryHashKey, new List<string>());
+                var listOfKeys = rulesetHashKeysDictionary[primaryHashKey] as List<string>;
+                listOfKeys.Add(primaryHashKey);
             }
             // If a RuleSet exists already, then remove from
             // dictionary and add a new ruleset with the
