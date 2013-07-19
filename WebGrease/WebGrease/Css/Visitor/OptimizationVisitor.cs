@@ -124,6 +124,11 @@ namespace WebGrease.Css.Visitor
                         //RulesetNode
                         var previousRulesetNode =previousStyleSheetRulesetNode as RulesetNode;
 
+                        if(previousRulesetNode.PrintSelector().Equals(hashKey))
+                        {
+                            return true;
+                        }
+
                         foreach (var declaration in previousRulesetNode.Declarations)
                         {
                             string hashKeyForDeclaration = declaration.Property;
@@ -133,13 +138,9 @@ namespace WebGrease.Css.Visitor
                             }
                         }
 
-                        if(previousRulesetNode.PrintSelector().Equals(hashKey))
-                        {
-                            return true;
-                        }
-                            
-                        
-                        else if (currentRuleSet.hasConflictingDelcaration(declarationNodeDictionary))
+                                      
+                        var lastRuleSet=(RulesetNode) ruleSetMediaPageDictionary[hashKey];
+                        if (lastRuleSet.hasConflictingDelcaration(declarationNodeDictionary))
                         {
                             return false;
                         }
