@@ -559,7 +559,7 @@ namespace WebGrease.Css.Visitor
                 return null;
             }
 
-            //Important Comments first
+            // Important Comments first
             foreach (var comment in declarationNode.ImportantComments)
             {
                 comment.Accept(this);
@@ -594,7 +594,7 @@ namespace WebGrease.Css.Visitor
         public override AstNode VisitExprNode(ExprNode exprNode)
         {
 
-            //comments
+            // Comments
             foreach (var comment in exprNode.ImportantComments)
             {
                 comment.Accept(this);
@@ -628,6 +628,10 @@ namespace WebGrease.Css.Visitor
             // append for: unary_operator?
             // TODO - Shall we remove the '+' operator here?
             _printerFormatter.Append(termNode.UnaryOperator);
+            if (termNode.IsBinary && FunctionNode.isBinaryOperator(termNode.UnaryOperator))
+            {
+                _printerFormatter.Append(" ");
+            }
 
             // append for: [ NUMBER S* | PERCENTAGE S* | LENGTH S* | EMS S* | EXS S* | ANGLE S* | TIME S* | FREQ S* ]
             if (!string.IsNullOrWhiteSpace(termNode.NumberBasedValue))

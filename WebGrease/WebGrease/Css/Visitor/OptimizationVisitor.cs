@@ -51,21 +51,32 @@ namespace WebGrease.Css.Visitor
         /// <summary>The optimize ruleset node.</summary>
         /// <param name="currentRuleSet">The current rule set.</param>
         /// <param name="ruleSetMediaPageDictionary">The rule set media page dictionary.</param>
-        private static void OptimizeRulesetNode(RulesetNode currentRuleSet, OrderedDictionary ruleSetMediaPageDictionary)
+        private static void OptimizeRulesetNode(RulesetNode currentRuleSet, OrderedDictionary ruleSetMediaPageDictionary, OrderedDictionary rulesetHashKeysDictionary)
         {
-            string hashKey;
+            string primaryHashKey;
 
             // Ruleset node optimization.
             // Selectors concatenation is the hash key here
-            hashKey = currentRuleSet.PrintSelector();
+            // Update: Now this is only primary hash key.
+            primaryHashKey = currentRuleSet.PrintSelector();
+            string hashKey = currentRuleSet.PrintSelector();
 
+            if (rulesetHashKeysDictionary.Contains(primaryHashKey))
+            {
+                hashKey = ((List<string>)rulesetHashKeysDictionary[primaryHashKey]).Last();
+            }
+            else
+            {
+                rulesetHashKeysDictionary.Add(primaryHashKey, new List<string>());
+            }
             // If a RuleSet exists already, then remove from
             // dictionary and add a new ruleset with the
             // declarations merged. Don't clobber the item in 
             // dictionary to preserve the order and keep the last
             // seen RuleSet
-            if (ruleSetMediaPageDictionary.Contains(hashKey))
+            if (ShouldCollapseTheNewRuleset(hashKey, ruleSetMediaPageDictionary, currentRuleSet))
             {
+                
                 // Merge the declarations
                 var newRuleSet = MergeDeclarations((RulesetNode)ruleSetMediaPageDictionary[hashKey], currentRuleSet);
 
@@ -82,9 +93,60 @@ namespace WebGrease.Css.Visitor
                 // Add the ruleset if there is atleast one unique declaration
                 if (newRuleSet != null)
                 {
+                    while (ruleSetMediaPageDictionary.Contains(hashKey))
+                    {
+                        hashKey = hashKey + " ";
+                    }
                     ruleSetMediaPageDictionary.Add(hashKey, newRuleSet);
+                    var listOfKeys = rulesetHashKeysDictionary[primaryHashKey] as List<string>;
+                    listOfKeys.Add(hashKey);
                 }
             }
+        }
+
+        private static bool ShouldCollapseTheNewRuleset(string hashKey, OrderedDictionary ruleSetMediaPageDictionary, RulesetNode currentRuleSet)
+        {
+            if (ruleSetMediaPageDictionary.Contains(hashKey))
+            {
+                OrderedDictionary declarationNodeDictionary = new OrderedDictionary();
+                
+                var styleSheetRuleNodes = ruleSetMediaPageDictionary.Values.Cast<StyleSheetRuleNode>().ToList();
+                int size = styleSheetRuleNodes.Count;
+                for (int i = size - 1; i > -1; i--)
+                {
+                    var previousStyleSheetRulesetNode = styleSheetRuleNodes.ElementAt(i);
+
+                    //if the node is actually RulesetNode
+                    if (currentRuleSet.GetType().IsAssignableFrom(previousStyleSheetRulesetNode.GetType()))
+                    {
+                        //RulesetNode
+                        var previousRulesetNode =previousStyleSheetRulesetNode as RulesetNode;
+
+                        foreach (var declaration in previousRulesetNode.Declarations)
+                        {
+                            string hashKeyForDeclaration = declaration.Property;
+                            if (!declarationNodeDictionary.Contains(hashKeyForDeclaration))
+                            {
+                                declarationNodeDictionary[hashKeyForDeclaration] = declaration;
+                            }
+                        }
+
+                        if(previousRulesetNode.PrintSelector().Equals(hashKey))
+                        {
+                            return true;
+                        }
+                            
+                        
+                        else if (currentRuleSet.hasConflictingDelcaration(declarationNodeDictionary))
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+            return false;
         }
 
         /// <summary>Computes the merged set of RulesetNode based on the declarations</summary>
@@ -254,6 +316,7 @@ namespace WebGrease.Css.Visitor
         {
             // List of updated ruleset, media and page nodes
             var ruleSetMediaPageDictionary = new OrderedDictionary();
+            var ruleSetHashKeysDictionary = new OrderedDictionary();
 
             foreach (var styleSheetRuleNode in styleSheetRuleNodes)
             {
@@ -261,7 +324,7 @@ namespace WebGrease.Css.Visitor
                 if (rulesetNode != null)
                 {
                     // Optimize rulesets
-                    OptimizeRulesetNode(rulesetNode, ruleSetMediaPageDictionary);
+                    OptimizeRulesetNode(rulesetNode, ruleSetMediaPageDictionary, ruleSetHashKeysDictionary);
                     continue;
                 }
 

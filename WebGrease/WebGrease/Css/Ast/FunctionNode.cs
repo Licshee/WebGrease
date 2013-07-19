@@ -10,6 +10,7 @@
 
 namespace WebGrease.Css.Ast
 {
+    using System;
     using System.Diagnostics.Contracts;
     using Visitor;
 
@@ -26,6 +27,10 @@ namespace WebGrease.Css.Ast
 
             this.FunctionName = functionName;
             this.ExprNode = exprNode;
+            if (this.ExprNode != null)
+            {
+                this.ExprNode.UsesBinary = usesBinary();
+            }
         }
 
         /// <summary>
@@ -41,6 +46,17 @@ namespace WebGrease.Css.Ast
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Expr")]
         public ExprNode ExprNode { get; private set; }
 
+        /// <summary>
+        /// Gets the list of valid names of the function that allows binary operator. 
+        /// </summary>
+        /// <value> The list of valid names of the function that allows binary operators.</value>
+        private static string[] BinaryOpererableFunctionNames = new string[] { "-webkit-calc", "calc", "min", "max" };
+
+        /// <summary>
+        /// Gets the array of possible binary operators
+        /// </summary>
+        public static string[] BinaryOperators = new string[] { "-", "+" };
+
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
         /// <returns>The modified AST node if modified otherwise the original node</returns>
@@ -48,5 +64,25 @@ namespace WebGrease.Css.Ast
         {
             return nodeVisitor.VisitFunctionNode(this);
         }
+
+        /// <summary>
+        /// Wether this function should allow binary operators in it.
+        /// </summary>
+        /// <returns>Boolean value indicating if this function should allow binary operator.</returns>
+        private bool usesBinary()
+        {
+            return Array.IndexOf(BinaryOpererableFunctionNames, this.FunctionName) > -1;
+        }
+
+        /// <summary>
+        /// Determines if the operator is binary operator
+        /// </summary>
+        /// <param name="binaryOperator">Operator to check</param>
+        /// <returns>Whether the operator is binary or not.</returns>
+        public static bool isBinaryOperator(string binaryOperator)
+        {
+            return Array.IndexOf(BinaryOperators, binaryOperator) > -1;
+        }
+
     }
 }

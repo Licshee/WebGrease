@@ -95,20 +95,6 @@ namespace WebGrease.Css.Ast
             this.IsBinary = false;
         }
 
-        /// <summary>Initializes a new instance of the TermNode class</summary>
-        /// <param name="unaryOperator">Unary Operator</param>
-        /// <param name="numberBasedValue">Number based value</param>
-        /// <param name="stringBasedValue">String based value</param>
-        /// <param name="hexColor">Hexadecimal color code</param>
-        /// <param name="functionNode">Function object</param>
-        /// <param name="binary">Whether this term is inside Binary Expression.</param>
-        public TermNode(string unaryOperator, string numberBasedValue, string stringBasedValue,
-            string hexColor, FunctionNode functionNode, ReadOnlyCollection<ImportantCommentNode> importantComments, bool isBinary)
-            :this(unaryOperator, numberBasedValue, stringBasedValue, hexColor, functionNode, importantComments)
-        {
-            // Whether this term is inside Binary Expression.
-            this.IsBinary = isBinary;
-        }
         /// <summary>
         /// Gets The Comments
         /// </summary>
@@ -122,33 +108,10 @@ namespace WebGrease.Css.Ast
         public bool IsBinary { get; set; }
 
         /// <summary>
-        /// Gets Unary Operator
-        /// </summary>
-        private string unaryOperator;
-
-        /// <summary>
         /// Gets Unary Operatior
         /// </summary>
         /// <value>Unary Operator</value>
-        public string UnaryOperator 
-        { 
-            get 
-            {
-                if (IsBinary && !string.IsNullOrWhiteSpace(unaryOperator) && (unaryOperator=="-" || unaryOperator =="+"))
-                {
-                    return unaryOperator+ " ";
-                }
-                else
-                {
-                    return unaryOperator;
-                }
-            }
-
-            private set
-            {
-                this.unaryOperator=value;
-            }
-        }
+        public string UnaryOperator { get; private set; }            
 
         /// <summary>
         /// Gets Number base value
