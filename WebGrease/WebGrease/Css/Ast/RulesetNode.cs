@@ -12,9 +12,12 @@
 
 namespace WebGrease.Css.Ast
 {
+    using System;
     using System.Collections.Generic;
-    using System.Collections.ObjectModel;
+    using System.Collections.ObjectModel;    
+    using System.Collections.Specialized;
     using System.Diagnostics.Contracts;
+    using System.Linq;
     using Selectors;
     using Visitor;
 
@@ -57,12 +60,29 @@ namespace WebGrease.Css.Ast
         /// <value>Declarations dictionary</value>
         public ReadOnlyCollection<DeclarationNode> Declarations { get; private set; }
 
+        /// <summary>
+        /// Check membership of each declaration in the dictionary.
+        /// </summary>
+        /// <param name="declarationDictionary"></param>
+        /// <returns></returns>
+        public bool hasConflictingDelcaration(OrderedDictionary declarationDictionary)
+        {
+            foreach (var declaration in Declarations)
+            {
+                if (declarationDictionary.Contains(declaration.Property))
+                {
+                    return true;
+                }                
+            }
+            return false;
+        }
+
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode Accept(NodeVisitor nodeVisitor)
         {
             return nodeVisitor.VisitRulesetNode(this);
-        }
+        } 
     }
 }

@@ -73,6 +73,7 @@ namespace WebGrease
                 HandleError(ex, null, ResourceStrings.GeneralErrorMessage);
                 return -1;
             }
+            Console.Read();
             return 0;
         }
 
