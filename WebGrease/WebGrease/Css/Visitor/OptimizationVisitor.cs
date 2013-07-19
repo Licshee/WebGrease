@@ -124,7 +124,7 @@ namespace WebGrease.Css.Visitor
                         //RulesetNode
                         var previousRulesetNode =previousStyleSheetRulesetNode as RulesetNode;
 
-                        if(previousRulesetNode.PrintSelector().Equals(hashKey))
+                        if(previousRulesetNode.PrintSelector().Equals(currentRuleSet.PrintSelector()))
                         {
                             return true;
                         }
