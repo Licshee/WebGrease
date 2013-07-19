@@ -449,7 +449,7 @@ namespace WebGrease.Css
                 return null;
             }
 
-            //Determine the function should allow binary operator
+            // Determine the function should allow binary operator
             // Calc, min, max are valid function that supports binary operator
             bool isBinary = functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("calc")
                 || functionTree.Children(T(CssParser.FUNCTIONNAME)).FirstChildText().EndsWith("min")
