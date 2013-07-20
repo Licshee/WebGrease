@@ -121,6 +121,8 @@ namespace WebGrease.Css.Visitor
                 
                 var styleSheetRuleNodes = ruleSetMediaPageDictionary.Values.Cast<StyleSheetRuleNode>().ToList();
                 int size = styleSheetRuleNodes.Count;
+
+                // Iterate through all rulesetnodes.
                 for (int i = size - 1; i > -1; i--)
                 {
                     var previousStyleSheetRulesetNode = styleSheetRuleNodes.ElementAt(i);
