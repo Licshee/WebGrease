@@ -68,5 +68,27 @@ namespace Css.Tests.Css30
             MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
             PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
         }
+
+        /// <summary> A test for ruleset optimization when there is conflict due to the ordering.</summary>
+        [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        public void ConflictDueToOrderingNotCollapseTest()
+        {
+            const string FileName = @"OrderBasedConflicts.css";
+            var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
+            Assert.IsNotNull(styleSheetNode);
+            MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
+        }
+
+        /// <summary> A test for ruleset optimization when there is not conflict due to the ordering.</summary>
+        [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        public void ConflictDueToOrderingCollapseTest()
+        {
+            const string FileName = @"OrderBasedConflictsCollapse.css";
+            var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
+            Assert.IsNotNull(styleSheetNode);
+            MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
+        }
     }
 }

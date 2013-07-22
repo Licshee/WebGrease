@@ -68,8 +68,7 @@ namespace WebGrease.Css.Visitor
             else
             {
                 rulesetHashKeysDictionary.Add(primaryHashKey, new List<string>());
-                var listOfKeys = rulesetHashKeysDictionary[primaryHashKey] as List<string>;
-                listOfKeys.Add(primaryHashKey);
+                (rulesetHashKeysDictionary[primaryHashKey] as List<string>).Add(primaryHashKey);
             }
             // If a RuleSet exists already, then remove from
             // dictionary and add a new ruleset with the
@@ -95,15 +94,30 @@ namespace WebGrease.Css.Visitor
                 // Add the ruleset if there is atleast one unique declaration
                 if (newRuleSet != null)
                 {
+                    // Generates an unique hashkey again, if hashKey already exists.
                     while (ruleSetMediaPageDictionary.Contains(hashKey))
                     {
-                        hashKey = hashKey + " ";
+                        hashKey = GenerateRandomkey();
                     }
                     ruleSetMediaPageDictionary.Add(hashKey, newRuleSet);
-                    var listOfKeys = rulesetHashKeysDictionary[primaryHashKey] as List<string>;
-                    listOfKeys.Add(hashKey);
+                    (rulesetHashKeysDictionary[primaryHashKey] as List<string>).Add(hashKey);
                 }
             }
+        }
+
+        /// <summary>
+        /// Generates 8 digit random key.
+        /// </summary>
+        /// <returns>8 digit random key.</returns>
+        private static string GenerateRandomkey()
+        {
+            var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            var result = new string(
+                Enumerable.Repeat(chars, 8)
+                          .Select(s => s[random.Next(s.Length)])
+                          .ToArray());
+            return result;
         }
 
         /// <summary>
@@ -117,28 +131,28 @@ namespace WebGrease.Css.Visitor
         {
             if (ruleSetMediaPageDictionary.Contains(hashKey))
             {
+                // Dictionary for declarations
                 OrderedDictionary declarationNodeDictionary = new OrderedDictionary();
-                
                 var styleSheetRuleNodes = ruleSetMediaPageDictionary.Values.Cast<StyleSheetRuleNode>().ToList();
-                int size = styleSheetRuleNodes.Count;
 
                 // Iterate through all rulesetnodes.
-                for (int i = size - 1; i > -1; i--)
+                for (int i = styleSheetRuleNodes.Count - 1; i > -1; i--)
                 {
                     var previousStyleSheetRulesetNode = styleSheetRuleNodes.ElementAt(i);
 
                     // If the node is actually RulesetNode
                     if (currentRuleSet.GetType().IsAssignableFrom(previousStyleSheetRulesetNode.GetType()))
                     {
-                        // RulesetNode
+                        // Previous Ruleset Node
                         var previousRulesetNode =previousStyleSheetRulesetNode as RulesetNode;
 
+                        // If Ruleset node has same selectors set
                         if(previousRulesetNode.PrintSelector().Equals(currentRuleSet.PrintSelector()))
                         {
                             return true;
                         }
 
-                        //Add each declaration of the previous ruleset in the dictionary
+                        // Add each declaration of the previous ruleset in the dictionary
                         foreach (var declaration in previousRulesetNode.Declarations)
                         {
                             string hashKeyForDeclaration = declaration.Property;
@@ -148,7 +162,7 @@ namespace WebGrease.Css.Visitor
                             }
                         }
 
-                        //check if the last same RulesetNode has same declaration property              
+                        // Check if the last same RulesetNode has same declaration property              
                         var lastRuleSet=(RulesetNode) ruleSetMediaPageDictionary[hashKey];
                         if (lastRuleSet.hasConflictingDelcaration(declarationNodeDictionary))
                         {
