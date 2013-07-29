@@ -359,6 +359,9 @@ namespace WebGrease.Tests
             Assert.IsTrue(!text.Contains("/* regular comment */"));
         }
 
+        /// <summary>
+        /// Allow Binary operators inside functions such as calc.
+        /// </summary>
         [TestMethod]
         [TestCategory(TestCategories.MinifyCssActivity)]
         public void CSSBinaryOperatorTest()
