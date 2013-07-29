@@ -17,6 +17,11 @@ namespace WebGrease.Css.Ast
     /// term [ operator term ]*</summary>
     public sealed class TermWithOperatorNode : AstNode
     {
+        /// <summary>
+        /// Gets whether the termWithOperator is binary or not.
+        /// </summary>
+        private bool usesBinary;
+
         /// <summary>Initializes a new instance of the TermWithOperatorNode class</summary>
         /// <param name="op">Operator string</param>
         /// <param name="termNode">Term object</param>
@@ -33,11 +38,6 @@ namespace WebGrease.Css.Ast
             this.Operator = op;
             this.TermNode = termNode;
         }
-
-        /// <summary>
-        /// Gets whether the termWithOperator is binary or not.
-        /// </summary>
-        private bool usesBinary;
 
         /// <summary>
         /// Gets whether the termWithOperator is binary or not.
