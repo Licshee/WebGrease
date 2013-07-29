@@ -368,8 +368,8 @@ namespace WebGrease.Tests
         {
             var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
             var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
-            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case9\functions.css");
-            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case9\functions.css");
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case9\functionsWithBinaryOperators.css");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case9\functionsWithBinaryOperators.css");
             minifyCssActivity.ShouldValidateForLowerCase = false;
             minifyCssActivity.ShouldAssembleBackgroundImages = false;
             minifyCssActivity.Execute();
