@@ -628,7 +628,7 @@ namespace WebGrease.Css.Visitor
             // append for: unary_operator?
             // TODO - Shall we remove the '+' operator here?
             _printerFormatter.Append(termNode.UnaryOperator);
-            if (termNode.IsBinary && FunctionNode.isBinaryOperator(termNode.UnaryOperator))
+            if (termNode.IsBinary && FunctionNode.IsBinaryOperator(termNode.UnaryOperator))
             {
                 _printerFormatter.Append(" ");
             }
