@@ -20,6 +20,11 @@ namespace WebGrease.Css.Ast
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Expr")]
     public sealed class ExprNode : AstNode
     {
+        /// <summary>
+        /// Gets wether the expr is binary or not.
+        /// </summary>
+        private bool usesBinary;
+
         /// <summary>Initializes a new instance of the ExprNode class</summary>
         /// <param name="termNode">Term object</param>
         /// <param name="termsWithOperators">Terms with Operators</param>
@@ -32,11 +37,6 @@ namespace WebGrease.Css.Ast
             this.ImportantComments = importantComments ?? (new List<ImportantCommentNode>()).AsReadOnly();
             this.UsesBinary = false;
         }
-
-        /// <summary>
-        /// Gets wether the expr is binary or not.
-        /// </summary>
-        private bool usesBinary;
 
         /// <summary>
         /// Gets wether the expr is binary or not.

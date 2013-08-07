@@ -1,0 +1,27 @@
+﻿section {
+  float: left;
+  margin: 1em;
+  border: solid 1px;
+  width: calc(100%/3 -2*1em -2*1px);
+}
+
+p {
+  margin: calc(1em - 2px) calc(1em - 1px);
+}
+
+p {
+  font-size: min(10px, 3em)
+}
+
+blockquote {
+  font-size: max(30px, 3em)
+}
+
+.box {
+  width: min(10% + 20px, 300px)
+}
+
+/* these are from jQuery UI files, supported by VSTeam, even though proprietary IE-only */
+.ui-helper-zfix { filter:Alpha(Opacity = 0); }
+
+.ui-datepicker-cover { filter: mask();}
