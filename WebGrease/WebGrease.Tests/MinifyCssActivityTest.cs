@@ -383,6 +383,5 @@ namespace WebGrease.Tests
             Assert.IsTrue(text.Contains("calc(1em - 2px) calc(1em - 1px)"));
             Assert.IsTrue(text.Contains("min(10% + 20px,300px"));
         }
-
     }
 }

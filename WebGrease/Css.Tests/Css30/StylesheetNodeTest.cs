@@ -61,7 +61,7 @@ namespace Css.Tests.Css30
             MinificationVerifier.VerifyMinification(BaseDirectory, FileName);
             PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName);
         }
-
+         
         /// <summary>A test for gradient</summary>
         [TestMethod]
         [TestCategory(TestCategories.CssParser)]
