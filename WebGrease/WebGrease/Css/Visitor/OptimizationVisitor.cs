@@ -114,7 +114,7 @@ namespace WebGrease.Css.Visitor
             var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             var random = new Random();
             var result = new string(
-                Enumerable.Repeat(chars, 8)
+                Enumerable.Repeat(chars, 16)
                           .Select(s => s[random.Next(s.Length)])
                           .ToArray());
             return result;
@@ -124,9 +124,9 @@ namespace WebGrease.Css.Visitor
         /// Determines if we should collapse with the old ruleset.
         /// </summary>
         /// <param name="hashKey"> hash key of last same ruleset occurs</param>
-        /// <param name="ruleSetMediaPageDictionary">Dictionary of hash keys and RulesetNodes</param>
-        /// <param name="currentRuleSet">RulesetNode currently tracking.</param>
-        /// <returns>Whether we should collapse or not.</returns>
+        /// <param name="ruleSetMediaPageDictionary"> Dictionary of hash keys and RulesetNodes</param>
+        /// <param name="currentRuleSet"> RulesetNode currently tracking.</param>
+        /// <returns> Whether we should collapse or not.</returns>
         private static bool ShouldCollapseTheNewRuleset(string hashKey, OrderedDictionary ruleSetMediaPageDictionary, RulesetNode currentRuleSet)
         {
             if (ruleSetMediaPageDictionary.Contains(hashKey))
@@ -140,7 +140,7 @@ namespace WebGrease.Css.Visitor
                 {
                     var previousStyleSheetRulesetNode = styleSheetRuleNodes.ElementAt(i);
 
-                    // If the node is actually RulesetNode
+                    // If the node is actually RulesetNode instance
                     if (currentRuleSet.GetType().IsAssignableFrom(previousStyleSheetRulesetNode.GetType()))
                     {
                         // Previous Ruleset Node
@@ -162,7 +162,7 @@ namespace WebGrease.Css.Visitor
                             }
                         }
 
-                        // Check if the last same RulesetNode has same declaration property              
+                        // Check if the last same RulesetNode has same declaration property
                         var lastRuleSet=(RulesetNode) ruleSetMediaPageDictionary[hashKey];
                         if (lastRuleSet.hasConflictingDelcaration(declarationNodeDictionary))
                         {
