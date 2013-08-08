@@ -59,7 +59,6 @@ namespace WebGrease.Css.Ast
         /// </summary>
         /// <value>Declarations dictionary</value>
         public ReadOnlyCollection<DeclarationNode> Declarations { get; private set; }
-
         /// <summary>
         /// Check membership of each declaration in the dictionary.
         /// </summary>
@@ -84,28 +83,24 @@ namespace WebGrease.Css.Ast
         /// <returns></returns>
         public bool ShouldMergeWith(RulesetNode rulesetNode)
         {
-            //TODO : Change The Rule more optimally
-            //currently it merges with the nodes who has exact same set of nodes
-
-            if (rulesetNode.Declarations.Count != this.Declarations.Count)
-            {
-                return false;
-            }
-
-            int numberOfDiffDeclarations = this.Declarations.Count;
+            int intersection=0;
             foreach (var myDeclaration in this.Declarations)
             {
                 foreach (var otherDeclaration in rulesetNode.Declarations)
                 {
                     if(myDeclaration.Equals(otherDeclaration))
                     {
-                        numberOfDiffDeclarations--;
+                        intersection++;
                         break;
                     }
                 }
+                if (intersection > 1)
+                {
+                    break;
+                }
             }
 
-            return numberOfDiffDeclarations==0;
+            return intersection > 1 ||(intersection==1 &&(Declarations.Count==1 || rulesetNode.Declarations.Count==1));
         }
 
         /// <summary>
@@ -119,7 +114,31 @@ namespace WebGrease.Css.Ast
             List<SelectorNode> otherSelectors = new List<SelectorNode>(otherRulesetNode.SelectorsGroupNode.SelectorNodes);
             ReadOnlyCollection<SelectorNode> unionList = mySelectors.Union(otherSelectors).ToList().AsReadOnly();
 
-            return new RulesetNode(new SelectorsGroupNode(unionList), this.Declarations, this.ImportantComments);
+            List<DeclarationNode> myDeclarations = new List<DeclarationNode>(this.Declarations);
+            List<DeclarationNode> otherDeclarations = new List<DeclarationNode>(otherRulesetNode.Declarations);
+            List<DeclarationNode> mergedNewDeclarations = new List<DeclarationNode>();
+
+            foreach (var myDeclaration in this.Declarations)
+            {
+                bool unique = true;
+                foreach (var otherDeclaration in otherRulesetNode.Declarations)
+                {
+                    if (myDeclaration.Equals(otherDeclaration))
+                    {
+                        unique = false;
+                        otherDeclarations.Remove(otherDeclaration);
+                        break;
+                    }
+                }
+                if (!unique)
+                {
+                    myDeclarations.Remove(myDeclaration);
+                    mergedNewDeclarations.Add(myDeclaration);
+                }
+            }
+            this.Declarations = myDeclarations.AsReadOnly();
+            otherRulesetNode.Declarations = otherDeclarations.AsReadOnly();
+            return new RulesetNode(new SelectorsGroupNode(unionList), mergedNewDeclarations.AsReadOnly(), this.ImportantComments);
         }
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>

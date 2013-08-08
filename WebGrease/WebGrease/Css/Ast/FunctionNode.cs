@@ -74,6 +74,12 @@ namespace WebGrease.Css.Ast
             return Array.IndexOf(BinaryOpererableFunctionNames, this.FunctionName) > -1;
         }
 
+        public bool Equals(FunctionNode functionNode)
+        {
+            return this.FunctionName == functionNode.FunctionName
+                && this.ExprNode.Equals(functionNode.ExprNode);
+        }
+
         /// <summary>
         /// Determines if the operator is binary operator
         /// </summary>

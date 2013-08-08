@@ -145,11 +145,23 @@ namespace WebGrease.Css.Ast
         /// <returns> Equal or not.</returns>
         public bool Equals(TermNode termNode)
         {
-            return termNode.IsBinary == this.IsBinary
+            bool equals = termNode.IsBinary == this.IsBinary
                 && termNode.UnaryOperator == this.UnaryOperator
                 && termNode.NumberBasedValue == this.NumberBasedValue
                 && termNode.StringBasedValue == this.StringBasedValue
                 && termNode.Hexcolor == this.Hexcolor;
+            if (this.FunctionNode != null && termNode.FunctionNode != null)
+            {
+                return equals && termNode.FunctionNode.Equals(this.FunctionNode);
+            }
+            else if (this.FunctionNode == null && termNode.FunctionNode == null)
+            {
+                return equals;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         /// <summary>Defines an accept operation</summary>

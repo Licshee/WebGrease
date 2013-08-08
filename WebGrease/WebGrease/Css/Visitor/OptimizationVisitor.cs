@@ -121,12 +121,17 @@ namespace WebGrease.Css.Visitor
                     var currentRulesetNode = (RulesetNode)currentRuleset;
                     if (preRulesetNode.ShouldMergeWith(currentRulesetNode))
                     {
-                        // Remove the old ruleset from old position
-                        ruleSetMediaPageDictionary.Remove(hashKey);
-                        ruleSetMediaPageDictionary.Remove(otherHashKey);
-
                         var mergedRulesetNode = currentRulesetNode.GetMergedRulesetNode(preRulesetNode);
                         var newHashKey = mergedRulesetNode.PrintSelector();
+                        // Remove the old ruleset from old position
+                        if (currentRulesetNode.Declarations.Count < 1)
+                        {
+                            ruleSetMediaPageDictionary.Remove(hashKey);
+                        }
+                        if (preRulesetNode.Declarations.Count < 1)
+                        {
+                            ruleSetMediaPageDictionary.Remove(otherHashKey);
+                        }
                         hashKey = newHashKey;
                         // Generates an unique hashkey again, if hashKey already exists.
                         while (ruleSetMediaPageDictionary.Contains(newHashKey))
