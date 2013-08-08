@@ -414,9 +414,11 @@ namespace WebGrease.Css.Visitor
                 updatedDeclarations.Remove(backgroundSizeNode);
             }
 
-            // if we have an output unit that is different than PIXELS, then we need to output a background-size
-            // property so scaling works appropriately
-            if (this.outputUnit != null && string.Compare(this.outputUnit, "PX", StringComparison.OrdinalIgnoreCase) != 0)
+            // if the DPI factor is not 1.0, then we need to output a properly-scaled background-size property, 
+            // regardless of the the output units we want (if we don't specify an output unit, pixels is used).
+            // but if we specify an output unit, we need to output the background-size property even if the DPI is 1.0,
+            // in order to properly handle the browser default font-size change functionality.
+            if (dpiFactor != 1f || this.outputUnit != null)
             {
                 updatedDeclarations.AddRange(this.CreateBackgroundSizeNode(assembledImage, dpiFactor));
             }
