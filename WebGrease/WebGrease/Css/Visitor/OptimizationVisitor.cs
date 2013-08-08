@@ -12,6 +12,7 @@ namespace WebGrease.Css.Visitor
     using System;
     using System.Collections.Generic;
     using System.Collections.Specialized;
+    using System.Collections.ObjectModel;
     using System.Linq;
     using Ast;
     using Extensions;
@@ -53,12 +54,10 @@ namespace WebGrease.Css.Visitor
         /// <param name="ruleSetMediaPageDictionary">The rule set media page dictionary.</param>
         private static void OptimizeRulesetNode(RulesetNode currentRuleSet, OrderedDictionary ruleSetMediaPageDictionary, OrderedDictionary rulesetHashKeysDictionary)
         {
-            string primaryHashKey;
-
             // Ruleset node optimization.
             // Selectors concatenation is the hash key here
             // Update: Now this is only primary hash key.
-            primaryHashKey = currentRuleSet.PrintSelector();
+            string primaryHashKey = currentRuleSet.PrintSelector();
             string hashKey = currentRuleSet.PrintSelector();
 
             if (rulesetHashKeysDictionary.Contains(primaryHashKey))
@@ -103,6 +102,43 @@ namespace WebGrease.Css.Visitor
                     (rulesetHashKeysDictionary[primaryHashKey] as List<string>).Add(hashKey);
                 }
             }
+
+            // Now, we should decide whether we should merge with another ruleset node.
+            // hashkey is the Hash Key of the Ruleset Node we interested in
+
+            // List of all hashkeys in dictionary
+            var hashKeyEnumerator = ruleSetMediaPageDictionary.Keys.GetEnumerator();
+            // Current RulesetNode we interested in 
+            var currentRuleset =ruleSetMediaPageDictionary[hashKey];
+            while (hashKeyEnumerator.MoveNext())
+            {
+                var otherHashKey = hashKeyEnumerator.Current;
+                var previousStyleSheetRulesetNode = ruleSetMediaPageDictionary[otherHashKey];
+                if (ruleSetMediaPageDictionary.Contains(hashKey) && currentRuleset.GetType().IsAssignableFrom(previousStyleSheetRulesetNode.GetType()) && !otherHashKey.Equals(hashKey))
+                {
+                    // Previous Ruleset Node
+                    var preRulesetNode = (RulesetNode)previousStyleSheetRulesetNode;
+                    var currentRulesetNode = (RulesetNode)currentRuleset;
+                    if (preRulesetNode.ShouldMergeWith(currentRulesetNode))
+                    {
+                        // Remove the old ruleset from old position
+                        ruleSetMediaPageDictionary.Remove(hashKey);
+                        ruleSetMediaPageDictionary.Remove(otherHashKey);
+
+                        var mergedRulesetNode = currentRulesetNode.GetMergedRulesetNode(preRulesetNode);
+                        var newHashKey = mergedRulesetNode.PrintSelector();
+                        hashKey = newHashKey;
+                        // Generates an unique hashkey again, if hashKey already exists.
+                        while (ruleSetMediaPageDictionary.Contains(newHashKey))
+                        {
+                            newHashKey = GenerateRandomkey();
+                        }
+
+                        ruleSetMediaPageDictionary.Add(newHashKey, mergedRulesetNode);
+                        break;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -134,12 +170,11 @@ namespace WebGrease.Css.Visitor
                 // Dictionary for declarations
                 OrderedDictionary declarationNodeDictionary = new OrderedDictionary();
                 var styleSheetRuleNodes = ruleSetMediaPageDictionary.Values.Cast<StyleSheetRuleNode>().ToList();
+                styleSheetRuleNodes.Reverse();
 
                 // Iterate through all rulesetnodes.
-                for (int i = styleSheetRuleNodes.Count - 1; i > -1; i--)
+                foreach (var previousStyleSheetRulesetNode in styleSheetRuleNodes)
                 {
-                    var previousStyleSheetRulesetNode = styleSheetRuleNodes.ElementAt(i);
-
                     // If the node is actually RulesetNode instance
                     if (currentRuleSet.GetType().IsAssignableFrom(previousStyleSheetRulesetNode.GetType()))
                     {
@@ -164,7 +199,7 @@ namespace WebGrease.Css.Visitor
 
                         // Check if the last same RulesetNode has same declaration property
                         var lastRuleSet=(RulesetNode) ruleSetMediaPageDictionary[hashKey];
-                        if (lastRuleSet.hasConflictingDelcaration(declarationNodeDictionary))
+                        if (lastRuleSet.HasConflictingDeclaration(declarationNodeDictionary))
                         {
                             return false;
                         }
@@ -173,6 +208,7 @@ namespace WebGrease.Css.Visitor
 
                 return true;
             }
+
             return false;
         }
 

@@ -65,7 +65,7 @@ namespace WebGrease.Css.Ast
         /// </summary>
         /// <param name="declarationDictionary"></param>
         /// <returns></returns>
-        public bool hasConflictingDelcaration(OrderedDictionary declarationDictionary)
+        public bool HasConflictingDeclaration(OrderedDictionary declarationDictionary)
         {
             foreach (var declaration in Declarations)
             {
@@ -77,6 +77,50 @@ namespace WebGrease.Css.Ast
             return false;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rulesetNode"></param>
+        /// <returns></returns>
+        public bool ShouldMergeWith(RulesetNode rulesetNode)
+        {
+            //TODO : Change The Rule more optimally
+            //currently it merges with the nodes who has exact same set of nodes
+
+            if (rulesetNode.Declarations.Count != this.Declarations.Count)
+            {
+                return false;
+            }
+
+            int numberOfDiffDeclarations = this.Declarations.Count;
+            foreach (var myDeclaration in this.Declarations)
+            {
+                foreach (var otherDeclaration in rulesetNode.Declarations)
+                {
+                    if(myDeclaration.Equals(otherDeclaration))
+                    {
+                        numberOfDiffDeclarations--;
+                        break;
+                    }
+                }
+            }
+
+            return numberOfDiffDeclarations==0;
+        }
+
+        /// <summary>
+        /// Gets merged RuleseteNode from the two RulesetNode
+        /// </summary>
+        /// <param name="otherRulesetNode"></param>
+        /// <returns></returns>
+        public RulesetNode GetMergedRulesetNode(RulesetNode otherRulesetNode)
+        {
+            List<SelectorNode> mySelectors = new List<SelectorNode>(this.SelectorsGroupNode.SelectorNodes);
+            List<SelectorNode> otherSelectors = new List<SelectorNode>(otherRulesetNode.SelectorsGroupNode.SelectorNodes);
+            ReadOnlyCollection<SelectorNode> unionList = mySelectors.Union(otherSelectors).ToList().AsReadOnly();
+
+            return new RulesetNode(new SelectorsGroupNode(unionList), this.Declarations, this.ImportantComments);
+        }
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
         /// <returns>The modified AST node if modified otherwise the original node</returns>

@@ -13,6 +13,7 @@ namespace WebGrease.Css.Ast
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Diagnostics.Contracts;
+    using System.Linq;
     using Visitor;
 
     /// <summary>expr
@@ -75,6 +76,35 @@ namespace WebGrease.Css.Ast
         /// <value>TermNode with Operators List</value>
         public ReadOnlyCollection<TermWithOperatorNode> TermsWithOperators { get; private set; }
 
+        /// <summary>
+        /// Determines if the node is equal to another node
+        /// </summary>
+        /// <param name="exprNode"> another exprNode</param>
+        /// <returns> Determine if the node is equal to another node</returns>
+        public bool Equals(ExprNode exprNode)
+        {
+            if (!exprNode.TermNode.Equals(this.TermNode))
+            {
+                return false;
+            }
+            if(exprNode.UsesBinary != this.UsesBinary)
+            {
+                return false;
+            }
+            if (exprNode.TermsWithOperators.Count != this.TermsWithOperators.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < TermsWithOperators.Count; i++)
+            {
+                if(!TermsWithOperators[i].Equals(this.TermsWithOperators[i]))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
         /// <returns>The modified AST node if modified otherwise the original node</returns>

@@ -138,6 +138,20 @@ namespace WebGrease.Css.Ast
         /// <value>FunctionNode Property</value>
         public FunctionNode FunctionNode { get; private set; }
 
+        /// <summary>
+        /// Determines if the node is equal to another node
+        /// </summary>
+        /// <param name="termNode"> another term node</param>
+        /// <returns> Equal or not.</returns>
+        public bool Equals(TermNode termNode)
+        {
+            return termNode.IsBinary == this.IsBinary
+                && termNode.UnaryOperator == this.UnaryOperator
+                && termNode.NumberBasedValue == this.NumberBasedValue
+                && termNode.StringBasedValue == this.StringBasedValue
+                && termNode.Hexcolor == this.Hexcolor;
+        }
+
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
         /// <returns>The modified AST node if modified otherwise the original node</returns>

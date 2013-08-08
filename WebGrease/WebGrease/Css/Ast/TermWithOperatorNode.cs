@@ -67,6 +67,17 @@ namespace WebGrease.Css.Ast
         /// <value>TermNode value</value>
         public TermNode TermNode { get; private set; }
 
+        /// <summary>
+        /// Determine if the node is equal to another node
+        /// </summary>
+        /// <param name="termWithOperator"> another termWithOperatorNode</param>
+        /// <returns> Equals or not</returns>
+        public bool Equals(TermWithOperatorNode termWithOperator)
+        {
+            return termWithOperator.UsesBinary == this.UsesBinary
+                && termWithOperator.TermNode.Equals(this.TermNode)
+                && termWithOperator.Operator.Equals(this.Operator);
+        }
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
         /// <returns>The modified AST node if modified otherwise the original node</returns>
