@@ -414,7 +414,9 @@ namespace WebGrease.Css.Visitor
                 updatedDeclarations.Remove(backgroundSizeNode);
             }
 
-            if (dpiFactor != 1f)
+            // if we have an output unit that is different than PIXELS, then we need to output a background-size
+            // property so scaling works appropriately
+            if (this.outputUnit != null && string.Compare(this.outputUnit, "PX", StringComparison.OrdinalIgnoreCase) != 0)
             {
                 updatedDeclarations.AddRange(this.CreateBackgroundSizeNode(assembledImage, dpiFactor));
             }
