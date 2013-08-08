@@ -392,7 +392,7 @@ namespace WebGrease
                     if (firstPivot != null)
                     {
                         var extension = Path.GetExtension(sourceFile);
-                        sourceFile = Path.ChangeExtension(sourceFile, "." + firstPivot + extension);
+                        sourceFile = Path.ChangeExtension(sourceFile, "." + firstPivot.ToString("{0}.{1}") + extension);
                     }
                 }
             }

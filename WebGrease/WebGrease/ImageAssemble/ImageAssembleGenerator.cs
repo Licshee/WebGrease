@@ -71,6 +71,7 @@ namespace WebGrease.ImageAssemble
         /// <param name="imageAssemblyAnalysisLog">The image Assembly Analysis Log.</param>
         /// <param name="forcedImageType">The forced image type to override detection.</param>
         /// <returns>The <see cref="ImageMap"/>.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "Heavy job is done here.")]
         internal static ImageMap AssembleImages(ReadOnlyCollection<InputImage> inputImages, SpritePackingType packingType, string assembleFileFolder, string mapFileName, string pngOptimizerToolCommand, bool dedup, IWebGreaseContext context, int? imagePadding = null, ImageAssemblyAnalysisLog imageAssemblyAnalysisLog = null, ImageType? forcedImageType = null)
         {
             // deduping is optional.  CssPipelineTask already has deduping built into it, so it skips deduping in ImageAssembleTool.
@@ -90,7 +91,7 @@ namespace WebGrease.ImageAssemble
                     Console.WriteLine(Enum.GetName(typeof(ImageType), imageType));
                     foreach (var entry in separatedLists[imageType])
                     {
-                        Console.WriteLine(entry.Key.OriginalImagePath);
+                        Console.WriteLine(entry.InputImage.OriginalImagePath);
                     }
                 }
 #endif

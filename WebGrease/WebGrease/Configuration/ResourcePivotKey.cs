@@ -44,5 +44,18 @@ namespace WebGrease.Configuration
         }
 
         #endregion
+
+        #region Internal Methods
+
+        /// <summary>
+        /// To string with specific format for concating the GroupKey and Key.
+        /// </summary>
+        /// <returns>The formated string for a file name, e.g. locale.generic-generic for ToString("{0}.{1}")</returns>
+        internal string ToString(string format)
+        {
+            return format.InvariantFormat(this.GroupKey, this.Key);
+        }
+
+        #endregion
     }
 }
