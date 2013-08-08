@@ -272,7 +272,7 @@ namespace WebGrease.Build
 
                             if (success && measure)
                             {
-                                var configReportFile = Path.Combine(sessionContext.Configuration.ReportPath, (configFileInfo.Directory != null ? configFileInfo.Directory.Name + "." : string.Empty) + activity.ToString() + "." + fileType + "." + configFileInfo.Name + ".");
+                                var configReportFile = Path.Combine(sessionContext.Configuration.ReportPath, (configFileInfo.Directory != null ? configFileInfo.Directory.Name + "." : string.Empty) + activity.ToString() + "." + fileType + "." + configFileInfo.Name);
                                 fileContext.Measure.WriteResults(configReportFile, configFileInfo.FullName, configFileStart);
                             }
 

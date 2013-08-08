@@ -786,13 +786,8 @@ namespace WebGrease.Activities
 
                 if (writeSpriteLogFile)
                 {
-                    var firstPivot = pivots.FirstOrDefault();
-                    if (firstPivot != null)
-                    {
-                        firstPivot = "." + firstPivot;
-                    }
-
-                    minifier.ImageSpritingLogPath = Path.Combine(this.context.Configuration.ReportPath, destinationFile + firstPivot + ".spritingLog.xml");
+                    var firstPivot = inputFile.ResourcePivotKeys.FirstOrDefault();
+                    minifier.ImageSpritingLogPath = Path.Combine(this.context.Configuration.ReportPath, destinationFile + ((firstPivot != null) ? "." + firstPivot.ToString("{0}.{1}") : string.Empty) + ".spritingLog.xml");
                 }
 
                 try
