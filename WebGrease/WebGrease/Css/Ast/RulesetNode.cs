@@ -101,6 +101,7 @@ namespace WebGrease.Css.Ast
             }
 
             return intersection > 1 ||(intersection==1 &&(Declarations.Count==1 || rulesetNode.Declarations.Count==1));
+            //return intersection > 1;
         }
 
         /// <summary>

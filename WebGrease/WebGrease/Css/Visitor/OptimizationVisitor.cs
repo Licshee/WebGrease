@@ -138,7 +138,7 @@ namespace WebGrease.Css.Visitor
                             diffRuleSetMediaPageDictionary.Add(otherHashKey, null);
                         }
                         // Generates an unique hashkey again, if hashKey already exists.
-                        while (ruleSetMediaPageDictionary.Contains(newHashKey))
+                        while (ruleSetMediaPageDictionary.Contains(newHashKey) || diffRuleSetMediaPageDictionary.Contains(newHashKey))
                         {
                             newHashKey = GenerateRandomkey();
                         }

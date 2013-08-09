@@ -98,7 +98,7 @@ namespace WebGrease.Css.Ast
 
             for (int i = 0; i < TermsWithOperators.Count; i++)
             {
-                if(!TermsWithOperators[i].Equals(this.TermsWithOperators[i]))
+                if(!exprNode.TermsWithOperators[i].Equals(this.TermsWithOperators[i]))
                 {
                     return false;
                 }
