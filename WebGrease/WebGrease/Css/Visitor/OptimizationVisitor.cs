@@ -104,21 +104,26 @@ namespace WebGrease.Css.Visitor
             }
 
             // Now, we should decide whether we should merge with another ruleset node.
-            // hashkey is the Hash Key of the Ruleset Node we interested in
+            // Note: A variable hashkey is the hash key of the RulesetNode which our cursor is on.
 
             // List of all hashkeys in dictionary
             var hashKeyEnumerator = ruleSetMediaPageDictionary.Keys.GetEnumerator();
             // Current RulesetNode we interested in 
             var currentRuleset =ruleSetMediaPageDictionary[hashKey];
+            var diffRuleSetMediaPageDictionary = new OrderedDictionary();
+            bool removed = false;
             while (hashKeyEnumerator.MoveNext())
-            {
+            { 
                 var otherHashKey = hashKeyEnumerator.Current;
                 var previousStyleSheetRulesetNode = ruleSetMediaPageDictionary[otherHashKey];
+                //if  the ruleset is instance RuleseNode class
                 if (ruleSetMediaPageDictionary.Contains(hashKey) && currentRuleset.GetType().IsAssignableFrom(previousStyleSheetRulesetNode.GetType()) && !otherHashKey.Equals(hashKey))
                 {
                     // Previous Ruleset Node
-                    var preRulesetNode = (RulesetNode)previousStyleSheetRulesetNode;
-                    var currentRulesetNode = (RulesetNode)currentRuleset;
+                    var preRulesetNode = (RulesetNode) previousStyleSheetRulesetNode;
+                    var currentRulesetNode = (RulesetNode) currentRuleset;
+                    
+                    // if the current ruleset should merge with the preRulesetNode
                     if (preRulesetNode.ShouldMergeWith(currentRulesetNode))
                     {
                         var mergedRulesetNode = currentRulesetNode.GetMergedRulesetNode(preRulesetNode);
@@ -126,22 +131,39 @@ namespace WebGrease.Css.Visitor
                         // Remove the old ruleset from old position
                         if (currentRulesetNode.Declarations.Count < 1)
                         {
-                            ruleSetMediaPageDictionary.Remove(hashKey);
+                            removed = true;
                         }
                         if (preRulesetNode.Declarations.Count < 1)
                         {
-                            ruleSetMediaPageDictionary.Remove(otherHashKey);
+                            diffRuleSetMediaPageDictionary.Add(otherHashKey, null);
                         }
-                        hashKey = newHashKey;
                         // Generates an unique hashkey again, if hashKey already exists.
                         while (ruleSetMediaPageDictionary.Contains(newHashKey))
                         {
                             newHashKey = GenerateRandomkey();
                         }
 
-                        ruleSetMediaPageDictionary.Add(newHashKey, mergedRulesetNode);
-                        break;
+                        diffRuleSetMediaPageDictionary.Add(newHashKey, mergedRulesetNode);                        
                     }
+                }
+            }
+            if (removed)
+            {
+                diffRuleSetMediaPageDictionary.Add(hashKey, null);
+            }
+            
+            //Now, sync the dictionary
+            var diffHashKeyEnumerator = diffRuleSetMediaPageDictionary.Keys.GetEnumerator();
+            while (diffHashKeyEnumerator.MoveNext())
+            {
+                var diffHashKey = diffHashKeyEnumerator.Current;
+                if (diffRuleSetMediaPageDictionary[diffHashKey] == null)
+                {
+                    ruleSetMediaPageDictionary.Remove(diffHashKey);
+                }
+                else
+                {
+                    ruleSetMediaPageDictionary.Add(diffHashKey, diffRuleSetMediaPageDictionary[diffHashKey]);
                 }
             }
         }
