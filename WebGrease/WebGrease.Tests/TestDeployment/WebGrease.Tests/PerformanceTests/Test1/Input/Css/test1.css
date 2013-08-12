@@ -1,6 +1,6 @@
 ﻿wgInclude("test1.include.css");
 wgInclude("include");
-.test1{color:red;}
+.test1{color:red}
 
 .sprite2{
     background: transparent url(hash(/images/galleryarrow_left.png)) no-repeat 0 0;
