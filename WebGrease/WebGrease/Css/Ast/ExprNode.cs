@@ -100,6 +100,7 @@ namespace WebGrease.Css.Ast
 
             return true;
         }
+
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
         /// <returns>The modified AST node if modified otherwise the original node</returns>
