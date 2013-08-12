@@ -66,7 +66,7 @@ namespace WebGrease.Css.Ast
         }
 
         /// <summary>
-        /// Wether this function should allow binary operators in it.
+        /// Whether this function should allow binary operators in it.
         /// </summary>
         /// <returns>Boolean value indicating if this function should allow binary operator.</returns>
         private bool usesBinary()
@@ -74,6 +74,11 @@ namespace WebGrease.Css.Ast
             return Array.IndexOf(BinaryOpererableFunctionNames, this.FunctionName) > -1;
         }
 
+        /// <summary>
+        /// Determine if two Function nodes are equal
+        /// </summary>
+        /// <param name="functionNode"> Another Function node to Compare.</param>
+        /// <returns> Equal or not. </returns>
         public bool Equals(FunctionNode functionNode)
         {
             return this.FunctionName == functionNode.FunctionName

@@ -83,15 +83,9 @@ namespace WebGrease.Css.Ast
         /// <returns> Determine if the node is equal to another node</returns>
         public bool Equals(ExprNode exprNode)
         {
-            if (!exprNode.TermNode.Equals(this.TermNode))
-            {
-                return false;
-            }
-            if(exprNode.UsesBinary != this.UsesBinary)
-            {
-                return false;
-            }
-            if (exprNode.TermsWithOperators.Count != this.TermsWithOperators.Count)
+            if (!exprNode.TermNode.Equals(this.TermNode)
+                || exprNode.UsesBinary != this.UsesBinary
+                || exprNode.TermsWithOperators.Count != this.TermsWithOperators.Count)
             {
                 return false;
             }
@@ -103,6 +97,7 @@ namespace WebGrease.Css.Ast
                     return false;
                 }
             }
+
             return true;
         }
         /// <summary>Defines an accept operation</summary>

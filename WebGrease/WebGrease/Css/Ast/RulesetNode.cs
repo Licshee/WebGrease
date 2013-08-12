@@ -94,6 +94,7 @@ namespace WebGrease.Css.Ast
                         break;
                     }
                 }
+
                 if (intersection > 1)
                 {
                     break;
@@ -107,8 +108,8 @@ namespace WebGrease.Css.Ast
         /// <summary>
         /// Gets merged RuleseteNode from the two RulesetNode
         /// </summary>
-        /// <param name="otherRulesetNode"></param>
-        /// <returns></returns>
+        /// <param name="otherRulesetNode"> another ruleset node</param>
+        /// <returns> A new merged Ruleset Node.</returns>
         public RulesetNode GetMergedRulesetNode(RulesetNode otherRulesetNode)
         {
             List<SelectorNode> mySelectors = new List<SelectorNode>(this.SelectorsGroupNode.SelectorNodes);
@@ -130,17 +131,20 @@ namespace WebGrease.Css.Ast
                         otherDeclarations.Remove(otherDeclaration);
                         break;
                     }
-                }
+                } 
+
                 if (!unique)
                 {
                     myDeclarations.Remove(myDeclaration);
                     mergedNewDeclarations.Add(myDeclaration);
                 }
             }
+
             this.Declarations = myDeclarations.AsReadOnly();
             otherRulesetNode.Declarations = otherDeclarations.AsReadOnly();
             return new RulesetNode(new SelectorsGroupNode(unionList), mergedNewDeclarations.AsReadOnly(), this.ImportantComments);
         }
+
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>
         /// <returns>The modified AST node if modified otherwise the original node</returns>
