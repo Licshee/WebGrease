@@ -70,7 +70,7 @@ namespace WebGrease.Css.Ast
             {
                 if (declarationDictionary.Contains(declaration.Property))
                 {
-                    return true;
+                    return !((DeclarationNode)declarationDictionary[declaration.Property]).Equals(declaration);
                 }                
             }
             return false;

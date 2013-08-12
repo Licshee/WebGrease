@@ -99,7 +99,7 @@ namespace Css.Tests.Css30
             const string FileName = @"Merge.css";
             var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
             Assert.IsNotNull(styleSheetNode);
-            MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
+            //MinificationVerifier.VerifyMinification(BaseDirectory, FileName, new List<NodeVisitor> { new OptimizationVisitor() });
 
             const string FileName2 = @"Merge2.css";
             var styleSheetNode2 = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName2)));
