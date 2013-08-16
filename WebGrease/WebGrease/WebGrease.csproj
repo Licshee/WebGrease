@@ -181,6 +181,8 @@
     <Compile Include="Configuration\ResourcePivotGroup.cs" />
     <Compile Include="Configuration\ResourcePivotKey.cs" />
     <Compile Include="Css\Visitor\ResourceResolutionVisitor.cs" />
+    <Compile Include="Css\Ast\ImportantCommentNode.cs" />
+    <Compile Include="Css\Ast\StyleSheetRuleOrCommentNode.cs" />
     <Compile Include="DelayedLogManager.cs" />
     <Compile Include="Cache\CacheFileCategories.cs" />
     <Compile Include="Activities\ErrorCode.cs" />

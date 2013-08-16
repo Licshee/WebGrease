@@ -197,7 +197,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 updatedUrl = string.Format(CultureInfo.CurrentUICulture, ImageAssembleConstants.UrlTerm, updatedUrl);
 
                 // Create a term with new assembled image url
-                updatedTermNode = new TermNode(originalTermNode.UnaryOperator, originalTermNode.NumberBasedValue, updatedUrl, originalTermNode.Hexcolor, originalTermNode.FunctionNode);
+                updatedTermNode = new TermNode(originalTermNode.UnaryOperator, originalTermNode.NumberBasedValue, updatedUrl, originalTermNode.Hexcolor, originalTermNode.FunctionNode, originalTermNode.ImportantComments);
                 return true;
             }
 
@@ -225,7 +225,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
             {
                 // No need to update the term with operators since there is only url element allowed in the expression
                 // which is primary term.
-                return new DeclarationNode(this.DeclarationNode.Property, new ExprNode(newBackgroundImageTermNode, originalExpr.TermsWithOperators), this.DeclarationNode.Prio);
+                return new DeclarationNode(this.DeclarationNode.Property, new ExprNode(newBackgroundImageTermNode, originalExpr.TermsWithOperators, originalExpr.ImportantComments), this.DeclarationNode.Prio, this.DeclarationNode.ImportantComments);
             }
 
             return this.DeclarationNode;

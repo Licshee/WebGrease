@@ -178,7 +178,7 @@ namespace Css.Tests.Css30
 
             var declarationNodes = keyFramesBlockNode.DeclarationNodes;
             Assert.IsTrue(declarationNodes.Count == 2);
-            
+
             var declarationNode = declarationNodes[0];
             Assert.IsNotNull(declarationNode);
             Assert.IsTrue(declarationNode.Property == "top");
@@ -401,7 +401,7 @@ namespace Css.Tests.Css30
             const string FileName = @"namespace.css";
             var styleSheetNode = CssParser.Parse(new FileInfo(Path.Combine(ActualDirectory, FileName)));
             Assert.IsNotNull(styleSheetNode);
-            
+
             var namespaces = styleSheetNode.Namespaces;
             Assert.IsNotNull(namespaces);
             Assert.IsTrue(namespaces.Count == 4);
@@ -757,27 +757,27 @@ namespace Css.Tests.Css30
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode);
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode.SelectorNodes);
             Assert.IsTrue(rulesetNode.SelectorsGroupNode.SelectorNodes.Count == 1);
-            
+
             var selectorNode = rulesetNode.SelectorsGroupNode.SelectorNodes[0];
             Assert.IsNotNull(selectorNode);
-            
+
             var simpleSelectorSequenceNode = selectorNode.SimpleSelectorSequenceNode;
             Assert.IsNotNull(simpleSelectorSequenceNode);
-            
+
             var typeSelector = simpleSelectorSequenceNode.TypeSelectorNode;
             Assert.IsNotNull(typeSelector);
             Assert.IsTrue(typeSelector.ElementName == "div");
-            
+
             var namespacePrefixNode = typeSelector.SelectorNamespacePrefixNode;
             Assert.IsNotNull(namespacePrefixNode);
             Assert.IsTrue(namespacePrefixNode.Prefix == string.Empty);
 
             var universalSelectorNode = simpleSelectorSequenceNode.UniversalSelectorNode;
             Assert.IsNull(universalSelectorNode);
-            
+
             var hashClassAttribPseudoNegationNodes = simpleSelectorSequenceNode.HashClassAttribPseudoNegationNodes;
             Assert.IsTrue(hashClassAttribPseudoNegationNodes == null || hashClassAttribPseudoNegationNodes.Count == 0);
-            
+
 
             ////
             //// ns|div
@@ -787,13 +787,13 @@ namespace Css.Tests.Css30
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode);
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode.SelectorNodes);
             Assert.IsTrue(rulesetNode.SelectorsGroupNode.SelectorNodes.Count == 1);
-            
+
             selectorNode = rulesetNode.SelectorsGroupNode.SelectorNodes[0];
             Assert.IsNotNull(selectorNode);
-            
+
             simpleSelectorSequenceNode = selectorNode.SimpleSelectorSequenceNode;
             Assert.IsNotNull(simpleSelectorSequenceNode);
-            
+
             typeSelector = simpleSelectorSequenceNode.TypeSelectorNode;
             Assert.IsNotNull(typeSelector);
             Assert.IsTrue(typeSelector.ElementName == "div");
@@ -819,17 +819,17 @@ namespace Css.Tests.Css30
 
             selectorNode = rulesetNode.SelectorsGroupNode.SelectorNodes[0];
             Assert.IsNotNull(selectorNode);
-            
+
             simpleSelectorSequenceNode = selectorNode.SimpleSelectorSequenceNode;
             Assert.IsNotNull(simpleSelectorSequenceNode);
-            
+
             typeSelector = simpleSelectorSequenceNode.TypeSelectorNode;
             Assert.IsNull(typeSelector);
 
             universalSelectorNode = simpleSelectorSequenceNode.UniversalSelectorNode;
             Assert.IsNotNull(universalSelectorNode);
             Assert.IsNull(universalSelectorNode.SelectorNamespacePrefixNode);
-            
+
             hashClassAttribPseudoNegationNodes = simpleSelectorSequenceNode.HashClassAttribPseudoNegationNodes;
             Assert.IsTrue(hashClassAttribPseudoNegationNodes == null || hashClassAttribPseudoNegationNodes.Count == 0);
 
@@ -841,19 +841,19 @@ namespace Css.Tests.Css30
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode);
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode.SelectorNodes);
             Assert.IsTrue(rulesetNode.SelectorsGroupNode.SelectorNodes.Count == 1);
-            
+
             selectorNode = rulesetNode.SelectorsGroupNode.SelectorNodes[0];
             Assert.IsNotNull(selectorNode);
-            
+
             simpleSelectorSequenceNode = selectorNode.SimpleSelectorSequenceNode;
             Assert.IsNotNull(simpleSelectorSequenceNode);
-            
+
             typeSelector = simpleSelectorSequenceNode.TypeSelectorNode;
             Assert.IsNull(typeSelector);
-            
+
             universalSelectorNode = simpleSelectorSequenceNode.UniversalSelectorNode;
             Assert.IsNotNull(universalSelectorNode);
-            
+
             hashClassAttribPseudoNegationNodes = simpleSelectorSequenceNode.HashClassAttribPseudoNegationNodes;
             Assert.IsTrue(hashClassAttribPseudoNegationNodes == null || hashClassAttribPseudoNegationNodes.Count == 0);
 
@@ -865,16 +865,16 @@ namespace Css.Tests.Css30
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode);
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode.SelectorNodes);
             Assert.IsTrue(rulesetNode.SelectorsGroupNode.SelectorNodes.Count == 1);
-            
+
             selectorNode = rulesetNode.SelectorsGroupNode.SelectorNodes[0];
             Assert.IsNotNull(selectorNode);
-            
+
             simpleSelectorSequenceNode = selectorNode.SimpleSelectorSequenceNode;
             Assert.IsNotNull(simpleSelectorSequenceNode);
-            
+
             typeSelector = simpleSelectorSequenceNode.TypeSelectorNode;
             Assert.IsNull(typeSelector);
-            
+
             universalSelectorNode = simpleSelectorSequenceNode.UniversalSelectorNode;
             Assert.IsNotNull(universalSelectorNode);
             Assert.IsNotNull(universalSelectorNode.SelectorNamespacePrefixNode);
@@ -891,20 +891,20 @@ namespace Css.Tests.Css30
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode);
             Assert.IsNotNull(rulesetNode.SelectorsGroupNode.SelectorNodes);
             Assert.IsTrue(rulesetNode.SelectorsGroupNode.SelectorNodes.Count == 1);
-            
+
             selectorNode = rulesetNode.SelectorsGroupNode.SelectorNodes[0];
             Assert.IsNotNull(selectorNode);
-            
+
             simpleSelectorSequenceNode = selectorNode.SimpleSelectorSequenceNode;
             Assert.IsNotNull(simpleSelectorSequenceNode);
-            
+
             typeSelector = simpleSelectorSequenceNode.TypeSelectorNode;
             Assert.IsNotNull(typeSelector);
             Assert.IsTrue(typeSelector.ElementName == "div");
-            
+
             universalSelectorNode = simpleSelectorSequenceNode.UniversalSelectorNode;
             Assert.IsNull(universalSelectorNode);
-            
+
             hashClassAttribPseudoNegationNodes = simpleSelectorSequenceNode.HashClassAttribPseudoNegationNodes;
             Assert.IsTrue(hashClassAttribPseudoNegationNodes == null || hashClassAttribPseudoNegationNodes.Count == 0);
 
@@ -1231,8 +1231,8 @@ namespace Css.Tests.Css30
 
             var universalSelectorNode = simpleSelectorSequenceNode.UniversalSelectorNode;
             Assert.IsNotNull(universalSelectorNode);
-            
-            namespacePrefixNode  = universalSelectorNode.SelectorNamespacePrefixNode;
+
+            namespacePrefixNode = universalSelectorNode.SelectorNamespacePrefixNode;
             Assert.IsNull(namespacePrefixNode);
 
             hashClassAttribPseudoNodes = simpleSelectorSequenceNode.HashClassAttribPseudoNegationNodes;
@@ -1448,14 +1448,14 @@ namespace Css.Tests.Css30
 
             var hashClassAttribPseudoNegationNode = hashClassAttribPseudoNegationNodes[0];
             Assert.IsNotNull(hashClassAttribPseudoNegationNode);
-            
+
             var attribNode = hashClassAttribPseudoNegationNode.AttribNode;
             Assert.IsNotNull(attribNode);
             Assert.IsTrue(attribNode.Ident == "att1");
-            
+
             var ns = attribNode.SelectorNamespacePrefixNode;
             Assert.IsNull(ns);
-            
+
             var operatorValue = attribNode.OperatorAndValueNode;
             Assert.IsTrue(operatorValue == null || (operatorValue.AttribOperatorKind == AttribOperatorKind.None && operatorValue.IdentOrString == string.Empty));
 
@@ -1872,7 +1872,7 @@ namespace Css.Tests.Css30
 
             var negationNode = hashClassAttribPseudoNegationNode.NegationNode;
             Assert.IsNotNull(negationNode);
-            
+
             var negationArgNode = negationNode.NegationArgNode;
             Assert.IsNotNull(negationArgNode);
 
@@ -2053,7 +2053,7 @@ namespace Css.Tests.Css30
 
             var selectorExpressionNode = functionalPseudoNode.SelectorExpressionNode;
             Assert.IsNotNull(selectorExpressionNode);
-            
+
             var selectorExpressions = selectorExpressionNode.SelectorExpressions;
             Assert.IsNotNull(selectorExpressions);
             Assert.IsTrue(selectorExpressions.Count == 1);
@@ -2207,10 +2207,10 @@ namespace Css.Tests.Css30
             functionalPseudoNode = pseudoNode.FunctionalPseudoNode;
             Assert.IsNotNull(functionalPseudoNode);
             Assert.IsTrue(functionalPseudoNode.FunctionName == "e4");
-            
+
             var selectorExpressionNode = functionalPseudoNode.SelectorExpressionNode;
             Assert.IsNotNull(selectorExpressionNode);
-            
+
             var selectorExpressions = selectorExpressionNode.SelectorExpressions;
             Assert.IsNotNull(selectorExpressions);
             Assert.IsTrue(selectorExpressions.Count == 3);
@@ -3159,7 +3159,7 @@ namespace Css.Tests.Css30
             Assert.IsTrue(styleSheetNode.StyleSheetRules[4] is RulesetNode);
             Assert.IsTrue(styleSheetNode.StyleSheetRules[5] is PageNode);
             Assert.IsTrue(styleSheetNode.StyleSheetRules[6] is RulesetNode);
-            
+
             MinificationVerifier.VerifyMinification(BaseDirectory, FileName);
             PrettyPrintVerifier.VerifyPrettyPrint(BaseDirectory, FileName);
         }

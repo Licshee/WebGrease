@@ -55,6 +55,8 @@ namespace WebGrease.Activities
             this.ShouldAssembleBackgroundImages = true;
             this.ImageAssembleReferencesToIgnore = new HashSet<string>();
             this.OutputUnitFactor = 1;
+            this.ShouldPreventOrderBasedConflict = false;
+            this.ShouldMergeBasedOnCommonDeclarations = false;
         }
 
         /// <summary>Gets or sets the image base prefix to remove from output path in log.</summary>
@@ -141,6 +143,16 @@ namespace WebGrease.Activities
 
         /// <summary>Gets or sets the merged resources.</summary>
         internal Dictionary<string, IDictionary<string, IDictionary<string, string>>> MergedResources { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ShouldPreventOrderBasedConflic
+        /// </summary>
+        internal bool ShouldPreventOrderBasedConflict { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ShouldMergeBasedOnCommonDeclarations
+        /// </summary>
+        internal bool ShouldMergeBasedOnCommonDeclarations { get; set; }
 
         /// <summary>The process.</summary>
         /// <param name="contentItem">The content item.</param>
@@ -559,7 +571,7 @@ namespace WebGrease.Activities
                 threadContext.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize).Execute(
                     () =>
                     {
-                        stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor { ShouldMergeMediaQueries = this.ShouldMergeMediaQueries });
+                        stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor() { ShouldMergeMediaQueries = this.ShouldMergeMediaQueries, ShouldPreventOrderBasedConflict=this.ShouldPreventOrderBasedConflict, ShouldMergeBasedOnCommonDeclarations=this.ShouldMergeBasedOnCommonDeclarations });
                         stylesheetNode = stylesheetNode.Accept(new ColorOptimizationVisitor());
                         stylesheetNode = stylesheetNode.Accept(new FloatOptimizationVisitor());
                     });

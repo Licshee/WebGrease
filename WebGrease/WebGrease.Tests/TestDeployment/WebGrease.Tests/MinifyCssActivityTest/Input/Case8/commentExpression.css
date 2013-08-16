@@ -1,0 +1,6 @@
+div
+{
+    color: white;	
+    background:/*!expression*/ red;	
+	/* regular comment */
+}

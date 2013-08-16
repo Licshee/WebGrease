@@ -185,6 +185,9 @@ namespace WebGrease.Css.Visitor
                                                          _printerFormatter.AppendLine(CssConstants.Semicolon);
                                                      }
                                                  });
+            //Visit Important CommentNodes 
+            rulesetNode.ImportantComments.ForEach(comment => comment.Accept(this));
+
             _printerFormatter.DecrementIndentLevel();
 
             // End the declarations with a line
@@ -561,6 +564,12 @@ namespace WebGrease.Css.Visitor
                 return null;
             }
 
+            // Important Comments first
+            foreach (var comment in declarationNode.ImportantComments)
+            {
+                comment.Accept(this);
+            }
+
             // declaration
             // : property ':' S* expr prio?
             // ;
@@ -591,6 +600,13 @@ namespace WebGrease.Css.Visitor
         /// <returns>The modified AST node if modified otherwise the original node</returns>
         public override AstNode VisitExprNode(ExprNode exprNode)
         {
+
+            // Comments
+            foreach (var comment in exprNode.ImportantComments)
+            {
+                comment.Accept(this);
+            }
+
             // expr
             // : term [ operator? term ]*
             // ;
@@ -619,6 +635,10 @@ namespace WebGrease.Css.Visitor
             // append for: unary_operator?
             // TODO - Shall we remove the '+' operator here?
             _printerFormatter.Append(termNode.UnaryOperator);
+            if (termNode.IsBinary && FunctionNode.IsBinaryOperator(termNode.UnaryOperator))
+            {
+                _printerFormatter.Append(" ");
+            }
 
             // append for: [ NUMBER S* | PERCENTAGE S* | LENGTH S* | EMS S* | EXS S* | ANGLE S* | TIME S* | FREQ S* ]
             if (!string.IsNullOrWhiteSpace(termNode.NumberBasedValue))
@@ -647,7 +667,23 @@ namespace WebGrease.Css.Visitor
                 termNode.FunctionNode.Accept(this);
             }
 
+            foreach (var comment in termNode.ImportantComments)
+            {
+                comment.Accept(this);
+            }
+
             return termNode;
+        }
+
+        /// <summary>
+        /// The <see cref=" ImportantCommentNode"/> visit implementation
+        /// </summary>
+        /// <param name="commentNode">ImportantCommentNode to visit</param>
+        /// <returns>he modified AST node if modified otherwise the original node</returns>
+        public override AstNode VisitImportantCommentNode(ImportantCommentNode commentNode)
+        {
+            _printerFormatter.Append(commentNode.Text);
+            return base.VisitImportantCommentNode(commentNode);
         }
 
         /// <summary>The <see cref="TermWithOperatorNode"/> visit implementation</summary>

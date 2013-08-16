@@ -295,7 +295,7 @@ namespace WebGrease.Css.Extensions
         /// <returns>The new term node</returns>
         internal static TermNode CopyTerm(this TermNode termNode)
         {
-            return termNode == null ? null : new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+            return termNode == null ? null : new TermNode(termNode.UnaryOperator, termNode.NumberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode, termNode.ImportantComments);
         }
 
         /// <summary>Creates a declaration node from list of term with operator nodes</summary>
@@ -312,7 +312,7 @@ namespace WebGrease.Css.Extensions
             var primaryTerm = termWithOperatorNodes[0].TermNode;
             termWithOperatorNodes.RemoveAt(0);
 
-            return new DeclarationNode(declarationNode.Property, new ExprNode(primaryTerm, termWithOperatorNodes.AsReadOnly()), declarationNode.Prio);
+            return new DeclarationNode(declarationNode.Property, new ExprNode(primaryTerm, termWithOperatorNodes.AsReadOnly(), null), declarationNode.Prio, declarationNode.ImportantComments);
         }
 
         /// <summary>

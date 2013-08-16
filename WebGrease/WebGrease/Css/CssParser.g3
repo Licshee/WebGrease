@@ -1,3 +1,4 @@
+
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="CssParser.g3" company="Microsoft">
 //   Copyright Microsoft Corporation, all rights reserved
@@ -95,7 +96,7 @@ tokens
     UNIVERSAL;
     URIBASEDVALUE;
     WHITESPACE;
-    WG_DPI;
+    WG_DPI;	
     REPLACEMENTTOKEN;
     REPLACEMENTTOKENBASEDVALUE;
     REPLACEMENTTOKENIDENTIFIER;
@@ -122,9 +123,16 @@ main
 //    [ [ ruleset | media | page | keyframes ] [ CDO S* | CDC S* ]* ]*
 //  ;
 styleSheet
-    : ((CHARSET_SYM STRING SEMICOLON)? styleimport* namespace* styleSheetrules*)
-    -> ^(STYLESHEET ^(CHARSET ^(STRINGBASEDVALUE STRING))? ^(IMPORTS styleimport*)? ^(NAMESPACES namespace*)? styleSheetrules*)
+    : ((CHARSET_SYM STRING SEMICOLON)? styleimport* namespace* styleSheetRulesOrComment*)
+    -> ^(STYLESHEET ^(CHARSET ^(STRINGBASEDVALUE STRING))? ^(IMPORTS styleimport*)? ^(NAMESPACES namespace*)? styleSheetRulesOrComment*)  
     ;
+
+///styleSheetRulesOrComment
+styleSheetRulesOrComment
+	: IMPORTANT_COMMENTS 
+	  | styleSheetrules
+	;
+	
 
 // import
 //  : IMPORT_SYM S*
@@ -170,8 +178,8 @@ media_query_list
     ;
 
 // media_query
-// : [ONLY | NOT]? S* media_type S* [ AND S* media_expression ]*
-// | media_expression [ AND S* media_expression ]*
+// : [ONLY | NOT]? S* media_type S* [ AND S* expression ]*
+// | expression [ AND S* expression ]*
 // ;
 media_query
  : (ONLY | NOT)? media_type (AND media_expression)*
@@ -188,14 +196,14 @@ media_type
  -> ^(MEDIA_TYPE IDENT)
  ;
 
-// media_expression
+// expression
 // : '(' S* media_feature S* [ ':' S* expr ]? ')' S*
 // ;
 media_expression
  : CIRCLE_BEGIN media_feature (COLON expr)? CIRCLE_END
  -> ^(MEDIA_EXPRESSION media_feature expr?)
  ;
-
+ 
 // media_feature
 // : IDENT
 // ;
@@ -227,7 +235,7 @@ pseudo_page
 //  : '/' S* | ',' S* | '*' S*
 //  ;
 operator
-    : FORWARD_SLASH | COMMA | STAR | EQUALS
+    : FORWARD_SLASH | COMMA | STAR | EQUALS 
     ;
 
 // unary_operator
@@ -242,8 +250,8 @@ unary_operator
 //  : IDENT S*
 //  ;
 property
-    : (STAR)? IDENT
-    -> ^(PROPERTY STAR? IDENT)
+    : (STAR)? IDENT IMPORTANT_COMMENTS*
+    -> ^(PROPERTY STAR? IDENT IMPORTANT_COMMENTS*)	
 	|REPLACEMENTTOKEN
 	-> ^(PROPERTY REPLACEMENTTOKEN)
     ;
@@ -256,8 +264,9 @@ ruleset
     : selectors_group
     CURLY_BEGIN
     (declaration SEMICOLON?)*
+	IMPORTANT_COMMENTS*
     CURLY_END
-    -> ^(RULESET selectors_group ^(DECLARATIONS declaration*)?)
+    -> ^(RULESET selectors_group ^(DECLARATIONS declaration*)? IMPORTANT_COMMENTS*)
     ;
 
 // selectors_group
@@ -306,7 +315,6 @@ whitespace
 //  : [ type_selector | universal ]
 //    [ HASH | class | attrib | pseudo | negation ]*
 //  | [ HASH | class | attrib | pseudo | negation ]+
-//  | REPLACEMENTTOKEN
 //  ;
 // universal is subset of type_selector
 // Grammar Note - The productions don't exactly match the Css 3 spec because of whitespace handling done through
@@ -319,7 +327,7 @@ simple_selector_sequence
     ;
 
 hashclassatnameattribpseudonegation
-    : REPLACEMENTTOKEN
+	: REPLACEMENTTOKEN
     -> ^(REPLACEMENTTOKEN ^(REPLACEMENTTOKENIDENTIFIER REPLACEMENTTOKEN))
     | hash
     -> ^(HASHCLASSATNAMEATTRIBPSEUDONEGATION hash)
@@ -430,7 +438,7 @@ functional_pseudo
 // expression
 //  /* In CSS3, the expressions are identifiers, strings, */
 //  /* or of the form "an+b" */
-//  : [ [ PLUS | '-' | DIMENSION | NUMBER | STRING | IDENT | REPLACEMENT ] S* ]+
+//  : [ [ PLUS | '-' | DIMENSION | NUMBER | STRING | IDENT ] S* ]+
 //  ;
 selectorexpression
   /* In CSS3, the expressions are identifiers, strings, */
@@ -462,8 +470,8 @@ atname
 //  : property ':' S* expr prio?
 //  ;
 declaration
-    : property COLON expr prio?
-    -> ^(DECLARATION property expr prio?)
+    : IMPORTANT_COMMENTS* property COLON expr prio? 
+    -> ^(DECLARATION IMPORTANT_COMMENTS* property expr prio? )
     ;
 
 stringoruri
@@ -488,33 +496,33 @@ prio
 // expr
 //  : term [ operator? term ]*
 //  ;
-expr
-    : term (termwithoperator)*
-    -> ^(EXPR term ^(TERMWITHOPERATORS termwithoperator*)?)
+expr	
+	: IMPORTANT_COMMENTS* term (termwithoperator)* 
+    -> ^(EXPR IMPORTANT_COMMENTS* term ^(TERMWITHOPERATORS termwithoperator*)?)
     ;
 
 termwithoperator
-    : operator? term
-    -> ^(TERMWITHOPERATOR ^(OPERATOR operator)? term)
+	: operator? term
+    -> ^(TERMWITHOPERATOR ^(OPERATOR operator)? term)	
     ;
 
 term
-    : (unary_operator? (t = NUMBER | t = PERCENTAGE | t = LENGTH | t = RELATIVELENGTH | t = ANGLE | t = TIME | t = FREQ | t = RESOLUTION | t = SPEECH))
-    -> ^(TERM unary_operator? ^(NUMBERBASEDVALUE $t))
-    | URI
-    -> ^(TERM ^(URIBASEDVALUE URI))
-    | (exp = (MSIE_EXPRESSION { $exp = TrimMsieExpression($MSIE_EXPRESSION.text); }))
-    -> ^(TERM ^(STRINGBASEDVALUE $exp))
-    | IDENT
-    -> ^(TERM ^(IDENTBASEDVALUE IDENT))
-    | STRING
-    -> ^(TERM ^(STRINGBASEDVALUE STRING))
-    | hash
-    -> ^(TERM ^(HEXBASEDVALUE hash))
-    | REPLACEMENTTOKEN
+    : (unary_operator? (t = NUMBER | t = PERCENTAGE | t = LENGTH | t = RELATIVELENGTH | t = ANGLE | t = TIME | t = FREQ | t = RESOLUTION | t = SPEECH) ) IMPORTANT_COMMENTS*
+    -> ^(TERM unary_operator? ^(NUMBERBASEDVALUE $t) IMPORTANT_COMMENTS*)
+    | URI IMPORTANT_COMMENTS*
+    -> ^(TERM ^(URIBASEDVALUE URI) IMPORTANT_COMMENTS*)
+    | (exp = (MSIE_EXPRESSION { $exp = TrimMsieExpression($MSIE_EXPRESSION.text); }))IMPORTANT_COMMENTS*
+    -> ^(TERM ^(STRINGBASEDVALUE $exp) IMPORTANT_COMMENTS*)
+    | IDENT IMPORTANT_COMMENTS*
+    -> ^(TERM ^(IDENTBASEDVALUE IDENT) IMPORTANT_COMMENTS*)
+    | STRING IMPORTANT_COMMENTS*
+    -> ^(TERM ^(STRINGBASEDVALUE STRING) IMPORTANT_COMMENTS*)
+    | hash IMPORTANT_COMMENTS*
+    -> ^(TERM ^(HEXBASEDVALUE hash) IMPORTANT_COMMENTS*)
+	| REPLACEMENTTOKEN
     -> ^(TERM ^(REPLACEMENTTOKENBASEDVALUE REPLACEMENTTOKEN))
-    | function
-    -> ^(TERM function)
+    | function IMPORTANT_COMMENTS*
+    -> ^(TERM function IMPORTANT_COMMENTS*)
     ;
 
 hash

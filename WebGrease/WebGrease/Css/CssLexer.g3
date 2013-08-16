@@ -1,4 +1,5 @@
-// --------------------------------------------------------------------------------------------------------------------
+
+﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="CssLexer.g3" company="Microsoft">
 //   Copyright Microsoft Corporation, all rights reserved
 // </copyright>
@@ -240,7 +241,7 @@ fragment UNICODE_ESCAPE_HACK
 // 2. The unicode range is desired for @font-face implementation.
 IDENT
     : (MINUS)? NMSTART (NMCHAR)*
-	|UNICODE_RANGE
+    |UNICODE_RANGE
     ;
 
 NUMBER
@@ -305,9 +306,19 @@ WS
     : WS_FRAGMENT+ { $channel = Hidden; }
     ;
 
+fragment EMPTY_COMMENT 
+	: '/**/'
+	;
+
 COMMENTS
-    : '/*' .* '*/' { $channel = Hidden; }
+	options {greedy=false;}
+    : EMPTY_COMMENT { $channel = Hidden; }
+	| '/*' ~('!') (.)*  '*/' { $channel = Hidden; }
     ;
+
+IMPORTANT_COMMENTS
+	: '/*!' (.)*  '*/'
+	;
 
 REPLACEMENTTOKEN
     : ('.'|'#')?'%'(LETTER|DIGITS|'-'|'.')+'%'

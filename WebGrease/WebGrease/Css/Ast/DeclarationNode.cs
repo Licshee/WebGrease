@@ -10,6 +10,8 @@
 
 namespace WebGrease.Css.Ast
 {
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Diagnostics.Contracts;
     using Visitor;
 
@@ -21,7 +23,7 @@ namespace WebGrease.Css.Ast
         /// <param name="property">Delcaration Property</param>
         /// <param name="exprNode">Expression objecy</param>
         /// <param name="prio">Priority string</param>
-        public DeclarationNode(string property, ExprNode exprNode, string prio)
+        public DeclarationNode(string property, ExprNode exprNode, string prio, ReadOnlyCollection<ImportantCommentNode> importantComments)
         {
             Contract.Requires(!string.IsNullOrWhiteSpace(property));
             Contract.Requires(exprNode != null);
@@ -30,7 +32,15 @@ namespace WebGrease.Css.Ast
             this.Property = property;
             this.ExprNode = exprNode;
             this.Prio = prio ?? string.Empty;
+            this.ImportantComments = importantComments ?? new List<ImportantCommentNode>().AsReadOnly();
+
         }
+
+        /// <summary>
+        /// Gets the list of Important Comment Nodes
+        /// This comments is in the beggining of the declaration
+        /// </summary>
+        public ReadOnlyCollection<ImportantCommentNode> ImportantComments { get; private set; }
 
         /// <summary>
         /// Gets the Property value
@@ -48,6 +58,18 @@ namespace WebGrease.Css.Ast
         /// <summary>Gets the Prio.</summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Prio")]
         public string Prio { get; private set; }
+
+        /// <summary>
+        /// Determine if the declaration is equal to another declaration
+        /// </summary>
+        /// <param name="declarationNode"> another declaration node</param>
+        /// <returns> Equals or not </returns>
+        public bool Equals(DeclarationNode declarationNode)
+        {
+            return declarationNode.Property.Equals(this.Property)
+                && declarationNode.ExprNode.Equals(this.ExprNode)
+                && declarationNode.Prio.Equals(this.Prio);
+        }
 
         /// <summary>Defines an accept operation</summary>
         /// <param name="nodeVisitor">The visitor to invoke</param>

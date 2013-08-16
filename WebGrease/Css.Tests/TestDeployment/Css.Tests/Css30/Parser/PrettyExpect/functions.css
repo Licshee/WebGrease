@@ -3,11 +3,11 @@ section
   float:left;
   margin:1em;
   border:solid 1px;
-  width:calc(100%/3 -2*1em -2*1px)
+  width:calc(100%/3 - 2*1em - 2*1px)
 }
 p
 {
-  margin:calc(1em -2px) calc(1em -1px)
+  margin:calc(1em - 2px) calc(1em - 1px)
 }
 p
 {
@@ -19,7 +19,7 @@ blockquote
 }
 .box
 {
-  width:min(10% +20px,300px)
+  width:min(10% + 20px,300px)
 }
 .ui-helper-zfix
 {
