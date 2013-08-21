@@ -10,6 +10,7 @@
 namespace WebGrease.Activities
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
@@ -33,7 +34,7 @@ namespace WebGrease.Activities
         /// <summary>
         /// Renamed Files Log.
         /// </summary>
-        private readonly Dictionary<string, List<string>> renamedFilesLog = new Dictionary<string, List<string>>();
+        private readonly ConcurrentDictionary<string, string> renamedFilesLog = new ConcurrentDictionary<string, string>();
 
         /// <summary>Initializes a new instance of the <see cref="FileHasherActivity"/> class.</summary>
         /// <param name="context">The web grease context</param>
@@ -372,43 +373,31 @@ namespace WebGrease.Activities
                 fileBeforeHashing = fileBeforeHashing.MakeRelativeToDirectory(this.BasePrefixToRemoveFromInputPathInLog);
             }
 
-            Safe.Lock(this.renamedFilesLog, () =>
+            // if it already exists, we need to ignore it and delete it from disk if it exists.
+            if (this.renamedFilesLog.ContainsKey(fileBeforeHashing) && !this.renamedFilesLog[fileBeforeHashing].Equals(fileAfterHashing))
             {
-                if (!this.renamedFilesLog.ContainsKey(fileAfterHashing))
+                if (skipIfExists)
                 {
-                    // add a new key
-                    this.renamedFilesLog.Add(fileAfterHashing, new List<string>());
-                }
-
-                // if it already exists, we need to ignore it and delete it from disk if it exists.
-                var existingRenames = this.renamedFilesLog.Where(rfl => rfl.Value.Contains(fileBeforeHashing) && !rfl.Key.Equals(fileAfterHashing)).ToArray();
-                if (existingRenames.Any())
-                {
-                    if (skipIfExists)
+                    if (File.Exists(fileAfterHashing))
                     {
-                        if (File.Exists(fileAfterHashing))
+                        File.Delete(fileAfterHashing);
+                        var directoryName = Path.GetDirectoryName(fileAfterHashing);
+                        if (!Directory.EnumerateFiles(directoryName).Any())
                         {
-                            File.Delete(fileAfterHashing);
-                            var directoryName = Path.GetDirectoryName(fileAfterHashing);
-                            if (!Directory.EnumerateFiles(directoryName).Any())
-                            {
-                                Directory.Delete(directoryName);
-                            }
+                            Directory.Delete(directoryName);
                         }
-
-                        return;
                     }
 
-                    throw new BuildWorkflowException(
-                        "The renamed filename already has a rename to a different file: \r\nBeforehashing:{0} \r\nNewAfterHashing:{1} ExistingAfterhashing:{2}"
-                            .InvariantFormat(fileBeforeHashing, fileAfterHashing, string.Join(",", existingRenames.Select(e => e.Key))));
+                    return;
                 }
 
-                if (!this.renamedFilesLog[fileAfterHashing].Contains(fileBeforeHashing))
-                {
-                    this.renamedFilesLog[fileAfterHashing].Add(fileBeforeHashing);
-                }
-            });
+                throw new BuildWorkflowException(
+                    "The renamed filename already has a rename to a different file: \r\nBeforehashing:{0} \r\nNewAfterHashing:{1} ExistingAfterhashing:{2}"
+                        .InvariantFormat(fileBeforeHashing, fileAfterHashing, string.Join(",", this.renamedFilesLog.Where(rfl => rfl.Key.Equals(fileBeforeHashing)).Select(e => e.Key))));
+            }
+
+            // add the entry
+            this.renamedFilesLog[fileBeforeHashing] = fileAfterHashing;
         }
 
         /// <summary>The make output absolute.</summary>
@@ -479,30 +468,34 @@ namespace WebGrease.Activities
                 }
                 else
                 {
-                    foreach (var key in this.renamedFilesLog.Keys.OrderBy(f => f))
+                    var groupedRenamedFiles = this.renamedFilesLog
+                        .OrderBy(rfl => rfl.Value)
+                        .GroupBy(rfl => rfl.Value, rfl => rfl.Key, (key, g) => new {FileAfterHashing = key, FilesBeforeHashing = g.ToList()});
+                    foreach (var group in groupedRenamedFiles)
                     {
-                        var inputfiles = this.renamedFilesLog[key];
-                        if (inputfiles.Any())
+                        if (!group.FilesBeforeHashing.Any())
                         {
-                            writer.WriteStartElement("File");
-                            writer.WriteStartElement("Output");
-                            var outputPath = GetUrlPath(key);
+                            continue;
+                        }
 
-                            // if desired, add a base to the path otherwise add the default "/"
-                            outputPath = (this.BasePrefixToAddToOutputPath ?? Path.AltDirectorySeparatorChar.ToString(CultureInfo.InvariantCulture))
-                                         + outputPath.TrimStart(Path.AltDirectorySeparatorChar);
+                        writer.WriteStartElement("File");
+                        writer.WriteStartElement("Output");
+                        var outputPath = GetUrlPath(group.FileAfterHashing);
 
-                            writer.WriteValue(outputPath);
-                            writer.WriteEndElement();
-                            foreach (var oldName in inputfiles.OrderBy(r => r))
-                            {
-                                writer.WriteStartElement("Input");
-                                writer.WriteValue(Path.AltDirectorySeparatorChar + GetUrlPath(oldName).TrimStart(Path.AltDirectorySeparatorChar));
-                                writer.WriteEndElement();
-                            }
+                        // if desired, add a base to the path otherwise add the default "/"
+                        outputPath = (this.BasePrefixToAddToOutputPath ?? Path.AltDirectorySeparatorChar.ToString(CultureInfo.InvariantCulture))
+                                     + outputPath.TrimStart(Path.AltDirectorySeparatorChar);
 
+                        writer.WriteValue(outputPath);
+                        writer.WriteEndElement();
+                        foreach (var oldName in group.FilesBeforeHashing.OrderBy(r => r))
+                        {
+                            writer.WriteStartElement("Input");
+                            writer.WriteValue(Path.AltDirectorySeparatorChar + GetUrlPath(oldName).TrimStart(Path.AltDirectorySeparatorChar));
                             writer.WriteEndElement();
                         }
+
+                        writer.WriteEndElement();
                     }
                 }
 
@@ -576,7 +569,7 @@ namespace WebGrease.Activities
                             var inputs = fileElement.Elements("Input").Select(e => (string)e);
                             foreach (var input in inputs)
                             {
-                                this.AppendToWorkLog(input, absoluteOutputPath, true);
+                               this.AppendToWorkLog(input, absoluteOutputPath, true);
                             }
                         }
                     }

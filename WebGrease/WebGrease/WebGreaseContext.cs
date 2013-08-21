@@ -7,6 +7,7 @@
 namespace WebGrease
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Drawing;
@@ -18,7 +19,6 @@ namespace WebGrease
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-
     using WebGrease.Activities;
     using WebGrease.Configuration;
     using WebGrease.Extensions;
@@ -39,7 +39,7 @@ namespace WebGrease
         #region Static Fields
 
         /// <summary>The cached file hashes</summary>
-        private static readonly IDictionary<string, Tuple<DateTime, long, string>> CachedFileHashes = new Dictionary<string, Tuple<DateTime, long, string>>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, Tuple<DateTime, long, string>> CachedFileHashes = new ConcurrentDictionary<string, Tuple<DateTime, long, string>>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>The md5 hasher</summary>
         private static readonly ThreadLocal<MD5CryptoServiceProvider> Hasher = new ThreadLocal<MD5CryptoServiceProvider>(() => new MD5CryptoServiceProvider());
@@ -52,7 +52,7 @@ namespace WebGrease
         #region Fields
 
         /// <summary>The session cached file hashes.</summary>
-        private readonly IDictionary<string, string> sessionCachedFileHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, string> sessionCachedFileHashes = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>Per session in memory cache of available files.</summary>
         private readonly IDictionary<string, IDictionary<string, string>> availableFileCollections = new Dictionary<string, IDictionary<string, string>>();
@@ -293,39 +293,34 @@ namespace WebGrease
         {
             string hash = null;
             var fi = new FileInfo(filePath);
-            Safe.Lock(
-                CachedFileHashes,
-                () =>
-                {
-                    if (!fi.Exists)
-                    {
-                        throw new FileNotFoundException("Could not find the file to create a hash for", filePath);
-                    }
 
-                    var uniqueId = fi.FullName;
+            if (!fi.Exists)
+            {
+                throw new FileNotFoundException("Could not find the file to create a hash for", filePath);
+            }
 
-                    if (this.sessionCachedFileHashes.TryGetValue(uniqueId, out hash))
-                    {
-                        // Found in current session cache, just return.
-                        return;
-                    }
+            var uniqueId = fi.FullName;
 
-                    Tuple<DateTime, long, string> cachedFileHash;
-                    CachedFileHashes.TryGetValue(uniqueId, out cachedFileHash);
+            if (this.sessionCachedFileHashes.TryGetValue(uniqueId, out hash))
+            {
+                // Found in current session cache, just return.
+                return hash;
+            }
 
-                    if (cachedFileHash != null && cachedFileHash.Item1 == fi.LastWriteTimeUtc && cachedFileHash.Item2 == fi.Length)
-                    {
-                        // found in static cache, between sessions, and is up to date return.
-                        hash = cachedFileHash.Item3;
-                        return;
-                    }
+            Tuple<DateTime, long, string> cachedFileHash;
+            CachedFileHashes.TryGetValue(uniqueId, out cachedFileHash);
 
-                    // either new, or has changed, recompute, and add to cached file hash
-                    hash = ComputeFileHash(fi.FullName);
 
-                    CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, hash);
-                    this.sessionCachedFileHashes[uniqueId] = hash;
-                });
+            if (cachedFileHash != null && cachedFileHash.Item1 == fi.LastWriteTimeUtc && cachedFileHash.Item2 == fi.Length)
+            {
+                // found in static cache, between sessions, and is up to date return.
+                return cachedFileHash.Item3;
+            }
+
+            // either new, or has changed, recompute, and add to cached file hash
+            hash = ComputeFileHash(fi.FullName);
+            CachedFileHashes[uniqueId] = new Tuple<DateTime, long, string>(fi.LastWriteTimeUtc, fi.Length, hash);
+            this.sessionCachedFileHashes[uniqueId] = hash;
 
             return hash;
         }
@@ -448,6 +443,7 @@ namespace WebGrease
                         var measureResult = item.Item1.Measure.GetResults();
                         Safe.Lock(
                             serialLock,
+                            Safe.MaxLockTimeout,
                             () =>
                             {
                                 this.threadedMeasureResults.AddRange(item.Item1.ThreadedMeasureResults);

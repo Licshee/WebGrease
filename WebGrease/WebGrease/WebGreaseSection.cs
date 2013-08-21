@@ -6,15 +6,14 @@
 namespace WebGrease
 {
     using System;
-    using System.Collections.Generic;
-
+    using System.Collections.Concurrent;
     using WebGrease.Configuration;
 
     /// <summary>The section.</summary>
     public class WebGreaseSection : IWebGreaseSection, ICachableWebGreaseSection
     {
         /// <summary>The thread locks.</summary>
-        private static readonly Dictionary<string, object> SectionLocks = new Dictionary<string, object>();
+        private static readonly ConcurrentDictionary<string, object> SectionLocks = new ConcurrentDictionary<string, object>();
 
         /// <summary>The is group.</summary>
         private readonly bool isGroup;
@@ -167,18 +166,8 @@ namespace WebGrease
         public bool Execute(Func<ICacheSection, bool> cachableSectionAction)
         {
             var id = WebGreaseContext.ToStringId(this.idParts);
-            object sectionLock = null;
-            WebGreaseSectionKey webGreaseSectionKey = null;
-            Safe.Lock(
-                SectionLocks, 
-                () => 
-                {
-                    webGreaseSectionKey = new WebGreaseSectionKey(this.context, id, this.cacheVarByContentItem, this.cacheVarBySetting, this.cacheVarByFileSet);
-                    if (!SectionLocks.TryGetValue(webGreaseSectionKey.Value, out sectionLock))
-                    {
-                        SectionLocks.Add(webGreaseSectionKey.Value, sectionLock = new object());
-                    }
-                });
+            var webGreaseSectionKey = new WebGreaseSectionKey(this.context, id, this.cacheVarByContentItem, this.cacheVarBySetting, this.cacheVarByFileSet);
+            var sectionLock = SectionLocks.GetOrAdd(webGreaseSectionKey.Value, new object());
 
             return Safe.Lock(
                 sectionLock, 

@@ -11,6 +11,8 @@
 namespace WebGrease.Tests
 {
     using System.IO;
+    using System.Linq;
+    using System.Xml.Linq;
     using Activities;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WebGrease.Tests;
@@ -99,6 +101,28 @@ namespace WebGrease.Tests
             Assert.IsFalse(File.Exists(Path.Combine(destinationDirectory, "C1", "ba4027675b202b7bf6f15085cb3344e3.gif")));
             Assert.IsTrue(File.Exists(Path.Combine(destinationDirectory, "C1", "163af4596ea7d10cadda5233fe6f1282.png")));
             Assert.IsTrue(File.Exists(fileHasherActivity.LogFileName));
+        }
+
+        /// <summary>A test for file hasher to append to existing log.</summary>
+        [TestMethod]
+        [TestCategory(TestCategories.FileHasherActivity)]
+        public void FileHasherActivityWithExistingLogTest()
+        {
+            var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\ExistingLog\Input");
+            var fileHasherActivity = new FileHasherActivity(new WebGreaseContext(new WebGreaseConfiguration()));
+            fileHasherActivity.SourceDirectories.Add(sourceDirectory);
+            var destinationDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\FileHasherActivityTest\ExistingLog\Output");
+            fileHasherActivity.DestinationDirectory = destinationDirectory;
+            fileHasherActivity.CreateExtraDirectoryLevelFromHashes = true;
+            fileHasherActivity.ShouldPreserveSourceDirectoryStructure = false;
+            fileHasherActivity.ConfigType = string.Empty;
+            fileHasherActivity.BasePrefixToRemoveFromOutputPathInLog = destinationDirectory;
+            fileHasherActivity.LogFileName = Path.Combine(sourceDirectory, @"..\statics\css_log.xml");
+            fileHasherActivity.Execute();
+
+            Assert.IsTrue(File.Exists(fileHasherActivity.LogFileName));
+            var xdoc = XDocument.Load(fileHasherActivity.LogFileName);
+            Assert.AreEqual(2, xdoc.Descendants("File").Count());
         }
     }
 }

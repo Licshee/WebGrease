@@ -146,6 +146,9 @@
     <Content Include="TestDeployment\WebGrease.Tests\CacheMultiThreadedMinifyCssActivityTest\image8.png" />
     <Content Include="TestDeployment\WebGrease.Tests\CacheMultiThreadedMinifyCssActivityTest\image9.png" />
     <Content Include="TestDeployment\WebGrease.Tests\CloningTests\landingPage.tmx.pc.ms.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\FileHasherActivityTest\ExistingLog\Input\C2\file.gif" />
+    <Content Include="TestDeployment\WebGrease.Tests\FileHasherActivityTest\ExistingLog\Output\00\00a04049a53f373eb5cd8f3e10b23e.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\FileHasherActivityTest\ExistingLog\statics\css_log.xml" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\include.js" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder2\include4.js" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder2\include5.other.css" />
