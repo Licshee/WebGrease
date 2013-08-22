@@ -265,5 +265,126 @@ namespace WebGrease.Tests
             Assert.IsTrue(!text.Contains("*/"));
             Assert.IsTrue(!text.Contains(";;"));
         }
+
+        /// <summary>
+        /// Preserve important Comment inside of ruleset
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        public void CSSImportantCommentTest()
+        {
+            var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case8\comment.css");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case8\comment.css");
+            minifyCssActivity.ShouldValidateForLowerCase = false;
+            minifyCssActivity.ShouldAssembleBackgroundImages = false;
+            minifyCssActivity.Execute();
+
+            // Assertions
+            var outputFilePath = minifyCssActivity.DestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            var text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(text));
+            Assert.IsTrue(text.Contains("/*! this is comment inside of ruleset*/"));
+            Assert.IsTrue(!text.Contains("/* regular comment */"));
+        }
+
+        /// <summary>
+        /// Preserve Comment outside of ruleset
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        public void CSSImportantOutsideCommentTest()
+        {
+            var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case8\commentOutside.css");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case8\commentOutside.css");
+            minifyCssActivity.ShouldValidateForLowerCase = false;
+            minifyCssActivity.ShouldAssembleBackgroundImages = false;
+            minifyCssActivity.Execute();
+
+            // Assertions
+            var outputFilePath = minifyCssActivity.DestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            var text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(text));
+            Assert.IsTrue(text.Contains("/*! this is comment outside of ruleset*/"));
+            Assert.IsTrue(!text.Contains("/* regular comment */"));
+        }
+
+        /// <summary>
+        /// Preserve comment before expression
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        public void CSSImportantExpressionCommentTest()
+        {
+            var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case8\commentExpression.css");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case8\commentExpression.css");
+            minifyCssActivity.ShouldValidateForLowerCase = false;
+            minifyCssActivity.ShouldAssembleBackgroundImages = false;
+            minifyCssActivity.Execute();
+
+            // Assertions
+            var outputFilePath = minifyCssActivity.DestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            var text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(text));
+            Assert.IsTrue(text.Contains("/*!expression*/"));
+            Assert.IsTrue(!text.Contains("/* regular comment */"));
+        }
+
+        /// <summary>
+        /// Preserve comment after term
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        public void CSSImportantTermCommentTest()
+        {
+            var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case8\commentTerm.css");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case8\commentTerm.css");
+            minifyCssActivity.ShouldValidateForLowerCase = false;
+            minifyCssActivity.ShouldAssembleBackgroundImages = false;
+            minifyCssActivity.Execute();
+
+            // Assertions
+            var outputFilePath = minifyCssActivity.DestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            var text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(text));
+            Assert.IsTrue(text.Contains("/*! term*/"));
+            Assert.IsTrue(!text.Contains("/* regular comment */"));
+        }
+
+        /// <summary>
+        /// Allow Binary operators inside functions such as calc.
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        public void CSSBinaryOperatorTest()
+        {
+            var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration()));
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case9\functionsWithBinaryOperators.css");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case9\functionsWithBinaryOperators.css");
+            minifyCssActivity.ShouldValidateForLowerCase = false;
+            minifyCssActivity.ShouldAssembleBackgroundImages = false;
+            minifyCssActivity.Execute();
+
+            // Assertions
+            var outputFilePath = minifyCssActivity.DestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            var text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(!string.IsNullOrWhiteSpace(text));
+            Assert.IsTrue(text.Contains("calc(100%/3 - 2*1em - 2*1px)"));
+            Assert.IsTrue(text.Contains("calc(1em - 2px) calc(1em - 1px)"));
+            Assert.IsTrue(text.Contains("min(10% + 20px,300px"));
+        }
     }
 }

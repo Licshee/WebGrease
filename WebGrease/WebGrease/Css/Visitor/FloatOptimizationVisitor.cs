@@ -60,13 +60,13 @@ namespace WebGrease.Css.Visitor
                         if (string.IsNullOrEmpty(units) || units == "%" || LengthUnits.IsMatch(units))
                         {
                             // either no units, or we can drop the units altogether (length or percentage) and just return the zero by itself
-                            return new TermNode(termNode.UnaryOperator, "0", termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+                            return new TermNode(termNode.UnaryOperator, "0", termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode, termNode.ImportantComments);
                         }
                         else
                         {
                             // but we can't drop the units for Angles, Times, Frequencies, or Resolutions,
                             // and we shouldn't drop them for any unknown units.
-                            return new TermNode(termNode.UnaryOperator, string.Concat("0", units), termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+                            return new TermNode(termNode.UnaryOperator, string.Concat("0", units), termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode, termNode.ImportantComments);
                         }
                     }
 
@@ -77,7 +77,7 @@ namespace WebGrease.Css.Visitor
                         rightNumber = string.Empty;
                     }
 
-                    return new TermNode(termNode.UnaryOperator, string.Concat(leftNumber, rightNumber, units), termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode);
+                    return new TermNode(termNode.UnaryOperator, string.Concat(leftNumber, rightNumber, units), termNode.StringBasedValue, termNode.Hexcolor, termNode.FunctionNode, termNode.ImportantComments);
                 }
             }
             else if (funcNode != null)
@@ -87,7 +87,7 @@ namespace WebGrease.Css.Visitor
                 funcNode = (FunctionNode)funcNode.Accept(this);
             }
 
-            return new TermNode(termNode.UnaryOperator, numberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, funcNode);
+            return new TermNode(termNode.UnaryOperator, numberBasedValue, termNode.StringBasedValue, termNode.Hexcolor, funcNode, termNode.ImportantComments);
         }
     }
 }

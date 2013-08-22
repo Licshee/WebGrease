@@ -96,15 +96,15 @@ namespace WebGrease.Css.Visitor
             newValue = newValue.Trim();
             if (IsNumberBasedValue(newValue))
             {
-                return new TermNode(termNode.UnaryOperator, newValue, null, null, null);
+                return new TermNode(termNode.UnaryOperator, newValue, null, null, null, null);
             }
 
             if (IsHexColor(newValue))
             {
-                return new TermNode(termNode.UnaryOperator, null, null, newValue, null);
+                return new TermNode(termNode.UnaryOperator, null, null, newValue, null, null);
             }
 
-            return new TermNode(termNode.UnaryOperator, null, newValue, null, null);
+            return new TermNode(termNode.UnaryOperator, null, newValue, null, null, null);
         }
 
         private static bool IsNumberBasedValue(string newValue)
@@ -138,7 +138,8 @@ namespace WebGrease.Css.Visitor
                 return new DeclarationNode(
                     ReplaceTokens(declarationNode.Property, this.resources),
                     declarationNode.ExprNode.Accept(this) as ExprNode,
-                    declarationNode.Prio);
+                    declarationNode.Prio,
+                    declarationNode.ImportantComments);
             }
 
             return base.VisitDeclarationNode(declarationNode);

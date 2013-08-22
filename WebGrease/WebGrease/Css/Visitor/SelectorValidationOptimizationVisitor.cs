@@ -138,7 +138,8 @@ namespace WebGrease.Css.Visitor
                         return new RulesetNode(
                             new SelectorsGroupNode(
                                 new ReadOnlyCollection<SelectorNode>(selectorNodes)), 
-                            rulesetNode.Declarations);
+                            rulesetNode.Declarations,
+                            rulesetNode.ImportantComments);
                     }
                 }
 

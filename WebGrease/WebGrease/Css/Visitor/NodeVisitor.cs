@@ -267,5 +267,15 @@ namespace WebGrease.Css.Visitor
         {
             return documentQueryNode;
         }
+
+        /// <summary>
+        /// The <see cref=" ImportantCommentNode"/> visit implementation
+        /// </summary>
+        /// <param name="commentNode"> The ImportantCommentNode to visit</param>
+        /// <returns> The modified AST node if modified otherwise the original node </returns>
+        public virtual AstNode VisitImportantCommentNode(ImportantCommentNode commentNode)
+        {
+            return commentNode;
+        }
     }
 }
