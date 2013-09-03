@@ -94,7 +94,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
                 return false;
             }
 
-            return MultipleUrlsRegex.Matches(text).Count > 1;
+            return MultipleUrlsRegex.Matches(text).Count > 1 && text.IndexOf("background", StringComparison.OrdinalIgnoreCase) != -1;
         }
 
         /// <summary>Matches the url pattern and returns the value of url term</summary>

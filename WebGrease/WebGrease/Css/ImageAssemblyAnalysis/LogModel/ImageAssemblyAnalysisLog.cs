@@ -38,7 +38,7 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.LogModel
         private const string SpritingIgnoredMessage = "-wg-spriting: ignore.";
 
         /// <summary>The multiple urls message.</summary>
-        private const string MultipleUrlsMessage = "Multiple url's in a single background are bnot supported by webgrease at this time.";
+        private const string MultipleUrlsMessage = "Multiple url's in a single background are not supported by webgrease at this time.";
 
         /// <summary>The background repeat invalid message.</summary>
         private const string BackgroundRepeatInvalidMessage = "Background-repeat value was invalid (only no-repeat allows spriting)";

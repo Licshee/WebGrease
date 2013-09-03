@@ -155,6 +155,11 @@
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder\include3.js" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder\include2.js" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\test1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\FontFaceHashing.css" />
+    <None Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.ttf" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.svg" />
+    <None Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.woff" />
+    <None Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.eot" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\bar.jpg" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\bullet-media.gif" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\foo.jpg" />
@@ -162,6 +167,11 @@
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\lazy2.jpg" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\media.gif" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\SpriteTest.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case8\comment.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case8\commentExpression.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case8\commentOutside.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case8\commentTerm.css" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case9\functionsWithBinaryOperators.css" />
     <Content Include="TestDeployment\WebGrease.Tests\PerformanceTests\Test1\Test2.xml">
       <SubType>Designer</SubType>
     </Content>

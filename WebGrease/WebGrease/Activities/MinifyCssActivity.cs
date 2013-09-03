@@ -34,7 +34,7 @@ namespace WebGrease.Activities
     internal sealed class MinifyCssActivity
     {
         /// <summary>The url hash regex pattern.</summary>
-        private static readonly Regex UrlHashRegexPattern = new Regex(@"url\((?<quote>[""']?)(?:hash\((?<url>[^)]*))\)\k<quote>\)", RegexOptions.Compiled);
+        private static readonly Regex UrlHashRegexPattern = new Regex(@"url\((?<quote>[""']?)(?:hash\((?<url>[^)]*))\)(?<extra>.*?)\k<quote>\)", RegexOptions.Compiled);
 
         /// <summary>The context.</summary>
         private readonly IWebGreaseContext context;
@@ -285,8 +285,9 @@ namespace WebGrease.Activities
 
         /// <summary>The execute.</summary>
         /// <param name="contentItem">The content Item.</param>
+        /// <param name="imageHasher">The image hasher</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Needs refactoring into multiple classes")]
-        internal void Execute(ContentItem contentItem = null)
+        internal void Execute(ContentItem contentItem = null, FileHasherActivity imageHasher = null)
         {
             if (contentItem == null)
             {
@@ -311,7 +312,7 @@ namespace WebGrease.Activities
                 contentItem = ContentItem.FromFile(this.SourceFile, Path.IsPathRooted(this.SourceFile) ? this.SourceFile.MakeRelativeToDirectory(this.context.Configuration.SourceDirectory) : this.SourceFile);
             }
 
-            var minifyresult = this.Process(contentItem);
+            var minifyresult = this.Process(contentItem, imageHasher);
 
             var css = minifyresult.Css.FirstOrDefault();
             if (css != null)
@@ -356,6 +357,7 @@ namespace WebGrease.Activities
                     match =>
                     {
                         var urlToHash = match.Groups["url"].Value;
+                        var extraInfo = match.Groups["extra"].Value;
                         var normalizedHashUrl = urlToHash.NormalizeUrl();
 
                         var imageContentFile = sourceImages.TryGetValue(normalizedHashUrl);
@@ -389,7 +391,7 @@ namespace WebGrease.Activities
                             imageContentFile = hashedImages[normalizedHashUrl];
                         }
 
-                        return "url(" + imageContentFile + ")";
+                        return "url(" + imageContentFile + extraInfo + ")";
                     });
 
                 return Tuple.Create(cssContent, (IEnumerable<ContentItem>)hashedContentItems);

@@ -1,5 +1,4 @@
-
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="CssLexer.g3" company="Microsoft">
 //   Copyright Microsoft Corporation, all rights reserved
 // </copyright>
@@ -191,9 +190,9 @@ TILDE
 // url(hash(abc.gif))
 // url('hash(abc.gif)')
 URI
-    : 'url(\'hash('(.*)')\')' {$text = RemoveUrlEdgeWhitespaces(RemoveComments($text)); }
-    | 'url("hash('(.*)')")' {$text = RemoveUrlEdgeWhitespaces(RemoveComments($text)); }
-    | 'url(hash('(.*)'))' {$text = RemoveUrlEdgeWhitespaces(RemoveComments($text)); }
+    : 'url(\'hash('(.*)')'(.*)'\')' {$text = RemoveUrlEdgeWhitespaces(RemoveComments($text)); }
+    | 'url("hash('(.*)')'(.*)'")' {$text = RemoveUrlEdgeWhitespaces(RemoveComments($text)); }
+    | 'url(hash('(.*)')'(.*)')' {$text = RemoveUrlEdgeWhitespaces(RemoveComments($text)); }
     | 'url('(.*)(CIRCLE_END) {$text = RemoveUrlEdgeWhitespaces(RemoveComments($text)); }
     ;
 
@@ -241,7 +240,7 @@ fragment UNICODE_ESCAPE_HACK
 // 2. The unicode range is desired for @font-face implementation.
 IDENT
     : (MINUS)? NMSTART (NMCHAR)*
-    |UNICODE_RANGE
+	|UNICODE_RANGE
     ;
 
 NUMBER

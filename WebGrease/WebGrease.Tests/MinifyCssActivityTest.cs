@@ -386,5 +386,43 @@ namespace WebGrease.Tests
             Assert.IsTrue(text.Contains("calc(1em - 2px) calc(1em - 1px)"));
             Assert.IsTrue(text.Contains("min(10% + 20px,300px"));
         }
+
+        /// <summary>
+        /// to support multiple url hashing in @font-face css.
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        public void MultipleFontFaceUrlTest()
+        {
+
+            var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration { SourceDirectory = Path.Combine(sourceDirectory, @"Input\Case10") }));
+            minifyCssActivity.ImageDirectories = new List<string> { Path.Combine(sourceDirectory, @"Input\Case10\fonts") };
+            minifyCssActivity.ImageExtensions = new List<string> { "*.eot", "*.svg", "*.ttf", "*.woff" };
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case10\FontFaceHashing.css");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case10\FontFaceHashing.css");
+            minifyCssActivity.ShouldValidateForLowerCase = true;
+            minifyCssActivity.ShouldAssembleBackgroundImages = false;
+            minifyCssActivity.ShouldOptimize = false;
+            minifyCssActivity.ShouldMinify = true;
+
+            var fileHasherActivity = new FileHasherActivity(new WebGreaseContext(new WebGreaseConfiguration()));
+            //fileHasherActivity.SourceDirectories.Add(Path.Combine(sourceDirectory, "fonts"));
+            var destinationDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"Output\Case10\fonts");
+            fileHasherActivity.DestinationDirectory = destinationDirectory;
+            fileHasherActivity.CreateExtraDirectoryLevelFromHashes = true;
+            fileHasherActivity.ShouldPreserveSourceDirectoryStructure = false;
+            fileHasherActivity.ConfigType = string.Empty;
+            fileHasherActivity.BasePrefixToRemoveFromOutputPathInLog = destinationDirectory;
+            fileHasherActivity.LogFileName = Path.Combine(sourceDirectory, @"Output\Case10\css_log.xml");
+
+            minifyCssActivity.Execute(imageHasher: fileHasherActivity);
+
+            // Assertions
+            var outputFilePath = minifyCssActivity.DestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            var text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(text.Contains("src:url(/a5/a4d2443ffdef56f268ccf6110461fd.eot);src:local(\"Segoe UI\"),local(\"SegoeUI\"),url(/a5/a4d2443ffdef56f268ccf6110461fd.eot?#iefix)) format(\"embedded-opentype\"),url(/9a/cb3fd09aa363c0b39158074cc3e58e.woff) format(\"woff\"),url(/6a/6b0126c8ad83b0d9551db2128eccc8.ttf) format(\"truetype\"),url(/bb/dfaabbfaf1dfd3b0362a5454ab9234.svg#web) format(\"svg\");"));
+        }
     }
 }

@@ -36,7 +36,7 @@ p
 @font-face
 {
   font-family:MyFont;
-  src:url(http://mysite/fonts/MyFont.ttf);
+  src:url(http://mysite/fonts/MyFont.ttf),url('hash(/fonts/MyFont2.ttf)#extrahash');
   unicode-range:U+0-7F
 }
 @font-face
