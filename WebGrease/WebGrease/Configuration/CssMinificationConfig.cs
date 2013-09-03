@@ -71,7 +71,12 @@ namespace WebGrease.Configuration
                     case "RemoveSelectors":
                         this.RemoveSelectors = value.IsNullOrWhitespace() ? new string[0] : value.Split(';');
                         break;
-
+                    case "PreventOrderBasedConflict":
+                        this.ShouldPreventOrderBasedConflict = value.TryParseBool();
+                        break;
+                    case "MergeBasedOnCommonDeclarations":
+                        this.ShouldMergeBasedOnCommonDeclarations = value.TryParseBool();
+                        break;
                 }
             }
         }
@@ -100,6 +105,16 @@ namespace WebGrease.Configuration
         /// </summary>
         internal bool ShouldExcludeProperties { get; set; }
 
+        /// <summary>
+        /// Gets or sets the ShouldPreventOrderBasedConflic, default is false
+        /// </summary>
+        internal bool ShouldPreventOrderBasedConflict { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ShouldMergeBasedOnCommonDeclarations, default is false
+        /// </summary>
+        internal bool ShouldMergeBasedOnCommonDeclarations { get; set; }
+        
         /// <summary>
         /// Gets or sets a collection of selectors which are forbidden to be in the file.
         /// </summary>

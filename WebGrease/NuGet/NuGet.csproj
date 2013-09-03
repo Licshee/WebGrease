@@ -115,7 +115,7 @@
     <Message Text="Building Package" Importance="high" />
     <!-- Build Machine-->
     <PropertyGroup Condition="$(SemanticVersionText)==''">
-      <SemanticVersionText>1.5.1</SemanticVersionText>
+      <SemanticVersionText>1.6.0</SemanticVersionText>
     </PropertyGroup>
     <PropertyGroup Condition="$(VersionPreRelease)==''">
       <VersionTxt>$(SemanticVersionText)</VersionTxt>

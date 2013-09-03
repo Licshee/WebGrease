@@ -144,7 +144,7 @@ namespace WebGrease.Activities
         /// <summary>Gets or sets the merged resources.</summary>
         internal Dictionary<string, IDictionary<string, IDictionary<string, string>>> MergedResources { get; set; }
 
-        /// <summary>
+        /// <summary> 
         /// Gets or sets the ShouldPreventOrderBasedConflic
         /// </summary>
         internal bool ShouldPreventOrderBasedConflict { get; set; }

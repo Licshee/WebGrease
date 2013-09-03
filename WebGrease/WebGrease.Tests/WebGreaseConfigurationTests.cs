@@ -166,6 +166,8 @@ namespace WebGrease.Tests
             Assert.IsNotNull(minifyConfig);
             Assert.IsTrue(minifyConfig.Name == "Release");
             Assert.IsTrue(minifyConfig.ShouldMinify);
+            Assert.IsTrue(minifyConfig.ShouldPreventOrderBasedConflict);
+            Assert.IsFalse(minifyConfig.ShouldMergeBasedOnCommonDeclarations);
 
             var spriteConfiguration = cssSet1.ImageSpriting["RElease"];
             Assert.IsTrue(spriteConfiguration.ShouldAutoSprite);

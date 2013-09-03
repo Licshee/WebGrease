@@ -715,6 +715,8 @@ namespace WebGrease.Activities
                 ShouldOptimize = minificationConfig.ShouldMinify || minificationConfig.ShouldOptimize,
                 ShouldValidateForLowerCase = minificationConfig.ShouldValidateLowerCase,
                 ShouldExcludeProperties = minificationConfig.ShouldExcludeProperties,
+                ShouldMergeBasedOnCommonDeclarations =  minificationConfig.ShouldMergeBasedOnCommonDeclarations,
+                ShouldPreventOrderBasedConflict = minificationConfig.ShouldPreventOrderBasedConflict,
                 ImageExtensions = imageExtensions,
                 ImageDirectories = imageDirectories,
                 BannedSelectors = new HashSet<string>(minificationConfig.RemoveSelectors.ToArray()),
