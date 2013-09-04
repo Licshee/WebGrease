@@ -401,6 +401,7 @@ namespace WebGrease.Tests
             minifyCssActivity.ImageExtensions = new List<string> { "*.eot", "*.svg", "*.ttf", "*.woff" };
             minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case10\FontFaceHashing.css");
             minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case10\FontFaceHashing.css");
+            minifyCssActivity.NonMergeSelectors = new HashSet<string> { "@font-face" };
             minifyCssActivity.ShouldValidateForLowerCase = true;
             minifyCssActivity.ShouldAssembleBackgroundImages = false;
             minifyCssActivity.ShouldOptimize = false;
@@ -422,7 +423,8 @@ namespace WebGrease.Tests
             var outputFilePath = minifyCssActivity.DestinationFile;
             Assert.IsTrue(File.Exists(outputFilePath));
             var text = File.ReadAllText(outputFilePath);
-            Assert.IsTrue(text.Contains("src:url(/a5/a4d2443ffdef56f268ccf6110461fd.eot);src:local(\"Segoe UI\"),local(\"SegoeUI\"),url(/a5/a4d2443ffdef56f268ccf6110461fd.eot?#iefix)) format(\"embedded-opentype\"),url(/9a/cb3fd09aa363c0b39158074cc3e58e.woff) format(\"woff\"),url(/6a/6b0126c8ad83b0d9551db2128eccc8.ttf) format(\"truetype\"),url(/bb/dfaabbfaf1dfd3b0362a5454ab9234.svg#web) format(\"svg\");"));
+            var expectedText = File.ReadAllText(Path.Combine(sourceDirectory, @"Input\Case10\FontFaceHashing-hashed.css"));
+            Assert.IsTrue(text.Equals(expectedText, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

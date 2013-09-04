@@ -12,7 +12,6 @@ namespace WebGrease.Css.Visitor
     using System;
     using System.Collections.Generic;
     using System.Collections.Specialized;
-    using System.Collections.ObjectModel;
     using System.Linq;
     using Ast;
     using Extensions;
@@ -22,6 +21,11 @@ namespace WebGrease.Css.Visitor
     /// <summary>Provides the optimize selectors visitor for the ASTs</summary>
     internal class OptimizationVisitor : NodeVisitor
     {
+        /// <summary>
+        /// None merge ruleset selectors
+        /// </summary>
+        internal IEnumerable<string> NonMergeRuleSetSelectors { get; set; }
+
         /// <summary>Gets or sets a value indicating whether should merge media queries.</summary>
         internal bool ShouldMergeMediaQueries { get; set; }
 
@@ -61,10 +65,12 @@ namespace WebGrease.Css.Visitor
         /// <summary>The optimize ruleset node.</summary>
         /// <param name="currentRuleSet">The current rule set.</param>
         /// <param name="ruleSetMediaPageDictionary">The rule set media page dictionary.</param>
+        /// <param name="rulesetHashKeysDictionary">The hashkey dictionary</param>
+        /// <param name="shouldPreventOrderBasedConflict">should prevent order based conflict</param>
         private static void OptimizeRulesetNode(RulesetNode currentRuleSet,
             OrderedDictionary ruleSetMediaPageDictionary,
             OrderedDictionary rulesetHashKeysDictionary,
-            bool ShouldPreventOrderBasedConflict)
+            bool shouldPreventOrderBasedConflict)
         {
             // Ruleset node optimization.
             // Selectors concatenation is the hash key here
@@ -86,9 +92,9 @@ namespace WebGrease.Css.Visitor
             // declarations merged. Don't clobber the item in 
             // dictionary to preserve the order and keep the last
             // seen RuleSet
-            if (ShouldCollapseTheNewRuleset(hashKey, ruleSetMediaPageDictionary, currentRuleSet, ShouldPreventOrderBasedConflict))
+            if (ShouldCollapseTheNewRuleset(hashKey, ruleSetMediaPageDictionary, currentRuleSet, shouldPreventOrderBasedConflict))
             {
-                
+
                 // Merge the declarations
                 var newRuleSet = MergeDeclarations((RulesetNode)ruleSetMediaPageDictionary[hashKey], currentRuleSet);
 
@@ -211,22 +217,23 @@ namespace WebGrease.Css.Visitor
         /// <param name="hashKey"> hash key of last same ruleset occurs</param>
         /// <param name="ruleSetMediaPageDictionary"> Dictionary of hash keys and RulesetNodes</param>
         /// <param name="currentRuleSet"> RulesetNode currently tracking.</param>
+        /// <param name="shouldPreventOrderBasedConflict">should prevent conflict.</param>
         /// <returns> Whether we should collapse or not.</returns>
         private static bool ShouldCollapseTheNewRuleset(string hashKey,
             OrderedDictionary ruleSetMediaPageDictionary,
             RulesetNode currentRuleSet,
-            bool ShouldPreventOrderBasedConflict)
+            bool shouldPreventOrderBasedConflict)
         {
-            
+
             if (ruleSetMediaPageDictionary.Contains(hashKey))
             {
-                if (!ShouldPreventOrderBasedConflict)
+                if (!shouldPreventOrderBasedConflict)
                 {
                     return true;
                 }
 
                 // Dictionary for declarations
-                OrderedDictionary declarationNodeDictionary = new OrderedDictionary();
+                var declarationNodeDictionary = new OrderedDictionary();
                 var styleSheetRuleNodes = ruleSetMediaPageDictionary.Values.Cast<StyleSheetRuleNode>().ToList();
                 styleSheetRuleNodes.Reverse();
 
@@ -237,10 +244,10 @@ namespace WebGrease.Css.Visitor
                     if (currentRuleSet.GetType().IsAssignableFrom(previousStyleSheetRulesetNode.GetType()))
                     {
                         // Previous Ruleset Node
-                        var previousRulesetNode =previousStyleSheetRulesetNode as RulesetNode;
+                        var previousRulesetNode = previousStyleSheetRulesetNode as RulesetNode;
 
                         // If Ruleset node has same selectors set
-                        if(previousRulesetNode.PrintSelector().Equals(currentRuleSet.PrintSelector()))
+                        if (previousRulesetNode.PrintSelector().Equals(currentRuleSet.PrintSelector()))
                         {
                             return true;
                         }
@@ -256,7 +263,7 @@ namespace WebGrease.Css.Visitor
                         }
 
                         // Check if the last same RulesetNode has same declaration property
-                        var lastRuleSet=(RulesetNode) ruleSetMediaPageDictionary[hashKey];
+                        var lastRuleSet = (RulesetNode)ruleSetMediaPageDictionary[hashKey];
                         if (lastRuleSet.HasConflictingDeclaration(declarationNodeDictionary))
                         {
                             return false;
@@ -442,7 +449,7 @@ namespace WebGrease.Css.Visitor
             foreach (var styleSheetRuleNode in styleSheetRuleNodes)
             {
                 var rulesetNode = styleSheetRuleNode as RulesetNode;
-                if (rulesetNode != null)
+                if (rulesetNode != null && (this.NonMergeRuleSetSelectors == null || !this.NonMergeRuleSetSelectors.Any(r => r.Equals(rulesetNode.PrintSelector(), StringComparison.OrdinalIgnoreCase))))
                 {
                     // Optimize rulesets
                     OptimizeRulesetNode(rulesetNode, ruleSetMediaPageDictionary, ruleSetHashKeysDictionary, this.ShouldPreventOrderBasedConflict);

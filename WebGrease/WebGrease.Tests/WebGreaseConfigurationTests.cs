@@ -168,6 +168,8 @@ namespace WebGrease.Tests
             Assert.IsTrue(minifyConfig.ShouldMinify);
             Assert.IsTrue(minifyConfig.ShouldPreventOrderBasedConflict);
             Assert.IsFalse(minifyConfig.ShouldMergeBasedOnCommonDeclarations);
+            Assert.IsTrue(minifyConfig.NonMergeSelectors.Contains("@font-face"));
+            Assert.IsTrue(minifyConfig.NonMergeSelectors.Contains(".specialSelector"));
 
             var spriteConfiguration = cssSet1.ImageSpriting["RElease"];
             Assert.IsTrue(spriteConfiguration.ShouldAutoSprite);

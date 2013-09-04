@@ -116,6 +116,9 @@ namespace WebGrease.Activities
         /// <summary>Gets BannedSelectors.</summary>
         internal HashSet<string> BannedSelectors { get; set; }
 
+        /// <summary>Gets or sets the none merge selectors.</summary>
+        internal HashSet<string> NonMergeSelectors { get; set; }
+
         /// <summary>Gets or sets Image Assembly Scan Output.</summary>
         /// <remarks>Optional - Needed only when image spriting is needed.</remarks>
         internal string ImageAssembleScanDestinationFile { get; set; }
@@ -158,7 +161,7 @@ namespace WebGrease.Activities
         /// <param name="contentItem">The content item.</param>
         /// <param name="imageHasher">The image hasher.</param>
         /// <returns>The <see cref="MinifyCssResult"/>.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Extension methods count as classes part of complexity.")] 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Extension methods count as classes part of complexity.")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA2204:Literals should be spelled correctly", MessageId = "Sprited", Justification = "Debug ONLY, remove before checkin")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters", MessageId = "WebGrease.LogManager.Error(System.String)", Justification = "Debug ONLY, remove before checkin")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling", Justification = "Refactor in a later iteration")]
@@ -410,39 +413,39 @@ namespace WebGrease.Activities
 
             var dpiPivots = dpiValues.Select(
                 dpi =>
+                {
+                    var dpiResolutionName = EverythingActivity.DpiToResolutionName(dpi);
+                    IDictionary<string, string> dpiResources = null;
+                    if (allDpiResources != null)
                     {
-                        var dpiResolutionName = EverythingActivity.DpiToResolutionName(dpi);
-                        IDictionary<string, string> dpiResources = null;
-                        if (allDpiResources != null)
-                        {
-                            allDpiResources.TryGetValue(dpiResolutionName, out dpiResources);
-                        }
+                        allDpiResources.TryGetValue(dpiResolutionName, out dpiResources);
+                    }
 
-                        var dpiResourcePivotKey = new ResourcePivotKey(Strings.DpiResourcePivotKey, dpiResolutionName);
+                    var dpiResourcePivotKey = new ResourcePivotKey(Strings.DpiResourcePivotKey, dpiResolutionName);
 
-                        return new { dpi, dpiResolutionName, dpiResourcePivotKey, dpiResources };
-                    });
+                    return new { dpi, dpiResolutionName, dpiResourcePivotKey, dpiResources };
+                });
 
             // Make sure we do dpi each before pivot to make it optimal when parallel 
             var pivots = mergedResources.SelectMany(
                 mergedResourceValues =>
-                    {
-                        var mergedResource = mergedResourceValues.Value.Values.ToList();
-                        return dpiPivots.Select(
-                            dpiPivot =>
-                                {
-                                    var dpiSpecificMergedResources = mergedResource.ToList();
-                                    if (dpiPivot.dpiResources != null)
-                                    {
-                                        dpiSpecificMergedResources.Add(dpiPivot.dpiResources);
-                                    }
+                {
+                    var mergedResource = mergedResourceValues.Value.Values.ToList();
+                    return dpiPivots.Select(
+                        dpiPivot =>
+                        {
+                            var dpiSpecificMergedResources = mergedResource.ToList();
+                            if (dpiPivot.dpiResources != null)
+                            {
+                                dpiSpecificMergedResources.Add(dpiPivot.dpiResources);
+                            }
 
-                                    return new MinifyCssPivot(
-                                        dpiSpecificMergedResources,
-                                        contentResourcePivotKeys.Concat(mergedResourceValues.Key).Concat(new[] { dpiPivot.dpiResourcePivotKey }).ToArray(),
-                                        dpiPivot.dpi);
-                                });
-                    });
+                            return new MinifyCssPivot(
+                                dpiSpecificMergedResources,
+                                contentResourcePivotKeys.Concat(mergedResourceValues.Key).Concat(new[] { dpiPivot.dpiResourcePivotKey }).ToArray(),
+                                dpiPivot.dpi);
+                        });
+                });
 
             return pivots;
         }
@@ -530,9 +533,12 @@ namespace WebGrease.Activities
                 this.ShouldOptimize,
                 this.ShouldAssembleBackgroundImages,
                 this.ShouldMinify,
+                this.ShouldPreventOrderBasedConflict,
+                this.ShouldMergeBasedOnCommonDeclarations,
                 this.IgnoreImagesWithNonDefaultBackgroundSize,
                 this.HackSelectors,
                 this.BannedSelectors,
+                this.NonMergeSelectors,
                 this.ImageAssembleReferencesToIgnore,
                 this.OutputUnit,
                 this.OutputUnitFactor,
@@ -573,7 +579,7 @@ namespace WebGrease.Activities
                 threadContext.SectionedAction(SectionIdParts.MinifyCssActivity, SectionIdParts.Optimize).Execute(
                     () =>
                     {
-                        stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor() { ShouldMergeMediaQueries = this.ShouldMergeMediaQueries, ShouldPreventOrderBasedConflict=this.ShouldPreventOrderBasedConflict, ShouldMergeBasedOnCommonDeclarations=this.ShouldMergeBasedOnCommonDeclarations });
+                        stylesheetNode = stylesheetNode.Accept(new OptimizationVisitor { ShouldMergeMediaQueries = this.ShouldMergeMediaQueries, ShouldPreventOrderBasedConflict = this.ShouldPreventOrderBasedConflict, ShouldMergeBasedOnCommonDeclarations = this.ShouldMergeBasedOnCommonDeclarations, NonMergeRuleSetSelectors = this.NonMergeSelectors });
                         stylesheetNode = stylesheetNode.Accept(new ColorOptimizationVisitor());
                         stylesheetNode = stylesheetNode.Accept(new FloatOptimizationVisitor());
                     });

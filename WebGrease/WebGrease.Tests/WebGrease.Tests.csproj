@@ -155,6 +155,7 @@
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder\include3.js" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\IncludeFolder\include2.js" />
     <Content Include="TestDeployment\WebGrease.Tests\IncludeTest\Test1\test1.js" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\FontFaceHashing-hashed.css" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\FontFaceHashing.css" />
     <None Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.ttf" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.svg" />

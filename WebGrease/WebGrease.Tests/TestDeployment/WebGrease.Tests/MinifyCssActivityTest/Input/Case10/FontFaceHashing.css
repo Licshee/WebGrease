@@ -10,3 +10,15 @@
   font-style: normal;
   font-weight: normal; 
 }
+@font-face 
+{
+  font-family: "Segoe UI";
+  src: url("hash(/fonts/font.eot)");
+    src: local("Segoe UI"), local("SegoeUI"),
+         url("hash(/fonts/font.eot)?#iefix)") format("embedded-opentype"),
+         url("hash(/fonts/font.woff)") format("woff"),
+         url("hash(/fonts/font.ttf)") format("truetype"),
+         url("hash(/fonts/font.svg)#web") format("svg");
+  font-style: normal;
+  font-weight: normal; 
+}

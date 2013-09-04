@@ -721,6 +721,7 @@ namespace WebGrease.Activities
                 ImageDirectories = imageDirectories,
                 BannedSelectors = new HashSet<string>(minificationConfig.RemoveSelectors.ToArray()),
                 HackSelectors = new HashSet<string>(minificationConfig.ForbiddenSelectors.ToArray()),
+                NonMergeSelectors = new HashSet<string>(minificationConfig.NonMergeSelectors.ToArray()),
                 ImageAssembleReferencesToIgnore = new HashSet<string>(spritingConfig.ImagesToIgnore.ToArray()),
                 ImageAssemblyPadding = spritingConfig.ImagePadding,
                 ErrorOnInvalidSprite = spritingConfig.ErrorOnInvalidSprite,

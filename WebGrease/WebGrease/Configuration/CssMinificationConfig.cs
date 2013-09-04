@@ -6,6 +6,7 @@
 
 namespace WebGrease.Configuration
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics.Contracts;
     using System.Xml.Linq;
@@ -24,6 +25,7 @@ namespace WebGrease.Configuration
             this.ShouldMinify = true;
             this.ForbiddenSelectors = new string[0];
             this.RemoveSelectors = new string[0];
+            this.NonMergeSelectors = new string[0];
         }
 
         /// <summary>
@@ -66,10 +68,13 @@ namespace WebGrease.Configuration
                         this.ShouldExcludeProperties = value.TryParseBool();
                         break;
                     case "ProhibitedSelectors":
-                        this.ForbiddenSelectors = value.IsNullOrWhitespace() ? new string[0] : value.Split(';');
+                        this.ForbiddenSelectors = value.IsNullOrWhitespace() ? new string[0] : value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                         break;
                     case "RemoveSelectors":
-                        this.RemoveSelectors = value.IsNullOrWhitespace() ? new string[0] : value.Split(';');
+                        this.RemoveSelectors = value.IsNullOrWhitespace() ? new string[0] : value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                        break;
+                    case "NonMergeSelectors":
+                        this.NonMergeSelectors = value.IsNullOrWhitespace() ? new string[0] : value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
                         break;
                     case "PreventOrderBasedConflict":
                         this.ShouldPreventOrderBasedConflict = value.TryParseBool();
@@ -114,7 +119,7 @@ namespace WebGrease.Configuration
         /// Gets or sets the ShouldMergeBasedOnCommonDeclarations, default is false
         /// </summary>
         internal bool ShouldMergeBasedOnCommonDeclarations { get; set; }
-        
+
         /// <summary>
         /// Gets or sets a collection of selectors which are forbidden to be in the file.
         /// </summary>
@@ -124,5 +129,10 @@ namespace WebGrease.Configuration
         /// Gets or sets a collection of selectors that will be ignored and not outputted.
         /// </summary>
         internal IEnumerable<string> RemoveSelectors { get; set; }
+
+        /// <summary>
+        /// Gets or sets a collection of selectors that will not be merged in optimization.
+        /// </summary>
+        internal IEnumerable<string> NonMergeSelectors { get; set; }
     }
 }
