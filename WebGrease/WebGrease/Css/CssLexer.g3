@@ -320,7 +320,7 @@ IMPORTANT_COMMENTS
 	;
 
 REPLACEMENTTOKEN
-    : ('.'|'#')?'%'(LETTER|DIGITS|'-'|'.')+'%'
+    : ('.'|'#')?'%'(LETTER|DIGITS|'-'|'.')+(':'(LETTER|DIGITS)*)?'%'
     ;
 
 fragment NMSTART

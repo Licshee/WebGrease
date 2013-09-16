@@ -251,6 +251,30 @@ namespace Microsoft.Ajax.Utilities
                     sb.Append('.');
                     name = GetName();
                 }
+                else if (m_currentChar == ':')
+                {
+                    // possibly ending with a fallback class identifier
+                    NextChar();
+                    sb.Append(':');
+                    sb.Append(GetName());
+
+                    // and MUST be followed by the closing percent delimiter
+                    if (m_currentChar == '%')
+                    {
+                        // found a valid replacement
+                        // create a new token to encompass the entire replacement token
+                        NextChar();
+                        sb.Append('%');
+                        token = new CssToken(TokenType.ReplacementToken, '%' + sb.ToString(), m_context);
+                        break;
+                    }
+                    else
+                    {
+                        // NOPE
+                        PushString(sb.ToString());
+                        break;
+                    }
+                }
                 else if (m_currentChar == '%')
                 {
                     // found a valid replacement

@@ -227,10 +227,64 @@ namespace Css.Tests.WebGreaseSpecific
             Assert.AreEqual("@media screen and (min-width:128px){}", replacedCss);
         }
 
+        [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.Tokens)]
+        public void ValueTokensFallback()
+        {
+            var css = ".body{font-size:%FONTSIZE:size%}";
+            var stylesheet = ParseCss(css);
+            var declarationNode = GetFirstDeclaration(stylesheet);
+            Assert.AreEqual("%FONTSIZE:size%", declarationNode.ExprNode.TermNode.ReplacementTokenBasedValue);
+            Assert.AreEqual(css, stylesheet.MinifyPrint());
+
+            var replacedCss = stylesheet.Accept(new ResourceResolutionVisitor(new[] { new Dictionary<string, string> { { "FONTSIZE", "10px" } } })).MinifyPrint();
+            Assert.AreEqual(".body{font-size:10px}", replacedCss);
+        }
+
+        [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.Tokens)]
+        public void ValueTokensMissingFallback()
+        {
+            var css = ".body{font-size:%FONTSIZE:size%;color:%foo.bar:color%;width:%notype:%}";
+            var stylesheet = ParseCss(css);
+            var declarationNode = GetFirstDeclaration(stylesheet);
+            Assert.AreEqual("%FONTSIZE:size%", declarationNode.ExprNode.TermNode.ReplacementTokenBasedValue);
+
+            declarationNode = GetNthDeclaration(stylesheet, 1);
+            Assert.AreEqual("%foo.bar:color%", declarationNode.ExprNode.TermNode.ReplacementTokenBasedValue);
+
+            declarationNode = GetNthDeclaration(stylesheet, 2);
+            Assert.AreEqual("%notype:%", declarationNode.ExprNode.TermNode.ReplacementTokenBasedValue);
+
+            Assert.AreEqual(css, stylesheet.MinifyPrint());
+
+            // NONE of the tokens should match any of the replacement strings, so they should pass through to the output as-is
+            var replacedCss = stylesheet.Accept(new ResourceResolutionVisitor(new[] { new Dictionary<string, string> { { "ed", "sewer" } } })).MinifyPrint();
+            Assert.AreEqual(css, replacedCss);
+
+            // SOME replacement strings should match the token names (less the fallback type) and get replaced
+            replacedCss = stylesheet.Accept(new ResourceResolutionVisitor(new[] { new Dictionary<string, string> { { "FONTSIZE", "10px" }, { "notype", "80px" } } })).MinifyPrint();
+            Assert.AreEqual(".body{font-size:10px;color:%foo.bar:color%;width:80px}", replacedCss);
+
+            // ALL replacement strings should match the token names (less the fallback type) and get replaced
+            replacedCss = stylesheet.Accept(new ResourceResolutionVisitor(new[] { new Dictionary<string, string> { { "FONTSIZE", "10px" }, { "foo.bar", "red" }, { "notype", "80px" } } })).MinifyPrint();
+            Assert.AreEqual(".body{font-size:10px;color:red;width:80px}", replacedCss);
+        }
+
         private static DeclarationNode GetFirstDeclaration(StyleSheetNode stylesheet)
         {
             var styleSheetRuleNode = GetFirstRuleSet(stylesheet);
             var declarationNode = styleSheetRuleNode.Declarations.FirstOrDefault();
+            Assert.IsNotNull(declarationNode);
+            return declarationNode;
+        }
+
+        private static DeclarationNode GetNthDeclaration(StyleSheetNode stylesheet, int index)
+        {
+            var styleSheetRuleNode = GetFirstRuleSet(stylesheet);
+            var declarationNode = styleSheetRuleNode.Declarations[index];
             Assert.IsNotNull(declarationNode);
             return declarationNode;
         }

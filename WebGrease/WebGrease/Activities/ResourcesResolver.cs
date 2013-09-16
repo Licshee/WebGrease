@@ -25,15 +25,15 @@ namespace WebGrease.Activities
     internal sealed class ResourcesResolver
     {
         /// <summary>
-        /// Directories to search the resource files.
-        /// </summary>
-        private readonly List<ResourceDirectoryPath> resourceDirectoryPaths = new List<ResourceDirectoryPath>();
-
-        /// <summary>
         /// Gets the localization resource key format
         /// </summary>
         /// <value>Regular expression pattern</value>
-        internal static readonly Regex LocalizationResourceKeyRegex = new Regex(@"%([-./\w_]+)%", RegexOptions.Compiled);
+        internal static readonly Regex LocalizationResourceKeyRegex = new Regex(@"%([-./\w_]+)(\:\w*)?%", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Directories to search the resource files.
+        /// </summary>
+        private readonly List<ResourceDirectoryPath> resourceDirectoryPaths = new List<ResourceDirectoryPath>();
 
         /// <summary>
         /// Output folder path.
@@ -292,6 +292,7 @@ namespace WebGrease.Activities
                     string resourceValue;
 
                     // Query the resources dictionary for a value corresponding to matched key
+                    // but NOT including any optional fallback class.
                     var matchedKey = match.Result("$1");
 
                     // If there is a value found in resources dictionary, return it for expansion

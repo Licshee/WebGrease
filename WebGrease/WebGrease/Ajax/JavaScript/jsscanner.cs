@@ -1907,9 +1907,23 @@ namespace Microsoft.Ajax.Utilities
             // the name portion should not START with a period
             if (ch != '.')
             {
+                // identifier parts and periods are allowed as the token name.
                 while (IsValidIdentifierPart(ch) || ch == '.')
                 {
                     ch = GetChar(++m_currentPosition);
+                }
+
+                // the token name can optionally be followed by a colon
+                // and a replacement fallback class (another identifier),
+                // so if there's a colon now, scan past it and the 
+                // following identifier (if any).
+                if (ch == ':')
+                {
+                    ch = GetChar(++m_currentPosition);
+                    while (IsValidIdentifierPart(ch))
+                    {
+                        ch = GetChar(++m_currentPosition);
+                    }
                 }
             }
 
