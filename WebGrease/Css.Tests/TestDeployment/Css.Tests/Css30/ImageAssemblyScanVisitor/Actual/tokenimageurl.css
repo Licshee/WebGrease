@@ -1,0 +1,8 @@
+#test1
+{
+  background: url('%IAmAToken%') no-repeat 0px 0px
+}
+#test2
+{
+  background: url('hash(%IAmAToken%)') no-repeat 0px 0px
+}

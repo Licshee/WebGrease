@@ -15,6 +15,7 @@ namespace WebGrease.Css.Visitor
     using System.Globalization;
     using System.IO;
     using System.Linq;
+    using System.Text.RegularExpressions;
     using Ast;
     using Ast.MediaQuery;
     using Extensions;
@@ -26,6 +27,7 @@ namespace WebGrease.Css.Visitor
     using WebGrease.Extensions;
 
     using ImageAssembleException = ImageAssemblyAnalysis.ImageAssembleException;
+    using WebGrease.Activities;
 
     /// <summary>Provides the implementation for ImageAssembly log visitor</summary>
     public sealed class ImageAssemblyScanVisitor : NodeVisitor
@@ -294,6 +296,13 @@ namespace WebGrease.Css.Visitor
             var relativeUrl = url.NormalizeUrl();
             var originalUrl = url;
 
+            // as long as there is token.
+            if (ResourcesResolver.LocalizationResourceKeyRegex.IsMatch(relativeUrl))
+            {
+                // ignore tokenized urls. this is having assumption that build time tokenization must be done before spriting.
+                return;
+            }
+
             url = this.GetAbsoluteImagePath(relativeUrl);
 
             // No need to report the url if it is present in ignore list
@@ -355,6 +364,7 @@ namespace WebGrease.Css.Visitor
         private string GetAbsoluteImagePath(string relativeUrl)
         {
             string url;
+
             if (this._availableImageSources != null)
             {
                 var sourceFile = this._availableImageSources.ContainsKey(relativeUrl) ? this._availableImageSources[relativeUrl] : null;

@@ -203,6 +203,7 @@
     <Content Include="TestDeployment\Css.Tests\Css30\FloatOptimizationVisitor\Actual\optimizefloat.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\FloatOptimizationVisitor\MinifiedExpect\optimizefloat.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\FloatOptimizationVisitor\PrettyExpect\optimizefloat.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\tokenimageurl.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\duplicatebackgroundformatexception.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\duplicateimagereferencewithdifferentrulesexception.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\ImageAssemblyScanVisitor\Actual\repeatedpropertynameexception.css" />

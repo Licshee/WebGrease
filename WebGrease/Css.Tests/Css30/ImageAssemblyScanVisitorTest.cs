@@ -179,5 +179,26 @@ namespace Css.Tests.Css30
                 Assert.IsTrue(imageAssembleException.ToString().Contains(string.Format(CultureInfo.InvariantCulture, CssStrings.TooManyLengthsError, string.Empty).TrimEnd(new[] { '.', '\'' })));
             }
         }
+
+        /// <summary>
+        /// A test for the image url is token.
+        /// tokenized background images should be ignored.
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        [TestCategory(TestCategories.ImageAssemblyScanVisitor)]
+        public void TokenImageUrlTest()
+        {
+            const string FileName = @"tokenimageurl.css";
+            var fileInfo = new FileInfo(Path.Combine(ActualDirectory, FileName));
+
+            var styleSheetNode = CssParser.Parse(fileInfo);
+            Assert.IsNotNull(styleSheetNode);
+            var visitor = new ImageAssemblyScanVisitor(fileInfo.FullName, null);
+            styleSheetNode.Accept(visitor);
+            var imageReferencesToAssemble = visitor.DefaultImageAssemblyScanOutput.ImageReferencesToAssemble;
+            Assert.IsNotNull(imageReferencesToAssemble);
+            Assert.AreEqual(0, imageReferencesToAssemble.Count);
+        }
     }
 }
