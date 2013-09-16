@@ -14,17 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     public class EmptyStatement : AstNode
     {
-        public EmptyStatement(Context context, JSParser parser)
-            : base(context, parser)
+        public EmptyStatement(Context context)
+            : base(context)
         {
         }
 
@@ -33,15 +28,6 @@ namespace Microsoft.Ajax.Utilities
             if (visitor != null)
             {
                 visitor.Visit(this);
-            }
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // never requires a semicolon because we ARE a semicolon
-                return false;
             }
         }
     }

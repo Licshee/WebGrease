@@ -14,9 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -63,8 +61,8 @@ namespace Microsoft.Ajax.Utilities
         public Context QuestionContext { get; set; }
         public Context ColonContext { get; set; }
 
-        public Conditional(Context context, JSParser parser)
-            : base(context, parser)
+        public Conditional(Context context)
+            : base(context)
         {
         }
 

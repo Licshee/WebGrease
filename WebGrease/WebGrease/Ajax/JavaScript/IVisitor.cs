@@ -22,9 +22,14 @@ namespace Microsoft.Ajax.Utilities
         void Visit(AspNetBlockNode node);
         void Visit(AstNodeList node);
         void Visit(BinaryOperator node);
+        void Visit(BindingIdentifier node);
         void Visit(Block node);
         void Visit(Break node);
         void Visit(CallNode node);
+        void Visit(ClassNode node);
+        void Visit(ComprehensionNode node);
+        void Visit(ComprehensionForClause node);
+        void Visit(ComprehensionIfClause node);
         void Visit(ConditionalCompilationComment node);
         void Visit(ConditionalCompilationElse node);
         void Visit(ConditionalCompilationElseIf node);
@@ -42,6 +47,7 @@ namespace Microsoft.Ajax.Utilities
         void Visit(DirectivePrologue node);
         void Visit(DoWhile node);
         void Visit(EmptyStatement node);
+        void Visit(ExportNode node);
         void Visit(ForIn node);
         void Visit(ForNode node);
         void Visit(FunctionObject node);
@@ -49,10 +55,14 @@ namespace Microsoft.Ajax.Utilities
         void Visit(GroupingOperator node);
         void Visit(IfNode node);
         void Visit(ImportantComment node);
+        void Visit(ImportExportSpecifier node);
+        void Visit(ImportNode node);
+        void Visit(InitializerNode node);
         void Visit(LabeledStatement node);
         void Visit(LexicalDeclaration node);
         void Visit(Lookup node);
         void Visit(Member node);
+        void Visit(ModuleDeclaration node);
         void Visit(ObjectLiteral node);
         void Visit(ObjectLiteralField node);
         void Visit(ObjectLiteralProperty node);
@@ -61,6 +71,8 @@ namespace Microsoft.Ajax.Utilities
         void Visit(ReturnNode node);
         void Visit(Switch node);
         void Visit(SwitchCase node);
+        void Visit(TemplateLiteral node);
+        void Visit(TemplateLiteralExpression node);
         void Visit(ThisLiteral node);
         void Visit(ThrowNode node);
         void Visit(TryNode node);

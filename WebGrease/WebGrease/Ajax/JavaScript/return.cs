@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -33,8 +32,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public ReturnNode(Context context, JSParser parser)
-            : base(context, parser)
+        public ReturnNode(Context context)
+            : base(context)
         {
         }
 

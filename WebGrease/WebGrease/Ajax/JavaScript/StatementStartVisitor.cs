@@ -14,13 +14,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
+    /// <summary>
+    /// Determines if a node at the beginning of a statement needs parentheses around it
+    /// </summary>
     public class StatementStartVisitor : IVisitor
     {
         #region private fields 
@@ -94,7 +94,14 @@ namespace Microsoft.Ajax.Utilities
 
         #endregion
 
-        #region IVisitor that return false
+        #region IVisitor that return false (needs parens)
+
+        public void Visit(ClassNode node)
+        {
+            // expressions are definitely NOT safe to start a statement off because it would
+            // then be interpreted as a class *declaration*.
+            m_isSafe = node.IfNotNull(n => n.ClassType == ClassType.Declaration);
+        }
 
         public void Visit(CustomNode node)
         {
@@ -104,11 +111,11 @@ namespace Microsoft.Ajax.Utilities
 
         public void Visit(FunctionObject node)
         {
+            // if this is an arrow function, then we're good to go. Otherwise
             // this shouldn't be called for anything but a function expression,
             // which is definitely NOT safe to start a statement off because it would
             // then be interpreted as a function *declaration*.
-            Debug.Assert(node == null || node.FunctionType == FunctionType.Expression);
-            m_isSafe = false;
+            m_isSafe = node.IfNotNull(n => n.FunctionType == FunctionType.ArrowFunction);
         }
 
         public void Visit(ObjectLiteral node)
@@ -120,7 +127,7 @@ namespace Microsoft.Ajax.Utilities
 
         #endregion
 
-        #region IVisitor nodes that return false
+        #region IVisitor nodes that return true (doesn't need parens)
 
         public void Visit(ArrayLiteral node)
         {
@@ -130,6 +137,11 @@ namespace Microsoft.Ajax.Utilities
         public void Visit(AspNetBlockNode node)
         {
             // starts with a '<%', so we don't care
+        }
+
+        public void Visit(BindingIdentifier node)
+        {
+            // binding identifier, so we don't care
         }
 
         public void Visit(Block node)
@@ -142,6 +154,11 @@ namespace Microsoft.Ajax.Utilities
         public void Visit(Break node)
         {
             // starts with a 'break', so we don't care
+        }
+
+        public void Visit(ComprehensionNode node)
+        {
+            // start with either '(' or '[', so we don't care
         }
 
         public void Visit(ConditionalCompilationComment node)
@@ -219,6 +236,11 @@ namespace Microsoft.Ajax.Utilities
             // empty statement, so we don't care
         }
 
+        public void Visit(ExportNode node)
+        {
+            // starts with export, so we don't care
+        }
+
         public void Visit(ForIn node)
         {
             // starts with a 'for', so we don't care
@@ -249,6 +271,11 @@ namespace Microsoft.Ajax.Utilities
             // comment, so we need to keep going
         }
 
+        public void Visit(ImportNode node)
+        {
+            // starts with import, so we don't care
+        }
+
         public void Visit(LabeledStatement node)
         {
             // starts with a label identifier, so we don't care
@@ -264,6 +291,11 @@ namespace Microsoft.Ajax.Utilities
             // lookup identifier, so we don't care
         }
 
+        public void Visit(ModuleDeclaration node)
+        {
+            // starts with module, so we don't care
+        }
+
         public void Visit(RegExpLiteral node)
         {
             // regexp literal, so we don't care
@@ -277,6 +309,11 @@ namespace Microsoft.Ajax.Utilities
         public void Visit(Switch node)
         {
             // starts with 'switch', so we don't care
+        }
+
+        public void Visit(TemplateLiteral node)
+        {
+            // starts with a lookup or a `, so we don't care
         }
 
         public void Visit(ThisLiteral node)
@@ -319,6 +356,30 @@ namespace Microsoft.Ajax.Utilities
             Debug.Fail("shouldn't get here");
         }
 
+        public void Visit(ComprehensionForClause node)
+        {
+            // shoudn't get here
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(ComprehensionIfClause node)
+        {
+            // shoudn't get here
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(InitializerNode node)
+        {
+            // shoudn't get here
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(ImportExportSpecifier node)
+        {
+            // shoudn't get here
+            Debug.Fail("shouldn't get here");
+        }
+
         public void Visit(ObjectLiteralField node)
         {
             // shoudn't get here
@@ -338,6 +399,12 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(SwitchCase node)
+        {
+            // shoudn't get here
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(TemplateLiteralExpression node)
         {
             // shoudn't get here
             Debug.Fail("shouldn't get here");

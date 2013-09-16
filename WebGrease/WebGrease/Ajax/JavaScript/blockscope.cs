@@ -14,28 +14,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Reflection;
 
 namespace Microsoft.Ajax.Utilities
 {
     public class BlockScope : ActivationObject
     {
-        private Context m_context;// = null;
-        public Context Context
-        {
-            get { return m_context; }
-        }
-
-        public BlockScope(ActivationObject parent, Context context, CodeSettings settings)
+        public BlockScope(ActivationObject parent, CodeSettings settings, ScopeType scopeType)
             : base(parent, settings)
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException("context");
-            }
-
-            m_context = context.Clone();
+            ScopeType = scopeType;
         }
 
         #region scope setup methods

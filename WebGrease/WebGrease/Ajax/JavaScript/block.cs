@@ -14,14 +14,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
-
-    public sealed class Block : AstNode
+    /// <summary>
+    /// Block of statements
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")]
+    public sealed class Block : AstNode, IEnumerable<AstNode>
     {
         private List<AstNode> m_list;
 
@@ -48,22 +49,12 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        private BlockScope m_blockScope;
-        internal BlockScope BlockScope
-        {
-            get { return m_blockScope; }
-            set { m_blockScope = value; }
-        }
-
         /// <summary>
-        /// Returns the enclosing scope of this block
+        /// Gets the count of statements making up this block
         /// </summary>
-        public override ActivationObject EnclosingScope
+        public int Count
         {
-            get
-            {
-                return m_blockScope != null ? m_blockScope : base.EnclosingScope;
-            }
+            get { return m_list.Count; }
         }
 
         /// <summary>
@@ -71,6 +62,11 @@ namespace Microsoft.Ajax.Utilities
         /// on a newline (true) or the same line as the statement to which it belongs (false)
         /// </summary>
         public bool BraceOnNewLine { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating this this block is a module body
+        /// </summary>
+        public bool IsModule { get; set; }
 
         public override Context TerminatingContext
         {
@@ -88,89 +84,10 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         public bool ForceBraces { get; set; }
 
-        public Block(Context context, JSParser parser)
-            : base(context, parser)
-        {
-            m_list = new List<AstNode>();
-        }
-
-        public override void Accept(IVisitor visitor)
-        {
-            if (visitor != null)
-            {
-                visitor.Visit(this);
-            }
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // if we are forcing the braces around this block or there are multiple statments
-                // within it, then we will be wrapping it in braces and never need to follow it with 
-                // a semicolon separator.
-                if (ForceBraces || m_list.Count > 1)
-                {
-                    return false;
-                }
-
-                // if there are no statements in this block, then we're not going to output it
-                // at all, which means we'll need to have a separator added to be the replacement
-                // empty statement.
-                if (m_list.Count == 0)
-                {
-                    return true;
-                }
-
-                // if we get here, then there is only a single statement in the block.
-                // if the first statement is null, then we actually have an empty block and will need to use a separator. 
-                if (m_list[0] == null)
-                {
-                    return true;
-                }
-
-                // if the statement is hidden, then we do not need a separator (WHY?)
-                if (m_list[0].HideFromOutput)
-                {
-                    return false;
-                }
-
-                // otherwise just ask that one contained statement to see what it needs
-                return m_list[0].RequiresSeparator;
-            }
-        }
-
-        internal override bool EncloseBlock(EncloseBlockType type)
-        {
-            // if there's more than one item, then return false.
-            // otherwise recurse the call
-            return (m_list.Count == 1 && m_list[0].EncloseBlock(type));
-        }
-
-        internal override bool IsDebuggerStatement
-        {
-            get
-            {
-                // a block will pop-positive for being a debugger statement
-                // if all the statements within it are debugger statements. 
-                // So loop through our list, and if any isn't, return false.
-                // otherwise return true.
-                // empty blocks do not pop positive for "debugger" statements
-                if (m_list.Count == 0)
-                {
-                    return false;
-                }
-
-                foreach (AstNode statement in m_list)
-                {
-                    if (!statement.IsDebuggerStatement)
-                    {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
+        /// <summary>
+        /// Gets or sets whether this block is a concise block (has no braces)
+        /// </summary>
+        public bool IsConcise { get; set; }
 
         /// <summary>
         /// Returns false unless the block constains only a single statement that is itself an expression.
@@ -189,14 +106,6 @@ namespace Microsoft.Ajax.Utilities
         }
 
         /// <summary>
-        /// Gets the count of statements making up this block
-        /// </summary>
-        public int Count
-        {
-            get { return m_list.Count; }
-        }
-
-        /// <summary>
         /// Gets an enumerator for the syntax tree nodes making up this block
         /// </summary>
         public override IEnumerable<AstNode> Children
@@ -205,6 +114,41 @@ namespace Microsoft.Ajax.Utilities
             {
                 return EnumerateNonNullNodes(m_list);
             }
+        }
+
+        public Block(Context context)
+            : base(context)
+        {
+            m_list = new List<AstNode>();
+        }
+
+        public override void Accept(IVisitor visitor)
+        {
+            if (visitor != null)
+            {
+                visitor.Visit(this);
+            }
+        }
+
+        /// <summary>
+        /// Remove all statements from the Block
+        /// </summary>
+        public void Clear()
+        {
+            foreach (var item in m_list)
+            {
+                item.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+            }
+
+            m_list.Clear();
+            this.IsConcise = false;
+        }
+
+        internal override bool EncloseBlock(EncloseBlockType type)
+        {
+            // if there's more than one item, then return false.
+            // otherwise recurse the call
+            return (m_list.Count == 1 && m_list[0].EncloseBlock(type));
         }
 
         /// <summary>
@@ -222,8 +166,16 @@ namespace Microsoft.Ajax.Utilities
                     m_list[ndx].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
                     if (newNode == null)
                     {
+                        // if this was concise, we're not anymore. Don't need to undo
+                        // the conciseness, because there's only one statement and we're going
+                        // to be deleting it.
+                        this.IsConcise = false;
+
                         // just remove it
                         m_list.RemoveAt(ndx);
+
+                        // if this was a concise block, it shouldn't be anymore
+                        this.IsConcise = false;
                     }
                     else
                     {
@@ -240,6 +192,13 @@ namespace Microsoft.Ajax.Utilities
                             // not a block -- slap it in there
                             m_list[ndx] = newNode;
                             newNode.Parent = this;
+
+                            // if we were concise and we are replacing our single expression with
+                            // something that isn't an expression, we are no longer concise.
+                            if (this.IsConcise && !newNode.IsExpression)
+                            {
+                                this.IsConcise = false;
+                            }
                         }
                     }
 
@@ -253,24 +212,32 @@ namespace Microsoft.Ajax.Utilities
         /// <summary>
         /// Append the given statement node to the end of the block
         /// </summary>
-        /// <param name="element">node to add to the block</param>
-        public void Append(AstNode element)
+        /// <param name="item">node to add to the block</param>
+        public void Append(AstNode item)
         {
-            if (element != null)
+            if (item != null)
             {
-                element.Parent = this;
-                m_list.Add(element);
+                if (this.IsConcise)
+                {
+                    // this WAS concise -- make it not a concise block now because adding another
+                    // statement totally changes the semantics.
+                    Unconcise();
+                }
+
+                item.Parent = this;
+                m_list.Add(item);
+                Context.UpdateWith(item.Context);
             }
         }
 
         /// <summary>
         /// Gets the zero-based index of the given syntax tree node within the block, or -1 if the node is not a direct child of the block
         /// </summary>
-        /// <param name="child">node to find</param>
+        /// <param name="item">node to find</param>
         /// <returns>zero-based index of the node in the block, or -1 if the node is not a direct child of the block</returns>
-        public int IndexOf(AstNode child)
+        public int IndexOf(AstNode item)
         {
-            return m_list.IndexOf(child);
+            return m_list.IndexOf(item);
         }
 
         /// <summary>
@@ -285,6 +252,13 @@ namespace Microsoft.Ajax.Utilities
                 int index = m_list.IndexOf(after);
                 if (index >= 0)
                 {
+                    if (this.IsConcise)
+                    {
+                        // this WAS concise -- make it not a concise block now because adding another
+                        // statement totally changes the semantics.
+                        Unconcise();
+                    }
+
                     var block = item as Block;
                     if (block != null)
                     {
@@ -304,21 +278,28 @@ namespace Microsoft.Ajax.Utilities
         /// <summary>
         /// Insert a new node into the given position index within the block
         /// </summary>
-        /// <param name="position">zero-based index into which the new node will be inserted</param>
+        /// <param name="index">zero-based index into which the new node will be inserted</param>
         /// <param name="item">new node to insert into the block</param>
-        public void Insert(int position, AstNode item)
+        public void Insert(int index, AstNode item)
         {
             if (item != null)
             {
+                if (this.IsConcise)
+                {
+                    // this WAS concise -- make it not a concise block now because adding another
+                    // statement totally changes the semantics.
+                    Unconcise();
+                }
+
                 var block = item as Block;
                 if (block != null)
                 {
-                    InsertRange(position, block.Children);
+                    InsertRange(index, block.Children);
                 }
                 else
                 {
                     item.Parent = this;
-                    m_list.Insert(position, item);
+                    m_list.Insert(index, item);
                 }
             }
         }
@@ -328,6 +309,10 @@ namespace Microsoft.Ajax.Utilities
         /// </summary>
         public void RemoveLast()
         {
+            // if this was concise, we're not anymore. Don't need to undo
+            // the conciseness, because there's only one statement and we're going
+            // to be deleting it.
+            this.IsConcise = false;
             RemoveAt(m_list.Count - 1);
         }
 
@@ -339,6 +324,11 @@ namespace Microsoft.Ajax.Utilities
         {
             if (0 <= index && index < m_list.Count)
             {
+                // if this was concise, we're not anymore. Don't need to undo
+                // the conciseness, because there's only one statement and we're going
+                // to be deleting it.
+                this.IsConcise = false;
+
                 m_list[index].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
                 m_list.RemoveAt(index);
             }
@@ -353,6 +343,12 @@ namespace Microsoft.Ajax.Utilities
         {
             if (newItems != null)
             {
+                if (this.IsConcise)
+                {
+                    // this WAS concise, but adding statements changes the semantics
+                    Unconcise();
+                }
+
                 m_list.InsertRange(index, newItems);
                 foreach (AstNode newItem in newItems)
                 {
@@ -361,17 +357,41 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        /// <summary>
-        /// Remove all statements from the Block
-        /// </summary>
-        public void Clear()
+        private void Unconcise()
         {
-            foreach (var item in m_list)
-            {
-                item.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
-            }
+            // Instead of implicitly returning the one expression, we're
+            // going to need to turn this into a non-concise block and explicitly return
+            // that expression.
+            this.IsConcise = false;
 
-            m_list.Clear();
+            // there should be a single statement that's an expression. Make it the argument of
+            // a return statement.
+            if (m_list.Count == 1)
+            {
+                var expression = m_list[0];
+                if (expression.IsExpression)
+                {
+                    m_list[0] = new ReturnNode(expression.Context)
+                    {
+                        Operand = expression,
+                        Parent = this
+                    };
+                }
+            }
         }
+
+        #region IEnumerable implementation
+
+        public IEnumerator<AstNode> GetEnumerator()
+        {
+            return m_list.GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return m_list.GetEnumerator();
+        }
+
+        #endregion
     }
 }

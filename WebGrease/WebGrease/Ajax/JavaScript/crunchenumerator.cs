@@ -67,10 +67,21 @@ namespace Microsoft.Ajax.Utilities
 
         public static string CrunchedLabel(int nestLevel)
         {
-            // nestCount is 1-based, so subtract one to make the character index 0-based.
-            // return null if the nestLevel is invalid (<= 0).
-            // TODO: make sure the generated name isn't a keyword!
-            return nestLevel > 0 ? GenerateNameFromNumber(nestLevel - 1) : null;
+            // nestCount is 0-based.
+            // return null if the nestLevel is invalid (< 0).
+            string minLabel = null;
+            if (nestLevel >= 0)
+            {
+                minLabel = GenerateNameFromNumber(nestLevel);
+                if (JSScanner.IsKeyword(minLabel, true))
+                {
+                    // prepend something to make it NOT a keyword.
+                    // no keywords start with an underscore, so...
+                    minLabel = '_' + minLabel;
+                }
+            }
+
+            return minLabel;
         }
 
         /// <summary>
@@ -183,7 +194,20 @@ namespace Microsoft.Ajax.Utilities
             if ((left.FieldType == FieldType.Argument || left.FieldType == FieldType.CatchError)
                 && (right.FieldType == FieldType.Argument || right.FieldType == FieldType.CatchError))
             {
-                return left.Position - right.Position;
+                var byPos = left.Position - right.Position;
+                if (byPos == 0)
+                {
+                    // if for some reason the positions are the same, then we failed somewhere and
+                    // need to look at the context position
+                    byPos = CompareContext(left.OriginalContext, right.OriginalContext);
+                    if (byPos == 0)
+                    {
+                        // NEITHER have an original context. Order by name; those MUST be different.
+                        byPos = string.Compare(left.Name, right.Name, StringComparison.Ordinal);
+                    }
+                }
+
+                return byPos;
             }
             if (left.FieldType == FieldType.Argument || left.FieldType == FieldType.CatchError)
             {
@@ -202,30 +226,39 @@ namespace Microsoft.Ajax.Utilities
             if (delta == 0)
             {
                 // same number of refcounts. Check the line number where they were declared
-                if (left.OriginalContext != null && right.OriginalContext != null)
-                {
-                    delta = left.OriginalContext.StartLineNumber - right.OriginalContext.StartLineNumber;
-                    if (delta == 0)
-                    {
-                        // same line? check the column -- those SHOULD be different
-                        delta = left.OriginalContext.StartColumn - right.OriginalContext.StartColumn;
-                    }
-                }
-                else if (left.OriginalContext != null)
-                {
-                    // right must not have an original context -- put it on the end
-                    return -1;
-                }
-                else if (right.OriginalContext != null)
-                {
-                    // left must not have an original context -- put it on the end
-                    return 1;
-                }
-                else
+                delta = CompareContext(left.OriginalContext, right.OriginalContext);
+                if (delta == 0)
                 {
                     // NEITHER have an original context. Order by name; those MUST be different.
                     delta = string.Compare(left.Name, right.Name, StringComparison.Ordinal);
                 }
+            }
+
+            return delta;
+        }
+
+        private static int CompareContext(Context left, Context right)
+        {
+            // same number of refcounts. Check the line number where they were declared
+            var delta = 0;
+            if (left != null && right != null)
+            {
+                delta = left.StartLineNumber - right.StartLineNumber;
+                if (delta == 0)
+                {
+                    // same line? check the column -- those SHOULD be different
+                    delta = left.StartColumn - right.StartColumn;
+                }
+            }
+            else if (left != null)
+            {
+                // right must not have an original context -- put it on the end
+                delta = -1;
+            }
+            else if (right != null)
+            {
+                // left must not have an original context -- put it on the end
+                delta = 1;
             }
 
             return delta;

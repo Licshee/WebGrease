@@ -14,10 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     /// <summary>
@@ -158,12 +154,37 @@ namespace Microsoft.Ajax.Utilities
             // not applicable; terminate
         }
 
+        public void Visit(BindingIdentifier node)
+        {
+            // not applicable; terminate
+        }
+
         public void Visit(Block node)
         {
             // not applicable; terminate
         }
 
         public void Visit(Break node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(ClassNode node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(ComprehensionNode node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(ComprehensionForClause node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(ComprehensionIfClause node)
         {
             // not applicable; terminate
         }
@@ -253,6 +274,11 @@ namespace Microsoft.Ajax.Utilities
             // not applicable; terminate
         }
 
+        public void Visit(ExportNode node)
+        {
+            // not applicable; terminate
+        }
+
         public void Visit(ForIn node)
         {
             // not applicable; terminate
@@ -283,12 +309,32 @@ namespace Microsoft.Ajax.Utilities
             // not applicable; terminate
         }
 
+        public void Visit(ImportExportSpecifier node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(ImportNode node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(InitializerNode node)
+        {
+            // not applicable; terminate
+        }
+
         public void Visit(LabeledStatement node)
         {
             // not applicable; terminate
         }
 
         public void Visit(LexicalDeclaration node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(ModuleDeclaration node)
         {
             // not applicable; terminate
         }
@@ -329,6 +375,16 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(SwitchCase node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(TemplateLiteral node)
+        {
+            // not applicable; terminate
+        }
+
+        public void Visit(TemplateLiteralExpression node)
         {
             // not applicable; terminate
         }

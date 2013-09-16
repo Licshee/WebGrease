@@ -14,9 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -24,6 +22,10 @@ namespace Microsoft.Ajax.Utilities
     public abstract class Declaration : AstNode, IEnumerable<VariableDeclaration>
     {
         private List<VariableDeclaration> m_list;
+
+        public JSToken StatementToken { get; set; }
+
+        public Context KeywordContext { get; set; }
 
         public int Count
         {
@@ -50,8 +52,17 @@ namespace Microsoft.Ajax.Utilities
 
         public ActivationObject Scope { get; set; }
 
-        protected Declaration(Context context, JSParser parser)
-            : base(context, parser)
+        public override bool IsDeclaration
+        {
+            get
+            {
+                // always considered a declaration
+                return true;
+            }
+        }
+
+        protected Declaration(Context context)
+            : base(context)
         {
             m_list = new List<VariableDeclaration>();
         }
@@ -70,25 +81,35 @@ namespace Microsoft.Ajax.Utilities
             {
                 if (m_list[ndx] == oldNode)
                 {
-                    // if the new node isn't a variabledeclaration, ignore the call
-                    VariableDeclaration newDecl = newNode as VariableDeclaration;
-                    if (newNode == null || newDecl != null)
+                    if (newNode == null)
                     {
+                        // found the item, but we just want to remove it after we unhook it
                         m_list[ndx].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
-                        m_list[ndx] = newDecl;
-                        m_list[ndx].IfNotNull(n => n.Parent = this);
-                        return true;
+                        m_list.RemoveAt(ndx);
+                    }
+                    else
+                    {
+                        // if the new node isn't a variabledeclaration, ignore the call
+                        VariableDeclaration newDecl = newNode as VariableDeclaration;
+                        if (newNode == null || newDecl != null)
+                        {
+                            m_list[ndx].IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                            m_list[ndx] = newDecl;
+                            newDecl.Parent = this;
+                            return true;
+                        }
                     }
 
                     break;
                 }
             }
+
             return false;
         }
 
         internal void Append(AstNode elem)
         {
-            VariableDeclaration decl = elem as VariableDeclaration;
+            var decl = elem as VariableDeclaration;
             if (decl != null)
             {
                 // first check the list for existing instances of this name.
@@ -96,8 +117,7 @@ namespace Microsoft.Ajax.Utilities
                 // if there is a dup (indicated by returning false) then that dup
                 // has an initializer, and we DON'T want to add this new one if it doesn't
                 // have it's own initializer.
-                if (HandleDuplicates(decl.Identifier)
-                    || decl.Initializer != null)
+                if (HandleDuplicates(decl.Binding) || decl.Initializer != null)
                 {
                     // set the parent and add it to the list
                     decl.Parent = this;
@@ -129,8 +149,7 @@ namespace Microsoft.Ajax.Utilities
                 // if there is a dup (indicated by returning false) then that dup
                 // has an initializer, and we DON'T want to add this new one if it doesn't
                 // have it's own initializer.
-                if (HandleDuplicates(decl.Identifier)
-                    || decl.Initializer != null)
+                if (HandleDuplicates(decl.Binding) || decl.Initializer != null)
                 {
                     // set the parent and add it to the list
                     decl.Parent = this;
@@ -152,35 +171,43 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        private bool HandleDuplicates(string name)
+        private bool HandleDuplicates(AstNode binding)
         {
-            var hasInitializer = true;
-            // walk backwards because we'll be removing items from the list
-            for (var ndx = m_list.Count - 1; ndx >= 0 ; --ndx)
-            {
-                VariableDeclaration varDecl = m_list[ndx];
+            var notDuplicate = true;
 
-                // if the name is a match...
-                if (string.CompareOrdinal(varDecl.Identifier, name) == 0)
+            // TODO: for now, just do this logic for simple binding identifiers.
+            // would be nice to also remove duplicates if they are in binding patterns (object literal and array literals)
+            var testName = (binding as BindingIdentifier).IfNotNull(b => b.Name);
+            if (!testName.IsNullOrWhiteSpace())
+            {
+                // walk backwards because we'll be removing items from the list
+                for (var ndx = m_list.Count - 1; ndx >= 0 ; --ndx)
                 {
-                    // check the initializer. If there is no initializer, then
-                    // we want to remove it because we'll be adding a new one.
-                    // but if there is an initializer, keep it but return false
-                    // to indicate that there is still a duplicate in the list, 
-                    // and that dup has an initializer.
-                    if (varDecl.Initializer != null)
+                    var varDecl = m_list[ndx];
+
+                    // if the binding is a simple identifier and the names match
+                    var bindingIdentifier = varDecl.Binding as BindingIdentifier;
+                    if (bindingIdentifier != null && string.CompareOrdinal(bindingIdentifier.Name, testName) == 0)
                     {
-                        hasInitializer = false;
-                    }
-                    else
-                    {
-                        varDecl.Parent = null;
-                        m_list.RemoveAt(ndx);
+                        // check the initializer. If there is no initializer, then
+                        // we want to remove it because we'll be adding a new one.
+                        // but if there is an initializer, keep it but return false
+                        // to indicate that there is still a duplicate in the list, 
+                        // and that dup has an initializer.
+                        if (varDecl.Initializer == null)
+                        {
+                            varDecl.Parent = null;
+                            m_list.RemoveAt(ndx);
+                        }
+                        else
+                        {
+                            notDuplicate = false;
+                        }
                     }
                 }
             }
 
-            return hasInitializer;
+            return notDuplicate;
         }
 
         public void RemoveAt(int index)
@@ -205,16 +232,23 @@ namespace Microsoft.Ajax.Utilities
 
         public bool Contains(string name)
         {
-            // look at each vardecl in our list
-            foreach(var varDecl in m_list)
+            if (!name.IsNullOrWhiteSpace())
             {
-                // if it matches the target name exactly...
-                if (string.CompareOrdinal(varDecl.Identifier, name) == 0)
+                // look at each vardecl in our list
+                foreach (var varDecl in m_list)
                 {
-                    // ...we found a match
-                    return true;
+                    foreach (var nameDeclaration in BindingsVisitor.Bindings(varDecl))
+                    {
+                        // if it matches the target name exactly...
+                        if (string.CompareOrdinal(name, nameDeclaration.Name) == 0)
+                        {
+                            // ...we found a match
+                            return true;
+                        }
+                    }
                 }
             }
+
             // if we get here, we didn't find any matches
             return false;
         }

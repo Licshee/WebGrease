@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -36,8 +35,8 @@ namespace Microsoft.Ajax.Utilities
 
         public string VariableName { get; set; }
 
-        public ConditionalCompilationSet(Context context, JSParser parser)
-            : base(context, parser)
+        public ConditionalCompilationSet(Context context)
+            : base(context)
         {
         }
 

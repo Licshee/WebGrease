@@ -51,33 +51,34 @@ namespace Microsoft.Ajax.Utilities
         ConditionalCompilationEnd,      // @end
         ConditionalCompilationVariable,           // entity defined defined during preprocessing
 
-        AspNetBlock,
-
         // used by both statement and expression switches
 
         // main expression switch
+        Identifier,
         Null,
         True,
         False,
         This,
-        Identifier,
         StringLiteral,
         IntegerLiteral,
         NumericLiteral,
+        TemplateLiteral,                // (may be complete, head, middle or tail)
 
         LeftParenthesis,                // (
         LeftBracket,                    // [
         AccessField,                    // .
+        ArrowFunction,                  // =>
+        RestSpread,                     // ...
 
         // operators
         FirstOperator,
         // unary ops
-        Void = FirstOperator,
-        TypeOf,
-        Delete,
+        Delete = FirstOperator,
         Increment,                      // ++
         Decrement,                      // --
-        LogicalNot,     // !
+        Void,
+        TypeOf,
+        LogicalNot,                     // !
         BitwiseNot,                     // ~
 
         FirstBinaryOperator,
@@ -142,18 +143,21 @@ namespace Microsoft.Ajax.Utilities
         PreprocessorDirective,
 
         // reserved words
+        Enum,
+        Extends,
+        Super,
         Class,
         Const,
-        Enum,
         Export,
-        Extends,
         Import,
-        Super,
+
+        // ECMAScript 6
+        Module,
 
         // ECMA strict reserved words
+        Let,
         Implements,
         Interface,
-        Let,
         Package,
         Private,
         Protected,
@@ -167,6 +171,9 @@ namespace Microsoft.Ajax.Utilities
         // always okay for identifiers
         Get,
         Set,
+
+        AspNetBlock,
+        ReplacementToken,               // %name(.name)*%
 
         EndOfLine, // only returned if the RawTokens flag is set on the scanner, but also used in error-recovery
         WhiteSpace, // only returned if the RawTokens flag is set on the scanner

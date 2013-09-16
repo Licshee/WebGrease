@@ -15,10 +15,17 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
+    public class LabelInfo
+    {
+        public int RefCount { get; set; }
+        public int NestLevel { get; set; }
+        public string MinLabel { get; set; }
+        public bool HasIssues { get; set; }
+    }
+
     public sealed class LabeledStatement : AstNode
     {
         private AstNode m_statement;
@@ -34,13 +41,16 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public int NestCount { get; set; }
         public string Label { get; set; }
+
+        public Context LabelContext { get; set; }
+
+        public LabelInfo LabelInfo { get; set; }
 
         public Context ColonContext { get; set; }
 
-        public LabeledStatement(Context context, JSParser parser)
-            : base(context, parser)
+        public LabeledStatement(Context context)
+            : base(context)
         {
         }
 
@@ -49,15 +59,6 @@ namespace Microsoft.Ajax.Utilities
             if (visitor != null)
             {
                 visitor.Visit(this);
-            }
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // requires a separator if the statement does
-                return (Statement != null ? Statement.RequiresSeparator : false);
             }
         }
 

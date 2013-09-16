@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -51,8 +50,8 @@ namespace Microsoft.Ajax.Utilities
 
         public ActivationObject BlockScope { get; set; }
 
-        public Switch(Context context, JSParser parser)
-            : base(context, parser)
+        public Switch(Context context)
+            : base(context)
         {
         }
 
@@ -61,16 +60,6 @@ namespace Microsoft.Ajax.Utilities
             if (visitor != null)
             {
                 visitor.Visit(this);
-            }
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // switch always has curly-braces, so we don't
-                // require the separator
-                return false;
             }
         }
 

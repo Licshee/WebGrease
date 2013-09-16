@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Security.Cryptography;
 using System.Xml;
@@ -165,7 +164,7 @@ namespace Microsoft.Ajax.Utilities
             // this should only be true for the function NAME segment.
             var functionObject = node as FunctionObject;
             if (functionObject != null 
-                && string.CompareOrdinal(name, functionObject.Name) == 0
+                && string.CompareOrdinal(name, functionObject.Binding.Name) == 0
                 && context != functionObject.Context)
             {
                 // adjust the offsets
@@ -176,7 +175,7 @@ namespace Microsoft.Ajax.Utilities
                 // for this format we want to output a separate segment for. It used to be its own Lookup
                 // node child of the function object, so we need to create a fake node here, start a new 
                 // symbol from it, end the symbol, then write it.
-                var fakeLookup = new Lookup(context, functionObject.Parser) { Name = name };
+                var fakeLookup = new Lookup(context) { Name = name };
                 var nameSymbol = JavaScriptSymbol.StartNew(fakeLookup, startLine, startColumn, GetSourceFileIndex(functionObject.Context.Document.FileContext));
 
                 // the name will never end on a different line -- it's a single unbreakable token. The length is just

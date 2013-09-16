@@ -18,12 +18,14 @@ using System;
 
 namespace Microsoft.Ajax.Utilities
 {
-    public class ObjectLiteralField : ConstantWrapper
+    public class ObjectLiteralField : ConstantWrapper, INameDeclaration
     {
+        public bool IsIdentifier { get; set; }
+
         public Context ColonContext { get; set; }
 
-        public ObjectLiteralField(Object value, PrimitiveType primitiveType, Context context, JSParser parser)
-            : base(value, primitiveType, context, parser)
+        public ObjectLiteralField(Object value, PrimitiveType primitiveType, Context context)
+            : base(value, primitiveType, context)
         {
         }
 
@@ -34,5 +36,34 @@ namespace Microsoft.Ajax.Utilities
                 visitor.Visit(this);
             }
         }
+
+        public string Name
+        {
+            get 
+            { 
+                return this.ToString(); 
+            }
+        }
+
+        public AstNode Initializer
+        {
+            get { return null; }
+        }
+
+        public bool IsParameter
+        {
+            get { return false; }
+        }
+
+        public bool RenameNotAllowed
+        {
+            get 
+            { 
+                // this represents an object property name, so we can't rename it
+                return true; 
+            }
+        }
+
+        public JSVariableField VariableField { get; set; }
     }
 }

@@ -350,7 +350,7 @@ namespace Microsoft.Ajax.Utilities.Configuration
 
                             case OriginAttributeName:
                                 // only supported value is "external" -- all others default to project
-                                inputNode.Origin = string.CompareOrdinal(reader.Value.ToUpperInvariant(), "EXTERNAL") == 0
+                                inputNode.Origin = reader.Value.Equals("EXTERNAL", StringComparison.OrdinalIgnoreCase)
                                     ? SourceOrigin.External
                                     : SourceOrigin.Project;
                                 break;

@@ -35,8 +35,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public AstNodeList(Context context, JSParser parser)
-            : base(context, parser)
+        public AstNodeList(Context context)
+            : base(context)
         {
             m_list = new List<AstNode>();
         }
@@ -69,6 +69,23 @@ namespace Microsoft.Ajax.Utilities
             get
             {
                 return EnumerateNonNullNodes(m_list);
+            }
+        }
+
+        public void ForEach<TItem>(Action<TItem> action) where TItem : AstNode
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
+
+            foreach (var item in m_list)
+            {
+                var itemAsType = item as TItem;
+                if (itemAsType != null)
+                {
+                    action(itemAsType);
+                }
             }
         }
 
@@ -205,7 +222,7 @@ namespace Microsoft.Ajax.Utilities
             {
                 ConstantWrapper constantWrapper = m_list[0] as ConstantWrapper;
                 if (constantWrapper != null 
-                    && string.CompareOrdinal(constantWrapper.Value.ToString(), argumentValue) == 0)
+                    && string.CompareOrdinal(argumentValue, constantWrapper.Value.ToString()) == 0)
                 {
                     return true;
                 }

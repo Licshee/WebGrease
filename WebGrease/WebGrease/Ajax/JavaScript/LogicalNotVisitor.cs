@@ -1,6 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿// LogicalNotVisitor.cs
+//
+// Copyright 2013 Microsoft Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -8,13 +20,21 @@ namespace Microsoft.Ajax.Utilities
     {
         private AstNode m_expression;
         private bool m_measure;
-        private JSParser m_parser;
         private int m_delta;
 
-        public LogicalNot(AstNode node, JSParser parser)
+        public bool MinifyBooleans { get; set; }
+
+        public LogicalNot(AstNode node)
+            : this(node, null)
+        {
+        }
+
+        public LogicalNot(AstNode node, CodeSettings codeSettings)
         {
             m_expression = node;
-            m_parser = parser;
+            
+            MinifyBooleans = codeSettings.IfNotNull(settings => settings.MinifyCode
+                && settings.IsModificationAllowed(TreeModifications.BooleanLiteralsToNotOperators));
         }
 
         public int Measure()
@@ -35,17 +55,17 @@ namespace Microsoft.Ajax.Utilities
             m_expression.Accept(this);
         }
 
-        public static void Apply(AstNode node, JSParser parser)
+        public static void Apply(AstNode node, CodeSettings codeSettings)
         {
-            var logicalNot = new LogicalNot(node, parser);
+            var logicalNot = new LogicalNot(node, codeSettings);
             logicalNot.Apply();
         }
 
-        private void WrapWithLogicalNot(AstNode operand)
+        private static void WrapWithLogicalNot(AstNode operand)
         {
             operand.Parent.ReplaceChild(
                 operand,
-                new UnaryOperator(operand.Context, m_parser)
+                new UnaryOperator(operand.Context)
                     {
                         Operand = operand,
                         OperatorToken = JSToken.LogicalNot
@@ -329,8 +349,14 @@ namespace Microsoft.Ajax.Utilities
                 // The first is guaranteed 3 additional characters. We have to check the delta for
                 // each branch and add them together to know how much the second would cost. If it's 
                 // greater than 3, then we just want to not the whole thing.
-                var notTrue = new LogicalNot(node.TrueExpression, m_parser);
-                var notFalse = new LogicalNot(node.FalseExpression, m_parser);
+                var notTrue = new LogicalNot(node.TrueExpression)
+                    {
+                        MinifyBooleans = this.MinifyBooleans
+                    };
+                var notFalse = new LogicalNot(node.FalseExpression)
+                    {
+                        MinifyBooleans = this.MinifyBooleans
+                    };
                 var costNottingBoth = notTrue.Measure() + notFalse.Measure();
 
                 if (m_measure)
@@ -366,8 +392,7 @@ namespace Microsoft.Ajax.Utilities
                         // a logical-not doesn't add or subtract anything. But if we aren't,
                         // we need to add/subtract the difference in the length between the
                         // "true" and "false" strings
-                        if (!m_parser.Settings.MinifyCode
-                            || !m_parser.Settings.IsModificationAllowed(TreeModifications.BooleanLiteralsToNotOperators))
+                        if (!MinifyBooleans)
                         {
                             // converting true to false adds a character, false to true subtracts
                             m_delta += node.ToBoolean() ? 1 : -1;

@@ -14,20 +14,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Reflection;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     public interface INameDeclaration
     {
         string Name { get; }
-        Context NameContext { get; }
+        Context Context { get; }
         AstNode Parent { get; }
         AstNode Initializer { get; }
+        bool IsParameter { get; }
         bool RenameNotAllowed { get; }
         JSVariableField VariableField { get; set; }
     }

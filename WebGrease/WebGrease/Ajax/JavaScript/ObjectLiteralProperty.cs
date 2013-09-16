@@ -1,6 +1,6 @@
 ﻿// ObjectLiteralProperty.cs
 //
-// Copyright 2012 Microsoft Corporation
+// Copyright 2013 Microsoft Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -51,13 +50,13 @@ namespace Microsoft.Ajax.Utilities
             get
             {
                 // we are constant if our value is constant.
-                // If we don't have a value, then assume it's constant?
+                // If we don't have a value, then assume it's constant
                 return Value != null ? Value.IsConstant : true;
             }
         }
 
-        public ObjectLiteralProperty(Context context, JSParser parser)
-            : base(context, parser)
+        public ObjectLiteralProperty(Context context)
+            : base(context)
         {
         }
 
@@ -100,7 +99,7 @@ namespace Microsoft.Ajax.Utilities
 
         internal override string GetFunctionGuess(AstNode target)
         {
-            return Name.ToString();
+            return Name.IfNotNull(n => n.ToString());
         }
     }
 }

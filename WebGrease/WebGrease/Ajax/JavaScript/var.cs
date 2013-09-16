@@ -14,9 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Generic;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     /// <summary>
@@ -25,8 +22,8 @@ namespace Microsoft.Ajax.Utilities
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Justification = "AST statement")]
     public sealed class Var : Declaration
     {
-        public Var(Context context, JSParser parser)
-            : base(context, parser)
+        public Var(Context context)
+            : base(context)
         {
         }
 

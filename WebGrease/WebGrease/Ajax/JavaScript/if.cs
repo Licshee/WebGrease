@@ -14,9 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -87,8 +85,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public IfNode(Context context, JSParser parser)
-            : base(context, parser)
+        public IfNode(Context context)
+            : base(context)
         {
         }
 
@@ -133,25 +131,6 @@ namespace Microsoft.Ajax.Utilities
                 return true;
             }
             return false;
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // if we have an else block, then the if statement
-                // requires a separator if the else block does. 
-                // otherwise only if the true case requires one.
-                if (FalseBlock != null && FalseBlock.Count > 0)
-                {
-                    return FalseBlock.RequiresSeparator;
-                }
-                if (TrueBlock != null && TrueBlock.Count > 0)
-                {
-                    return TrueBlock.RequiresSeparator;
-                }
-                return false;
-            }
         }
 
         internal override bool EncloseBlock(EncloseBlockType type)

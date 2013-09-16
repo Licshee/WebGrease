@@ -19,8 +19,8 @@ namespace Microsoft.Ajax.Utilities
     public sealed class DebuggerNode : AstNode
     {
 
-        public DebuggerNode(Context context, JSParser parser)
-            : base(context, parser)
+        public DebuggerNode(Context context)
+            : base(context)
         {
         }
 
@@ -29,15 +29,6 @@ namespace Microsoft.Ajax.Utilities
             if (visitor != null)
             {
                 visitor.Visit(this);
-            }
-        }
-
-        internal override bool IsDebuggerStatement
-        {
-            get
-            {
-                // this is always a debugger statement
-                return true;
             }
         }
     }

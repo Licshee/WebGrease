@@ -180,7 +180,7 @@
   <data name="ExpectedOpenBrace" xml:space="preserve">
     <value>Expected open brace, found '{0}'</value>
   </data>
-  <data name="ExpectedOpenParen" xml:space="preserve">
+  <data name="ExpectedOpenParenthesis" xml:space="preserve">
     <value>Expected opening parenthesis</value>
   </data>
   <data name="ExpectedProgId" xml:space="preserve">
@@ -200,9 +200,6 @@
   </data>
   <data name="ExpectedTerm" xml:space="preserve">
     <value>Expected term, found {0}</value>
-  </data>
-  <data name="FallbackEncodingFailed" xml:space="preserve">
-    <value>CssFallbackBuffer failed to encode encoded characters!</value>
   </data>
   <data name="HashAfterUnaryNotAllowed" xml:space="preserve">
     <value>Hash ({0}) not allowed after unary operator</value>
@@ -267,7 +264,7 @@
   <data name="DuplicateNamespaceDeclaration" xml:space="preserve">
     <value>Duplicate namespace declaration; already declared '{0}'</value>
   </data>
-  <data name="HackGeneratesInvalidCSS" xml:space="preserve">
+  <data name="HackGeneratesInvalidCss" xml:space="preserve">
     <value>Browser hack generates invalid CSS</value>
   </data>
   <data name="UndeclaredNamespace" xml:space="preserve">
@@ -279,7 +276,7 @@
   <data name="ExpressionError" xml:space="preserve">
     <value>JavaScript error in expression property: {0}</value>
   </data>
-  <data name="ExpectedClosingParen" xml:space="preserve">
+  <data name="ExpectedClosingParenthesis" xml:space="preserve">
     <value>Expected closing parenthesis, found '{0}'</value>
   </data>
   <data name="ExpectedMediaFeature" xml:space="preserve">
@@ -293,24 +290,6 @@
   </data>
   <data name="MediaQueryRequiresSpace" xml:space="preserve">
     <value>Media queries require a space between 'and' and the opening parenthesis: '{0}'</value>
-  </data>
-  <data name="Severity0" xml:space="preserve">
-    <value>run-time</value>
-  </data>
-  <data name="Severity1" xml:space="preserve">
-    <value>coding</value>
-  </data>
-  <data name="Severity2" xml:space="preserve">
-    <value>code</value>
-  </data>
-  <data name="Severity3" xml:space="preserve">
-    <value>performance</value>
-  </data>
-  <data name="Severity4" xml:space="preserve">
-    <value>improper technique</value>
-  </data>
-  <data name="SeverityUnknown" xml:space="preserve">
-    <value>unknown ({0})</value>
   </data>
   <data name="PossibleInvalidClassName" xml:space="preserve">
     <value>Possible cross-browser invalid class name: {0}</value>

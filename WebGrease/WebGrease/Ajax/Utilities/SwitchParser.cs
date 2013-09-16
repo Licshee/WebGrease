@@ -308,7 +308,8 @@ namespace Microsoft.Ajax.Utilities
         /// Takes an array of arguments and parses the switches into the appropriate settings objects
         /// </summary>
         /// <param name="args"></param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode", Justification="Big switch statement"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Big switch statement")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode", Justification="Big switch statement"), 
+         System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity", Justification = "Big switch statement")]
         public void Parse(string[] args)
         {
             var listSeparators = new[] { ',', ';' };
@@ -887,16 +888,37 @@ namespace Microsoft.Ajax.Utilities
                                                 break;
 
                                             case "PROG":
+                                            case "PROGRAM":
                                                 // this is the default setting
                                                 JSSettings.SourceMode = JavaScriptSourceMode.Program;
                                                 break;
 
+                                            case "MOD":
+                                            case "MODULE":
+                                                JSSettings.SourceMode = JavaScriptSourceMode.Module;
+                                                break;
+
                                             case "EXPR":
+                                            case "EXPRESSION":
                                                 JSSettings.SourceMode = JavaScriptSourceMode.Expression;
                                                 break;
 
                                             case "EVT":
+                                            case "EVENT":
                                                 JSSettings.SourceMode = JavaScriptSourceMode.EventHandler;
+                                                break;
+
+                                            case "ES5":
+                                                // say we are targetting ECMAScript 5. ECMAScript 6 features won't
+                                                // be disabled; future feature may change them to ES5-equivalents.
+                                                JSSettings.ScriptVersion = ScriptVersion.EcmaScript5;
+                                                break;
+
+                                            case "ES6":
+                                                // say we are targetting ECMAScript 6 so the parser will know ahead of
+                                                // time and not be surprised by new syntax. Future feature may generate
+                                                // ES6 syntax for optimizations.
+                                                JSSettings.ScriptVersion = ScriptVersion.EcmaScript6;
                                                 break;
 
                                             default:

@@ -58,6 +58,10 @@ namespace Microsoft.Ajax.Utilities
                 // always allowed
                 case JSToken.Get: return "get";
                 case JSToken.Set: return "set";
+                case JSToken.Super: return "super";
+
+                // what about EcmaScript 6? Does this become a reserved word?
+                case JSToken.Module: return "module";
 
                 // not in strict mode
                 case JSToken.Implements: return "implements";
@@ -79,48 +83,26 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        internal JSToken GetKeyword(Context context, int wordLength)
-        {
-            return GetKeyword(context.Document.Source, context.StartPosition, wordLength);
-        }
-
         internal JSToken GetKeyword(string source, int startPosition, int wordLength)
         {
-            JSKeyword keyword = this;
-
-        nextToken:
+            var keyword = this;
             while (null != keyword)
             {
                 if (wordLength == keyword.m_length)
                 {
                     // equal number of characters
                     // we know the first char has to match, so start with the second
-                    for (int i = 1, j = startPosition + 1; i < wordLength; i++, j++)
+                    var comparison = string.CompareOrdinal(keyword.m_name, 0, source, startPosition, wordLength);
+                    if (comparison == 0)
                     {
-                        char ch1 = keyword.m_name[i];
-                        char ch2 = source[j];
-                        if (ch1 == ch2)
-                        {
-                            // match -- continue
-                            continue;
-                        }
-                        else if (ch2 < ch1)
-                        {
-                            // because the list is in order, if the character for the test
-                            // is less than the character for the keyword we are testing against,
-                            // then we know this isn't going to be in any other node
-                            return JSToken.Identifier;
-                        }
-                        else
-                        {
-                            // must be greater than the current token -- try the next one
-                            keyword = keyword.m_next;
-                            goto nextToken;
-                        }
+                        // found a match
+                        return keyword.m_token;
                     }
-
-                    // if we got this far, it was a complete match
-                    return keyword.m_token;
+                    else if (comparison > 0)
+                    {
+                        // because the list is in order, if we're past this guy, there's no match
+                        return JSToken.Identifier;
+                    }
                 }
                 else if (wordLength < keyword.m_length)
                 {
@@ -131,6 +113,8 @@ namespace Microsoft.Ajax.Utilities
 
                 keyword = keyword.m_next;
             }
+
+            // walked th list without finding a map
             return JSToken.Identifier;
         }
 
@@ -174,6 +158,8 @@ namespace Microsoft.Ajax.Utilities
                                 new JSKeyword(JSToken.InstanceOf, "instanceof"))))));
             // l
             keywords['l' - 'a'] = new JSKeyword(JSToken.Let, "let");
+            // m
+            //keywords['m' - 'a'] = new JSKeyword(JSToken.Module, "module");
             // n
             keywords['n' - 'a'] = new JSKeyword(JSToken.New, "new",
                 new JSKeyword(JSToken.Null, "null",

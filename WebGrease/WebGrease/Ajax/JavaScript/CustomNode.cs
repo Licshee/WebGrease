@@ -14,10 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     /// <summary>
@@ -27,8 +23,8 @@ namespace Microsoft.Ajax.Utilities
     /// </summary>
     public class CustomNode : AstNode
     {
-        public CustomNode(Context context, JSParser parser)
-            : base(context, parser)
+        public CustomNode(Context context)
+            : base(context)
         {
         }
 
@@ -40,7 +36,33 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public override string ToCode()
+        /// <summary>
+        /// Gets whether to add a semicolon after the node when another node follows this inside a block
+        /// </summary>
+        internal virtual bool RequiresSeparator
+        {
+            get
+            {
+                // by default, custom nodes will get semicolons inserted after them.
+                // override this method in your own custom node if that is not the desired behavior.
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Gets whether the custom node is a debugger statement and should be stripped for release builds
+        /// </summary>
+        internal virtual bool IsDebuggerStatement
+        {
+            get
+            {
+                // by default, custom nodes are not debug-only statements.
+                // override this method in your own custom node if that is not the desired behavior.
+                return false;
+            }
+        }
+
+        public virtual string ToCode()
         {
             // by default, this node produces nothing in the output.
             // the OutputVisitor will output the results of ToCode, so

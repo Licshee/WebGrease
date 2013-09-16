@@ -18,22 +18,23 @@ namespace Microsoft.Ajax.Utilities
 {
     public class ImportantComment : AstNode
     {
-        public string Comment { get; private set; }
+        public string Comment { get; set; }
 
-        public ImportantComment(Context context, JSParser parser)
-            : base(context, parser)
+        public override bool IsDeclaration
         {
-            if (parser != null && parser.Settings.OutputMode == OutputMode.SingleLine)
+            get
             {
-                // if we are in single-line mode, we want to replace all CRLF pairs
-                // with just the LF to save output bytes.
-                Comment = Context.Code.Replace("\r\n", "\n");
+                // this is for determining if a node in a block AFTER a return/break/continue
+                // should be removed. We don't want to remove an important comment, so SAY it's
+                // a declaration.
+                return true;
             }
-            else
-            {
-                // multi-line mode, just leave it as-is
-                Comment = Context.Code;
-            }
+        }
+
+        public ImportantComment(Context context)
+            : base(context)
+        {
+            Comment = Context.Code;
         }
 
         public override void Accept(IVisitor visitor)
@@ -41,15 +42,6 @@ namespace Microsoft.Ajax.Utilities
             if (visitor != null)
             {
                 visitor.Visit(this);
-            }
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // never requires a separator because we always line-break after the comment
-                return false;
             }
         }
     }

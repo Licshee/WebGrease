@@ -14,18 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Microsoft.Ajax.Utilities
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
 
     /// <summary>
     /// output JSON-compatible code
@@ -235,7 +229,37 @@ namespace Microsoft.Ajax.Utilities
             IsValid = false;
         }
 
+        public void Visit(BindingIdentifier node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
         public void Visit(Break node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(ClassNode node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(ComprehensionNode node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(ComprehensionForClause node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(ComprehensionIfClause node)
         {
             // invalid! ignore
             IsValid = false;
@@ -337,6 +361,12 @@ namespace Microsoft.Ajax.Utilities
             IsValid = false;
         }
 
+        public void Visit(ExportNode node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
         public void Visit(ForIn node)
         {
             // invalid! ignore
@@ -384,6 +414,24 @@ namespace Microsoft.Ajax.Utilities
             IsValid = false;
         }
 
+        public void Visit(ImportExportSpecifier node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(ImportNode node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(InitializerNode node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
         public void Visit(LabeledStatement node)
         {
             // invalid! ignore
@@ -403,6 +451,12 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(Member node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(ModuleDeclaration node)
         {
             // invalid! ignore
             IsValid = false;
@@ -433,6 +487,18 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(SwitchCase node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(TemplateLiteral node)
+        {
+            // invalid! ignore
+            IsValid = false;
+        }
+
+        public void Visit(TemplateLiteralExpression node)
         {
             // invalid! ignore
             IsValid = false;

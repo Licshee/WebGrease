@@ -14,9 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -56,8 +54,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public WithNode(Context context, JSParser parser)
-            : base(context, parser)
+        public WithNode(Context context)
+            : base(context)
         {
         }
 
@@ -90,15 +88,6 @@ namespace Microsoft.Ajax.Utilities
                 return true;
             }
             return false;
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // requires a separator if the body does
-                return Body == null || Body.Count == 0 ? false : Body.RequiresSeparator;
-            }
         }
 
         internal override bool EncloseBlock(EncloseBlockType type)

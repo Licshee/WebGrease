@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -24,8 +23,8 @@ namespace Microsoft.Ajax.Utilities
     {
         public bool IsGetter { get; set; }
 
-        public GetterSetter(String identifier, bool isGetter, Context context, JSParser parser)
-            : base(identifier, PrimitiveType.String, context, parser)
+        public GetterSetter(String identifier, bool isGetter, Context context)
+            : base(identifier, PrimitiveType.String, context)
         {
             IsGetter = isGetter;
         }

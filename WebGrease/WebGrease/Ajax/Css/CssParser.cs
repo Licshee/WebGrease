@@ -222,11 +222,9 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                return (
-                  m_currentToken != null
-                  ? m_currentToken.TokenType
-                  : TokenType.None
-                  );
+                return m_currentToken != null
+                    ? m_currentToken.TokenType
+                    : TokenType.None;
             }
         }
 
@@ -234,11 +232,9 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                return (
-                  m_currentToken != null
-                  ? m_currentToken.Text
-                  : string.Empty
-                  );
+                return m_currentToken != null
+                    ? m_currentToken.Text
+                    : string.Empty;
             }
         }
 
@@ -306,7 +302,8 @@ namespace Microsoft.Ajax.Utilities
                         m_scanner.AllowEmbeddedAspNetBlocks = this.Settings.AllowEmbeddedAspNetBlocks;
                         m_scanner.ScannerError += (sender, ea) =>
                             {
-                                OnCssError(ea.Exception);
+                                ea.Error.File = this.FileContext;
+                                OnCssError(ea.Error);
                             };
                         m_scanner.ContextChange += (sender, ea) =>
                             {
@@ -339,13 +336,19 @@ namespace Microsoft.Ajax.Utilities
 
                         if (!m_scanner.EndOfFile)
                         {
-                            OnCssError(new CssException(
-                                (int)CssErrorCode.ExpectedEndOfFile,
-                                CssStrings.ScannerSubsystem,
-                                0,
-                                m_currentToken.Context.Start.Line,
-                                m_currentToken.Context.Start.Char,
-                                CssStrings.ExpectedEndOfFile));
+                            int errorNumber = (int)CssErrorCode.ExpectedEndOfFile;
+                            OnCssError(new ContextError()
+                                {
+                                    IsError = true,
+                                    Severity = 0,
+                                    Subcategory = ContextError.GetSubcategory(0),
+                                    File = FileContext,
+                                    ErrorNumber = errorNumber,
+                                    ErrorCode = "CSS{0}".FormatInvariant(errorNumber & (0xffff)),
+                                    StartLine = m_currentToken.Context.Start.Line,
+                                    StartColumn = m_currentToken.Context.Start.Char,
+                                    Message = CssStrings.ExpectedEndOfFile,
+                                });
                         }
 
                         // get the crunched string and dump the string builder
@@ -380,6 +383,20 @@ namespace Microsoft.Ajax.Utilities
             // but we want to strip it off the source so it doesn't interfere with the parsing.
             // We SHOULD also check for a @charset rule to see if we need to re-decode the string. But for now, just
             // throw a low-pri warning if we see an improperly-decided BOM.
+
+            if (source.StartsWith("/*/#SOURCE", StringComparison.OrdinalIgnoreCase))
+            {
+                var firstLineBreak = source.IndexOfAny(new[] { '\n', '\r' });
+                if (firstLineBreak >= 0)
+                {
+                    if (source[firstLineBreak] == '\r' && source[firstLineBreak + 1] == '\n')
+                    {
+                        ++firstLineBreak;
+                    }
+
+                    source = source.Substring(firstLineBreak + 1);
+                }
+            }
 
             if (source.StartsWith("\u00ef\u00bb\u00bf", StringComparison.Ordinal))
             {
@@ -2284,7 +2301,7 @@ namespace Microsoft.Ajax.Utilities
             Parsed parsed = Parsed.False;
             bool hasUnary = false;
             if (CurrentTokenType == TokenType.Character
-              && (CurrentTokenText == "-" || CurrentTokenText == "+"))
+                && (CurrentTokenText == "-" || CurrentTokenText == "+"))
             {
                 if (wasEmpty)
                 {
@@ -2348,7 +2365,7 @@ namespace Microsoft.Ajax.Utilities
                         {
                             Append(' ');
                         }
-                        
+
                         wasEmpty = false;
                     }
 
@@ -2479,6 +2496,30 @@ namespace Microsoft.Ajax.Utilities
                         else
                         {
                             ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
+                        }
+                    }
+                    else if (CurrentTokenType == TokenType.Character
+                        && CurrentTokenText == "%")
+                    {
+                        // see if this is the start of a replacement token
+                        m_currentToken = m_scanner.ScanReplacementToken(m_currentToken);
+                        if (CurrentTokenType == TokenType.ReplacementToken)
+                        {
+                            // it was -- output it and move along
+                            if (wasEmpty)
+                            {
+                                Append(' ');
+                                wasEmpty = false;
+                            }
+
+                            AppendCurrent();
+                            SkipSpace();
+                            parsed = Parsed.True;
+                        }
+                        else
+                        {
+                            // nope; just a percent. 
+                            goto default;
                         }
                     }
                     else
@@ -2625,7 +2666,7 @@ namespace Microsoft.Ajax.Utilities
             return parsed;
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "No, we want to output lower-case here")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "we want lower-case output")]
         private Parsed ParseRgb()
         {
@@ -2885,12 +2926,8 @@ namespace Microsoft.Ajax.Utilities
                 var expressionCode = jsBuilder.ToString();
                 if (Settings.MinifyExpressions)
                 {
-                    // we want to minify the javascript expressions.
-                    // create a JSParser object from the code we parsed.
-                    JSParser jsParser = new JSParser(expressionCode);
-
-                    // copy the file context
-                    jsParser.FileContext = this.FileContext;
+                    // we want to minify the javascript expressions
+                    JSParser jsParser = new JSParser();
 
                     // hook the error handler and set the "contains errors" flag to false.
                     // the handler will set the value to true if it encounters any errors
@@ -2902,14 +2939,14 @@ namespace Microsoft.Ajax.Utilities
                     };
 
                     // parse the source as an expression using our common JS settings
-                    Block block = jsParser.Parse(m_jsSettings);
+                    var block = jsParser.Parse(new DocumentContext(expressionCode) { FileContext = this.FileContext }, m_jsSettings);
 
                     // if we got back a parsed block and there were no errors, output the minified code.
                     // if we didn't get back the block, or if there were any errors at all, just output
                     // the raw expression source.
                     if (block != null && !containsErrors)
                     {
-                        Append(block.ToCode());
+                        Append(OutputVisitor.Apply(block, jsParser.Settings));
                     }
                     else
                     {
@@ -3653,7 +3690,9 @@ namespace Microsoft.Ajax.Utilities
                 CurrentTokenType);
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"),
+         System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode"),
+         System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase")]
         private bool Append(object obj, TokenType tokenType)
         {
             bool outputText = false;
@@ -4294,6 +4333,11 @@ namespace Microsoft.Ajax.Utilities
 
         #region Error methods
 
+        public static string ErrorFormat(CssErrorCode errorCode)
+        {
+            return CssStrings.ResourceManager.GetString(errorCode.ToString(), CssStrings.Culture);
+        }
+
         private void ReportError(int severity, CssErrorCode errorNumber, CssContext context, params object[] arguments)
         {
             // guide: 0 == syntax error
@@ -4302,83 +4346,46 @@ namespace Microsoft.Ajax.Utilities
             //        3 == this can lead to performance problems
             //        4 == this is just not right
 
-            string message = CssStrings.ResourceManager.GetString(errorNumber.ToString(), CssStrings.Culture).FormatInvariant(arguments);
-            var exc = new CssException(
-                (int)errorNumber,
-                CssStrings.ParserSubsystem,
-                severity,
-                (context != null) ? context.Start.Line : 0,
-                (context != null) ? context.Start.Char : 0,
-                message);
+            string message = ErrorFormat(errorNumber).FormatInvariant(arguments);
+            Debug.Assert(!message.IsNullOrWhiteSpace());
+            var error = new ContextError()
+                {
+                    IsError = severity < 2,
+                    Severity = severity,
+                    Subcategory = ContextError.GetSubcategory(severity),
+                    File = FileContext,
+                    ErrorNumber = (int)errorNumber,
+                    ErrorCode = "CSS{0}".FormatInvariant(((int)errorNumber) & (0xffff)),
+                    StartLine = context.IfNotNull(c => c.Start.Line),
+                    StartColumn = context.IfNotNull(c => c.Start.Char),
+                    Message = message,
+                };
 
             // but warnings we want to just report and carry on
-            OnCssError(exc);
+            OnCssError(error);
         }
 
         // just use the current context for the error
         private void ReportError(int severity, CssErrorCode errorNumber, params object[] arguments)
         {
-            ReportError(severity, errorNumber, (m_currentToken != null ? m_currentToken.Context : null), arguments);
+            ReportError(severity, errorNumber, m_currentToken.IfNotNull(c => c.Context), arguments);
         }
 
-        public event EventHandler<CssErrorEventArgs> CssError;
+        public event EventHandler<ContextErrorEventArgs> CssError;
 
-        protected void OnCssError(CssException exception)
+        protected void OnCssError(ContextError cssError)
         {
-            if (CssError != null && exception != null && !Settings.IgnoreAllErrors)
+            if (CssError != null && cssError != null && !Settings.IgnoreAllErrors)
             {
-                // format our CSS error code
-                string errorCode = "CSS{0}".FormatInvariant((exception.Error & (0xffff)));
-
                 // if we have no errors in our error ignore list, or if we do but this error code is not in
                 // that list, fire the event to whomever is listening for it.
-                if (!Settings.IgnoreErrorCollection.Contains(errorCode))
+                if (!Settings.IgnoreErrorCollection.Contains(cssError.ErrorCode))
                 {
-                    CssError(this, new CssErrorEventArgs(exception,
-                        new ContextError(
-                            exception.Severity < 2, 
-                            exception.Severity,
-                            GetSeverityString(exception.Severity), 
-                            errorCode,
-                            null,
-                            FileContext, 
-                            exception.Line, 
-                            exception.Char, 
-                            0, 
-                            0, 
-                            exception.Message)));
+                    CssError(this, new ContextErrorEventArgs()
+                        {
+                            Error = cssError
+                        });
                 }
-            }
-        }
-
-        private static string GetSeverityString(int severity)
-        {
-            // From jscriptexception.js:
-            //
-            //guide: 0 == there will be a run-time error if this code executes
-            //       1 == the programmer probably did not intend to do this
-            //       2 == this can lead to problems in the future.
-            //       3 == this can lead to performance problems
-            //       4 == this is just not right
-            switch (severity)
-            {
-                case 0:
-                    return CssStrings.Severity0;
-
-                case 1:
-                    return CssStrings.Severity1;
-
-                case 2:
-                    return CssStrings.Severity2;
-
-                case 3:
-                    return CssStrings.Severity3;
-
-                case 4:
-                    return CssStrings.Severity4;
-
-                default:
-                    return CssStrings.SeverityUnknown.FormatInvariant(severity);
             }
         }
 
@@ -4455,58 +4462,5 @@ namespace Microsoft.Ajax.Utilities
         }
 
         #endregion
-    }
-
-    #region custom exceptions
-
-    /// <summary>
-    /// Base class for exceptions thrown by the parser or the scanner
-    /// </summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1711:IdentifiersShouldNotHaveIncorrectSuffix", Justification = "backwards-compatibility for public class name")]
-    public sealed class CssException
-    {
-        public string Originator { get; private set; }
-
-        public int Severity { get; private set; }
-
-        public int Line { get; private set; }
-
-        public int Char { get; private set; }
-
-        public int Error { get; private set; }
-
-        public string Message { get; private set; }
-
-        internal CssException(int errorNum, string source, int severity, int line, int pos, string message)
-        {
-            Error = errorNum;
-            Originator = source;
-            Severity = severity;
-            Line = line;
-            Char = pos;
-            Message = message;
-        }
-    }
-
-    #endregion
-
-    public class CssErrorEventArgs : EventArgs
-    {
-        /// <summary>
-        /// The error information with the context info.
-        /// Use this property going forward
-        /// </summary>
-        public ContextError Error { get; private set; }
-
-        /// <summary>
-        /// The CSS exception object. Don't use this; might go away in future version. Use the Error property instead.
-        /// </summary>
-        public CssException Exception { get; private set; }
-
-        internal CssErrorEventArgs(CssException exc, ContextError error)
-        {
-            Error = error;
-            Exception = exc;
-        }
     }
 }

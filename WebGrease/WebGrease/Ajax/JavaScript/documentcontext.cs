@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -24,36 +23,30 @@ namespace Microsoft.Ajax.Utilities
     {
         private Dictionary<string, string> m_reportedVariables;
 
-        private JSParser m_parser;
-
         public string Source { get; private set; }
         public string FileContext { get; set; }
+
         public bool IsGenerated { get; private set; }
+        public JSParser Parser { get; set; }
 
-        public DocumentContext(JSParser parser)
+        /// <summary>
+        /// Create a new document context from the given source
+        /// </summary>
+        /// <param name="source"></param>
+        public DocumentContext(string source)
         {
-            m_parser = parser;
-            IsGenerated = true;
-            Source = "[generated code]";
-        }
-
-        public DocumentContext(JSParser parser, string source)
-        {
-            m_parser = parser;
             Source = source;
         }
 
-        internal DocumentContext DifferentFileContext(string fileContext)
+        public DocumentContext Clone()
         {
-            // use the SAME parser and reported variable dictionary
-            var documentContext = new DocumentContext(m_parser, Source)
-            {
-                IsGenerated = this.IsGenerated,
-                FileContext = fileContext
-            };
-
-            documentContext.m_reportedVariables = this.m_reportedVariables;
-            return documentContext;
+            return new DocumentContext(this.Source)
+                {
+                    IsGenerated = this.IsGenerated,
+                    FileContext = this.FileContext,
+                    Parser = this.Parser,
+                    m_reportedVariables = this.m_reportedVariables,
+                };
         }
 
         //---------------------------------------------------------------------------------------
@@ -65,22 +58,19 @@ namespace Microsoft.Ajax.Utilities
         //      parsing has to continue (the host returns true when parsing has to continue)
         //---------------------------------------------------------------------------------------
 
-        internal void HandleError(JScriptException error)
+        internal void HandleError(ContextError error)
         {
-            if (m_parser != null)
+            if (Parser != null)
             {
-                if (!m_parser.OnCompilerError(error))
-                {
-                    throw new EndOfStreamException(); // this exception terminates the parser
-                }
+                Parser.OnCompilerError(error);
             }
         }
 
-        internal void ReportUndefined(UndefinedReferenceException ex)
+        internal void ReportUndefined(UndefinedReference referernce)
         {
-            if (m_parser != null)
+            if (Parser != null)
             {
-                m_parser.OnUndefinedReference(ex);
+                Parser.OnUndefinedReference(referernce);
             }
         }
 

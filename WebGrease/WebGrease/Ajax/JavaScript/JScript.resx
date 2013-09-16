@@ -222,9 +222,6 @@
   <data name="KeywordUsedAsIdentifier" xml:space="preserve">
     <value>Reserved words and should not be used as an identifier; cross-browser differences</value>
   </data>
-  <data name="NoCommaOrTypeDefinitionError" xml:space="preserve">
-    <value>Expected ','. Write 'identifier : Type' rather than 'Type identifier' to declare a typed parameter</value>
-  </data>
   <data name="NoRightParenthesisOrComma" xml:space="preserve">
     <value>Expected ',' or ')'</value>
   </data>
@@ -254,12 +251,6 @@
   </data>
   <data name="RegExpSyntax" xml:space="preserve">
     <value>Syntax error in regular expression</value>
-  </data>
-  <data name="UncaughtException" xml:space="preserve">
-    <value>Exception thrown and not caught</value>
-  </data>
-  <data name="InternalCompilerError" xml:space="preserve">
-    <value>***INTERNAL COMPILER ERROR***</value>
   </data>
   <data name="StatementBlockExpected" xml:space="preserve">
     <value>Always use full statement blocks</value>
@@ -351,24 +342,6 @@
   <data name="StrictModeArgumentName" xml:space="preserve">
     <value>Strict-mode does not allow certain argument names</value>
   </data>
-  <data name="Severity0" xml:space="preserve">
-    <value>run-time</value>
-  </data>
-  <data name="Severity1" xml:space="preserve">
-    <value>coding</value>
-  </data>
-  <data name="Severity2" xml:space="preserve">
-    <value>code</value>
-  </data>
-  <data name="Severity3" xml:space="preserve">
-    <value>performance</value>
-  </data>
-  <data name="Severity4" xml:space="preserve">
-    <value>improper technique</value>
-  </data>
-  <data name="SeverityUnknown" xml:space="preserve">
-    <value>unknown ({0})</value>
-  </data>
   <data name="DuplicateConstantDeclaration" xml:space="preserve">
     <value>Constant declaration already declared</value>
   </data>
@@ -383,9 +356,6 @@
   </data>
   <data name="UnclosedFunction" xml:space="preserve">
     <value>End of file encountered before function is properly closed</value>
-  </data>
-  <data name="FallbackEncodingFailed" xml:space="preserve">
-    <value>Fallback character encoding failed</value>
   </data>
   <data name="ObjectLiteralKeyword" xml:space="preserve">
     <value>Reserved word used as object literal property name; cross-browser issue.</value>
@@ -408,9 +378,6 @@
   <data name="DuplicateCatch" xml:space="preserve">
     <value>Variable or function declaration redefines the catch error name</value>
   </data>
-  <data name="InvalidJSONOutput" xml:space="preserve">
-    <value>Invalid JSON JavaScript nodes encountered during output</value>
-  </data>
   <data name="SuspectEquality" xml:space="preserve">
     <value>Suspect equality comparison</value>
   </data>
@@ -419,5 +386,89 @@
   </data>
   <data name="ArrayLiteralTrailingComma" xml:space="preserve">
     <value>Trailing comma in array literal; cross-browser difference</value>
+  </data>
+  <data name="StrictModeCatchName" xml:space="preserve">
+    <value>Strict-mode does not allow certain catch binding names</value>
+  </data>
+  <data name="BindingPatternRequiresInitializer" xml:space="preserve">
+    <value>Binding pattern requires initializer</value>
+  </data>
+  <data name="ImplicitPropertyNameMustBeIdentifier" xml:space="preserve">
+    <value>Implicit property name must be identifier</value>
+  </data>
+  <data name="SetterMustHaveOneParameter" xml:space="preserve">
+    <value>Setter methods must have a single formal argument</value>
+  </data>
+  <data name="RestParameterNotLast" xml:space="preserve">
+    <value>Rest parameter can only be in last position</value>
+  </data>
+  <data name="UnableToConvertFromBinding" xml:space="preserve">
+    <value>Unable to convert from binding to reference</value>
+  </data>
+  <data name="UnableToConvertToBinding" xml:space="preserve">
+    <value>Unable to convert from reference to binding</value>
+  </data>
+  <data name="BadBindingSyntax" xml:space="preserve">
+    <value>Invalid binding syntax</value>
+  </data>
+  <data name="MethodsNotAllowedInBindings" xml:space="preserve">
+    <value>Methods not allowed in object literal bindings</value>
+  </data>
+  <data name="NoForOrIf" xml:space="preserve">
+    <value>Expected 'for' or 'if' keyword</value>
+  </data>
+  <data name="ClassElementExpected" xml:space="preserve">
+    <value>Expected class element</value>
+  </data>
+  <data name="DuplicateClassElementName" xml:space="preserve">
+    <value>Duplicate class element name</value>
+  </data>
+  <data name="SpecialConstructor" xml:space="preserve">
+    <value>Class constructor must be normal method</value>
+  </data>
+  <data name="StaticPrototype" xml:space="preserve">
+    <value>Class static method cannot be named "prototype"</value>
+  </data>
+  <data name="UnusedLabel" xml:space="preserve">
+    <value>Statement label never referenced</value>
+  </data>
+  <data name="NoBinding" xml:space="preserve">
+    <value>Expected binding syntax</value>
+  </data>
+  <data name="MultipleDefaultExports" xml:space="preserve">
+    <value>Multiple default exports</value>
+  </data>
+  <data name="ImportNoModuleName" xml:space="preserve">
+    <value>Import statement must include module name</value>
+  </data>
+  <data name="DuplicateModuleDeclaration" xml:space="preserve">
+    <value>Duplicate module declaration</value>
+  </data>
+  <data name="NoDefaultModuleExport" xml:space="preserve">
+    <value>Imported module has no default export</value>
+  </data>
+  <data name="NoModuleExport" xml:space="preserve">
+    <value>Imported module does not export name</value>
+  </data>
+  <data name="NewLineNotAllowed" xml:space="preserve">
+    <value>New line not allowed</value>
+  </data>
+  <data name="NoExpectedFrom" xml:space="preserve">
+    <value>Expected "from"</value>
+  </data>
+  <data name="NoSpecifierSet" xml:space="preserve">
+    <value>Expected specifier set</value>
+  </data>
+  <data name="NoStringLiteral" xml:space="preserve">
+    <value>Expected string literal</value>
+  </data>
+  <data name="ExportNotAtModuleLevel" xml:space="preserve">
+    <value>Export statements must be at top level of module</value>
+  </data>
+  <data name="NoSource" xml:space="preserve">
+    <value>No source set on parser</value>
+  </data>
+  <data name="ArrowCannotBeConstructor" xml:space="preserve">
+    <value>Arrow functions cannot be constructors</value>
   </data>
 </root>

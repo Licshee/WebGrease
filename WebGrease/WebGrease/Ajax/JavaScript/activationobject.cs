@@ -16,18 +16,29 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Reflection;
 
 namespace Microsoft.Ajax.Utilities
 {
+    public enum ScopeType
+    {
+        None = 0,
+        Global,
+        Function,
+        Block,
+        With,
+        Catch,
+        Class,
+        Lexical,
+        Module,
+    }
+
     public abstract class ActivationObject
     {
         #region private fields
 
         private bool m_useStrict;//= false;
         private bool m_isKnownAtCompileTime;
-        private CodeSettings m_settings;
 
         #endregion
 
@@ -42,6 +53,10 @@ namespace Microsoft.Ajax.Utilities
         #endregion
 
         #region public properties
+
+        public AstNode Owner { get; set; }
+
+        public bool HasSuperBinding { get; set; }
 
         public bool UseStrict
         {
@@ -72,12 +87,11 @@ namespace Microsoft.Ajax.Utilities
             set 
             { 
                 m_isKnownAtCompileTime = value;
-                if (!value 
-                    && m_settings.EvalTreatment == EvalTreatment.MakeAllSafe)
+                if (!value && Settings.EvalTreatment == EvalTreatment.MakeAllSafe)
                 {
                     // are we a function scope?
-                    var funcScope = this as FunctionScope;
-                    if (funcScope == null)
+                    var functionObject = this.Owner as FunctionObject;
+                    if (functionObject == null)
                     {
                         // we are not a function, so the parent scope is unknown too
                         Parent.IfNotNull(p => p.IsKnownAtCompileTime = false);
@@ -87,7 +101,7 @@ namespace Microsoft.Ajax.Utilities
                         // we are a function, check to see if the function object is actually
                         // referenced. (we don't want to mark the parent as unknown if this function 
                         // isn't even referenced).
-                        if (funcScope.FunctionObject.IsReferenced)
+                        if (functionObject.IsReferenced)
                         {
                             Parent.IsKnownAtCompileTime = false;
                         }
@@ -107,8 +121,17 @@ namespace Microsoft.Ajax.Utilities
         public ICollection<INameDeclaration> VarDeclaredNames { get; private set; }
         public ICollection<INameDeclaration> LexicallyDeclaredNames { get; private set; }
 
-        public ICollection<ParameterDeclaration> GhostedCatchParameters { get; private set; }
+        public ICollection<BindingIdentifier> GhostedCatchParameters { get; private set; }
         public ICollection<FunctionObject> GhostedFunctions { get; private set; }
+
+        public string ScopeName { get; set; }
+        public ScopeType ScopeType { get; protected set; }
+
+        #endregion
+
+        #region protected properties
+
+        protected CodeSettings Settings { get; private set; }
 
         #endregion
 
@@ -116,7 +139,7 @@ namespace Microsoft.Ajax.Utilities
         {
             m_isKnownAtCompileTime = true;
             m_useStrict = false;
-            m_settings = codeSettings;
+            Settings = codeSettings;
 
             Parent = parent;
             NameTable = new Dictionary<string, JSVariableField>();
@@ -137,9 +160,137 @@ namespace Microsoft.Ajax.Utilities
             VarDeclaredNames = new HashSet<INameDeclaration>();
             LexicallyDeclaredNames = new HashSet<INameDeclaration>();
 
-            GhostedCatchParameters = new HashSet<ParameterDeclaration>();
+            GhostedCatchParameters = new HashSet<BindingIdentifier>();
             GhostedFunctions = new HashSet<FunctionObject>();
         }
+
+        #region public static methods
+
+        /// <summary>
+        /// Delete a binding from its parent pattern
+        /// </summary>
+        /// <param name="binding">binding to delete</param>
+        /// <param name="normalizePattern">true to normalize the parent pattern and possibly delete it if now empty</param>
+        /// <returns>true if deleted, otherwise false</returns>
+        public static bool DeleteFromBindingPattern(AstNode binding, bool normalizePattern)
+        {
+            var deleted = false;
+            if (binding != null)
+            {
+                // the parent might be an node list under an array literal, or
+                // or a property under an object literal 
+                ObjectLiteralProperty property = null;
+                VariableDeclaration varDecl;
+                var nodeList = binding.Parent as AstNodeList;
+                if (nodeList != null && nodeList.Parent is ArrayLiteral)
+                {
+                    // name under an array literal so if this is the LAST element, we can delete it,
+                    // otherwise we have to replace it with a missing constant
+                    deleted = nodeList.ReplaceChild(
+                        binding,
+                        new ConstantWrapper(Missing.Value, PrimitiveType.Other, binding.Context.Clone()));
+                }
+                else if ((property = binding.Parent as ObjectLiteralProperty) != null)
+                {
+                    // delete the property from the list of properties after saving the list of properties for later
+                    nodeList = property.Parent as AstNodeList;
+                    deleted = property.Parent.ReplaceChild(property, null);
+                }
+                else if ((varDecl = binding.Parent as VariableDeclaration) != null)
+                {
+                    // we're at the top -- the empty binding we are deleting is defined within a vardecl.
+                    // IF the declaration is not the variable of a for-in statement, and
+                    // IF there are other vardecls in the var, and
+                    // IF the initializer is null or constant, 
+                    // THEN we can delete it. Otherwise we need to leave the empty pattern.
+                    var declaration = varDecl.Parent as Declaration;
+                    if (declaration != null)
+                    {
+                        var forIn = declaration.Parent as ForIn;
+                        if ((forIn == null || forIn.Variable != declaration)
+                            && (varDecl.Initializer == null || varDecl.Initializer.IsConstant))
+                        {
+                            // NOT in a for-in statement and the initializer is constant. We can delete the
+                            // vardecl with the empty binding pattern from its parent and then check to see
+                            // if the parent is now empty, and delete it if it is.
+                            deleted = varDecl.Parent.ReplaceChild(varDecl, null);
+                            if (declaration.Count == 0)
+                            {
+                                // the whole statement is now empty; whack it too
+                                declaration.Parent.ReplaceChild(declaration, null);
+                            }
+                        }
+                    }
+                }
+
+                if (deleted)
+                {
+                    var bindingIdentifier = binding as BindingIdentifier;
+                    if (bindingIdentifier != null)
+                    {
+                        // because this is a binding parameter, the binding should be listed
+                        // in the field's declarations collection. Remove it, too
+                        bindingIdentifier.VariableField.Declarations.Remove(bindingIdentifier);
+
+                        // mark the field as deleted IF there are no more references
+                        // or declarations
+                        if (!bindingIdentifier.VariableField.IsReferenced
+                            && bindingIdentifier.VariableField.Declarations.Count == 0)
+                        {
+                            bindingIdentifier.VariableField.WasRemoved = true;
+                        }
+                    }
+
+                    // see if we also want to possibly clean up this pattern, now that we've
+                    // removed something from it
+                    if (normalizePattern && nodeList != null)
+                    {
+                        // if this nodelist is the child of an array literal, make sure we remove 
+                        // any trailing elisions. 
+                        if (nodeList.Parent is ArrayLiteral)
+                        {
+                            for (var ndx = nodeList.Count - 1; ndx >= 0; --ndx)
+                            {
+                                var constantWrapper = nodeList[ndx] as ConstantWrapper;
+                                if (constantWrapper != null && constantWrapper.Value == Missing.Value)
+                                {
+                                    nodeList.RemoveAt(ndx);
+                                }
+                                else
+                                {
+                                    // no longer an elision; stop iterating
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (nodeList.Count == 0)
+                        {
+                            // the list is now empty!
+                            // let's recursively get rid of the parent array or object literal
+                            // from ITS binding pattern
+                            DeleteFromBindingPattern(nodeList.Parent, normalizePattern);
+                        }
+                    }
+                }
+            }
+
+            return deleted;
+        }
+
+        public static void RemoveBinding(AstNode binding)
+        {
+            // first unhook all the declarations in the binding pattern
+            foreach (var boundName in BindingsVisitor.Bindings(binding))
+            {
+                boundName.VariableField.IfNotNull(v => v.Declarations.Remove(boundName));
+            }
+
+            // then remove the binding from it's parent and clean up any cascade
+            DeleteFromBindingPattern(binding, true);
+        }
+
+        #endregion
 
         #region scope setup methods
 
@@ -152,8 +303,15 @@ namespace Microsoft.Ajax.Utilities
         {
             foreach (var lexDecl in LexicallyDeclaredNames)
             {
-                // use the function as the field value if it's a function
-                DefineField(lexDecl, lexDecl as FunctionObject);
+                // use the function as the field value if its parent is a function
+                // or the class node if its a class
+                AstNode fieldValue = lexDecl.Parent as FunctionObject;
+                if (fieldValue == null)
+                {
+                    fieldValue = lexDecl.Parent as ClassNode;
+                }
+
+                DefineField(lexDecl, fieldValue);
             }
         }
 
@@ -166,10 +324,10 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        private void DefineField(INameDeclaration nameDecl, FunctionObject fieldValue)
+        private void DefineField(INameDeclaration nameDecl, AstNode fieldValue)
         {
             var field = this[nameDecl.Name];
-            if (nameDecl is ParameterDeclaration)
+            if (nameDecl.IsParameter)
             {
                 // function parameters are handled separately, so if this is a parameter declaration,
                 // then it must be a catch variable. 
@@ -178,7 +336,7 @@ namespace Microsoft.Ajax.Utilities
                     // no collision - create the catch-error field
                     field = new JSVariableField(FieldType.CatchError, nameDecl.Name, 0, null)
                     {
-                        OriginalContext = nameDecl.NameContext,
+                        OriginalContext = nameDecl.Context,
                         IsDeclared = true
                     };
 
@@ -197,15 +355,19 @@ namespace Microsoft.Ajax.Utilities
                 {
                     // could be global or local depending on the scope, so let the scope create it.
                     field = this.CreateField(nameDecl.Name, null, 0);
-                    field.OriginalContext = nameDecl.NameContext;
+                    field.OriginalContext = nameDecl.Context;
                     field.IsDeclared = true;
                     field.IsFunction = (nameDecl is FunctionObject);
                     field.FieldValue = fieldValue;
 
-                    // if this field is a constant, mark it now
-                    var lexDeclaration = nameDecl.Parent as LexicalDeclaration;
-                    field.InitializationOnly = nameDecl.Parent is ConstStatement
-                        || (lexDeclaration != null && lexDeclaration.StatementToken == JSToken.Const);
+                    // if this field is a constant or an import, mark it now as initialize only.
+                    // Mozilla const statements will be const => vardecl => node
+                    // ES6 const statements will be lexdecl(StatementToken == JSToken.Cont) => vardecl => node
+                    // imports can be import => 
+                    var parentParent = nameDecl.Parent.IfNotNull(p => p.Parent);
+                    LexicalDeclaration lexDeclaration;
+                    field.InitializationOnly = parentParent is ConstStatement
+                        || ((lexDeclaration = parentParent as LexicalDeclaration) != null && lexDeclaration.StatementToken == JSToken.Const);
 
                     this.AddField(field);
                 }
@@ -214,9 +376,9 @@ namespace Microsoft.Ajax.Utilities
                     // already defined! 
                     // if this is a lexical declaration, then it's an error because we have two
                     // lexical declarations with the same name in the same scope.
-                    if (nameDecl.Parent is LexicalDeclaration)
+                    if (nameDecl.Parent.IfNotNull(p => p.Parent) is LexicalDeclaration)
                     {
-                        nameDecl.NameContext.HandleError(JSError.DuplicateLexicalDeclaration, true);
+                        nameDecl.Context.HandleError(JSError.DuplicateLexicalDeclaration, true);
                     }
 
                     if (nameDecl.Initializer != null)
@@ -237,6 +399,25 @@ namespace Microsoft.Ajax.Utilities
                     if (fieldValue != null)
                     {
                         field.FieldValue = fieldValue;
+                    }
+                }
+
+                // if this is a field that was declared with an export statement, then we want to set the
+                // IsExported flag. Stop if we get to a block, because that means we aren't in an export
+                // statement.
+                var parent = (AstNode)nameDecl;
+                while ((parent = parent.Parent) != null && !(parent is Block))
+                {
+                    if (parent is ExportNode)
+                    {
+                        field.IsExported = true;
+                        break;
+                    }
+                    else if (parent is ImportNode)
+                    {
+                        // import fields cannot be assigned to.
+                        field.InitializationOnly = true;
+                        break;
                     }
                 }
             }
@@ -275,23 +456,27 @@ namespace Microsoft.Ajax.Utilities
         {
             foreach (var variableField in NameTable.Values)
             {
-                // not referenced, not generated, and has an original context so not added after the fact.
-                // and we don't care if catch-error fields are unreferenced.
-                if (!variableField.IsReferenced
-                    && !variableField.IsGenerated
-                    && variableField.OuterField == null
-                    && variableField.FieldType != FieldType.CatchError
-                    && variableField.FieldType != FieldType.GhostCatch
-                    && variableField.OriginalContext != null)
+                if (variableField.OuterField == null)
                 {
-                    UnreferencedVariableField(variableField);
-                }
-                else if (variableField.RefCount == 1
-                    && this.IsKnownAtCompileTime
-                    && m_settings.RemoveUnneededCode
-                    && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedVariables))
-                {
-                    SingleReferenceVariableField(variableField);
+                    // not referenced, not generated, and has an original context so not added after the fact.
+                    // and we don't care if ghosted, catch-error fields or exports are unreferenced.
+                    if (!variableField.IsReferenced
+                        && !variableField.IsGenerated
+                        && variableField.FieldType != FieldType.CatchError
+                        && variableField.FieldType != FieldType.GhostCatch
+                        && !variableField.IsExported
+                        && variableField.OriginalContext != null)
+                    {
+                        UnreferencedVariableField(variableField);
+                    }
+                    else if (variableField.FieldType == FieldType.Local
+                        && variableField.RefCount == 1
+                        && this.IsKnownAtCompileTime
+                        && Settings.RemoveUnneededCode
+                        && Settings.IsModificationAllowed(TreeModifications.RemoveUnusedVariables))
+                    {
+                        SingleReferenceVariableField(variableField);
+                    }
                 }
             }
         }
@@ -304,11 +489,7 @@ namespace Microsoft.Ajax.Utilities
             {
                 UnreferencedFunction(variableField, functionObject);
             }
-            else if (variableField.FieldType == FieldType.Argument)
-            {
-                UnreferencedArgument(variableField);
-            }
-            else if (!variableField.WasRemoved)
+            else if (variableField.FieldType != FieldType.Argument && !variableField.WasRemoved)
             {
                 UnreferencedVariable(variableField);
             }
@@ -319,14 +500,14 @@ namespace Microsoft.Ajax.Utilities
             // if there is no name, then ignore this declaration because it's malformed.
             // (won't be a function expression because those are automatically referenced).
             // also ignore ghosted function fields.
-            if (functionObject.Name != null && variableField.FieldType != FieldType.GhostFunction)
+            if (functionObject.Binding != null && variableField.FieldType != FieldType.GhostFunction)
             {
                 // if the function name isn't a simple identifier, then leave it there and mark it as
                 // not renamable because it's probably one of those darn IE-extension event handlers or something.
-                if (JSScanner.IsValidIdentifier(functionObject.Name))
+                if (JSScanner.IsValidIdentifier(functionObject.Binding.Name))
                 {
                     // unreferenced function declaration. fire a warning.
-                    var ctx = functionObject.IdContext ?? variableField.OriginalContext;
+                    var ctx = functionObject.Binding.Context ?? variableField.OriginalContext;
                     ctx.HandleError(JSError.FunctionNotReferenced, false);
 
                     // hide it from the output if our settings say we can.
@@ -338,11 +519,13 @@ namespace Microsoft.Ajax.Utilities
                     // so if this is a block scope, don't hide the function, even if it is unreferenced because
                     // of the cross-browser difference.
                     if (this.IsKnownAtCompileTime
-                        && m_settings.MinifyCode
-                        && m_settings.RemoveUnneededCode
+                        && Settings.MinifyCode
+                        && Settings.RemoveUnneededCode
                         && !(this is BlockScope))
                     {
-                        functionObject.HideFromOutput = true;
+                        // REMOVE the unreferened function, don't dance around trying to "hide" it
+                        //functionObject.HideFromOutput = true;
+                        functionObject.Parent.IfNotNull(p => p.ReplaceChild(functionObject, null));
                     }
                 }
                 else
@@ -350,31 +533,6 @@ namespace Microsoft.Ajax.Utilities
                     // not a valid identifier name for this function. Don't rename it because it's
                     // malformed and we don't want to mess up the developer's intent.
                     variableField.CanCrunch = false;
-                }
-            }
-        }
-
-        private void UnreferencedArgument(JSVariableField variableField)
-        {
-            // unreferenced argument. We only want to throw a warning if there are no referenced arguments
-            // AFTER this unreferenced argument. Also, we're assuming that if this is an argument field,
-            // this scope MUST be a function scope.
-            var functionScope = this as FunctionScope;
-            if (functionScope != null)
-            {
-                if (functionScope.FunctionObject.IfNotNull(func => func.IsArgumentTrimmable(variableField)))
-                {
-                    // if we are planning on removing unreferenced function parameters, mark it as removed
-                    // so we don't waste a perfectly good auto-rename name on it later.
-                    if (m_settings.RemoveUnneededCode
-                        && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedParameters))
-                    {
-                        variableField.WasRemoved = true;
-                    }
-
-                    variableField.OriginalContext.HandleError(
-                        JSError.ArgumentNotReferenced,
-                        false);
                 }
             }
         }
@@ -387,10 +545,11 @@ namespace Microsoft.Ajax.Utilities
             // not referenced. If there's a single definition, and it either has no
             // initializer or the initializer is constant, get rid of it. 
             // (unless we aren't removing unneeded code, or the scope is unknown)
-            if (variableField.Declarations.Count == 1
-                && this.IsKnownAtCompileTime)
+            if (variableField.Declarations.Count == 1 && this.IsKnownAtCompileTime)
             {
-                var varDecl = variableField.OnlyDeclaration as VariableDeclaration;
+                BindingIdentifier bindingIdentifier;
+                var nameDeclaration = variableField.OnlyDeclaration;
+                var varDecl = nameDeclaration.IfNotNull(decl => decl.Parent as VariableDeclaration);
                 if (varDecl != null)
                 {
                     var declaration = varDecl.Parent as Declaration;
@@ -409,10 +568,10 @@ namespace Microsoft.Ajax.Utilities
                             // a function.
                             throwWarning = false;
                         }
-                        else if (m_settings.RemoveUnneededCode
-                            && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedVariables))
+                        else if (Settings.RemoveUnneededCode
+                            && Settings.IsModificationAllowed(TreeModifications.RemoveUnusedVariables))
                         {
-                            variableField.Declarations.Remove(varDecl);
+                            variableField.Declarations.Remove(nameDeclaration);
 
                             // don't "remove" the field if it's a ghost to another field
                             if (variableField.GhostedField == null)
@@ -435,6 +594,11 @@ namespace Microsoft.Ajax.Utilities
                         throwWarning = false;
                     }
                 }
+                else if ((bindingIdentifier = nameDeclaration as BindingIdentifier) != null)
+                {
+                    // try deleting the binding pattern declaration
+                    DeleteFromBindingPattern(bindingIdentifier, true);
+                }
             }
 
             if (throwWarning && variableField.HasNoReferences)
@@ -449,15 +613,13 @@ namespace Microsoft.Ajax.Utilities
 
         private static void SingleReferenceVariableField(JSVariableField variableField)
         {
-            // local fields that don't reference an outer field, have only one refcount
-            // and one declaration
-            if (variableField.FieldType == FieldType.Local
-                && variableField.OuterField == null
-                && variableField.Declarations.Count == 1)
+            // local fields that only have one declaration
+            if (variableField.Declarations.Count == 1)
             {
                 // there should only be one, it should be a vardecl, and 
                 // either no initializer or a constant initializer
-                var varDecl = variableField.OnlyDeclaration as VariableDeclaration;
+                var nameDeclaration = variableField.OnlyDeclaration;
+                var varDecl = nameDeclaration.IfNotNull(d => d.Parent as VariableDeclaration);
                 if (varDecl != null
                     && varDecl.Initializer != null
                     && varDecl.Initializer.IsConstant)
@@ -473,6 +635,7 @@ namespace Microsoft.Ajax.Utilities
                             && reference.VariableField != null
                             && reference.VariableField.OuterField == null
                             && reference.VariableField.CanCrunch
+                            && !reference.VariableField.IsExported
                             && varDecl.Index < reference.Index
                             && !IsIterativeReference(varDecl.Initializer, reference))
                         {
@@ -490,7 +653,7 @@ namespace Microsoft.Ajax.Utilities
                                 refNode.Parent.IfNotNull(p => p.ReplaceChild(refNode, varDecl.Initializer));
 
                                 // we're also going to remove the declaration itself
-                                variableField.Declarations.Remove(varDecl);
+                                variableField.Declarations.Remove(nameDeclaration);
                                 variableField.WasRemoved = true;
 
                                 // remove the vardecl from the declaration list
@@ -584,11 +747,11 @@ namespace Microsoft.Ajax.Utilities
         protected void ManualRenameFields()
         {
             // if the local-renaming kill switch is on, we won't be renaming ANYTHING, so we'll have nothing to do.
-            if (m_settings.IsModificationAllowed(TreeModifications.LocalRenaming))
+            if (Settings.IsModificationAllowed(TreeModifications.LocalRenaming))
             {
                 // if the parser settings has a list of rename pairs, we will want to go through and rename
                 // any matches
-                if (m_settings.HasRenamePairs)
+                if (Settings.HasRenamePairs)
                 {
                     // go through the list of fields in this scope. Anything defined in the script that
                     // is in the parser rename map should be renamed and the auto-rename flag reset so
@@ -602,7 +765,7 @@ namespace Microsoft.Ajax.Utilities
                             && (varField.FieldType != FieldType.Arguments && varField.FieldType != FieldType.Predefined))
                         {
                             // see if the name is in the parser's rename map
-                            string newName = m_settings.GetNewName(varField.Name);
+                            string newName = Settings.GetNewName(varField.Name);
                             if (!string.IsNullOrEmpty(newName))
                             {
                                 // it is! Change the name of the field, but make sure we reset the CanCrunch flag
@@ -624,9 +787,9 @@ namespace Microsoft.Ajax.Utilities
                 // fields that match and are still slated to rename as uncrunchable so they won't get renamed.
                 // if the settings say we're not going to renaming anything automatically (KeepAll), then we 
                 // have nothing to do.
-                if (m_settings.LocalRenaming != LocalRenaming.KeepAll)
+                if (Settings.LocalRenaming != LocalRenaming.KeepAll)
                 {
-                    foreach (var noRename in m_settings.NoAutoRenameCollection)
+                    foreach (var noRename in Settings.NoAutoRenameCollection)
                     {
                         // don't rename outer fields (only actual fields), 
                         // and we're only concerned with fields that can still
@@ -760,7 +923,7 @@ namespace Microsoft.Ajax.Utilities
                         // we also always want to crunch "placeholder" fields.
                         if (localField.CanCrunch
                             && (localField.RefCount > 0 || localField.IsDeclared || localField.IsPlaceholder
-                            || !(m_settings.RemoveFunctionExpressionNames && m_settings.IsModificationAllowed(TreeModifications.RemoveFunctionExpressionNames))))
+                            || !(Settings.RemoveFunctionExpressionNames && Settings.IsModificationAllowed(TreeModifications.RemoveFunctionExpressionNames))))
                         {
                             localField.CrunchedName = crunchEnum.NextName();
                         }
@@ -794,18 +957,11 @@ namespace Microsoft.Ajax.Utilities
                     // The second clause is only computed IF we already think we're good to go.
                     // IF we aren't preserving function names, then we're good. BUT if we are, we're
                     // only good to go if this field doesn't represent a function object.
-                    if ((m_settings.LocalRenaming == LocalRenaming.CrunchAll
+                    if ((Settings.LocalRenaming == LocalRenaming.CrunchAll
                         || !variableField.Name.StartsWith("L_", StringComparison.Ordinal))
-                        && !(m_settings.PreserveFunctionNames && variableField.IsFunction))
+                        && !(Settings.PreserveFunctionNames && variableField.IsFunction))
                     {
-                        // don't add to our list if it's a function that's going to be hidden anyway
-                        FunctionObject funcObject;
-                        if (!variableField.IsFunction
-                            || (funcObject = variableField.FieldValue as FunctionObject) == null
-                            || !funcObject.HideFromOutput)
-                        {
-                            list.Add(variableField);
-                        }
+                        list.Add(variableField);
                     }
                 }
             }
@@ -845,9 +1001,15 @@ namespace Microsoft.Ajax.Utilities
             var variableField = this[name];
 
             // if we didn't find anything and this scope has a parent
-            if (variableField == null)
+            if (variableField == null && name != null)
             {
-                if (this.Parent != null)
+                // if this is the super reference and we have one....
+                if (string.CompareOrdinal(name, "super") == 0 && this.HasSuperBinding)
+                {
+                    variableField = new JSVariableField(FieldType.Super, name, 0, null);
+                    NameTable.Add(name, variableField);
+                }
+                else if (this.Parent != null)
                 {
                     // recursively go up the scope chain to find a reference,
                     // then create an inner field to point to it and we'll return

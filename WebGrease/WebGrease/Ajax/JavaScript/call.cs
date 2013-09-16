@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -59,8 +58,8 @@ namespace Microsoft.Ajax.Utilities
             set;
         }
 
-        public CallNode(Context context, JSParser parser)
-            : base(context, parser)
+        public CallNode(Context context)
+            : base(context)
         {
         }
 
@@ -164,16 +163,6 @@ namespace Microsoft.Ajax.Utilities
                 && this.IsConstructor == otherCall.IsConstructor
                 && this.Function.IsEquivalentTo(otherCall.Function)
                 && this.Arguments.IsEquivalentTo(otherCall.Arguments);
-        }
-
-        internal override bool IsDebuggerStatement
-        {
-            get
-            {
-                // see if this is a member, lookup, or call node
-                // if it is, then we will pop positive if the recursive call does
-                return ((Function is Member || Function is CallNode || Function is Lookup) && Function.IsDebuggerStatement);
-            }
         }
     }
 }

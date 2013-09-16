@@ -26,9 +26,9 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                foreach (var childNode in node.Children)
+                if (node.Elements != null)
                 {
-                    childNode.Accept(this);
+                    node.Elements.Accept(this);
                 }
             }
         }
@@ -42,9 +42,12 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                foreach (var childNode in node.Children)
+                foreach (var element in node.Children)
                 {
-                    childNode.Accept(this);
+                    if (element != null)
+                    {
+                        element.Accept(this);
+                    }
                 }
             }
         }
@@ -65,37 +68,106 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public virtual void Visit(BindingIdentifier node)
+        {
+            // no children
+        }
+
         public virtual void Visit(Block node)
         {
             if (node != null)
             {
-                foreach (var childNode in node.Children)
+                foreach (var statement in node.Children)
                 {
-                    childNode.Accept(this);
+                    if (statement != null)
+                    {
+                        statement.Accept(this);
+                    }
                 }
             }
         }
 
         public virtual void Visit(Break node)
         {
-            if (node != null)
-            {
-                // no children
-            }
+            // no children
         }
 
         public virtual void Visit(CallNode node)
         {
             if (node != null)
             {
+                if (node.Arguments != null)
+                {
+                    node.Arguments.Accept(this);
+                }
+
                 if (node.Function != null)
                 {
                     node.Function.Accept(this);
                 }
+            }
+        }
 
-                if (node.Arguments != null)
+        public virtual void Visit(ClassNode node)
+        {
+            if (node != null)
+            {
+                if (node.Binding != null)
                 {
-                    node.Arguments.Accept(this);
+                    node.Binding.Accept(this);
+                }
+
+                if (node.Heritage != null)
+                {
+                    node.Heritage.Accept(this);
+                }
+
+                if (node.Elements != null)
+                {
+                    node.Elements.Accept(this);
+                }
+            }
+        }
+
+        public virtual void Visit(ComprehensionNode node)
+        {
+            if (node != null)
+            {
+                if (node.Clauses != null)
+                {
+                    node.Clauses.Accept(this);
+                }
+
+                if (node.Expression != null)
+                {
+                    node.Expression.Accept(this);
+                }
+            }
+        }
+
+        public virtual void Visit(ComprehensionForClause node)
+        {
+            if (node != null)
+            {
+                if (node.Binding != null)
+                {
+                    node.Binding.Accept(this);
+                }
+
+                if (node.Expression != null)
+                {
+                    node.Expression.Accept(this);
+                }
+            }
+        }
+
+        public virtual void Visit(ComprehensionIfClause node)
+        {
+            if (node != null)
+            {
+                if (node.Condition != null)
+                {
+                    node.Condition.Accept(this);
                 }
             }
         }
@@ -194,19 +266,19 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                foreach (var childNode in node.Children)
+                foreach (var declaration in node.Children)
                 {
-                    childNode.Accept(this);
+                    if (declaration != null)
+                    {
+                        declaration.Accept(this);
+                    }
                 }
             }
         }
 
         public virtual void Visit(ContinueNode node)
         {
-            if (node != null)
-            {
-                // no children
-            }
+            // no children
         }
 
         public virtual void Visit(CustomNode node)
@@ -215,7 +287,10 @@ namespace Microsoft.Ajax.Utilities
             {
                 foreach (var childNode in node.Children)
                 {
-                    childNode.Accept(this);
+                    if (childNode != null)
+                    {
+                        childNode.Accept(this);
+                    }
                 }
             }
         }
@@ -251,6 +326,17 @@ namespace Microsoft.Ajax.Utilities
             // no children
         }
 
+        public virtual void Visit(ExportNode node)
+        {
+            if (node != null)
+            {
+                foreach (var specifier in node.Children)
+                {
+                    specifier.Accept(this);
+                }
+            }
+        }
+
         public virtual void Visit(ForIn node)
         {
             if (node != null)
@@ -280,7 +366,7 @@ namespace Microsoft.Ajax.Utilities
                 {
                     node.Initializer.Accept(this);
                 }
-
+                
                 if (node.Condition != null)
                 {
                     node.Condition.Accept(this);
@@ -316,9 +402,12 @@ namespace Microsoft.Ajax.Utilities
 
         public virtual void Visit(GroupingOperator node)
         {
-            if (node != null && node.Operand != null)
+            if (node != null)
             {
-                node.Operand.Accept(this);
+                if (node.Operand != null)
+                {
+                    node.Operand.Accept(this);
+                }
             }
         }
 
@@ -348,6 +437,44 @@ namespace Microsoft.Ajax.Utilities
             // no children
         }
 
+        public virtual void Visit(ImportExportSpecifier node)
+        {
+            if (node != null)
+            {
+                if (node.LocalIdentifier != null)
+                {
+                    node.LocalIdentifier.Accept(this);
+                }
+            }
+        }
+
+        public virtual void Visit(ImportNode node)
+        {
+            if (node != null)
+            {
+                foreach (var specifier in node.Children)
+                {
+                    specifier.Accept(this);
+                }
+            }
+        }
+
+        public virtual void Visit(InitializerNode node)
+        {
+            if (node != null)
+            {
+                if (node.Binding != null)
+                {
+                    node.Binding.Accept(this);
+                }
+
+                if (node.Initializer != null)
+                {
+                    node.Initializer.Accept(this);
+                }
+            }
+        }
+
         public virtual void Visit(LabeledStatement node)
         {
             if (node != null)
@@ -363,9 +490,12 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                foreach (var childNode in node.Children)
+                foreach (var declaration in node.Children)
                 {
-                    childNode.Accept(this);
+                    if (declaration != null)
+                    {
+                        declaration.Accept(this);
+                    }
                 }
             }
         }
@@ -382,6 +512,22 @@ namespace Microsoft.Ajax.Utilities
                 if (node.Root != null)
                 {
                     node.Root.Accept(this);
+                }
+            }
+        }
+
+        public virtual void Visit(ModuleDeclaration node)
+        {
+            if (node != null)
+            {
+                if (node.Binding != null)
+                {
+                    node.Binding.Accept(this);
+                }
+
+                if (node.Body != null)
+                {
+                    node.Body.Accept(this);
                 }
             }
         }
@@ -420,7 +566,18 @@ namespace Microsoft.Ajax.Utilities
 
         public virtual void Visit(ParameterDeclaration node)
         {
-            // no children
+            if (node != null)
+            {
+                if (node.Binding != null)
+                {
+                    node.Binding.Accept(this);
+                }
+
+                if (node.Initializer != null)
+                {
+                    node.Initializer.Accept(this);
+                }
+            }
         }
 
         public virtual void Visit(RegExpLiteral node)
@@ -471,6 +628,33 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public virtual void Visit(TemplateLiteral node)
+        {
+            if (node != null)
+            {
+                if (node.Function != null)
+                {
+                    node.Function.Accept(this);
+                }
+
+                if (node.Expressions != null)
+                {
+                    node.Expressions.Accept(this);
+                }
+            }
+        }
+
+        public virtual void Visit(TemplateLiteralExpression node)
+        {
+            if (node != null)
+            {
+                if (node.Expression != null)
+                {
+                    node.Expression.Accept(this);
+                }
+            }
+        }
+
         public virtual void Visit(ThisLiteral node)
         {
             // no children
@@ -496,6 +680,11 @@ namespace Microsoft.Ajax.Utilities
                     node.TryBlock.Accept(this);
                 }
 
+                if (node.CatchParameter != null)
+                {
+                    node.CatchParameter.Accept(this);
+                }
+
                 if (node.CatchBlock != null)
                 {
                     node.CatchBlock.Accept(this);
@@ -512,9 +701,12 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                foreach (var childNode in node.Children)
+                foreach (var declaration in node.Children)
                 {
-                    childNode.Accept(this);
+                    if (declaration != null)
+                    {
+                        declaration.Accept(this);
+                    }
                 }
             }
         }
@@ -523,6 +715,11 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
+                if (node.Binding != null)
+                {
+                    node.Binding.Accept(this);
+                }
+
                 if (node.Initializer != null)
                 {
                     node.Initializer.Accept(this);

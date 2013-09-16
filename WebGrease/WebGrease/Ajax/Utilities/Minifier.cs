@@ -102,14 +102,8 @@ namespace Microsoft.Ajax.Utilities
             // reset the errors builder
             m_errorList = new List<ContextError>();
 
-            // create the parser from the source string.
-            // pass null for the assumed globals array
-            var parser = new JSParser(source);
-
-            // file context is a property on the parser
-            parser.FileContext = FileName;
-
-            // hook the engine error event
+            // create the parser and hook the engine error event
+            var parser = new JSParser();
             parser.CompilerError += OnJavaScriptError;
 
             try
@@ -124,7 +118,7 @@ namespace Microsoft.Ajax.Utilities
                     }
 
                     // parse the input
-                    var scriptBlock = parser.Parse(codeSettings);
+                    var scriptBlock = parser.Parse(new DocumentContext(source) { FileContext = this.FileName }, codeSettings);
                     if (scriptBlock != null && !preprocessOnly)
                     {
                         // we'll return the crunched code
@@ -134,18 +128,12 @@ namespace Microsoft.Ajax.Utilities
                             // that specifically returns valid JSON.
                             if (!JSONOutputVisitor.Apply(stringWriter, scriptBlock))
                             {
-                                m_errorList.Add(new ContextError(
-                                    true,
-                                    0,
-                                    null,
-                                    null,
-                                    null,
-                                    this.FileName,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    JScript.InvalidJSONOutput));
+                                m_errorList.Add(new ContextError()
+                                    {
+                                        Severity = 0,
+                                        File = this.FileName,
+                                        Message = CommonStrings.InvalidJSONOutput,
+                                    });
                             }
                         }
                         else
@@ -160,18 +148,12 @@ namespace Microsoft.Ajax.Utilities
             }
             catch (Exception e)
             {
-                m_errorList.Add(new ContextError(
-                    true,
-                    0,
-                    null,
-                    null,
-                    null,
-                    this.FileName,
-                    0,
-                    0,
-                    0,
-                    0,
-                    e.Message));
+                m_errorList.Add(new ContextError()
+                    {
+                        Severity = 0,
+                        File = this.FileName,
+                        Message = e.Message,
+                    });
                 throw;
             }
 
@@ -238,7 +220,7 @@ namespace Microsoft.Ajax.Utilities
             }
 
             // hook the error handler
-            parser.CssError += new EventHandler<CssErrorEventArgs>(OnCssError);
+            parser.CssError += new EventHandler<ContextErrorEventArgs>(OnCssError);
 
             // try parsing the source and return the results
             try
@@ -247,18 +229,12 @@ namespace Microsoft.Ajax.Utilities
             }
             catch (Exception e)
             {
-                m_errorList.Add(new ContextError(
-                    true,
-                    0,
-                    null,
-                    null,
-                    null,
-                    this.FileName,
-                    0,
-                    0,
-                    0,
-                    0,
-                    e.Message));
+                m_errorList.Add(new ContextError()
+                    {
+                        Severity = 0,
+                        File = this.FileName,
+                        Message = e.Message,
+                    });
                 throw;
             }
             return minifiedResults;
@@ -269,9 +245,9 @@ namespace Microsoft.Ajax.Utilities
         #region Error-handling Members
 
 #if !JSONLY
-        private void OnCssError(object sender, CssErrorEventArgs e)
+        private void OnCssError(object sender, ContextErrorEventArgs e)
         {
-            ContextError error = e.Error;
+            var error = e.Error;
             if (error.Severity <= WarningLevel)
             {
                 m_errorList.Add(error);
@@ -279,9 +255,9 @@ namespace Microsoft.Ajax.Utilities
         }
 #endif
 
-        private void OnJavaScriptError(object sender, JScriptExceptionEventArgs e)
+        private void OnJavaScriptError(object sender, ContextErrorEventArgs e)
         {
-            ContextError error = e.Error;
+            var error = e.Error;
             if (error.Severity <= WarningLevel)
             {
                 m_errorList.Add(error);

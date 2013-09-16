@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 
 namespace Microsoft.Ajax.Utilities
@@ -36,6 +35,7 @@ namespace Microsoft.Ajax.Utilities
         GhostCatch,
         GhostFunction,
         UndefinedGlobal,
+        Super,
     }
 
     public class JSVariableField
@@ -62,6 +62,7 @@ namespace Microsoft.Ajax.Utilities
         public bool InitializationOnly { get; set; }
         public int Position { get; set; }
         public bool WasRemoved { get; set; }
+        public bool IsExported { get; set; }
 
         public JSVariableField OuterField { get; set; }
 
@@ -122,7 +123,7 @@ namespace Microsoft.Ajax.Utilities
 
         /// <summary>
         /// returns the only declaration IF there is only ONE name declaration
-        /// in the collection; otherwise returns false.
+        /// in the collection; otherwise returns null.
         /// </summary>
         public INameDeclaration OnlyDeclaration
         {
@@ -265,12 +266,18 @@ namespace Microsoft.Ajax.Utilities
                 // if the refcount is zero, we know we're not referenced.
                 // if the count is greater than zero and we're a function definition,
                 // then we need to do a little more work
-                FunctionObject funcObj = FieldValue as FunctionObject;
+                var funcObj = FieldValue as FunctionObject;
                 if (funcObj != null)
                 {
                     // ask the function object if it's referenced. 
                     return funcObj.IsReferenced;
                 }
+                else if (FieldValue is ClassNode)
+                {
+                    // classes are always referenced. For now.
+                    return true;
+                }
+
                 return RefCount > 0;
             }
         }
@@ -350,6 +357,9 @@ namespace Microsoft.Ajax.Utilities
                     break;
 
                 case FieldType.Global:
+                case FieldType.Super:
+                case FieldType.WithField:
+                case FieldType.UndefinedGlobal:
                     CanCrunch = false;
                     break;
 
@@ -362,10 +372,6 @@ namespace Microsoft.Ajax.Utilities
                     CanCrunch = false;
                     break;
 
-                case FieldType.WithField:
-                    CanCrunch = false;
-                    break;
-
                 case FieldType.GhostCatch:
                     CanCrunch = true;
                     IsPlaceholder = true;
@@ -375,10 +381,6 @@ namespace Microsoft.Ajax.Utilities
                     CanCrunch = OuterField == null ? true : OuterField.CanCrunch;
                     IsFunction = true;
                     IsPlaceholder = true;
-                    break;
-
-                case FieldType.UndefinedGlobal:
-                    CanCrunch = false;
                     break;
 
                 default:

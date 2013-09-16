@@ -14,10 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -61,8 +58,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public BinaryOperator(Context context, JSParser parser)
-            : base(context, parser)
+        public BinaryOperator(Context context)
+            : base(context)
         {
         }
 
@@ -233,10 +230,8 @@ namespace Microsoft.Ajax.Utilities
 
         public override void Accept(IVisitor visitor)
         {
-            if (visitor != null)
-            {
-                visitor.Visit(this);
-            }
+            if (visitor == null) return;
+            visitor.Visit(this);
         }
 
         public override bool ReplaceChild(AstNode oldNode, AstNode newNode)

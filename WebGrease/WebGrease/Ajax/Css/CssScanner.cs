@@ -238,6 +238,39 @@ namespace Microsoft.Ajax.Utilities
             return token;
         }
 
+        public CssToken ScanReplacementToken(CssToken token)
+        {
+            var sb = new StringBuilder();
+            var name = GetName();
+            while (name != null)
+            {
+                sb.Append(name);
+                if (m_currentChar == '.')
+                {
+                    // try getting another name, loop
+                    sb.Append('.');
+                    name = GetName();
+                }
+                else if (m_currentChar == '%')
+                {
+                    // found a valid replacement
+                    // create a new token to encompass the entire replacement token
+                    NextChar();
+                    sb.Append('%');
+                    token = new CssToken(TokenType.ReplacementToken, '%' + sb.ToString(), m_context);
+                    break;
+                }
+                else
+                {
+                    // NOPE
+                    PushString(sb.ToString());
+                    break;
+                }
+            }
+
+            return token;
+        }
+
         #region Scan... methods
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
@@ -1809,7 +1842,7 @@ namespace Microsoft.Ajax.Utilities
                 }
                 else
                 {
-                    m_readAhead = m_readAhead.Substring(1); ;
+                    m_readAhead = m_readAhead.Substring(1);
                 }
 
                 // REVIEW: we don't handle pushing newlines back into buffer
@@ -1994,23 +2027,30 @@ namespace Microsoft.Ajax.Utilities
             //        4 == this is just not right
 
             string message = CssStrings.ResourceManager.GetString(error.ToString(), CssStrings.Culture).FormatInvariant(args);
-            OnScannerError(new CssException(
-                (int)error,
-                CssStrings.ScannerSubsystem,
-                severity,
-                m_context.End.Line,
-                m_context.End.Char,
-                message
-                ));
+            OnScannerError(new ContextError()
+                {
+                    IsError = severity < 2,
+                    Severity = severity,
+                    Subcategory = CssStrings.ScannerSubsystem,
+                    File = "",
+                    ErrorNumber = (int)error,
+                    ErrorCode = "CSS{0}".FormatInvariant(((int)error) & (0xffff)),
+                    StartLine = m_context.End.Line,
+                    StartColumn = m_context.End.Char,
+                    Message = message,
+                });
         }
 
-        public event EventHandler<CssScannerErrorEventArgs> ScannerError;
+        public event EventHandler<ContextErrorEventArgs> ScannerError;
 
-        protected void OnScannerError(CssException exc)
+        protected void OnScannerError(ContextError error)
         {
             if (ScannerError != null)
             {
-                ScannerError(this, new CssScannerErrorEventArgs(exc));
+                ScannerError(this, new ContextErrorEventArgs()
+                    {
+                        Error = error
+                    });
             }
         }
 
@@ -2026,16 +2066,6 @@ namespace Microsoft.Ajax.Utilities
         }
 
         #endregion
-    }
-
-    internal class CssScannerErrorEventArgs : EventArgs
-    {
-        public CssException Exception { get; private set; }
-
-        public CssScannerErrorEventArgs(CssException exc)
-        {
-            Exception = exc;
-        }
     }
 
     internal class CssScannerContextChangeEventArgs : EventArgs

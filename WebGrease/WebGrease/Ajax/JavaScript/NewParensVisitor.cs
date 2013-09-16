@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Diagnostics;
 
 namespace Microsoft.Ajax.Utilities
 {
+    /// <summary>
+    /// Determines whether or not a node needs parentheses around it within a new operator
+    /// </summary>
     internal class NewParensVisitor : IVisitor
     {
         private bool m_needsParens;// = false;
@@ -55,6 +57,11 @@ namespace Microsoft.Ajax.Utilities
             m_needsParens = true;
         }
 
+        public void Visit(BindingIdentifier node)
+        {
+            // we're good
+        }
+
         public void Visit(CallNode node)
         {
             if (node != null)
@@ -88,6 +95,18 @@ namespace Microsoft.Ajax.Utilities
                 // shouldn't happen, but we're a call so let's wrap in parens
                 m_needsParens = true;
             }
+        }
+
+        public void Visit(ClassNode node)
+        {
+            // we're good
+        }
+
+        public void Visit(ComprehensionNode node)
+        {
+            // we're good. We are either an array comprehension, in which case we start
+            // with a [ character, or a generator comprehension, in which case we start
+            // with a ( character. No need for another set of parens.
         }
 
         public void Visit(ConditionalCompilationComment node)
@@ -170,7 +189,7 @@ namespace Microsoft.Ajax.Utilities
 
         public void Visit(ImportantComment node)
         {
-            // don't recurse
+            // we're good?
         }
 
         public void Visit(Lookup node)
@@ -198,6 +217,11 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(RegExpLiteral node)
+        {
+            // we're good
+        }
+
+        public void Visit(TemplateLiteral node)
         {
             // we're good
         }
@@ -255,6 +279,16 @@ namespace Microsoft.Ajax.Utilities
             Debug.Fail("shouldn't get here");
         }
 
+        public void Visit(ComprehensionForClause node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(ComprehensionIfClause node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
         public void Visit(ConstStatement node)
         {
             Debug.Fail("shouldn't get here");
@@ -285,6 +319,11 @@ namespace Microsoft.Ajax.Utilities
             Debug.Fail("shouldn't get here");
         }
 
+        public void Visit(ExportNode node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
         public void Visit(ForIn node)
         {
             Debug.Fail("shouldn't get here");
@@ -300,12 +339,32 @@ namespace Microsoft.Ajax.Utilities
             Debug.Fail("shouldn't get here");
         }
 
+        public void Visit(ImportExportSpecifier node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(ImportNode node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(InitializerNode node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
         public void Visit(LabeledStatement node)
         {
             Debug.Fail("shouldn't get here");
         }
 
         public void Visit(LexicalDeclaration node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(ModuleDeclaration node)
         {
             Debug.Fail("shouldn't get here");
         }
@@ -321,6 +380,11 @@ namespace Microsoft.Ajax.Utilities
         }
 
         public void Visit(SwitchCase node)
+        {
+            Debug.Fail("shouldn't get here");
+        }
+
+        public void Visit(TemplateLiteralExpression node)
         {
             Debug.Fail("shouldn't get here");
         }

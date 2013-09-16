@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -53,8 +52,8 @@ namespace Microsoft.Ajax.Utilities
 
         public Context ColonContext { get; set; }
 
-        public SwitchCase(Context context, JSParser parser)
-            : base(context, parser)
+        public SwitchCase(Context context)
+            : base(context)
         {
         }
 
@@ -91,21 +90,6 @@ namespace Microsoft.Ajax.Utilities
                 }
             }
             return false;
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // no statements doesn't require a separator.
-                // otherwise only if statements require it
-                if (Statements == null || Statements.Count == 0)
-                {
-                    return false;
-                }
-
-                return Statements[Statements.Count - 1].RequiresSeparator;
-            }
         }
     }
 }

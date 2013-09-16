@@ -171,7 +171,32 @@
     <Compile Include="Activities\MinifyCssPivot.cs" />
     <Compile Include="Activities\ResourcePivotActivity.cs" />
     <Compile Include="Activities\MinifyCssResult.cs" />
+    <Compile Include="Ajax\JavaScript\BindingIdentifier.cs" />
+    <Compile Include="Ajax\JavaScript\BindingsVisitor.cs" />
+    <Compile Include="Ajax\JavaScript\BindingTransform.cs" />
+    <Compile Include="Ajax\JavaScript\ClassNode.cs" />
+    <Compile Include="Ajax\JavaScript\ComprehensionClause.cs" />
+    <Compile Include="Ajax\JavaScript\ComprehensionForClause.cs" />
+    <Compile Include="Ajax\JavaScript\ComprehensionIfClause.cs" />
+    <Compile Include="Ajax\JavaScript\ComprehensionNode.cs" />
+    <Compile Include="Ajax\JavaScript\ExportNode.cs" />
+    <Compile Include="Ajax\JavaScript\IModuleReference.cs" />
+    <Compile Include="Ajax\JavaScript\ImportExportSpecifier.cs" />
+    <Compile Include="Ajax\JavaScript\ImportExportStatement.cs" />
+    <Compile Include="Ajax\JavaScript\ImportNode.cs" />
+    <Compile Include="Ajax\JavaScript\Initializer.cs" />
+    <Compile Include="Ajax\JavaScript\IRenameable.cs" />
+    <Compile Include="Ajax\JavaScript\ModuleDeclaration.cs" />
+    <Compile Include="Ajax\JavaScript\ModuleScope.cs" />
+    <Compile Include="Ajax\JavaScript\RequiresSeparatorVisitor.cs" />
     <Compile Include="Ajax\JavaScript\StatementStartVisitor.cs" />
+    <Compile Include="Ajax\JavaScript\TemplateLiteral.cs" />
+    <Compile Include="Ajax\JavaScript\TemplateLiteralExpression.cs" />
+    <Compile Include="Ajax\Utilities\CommonStrings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>CommonStrings.resx</DependentUpon>
+    </Compile>
     <Compile Include="Cache\CacheFileLockException.cs" />
     <Compile Include="Configuration\FileSetBase.cs" />
     <Compile Include="Configuration\GlobalConfig.cs" />
@@ -273,7 +298,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>JScript.resx</DependentUpon>
     </Compile>
-    <Compile Include="Ajax\JavaScript\jscriptexception.cs" />
     <Compile Include="Ajax\JavaScript\jserror.cs" />
     <Compile Include="Ajax\JavaScript\jskeyword.cs" />
     <Compile Include="Ajax\JavaScript\JSONOutputVisitor.cs" />
@@ -502,6 +526,11 @@
     <EmbeddedResource Include="Ajax\JavaScript\JScript.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>JScript.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>Microsoft.Ajax.Utilities</CustomToolNamespace>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Ajax\Utilities\CommonStrings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>CommonStrings.Designer.cs</LastGenOutput>
       <CustomToolNamespace>Microsoft.Ajax.Utilities</CustomToolNamespace>
     </EmbeddedResource>
     <EmbeddedResource Include="Css\CssStrings.resx">

@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -34,8 +33,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public ThrowNode(Context context, JSParser parser)
-            : base(context, parser)
+        public ThrowNode(Context context)
+            : base(context)
         {
         }
 
@@ -63,18 +62,6 @@ namespace Microsoft.Ajax.Utilities
                 return true;
             }
             return false;
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // if MacSafariQuirks is true, then we will be adding the semicolon
-                // ourselves every single time and won't need outside code to add it.
-                // otherwise we won't be adding it, but it will need it if there's something
-                // to separate it from.
-                return !Parser.Settings.MacSafariQuirks;
-            }
         }
     }
 }

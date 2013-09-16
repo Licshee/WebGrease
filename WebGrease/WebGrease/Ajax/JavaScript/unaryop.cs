@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -41,8 +40,11 @@ namespace Microsoft.Ajax.Utilities
         public bool OperatorInConditionalCompilationComment { get; set; }
         public bool ConditionalCommentContainsOn { get; set; }
 
-        public UnaryOperator(Context context, JSParser parser)
-            : base(context, parser)
+        // only useful for yield operators
+        public bool IsDelegator { get; set; }
+
+        public UnaryOperator(Context context)
+            : base(context)
         {
         }
 
@@ -68,6 +70,7 @@ namespace Microsoft.Ajax.Utilities
 
                 case JSToken.Void:
                 case JSToken.Delete:
+                case JSToken.RestSpread:
                     // void returns undefined.
                     // delete returns number, but just return other
                     return PrimitiveType.Other;

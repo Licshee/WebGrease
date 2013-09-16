@@ -140,15 +140,26 @@ namespace Microsoft.Ajax.Utilities
             return number.ToStringInvariant(null);
         }
 
-        public static string ToStringInvariant(this double number)
-        {
-            return number.ToStringInvariant(null);
-        }
-
         public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
         {
             var hash = new HashSet<TKey>();
             return source.Where(p => hash.Add(keySelector(p)));
+        }
+
+        public static void ForEach<TObject>(this IEnumerable<TObject> collection, Action<TObject> action)
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
+
+            if (collection != null)
+            {
+                foreach (var item in collection)
+                {
+                    item.IfNotNull(i => action(i));
+                }
+            }
         }
 
         public static TResult IfNotNull<TObject, TResult>(this TObject obj, Func<TObject, TResult> action)
@@ -159,6 +170,16 @@ namespace Microsoft.Ajax.Utilities
             }
 
             return obj == null ? default(TResult) : action(obj);
+        }
+
+        public static TResult IfNotNull<TObject, TResult>(this TObject obj, Func<TObject, TResult> action, TResult defaultValue)
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
+
+            return obj == null ? defaultValue : action(obj);
         }
 
         public static void IfNotNull<TObject>(this TObject obj, Action<TObject> action)

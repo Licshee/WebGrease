@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -56,8 +55,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public ObjectLiteral(Context context, JSParser parser)
-            : base(context, parser)
+        public ObjectLiteral(Context context)
+            : base(context)
         {
         }
 

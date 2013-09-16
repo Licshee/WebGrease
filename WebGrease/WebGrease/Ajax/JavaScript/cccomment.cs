@@ -14,9 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -34,20 +32,12 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public ConditionalCompilationComment(Context context, JSParser parser)
-            : base(context, parser)
+        public ConditionalCompilationComment(Context context)
+            : base(context)
         {
-            Statements = new Block(null, parser);
+            Statements = new Block(context.FlattenToStart());
         }
 
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                return Statements.Count > 0 ? Statements[Statements.Count - 1].RequiresSeparator : true;
-            }
-        }
 
         public override void Accept(IVisitor visitor)
         {

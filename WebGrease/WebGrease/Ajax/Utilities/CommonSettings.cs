@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 
@@ -224,33 +223,6 @@ namespace Microsoft.Ajax.Utilities
         #region IgnoreErrors list
 
         /// <summary>
-        /// Collection of errors to ignore
-        /// </summary>
-        [Obsolete("Use IgnoreErrorCollection instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public ReadOnlyCollection<string> IgnoreErrors 
-        {
-            get
-            {
-                var newList = new List<string>();
-                newList.AddRange(IgnoreErrorCollection);
-                return new ReadOnlyCollection<string>(newList);
-            }
-        }
-
-        /// <summary>
-        /// Set the list of errors to ignore
-        /// </summary>
-        /// <param name="definedNames">array of error code strings</param>
-        /// <returns>number of error codes successfully added to the collection</returns>
-        [Obsolete("Use SetIgnoreErrors passing in an IEnumerable<string> instead instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public int SetIgnoreErrors(params string[] ignoreErrors)
-        {
-            return SetIgnoreErrors((ICollection<string>)ignoreErrors);
-        }
-
-        /// <summary>
         /// Gets a collection of errors to ignore
         /// </summary>
         public ICollection<string> IgnoreErrorCollection { get; private set; }
@@ -314,21 +286,6 @@ namespace Microsoft.Ajax.Utilities
         #endregion
 
         #region Preprocessor defines
-
-        /// <summary>
-        /// Collection of names to define for the preprocessor
-        /// </summary>
-        [Obsolete("Use PreprocessorValues instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public ReadOnlyCollection<string> PreprocessorDefines 
-        { 
-            get 
-            {
-                var defines = new List<string>();
-                defines.AddRange(PreprocessorValues.Keys);
-                return new ReadOnlyCollection<string>(defines); 
-            } 
-        }
 
         /// <summary>
         /// dictionary of defines and their values

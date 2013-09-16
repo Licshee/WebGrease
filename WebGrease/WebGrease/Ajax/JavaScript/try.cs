@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -26,7 +25,7 @@ namespace Microsoft.Ajax.Utilities
         private Block m_finallyBlock;
         private ParameterDeclaration m_catchParameter;
 
-		public Block TryBlock
+        public Block TryBlock
         {
             get { return m_tryBlock; }
             set
@@ -37,7 +36,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-		public Block CatchBlock
+        public Block CatchBlock
         {
             get { return m_catchBlock; }
             set
@@ -48,7 +47,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-		public Block FinallyBlock
+        public Block FinallyBlock
         {
             get { return m_finallyBlock; }
             set
@@ -70,34 +69,13 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public string CatchVarName
-        {
-            get
-            {
-                return CatchParameter.IfNotNull(v => v.Name);
-            }
-        }
-
         public Context CatchContext { get; set; }
-
-        public Context CatchVarContext
-        {
-            get
-            {
-                return CatchParameter.IfNotNull(v => v.Context);
-            }
-        }
 
         public Context FinallyContext { get; set; }
 
-        public TryNode(Context context, JSParser parser)
-            : base(context, parser)
+        public TryNode(Context context)
+            : base(context)
         {
-        }
-
-        public void SetCatchVariable(JSVariableField field)
-        {
-            CatchParameter.VariableField = field;
         }
 
         public override void Accept(IVisitor visitor)
@@ -125,8 +103,11 @@ namespace Microsoft.Ajax.Utilities
             }
             if (CatchParameter == oldNode)
             {
-                CatchParameter = newNode as ParameterDeclaration;
-                return true;
+                return (newNode as ParameterDeclaration).IfNotNull(p =>
+                    {
+                        CatchParameter = p;
+                        return true;
+                    });
             }
             if (CatchBlock == oldNode)
             {
@@ -139,15 +120,6 @@ namespace Microsoft.Ajax.Utilities
                 return true;
             }
             return false;
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // try requires no separator
-                return false;
-            }
         }
     }
 }

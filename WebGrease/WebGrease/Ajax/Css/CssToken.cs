@@ -199,6 +199,7 @@ namespace Microsoft.Ajax.Utilities
         RightBottomSymbol,
 
 		AspNetBlock,
+        ReplacementToken,
 
         Error = -1
     }

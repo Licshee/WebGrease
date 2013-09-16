@@ -14,16 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     public class DirectivePrologue : ConstantWrapper
     {
-        public DirectivePrologue(string value, Context context, JSParser parser)
-            : base(value, PrimitiveType.String, context, parser)
+        public DirectivePrologue(string value, Context context)
+            : base(value, PrimitiveType.String, context)
         {
             // this is a "use strict" directive if the source context is EXACTLY "use strict"
             // don't consider the quotes so it can be " or ' delimiters
@@ -40,17 +36,6 @@ namespace Microsoft.Ajax.Utilities
                 // directive prologues aren't expressions -- we don't want to
                 // combine them with other expressions, for instance.
                 return false;
-            }
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // we hide redundant directives.
-                // if we aren't hiding this node, then yes: we need a semicolon.
-                // but if we are, we don't want to add some mystery semicolon to the output 
-                return !IsRedundant;
             }
         }
 

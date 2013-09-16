@@ -14,26 +14,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     internal class FinalPassVisitor : TreeVisitor
     {
-        private JSParser m_parser;
+        private CodeSettings m_settings;
         private StatementStartVisitor m_statementStart;
 
-        private FinalPassVisitor(JSParser parser)
+        private FinalPassVisitor(CodeSettings codeSettings)
         {
-            m_parser = parser;
+            m_settings = codeSettings;
             m_statementStart = new StatementStartVisitor();
         }
 
-        public static void Apply(AstNode node, JSParser parser)
+        public static void Apply(AstNode node, CodeSettings codeSettings)
         {
-            var visitor = new FinalPassVisitor(parser);
+            var visitor = new FinalPassVisitor(codeSettings);
             node.Accept(visitor);
         }
 
@@ -43,14 +39,16 @@ namespace Microsoft.Ajax.Utilities
             {
                 // if this isn't a comma-operator, just recurse normal.
                 // if it is and this is the root block (parent is null) or a function block
+                // (but not an arrow-function block with a single statement)
                 // or there's already more than one statement in the block, we will want to possibly break
                 // this comma-operator expression statement into separate expression statements.
                 Block parentBlock;
+                FunctionObject functionObject;
                 if (node.OperatorToken == JSToken.Comma
-                    && m_parser.Settings.IsModificationAllowed(TreeModifications.UnfoldCommaExpressionStatements)
+                    && m_settings.IsModificationAllowed(TreeModifications.UnfoldCommaExpressionStatements)
                     && ((parentBlock = node.Parent as Block) != null)
                     && (parentBlock.Parent == null
-                        || parentBlock.Parent is FunctionObject
+                        || ((functionObject = parentBlock.Parent as FunctionObject) != null && (functionObject.FunctionType != FunctionType.ArrowFunction || parentBlock.Count > 1))
                         || parentBlock.Parent is TryNode
                         || parentBlock.Parent is SwitchCase
                         || parentBlock.Count > 1))
@@ -168,7 +166,7 @@ namespace Microsoft.Ajax.Utilities
                 var right = nodeList[ndx];
                 nodeList.RemoveAt(ndx);
 
-                newNode = new CommaOperator(null, nodeList.Parser)
+                newNode = new CommaOperator(left.Context.FlattenToStart())
                     {
                         Operand1 = left,
                         Operand2 = right
@@ -192,7 +190,7 @@ namespace Microsoft.Ajax.Utilities
                 }
                 else
                 {
-                    right = new AstNodeList(null, nodeList.Parser);
+                    right = new AstNodeList(nodeList[ndx].Context.FlattenToStart());
                     while (ndx < nodeList.Count)
                     {
                         var temp = nodeList[ndx];
@@ -201,7 +199,7 @@ namespace Microsoft.Ajax.Utilities
                     }
                 }
 
-                newNode = new CommaOperator(null, nodeList.Parser)
+                newNode = new CommaOperator(left.Context.FlattenToStart())
                     {
                         Operand1 = left,
                         Operand2 = right
@@ -265,13 +263,35 @@ namespace Microsoft.Ajax.Utilities
             {
                 // no children, so don't bother calling the base.
                 if (node.PrimitiveType == PrimitiveType.Boolean
-                    && m_parser.Settings.IsModificationAllowed(TreeModifications.BooleanLiteralsToNotOperators))
+                    && m_settings.IsModificationAllowed(TreeModifications.BooleanLiteralsToNotOperators))
                 {
-                    node.Parent.ReplaceChild(node, new UnaryOperator(node.Context, m_parser)
+                    node.Parent.ReplaceChild(node, new UnaryOperator(node.Context)
                         {
-                            Operand = new ConstantWrapper(node.ToBoolean() ? 0 : 1, PrimitiveType.Number, node.Context, m_parser),
+                            Operand = new ConstantWrapper(node.ToBoolean() ? 0 : 1, PrimitiveType.Number, node.Context),
                             OperatorToken = JSToken.LogicalNot
                         });
+                }
+            }
+        }
+
+        public override void Visit(ImportExportSpecifier node)
+        {
+            if (node != null)
+            {
+                if (node.LocalIdentifier != null && node.ExternalName.IsNullOrWhiteSpace())
+                {
+                    // we have a local identifier with no "as" mapping.
+                    // if this is an import, we are importing an external name as a binding identifier.
+                    // if this is an export, we may be re-exporting a value from an external module, in which
+                    // case the identifier will be a binding identifier and already marked as not renamable, 
+                    // or we are exporting our own field, in which case it will be a lookup. 
+                    var renameable = node.LocalIdentifier as IRenameable;
+                    if (renameable.WasRenamed)
+                    {
+                        // it was renamed. We need to change this specifier to import the external
+                        // name AS this identifier's original name.
+                        node.ExternalName = renameable.OriginalName;
+                    }
                 }
             }
         }

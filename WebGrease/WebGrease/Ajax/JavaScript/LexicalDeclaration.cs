@@ -16,18 +16,11 @@
 
 namespace Microsoft.Ajax.Utilities
 {
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.IO;
-    using System.Text;
-
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Justification = "AST statement")]
     public class LexicalDeclaration : Declaration
     {
-        public JSToken StatementToken { get; set; }
-
-        public LexicalDeclaration(Context context, JSParser parser)
-            : base(context, parser)
+        public LexicalDeclaration(Context context)
+            : base(context)
         {
         }
 

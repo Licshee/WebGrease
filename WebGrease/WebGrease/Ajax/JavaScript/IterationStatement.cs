@@ -16,11 +16,6 @@
 
 namespace Microsoft.Ajax.Utilities
 {
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.IO;
-    using System.Text;
-
     public abstract class IterationStatement : AstNode
     {
         private Block m_body;
@@ -36,8 +31,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        protected IterationStatement(Context context, JSParser parser)
-            : base(context, parser)
+        protected IterationStatement(Context context)
+            : base(context)
         {
         }
     }

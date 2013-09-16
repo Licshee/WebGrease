@@ -18,17 +18,9 @@ namespace Microsoft.Ajax.Utilities
 {
     public abstract class ConditionalCompilationStatement : AstNode
     {
-        protected ConditionalCompilationStatement(Context context, JSParser parser)
-            : base(context, parser)
+        protected ConditionalCompilationStatement(Context context)
+            : base(context)
         {
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                return false;
-            }
         }
     }
 }

@@ -15,8 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -37,8 +35,46 @@ namespace Microsoft.Ajax.Utilities
 
         public bool MayHaveIssues { get; set; }
 
-        public ArrayLiteral(Context context, JSParser parser)
-            : base(context, parser)
+        public int Length
+        {
+            get
+            {
+                int count = 0;
+                foreach (var element in m_elements)
+                {
+                    if (!element.IsConstant)
+                    {
+                        return -1;
+                    }
+
+                    var unaryOperator = element as UnaryOperator;
+                    if (unaryOperator != null && unaryOperator.OperatorToken == JSToken.RestSpread)
+                    {
+                        // it's a spread. we already know it's a constant, but let's make sure it's
+                        // also an array literal
+                        var length = (unaryOperator.Operand as ArrayLiteral).IfNotNull(a => a.Length, -1);
+                        if (length >= 0)
+                        {
+                            count += length;
+                        }
+                        else
+                        {
+                            return -1;
+                        }
+                    }
+                    else
+                    {
+                        // not a spread; just one element
+                        ++count;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public ArrayLiteral(Context context)
+            : base(context)
         {
         }
 

@@ -57,6 +57,8 @@ namespace Microsoft.Ajax.Utilities
 
         private CodeSettings m_settings;
 
+        private RequiresSeparatorVisitor m_requiresSeparator;
+
         // this is a regular expression that we'll use to minimize numeric values
         // that don't employ the e-notation
         private static Regex s_decimalFormat = new Regex(
@@ -68,8 +70,15 @@ namespace Microsoft.Ajax.Utilities
             m_outputStream = writer;
             m_settings = settings ?? new CodeSettings();
             m_onNewLine = true;
+            m_requiresSeparator = new RequiresSeparatorVisitor(m_settings);
         }
 
+        /// <summary>
+        /// Render a node tree to a text writer
+        /// </summary>
+        /// <param name="writer">writer to which to send output</param>
+        /// <param name="node">node to render</param>
+        /// <param name="settings">settings to use for output</param>
         public static void Apply(TextWriter writer, AstNode node, CodeSettings settings)
         {
             if (node != null)
@@ -81,6 +90,26 @@ namespace Microsoft.Ajax.Utilities
                 // and pass it offsets to the last line and column positions.
                 settings.IfNotNull(s => s.SymbolsMap.IfNotNull(m => m.EndOutputRun(outputVisitor.m_lineCount, outputVisitor.m_lineLength)));
             }
+        }
+
+        /// <summary>
+        /// Render a node tree as a string
+        /// </summary>
+        /// <param name="node">node to render</param>
+        /// <param name="settings">settings to use for output</param>
+        /// <returns>string representation of the node</returns>
+        public static string Apply(AstNode node, CodeSettings settings)
+        {
+            if (node != null)
+            {
+                using (var writer = new StringWriter(CultureInfo.InvariantCulture))
+                {
+                    OutputVisitor.Apply(writer, node, settings);
+                    return writer.ToString();
+                }
+            }
+
+            return string.Empty;
         }
 
         #region IVisitor Members
@@ -400,6 +429,19 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public void Visit(BindingIdentifier node)
+        {
+            if (node != null)
+            {
+                // output the name (use the field is possible)
+                Output(node.VariableField != null ? node.VariableField.ToString() : node.Name);
+                MarkSegment(node, node.Name, node.Context);
+                SetContextOutputPosition(node.Context);
+                node.VariableField.IfNotNull(f => SetContextOutputPosition(f.OriginalContext));
+            }
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public void Visit(Block node)
         {
             if (node != null)
@@ -407,40 +449,53 @@ namespace Microsoft.Ajax.Utilities
                 // don't create a symbol for the root node -- it can encompass any of the input files
                 var symbol = node.Parent != null ? StartSymbol(node) : null;
 
+                var outputBraces = true;
                 if (node.Parent != null)
                 {
                     // not the root block.
                     // if the parent is a function node, we will need a "use strict" directive
                     // if the function's scope is strict but the parent scope is not
-                    var parentFunction = node.Parent as FunctionObject;
-                    if (parentFunction != null
-                        && parentFunction.FunctionScope.UseStrict
-                        && !parentFunction.FunctionScope.Parent.UseStrict)
+                    ModuleDeclaration moduleDecl;
+                    var parentNode = node.Parent;
+                    if (parentNode is FunctionObject
+                        && parentNode.EnclosingScope.UseStrict
+                        && !parentNode.EnclosingScope.Parent.UseStrict)
                     {
                         m_needsStrictDirective = true;
                     }
+                    else if ((moduleDecl = node.Parent as ModuleDeclaration) != null && moduleDecl.IsImplicit)
+                    {
+                        // this is an implicit module block. Don't output the strict directive
+                        // because all modules are implicitly strict anyway.
+                        m_needsStrictDirective = false;
+                        outputBraces = false;
+                    }
 
-                    // always enclose in curly-braces
-                    OutputPossibleLineBreak('{');
-                    SetContextOutputPosition(node.Context);
-                    MarkSegment(node, null, node.Context);
-                    Indent();
+                    if (outputBraces)
+                    {
+                        // always enclose in curly-braces
+                        OutputPossibleLineBreak('{');
+                        SetContextOutputPosition(node.Context);
+                        MarkSegment(node, null, node.Context);
+                        Indent();
+                    }
                 }
                 else
                 {
                     // root block.
                     // we will need a "use strict" directive IF this scope is strict and we
                     // haven't already gone past where we can insert global directive prologues
-                    m_needsStrictDirective = node.EnclosingScope.UseStrict && !m_doneWithGlobalDirectives;
+                    m_needsStrictDirective = node.EnclosingScope.IfNotNull(s => s.UseStrict) && !m_doneWithGlobalDirectives;
+                    outputBraces = false;
                 }
 
                 AstNode prevStatement = null;
                 for (var ndx = 0; ndx < node.Count; ++ndx)
                 {
                     var statement = node[ndx];
-                    if (statement != null && !statement.HideFromOutput)
+                    if (statement != null)
                     {
-                        if (prevStatement != null && prevStatement.RequiresSeparator)
+                        if (prevStatement != null && m_requiresSeparator.Query(prevStatement))
                         {
                             OutputPossibleLineBreak(';');
                             MarkSegment(prevStatement, null, prevStatement.TerminatingContext);
@@ -466,7 +521,7 @@ namespace Microsoft.Ajax.Utilities
                     }
                 }
 
-                if (node.Parent != null)
+                if (outputBraces)
                 {
                     Unindent();
 
@@ -480,7 +535,7 @@ namespace Microsoft.Ajax.Utilities
                     OutputPossibleLineBreak('}');
                     MarkSegment(node, null, node.Context);
                 }
-                else if (prevStatement != null && prevStatement.RequiresSeparator && m_settings.TermSemicolons)
+                else if (prevStatement != null && m_requiresSeparator.Query(prevStatement) && m_settings.TermSemicolons)
                 {
                     // this is the root block (parent is null) and we want to make sure we end
                     // with a terminating semicolon, so don't replace it
@@ -506,19 +561,18 @@ namespace Microsoft.Ajax.Utilities
                 SetContextOutputPosition(node.Context);
 
                 m_startOfStatement = false;
-                if (!string.IsNullOrEmpty(node.Label))
+                if (!node.Label.IsNullOrWhiteSpace())
                 {
                     // NO PAGE BREAKS ALLOWED HERE
                     m_noLineBreaks = true;
-                    if (m_settings.LocalRenaming != LocalRenaming.KeepAll
-                        && m_settings.IsModificationAllowed(TreeModifications.LocalRenaming))
+                    if (node.LabelInfo.IfNotNull(li => !li.MinLabel.IsNullOrWhiteSpace()))
                     {
-                        // minify the label -- only depends on nesting level
-                        Output(CrunchEnumerator.CrunchedLabel(node.NestLevel) ?? node.Label);
+                        // output minified label
+                        Output(node.LabelInfo.MinLabel);
                     }
                     else
                     {
-                        // not minified -- just output label
+                        // not minified -- just output original label
                         Output(node.Label);
                     }
 
@@ -625,6 +679,177 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public void Visit(ClassNode node)
+        {
+            if (node != null)
+            {
+                var wrapInParens = m_startOfStatement && node.ClassType != ClassType.Declaration;
+                if (wrapInParens)
+                {
+                    OutputPossibleLineBreak('(');
+                    m_startOfStatement = false;
+                }
+
+                Output("class");
+                MarkSegment(node, null, node.ClassContext);
+                SetContextOutputPosition(node.ClassContext);
+                m_startOfStatement = false;
+
+                // name if optional if this is an expression, and it should
+                // be a simple binding identifier if it's present
+                if (node.Binding != null)
+                {
+                    var bindingIdentifier = node.Binding as BindingIdentifier;
+                    if (bindingIdentifier != null)
+                    {
+                        // if this isn't an expression, or if the class name is actually referenced,
+                        // or if we don't want to remove expression names, output the name. Otherwise
+                        // hide it.
+                        if (node.ClassType != ClassType.Expression
+                            || bindingIdentifier.VariableField.IsReferenced
+                            || !m_settings.RemoveFunctionExpressionNames)
+                        {
+                            node.Binding.Accept(this);
+                        }
+                    }
+                    else
+                    {
+                        // not a simple identifier -- output anyway to maintain the code as-is
+                        node.Binding.Accept(this);
+                    }
+                }
+
+                // heritage is optional
+                if (node.Heritage != null)
+                {
+                    Output("extends");
+                    MarkSegment(node, null, node.ExtendsContext);
+                    SetContextOutputPosition(node.ExtendsContext);
+
+                    node.Heritage.Accept(this);
+                }
+
+                // if there are any elements, put the braces on new lines and indent
+                node.Elements.IfNotNull(e => { if (e.Count > 0) { NewLine(); Indent();  } });
+                OutputPossibleLineBreak('{');
+                MarkSegment(node, null, node.OpenBrace);
+                SetContextOutputPosition(node.OpenBrace);
+
+                // output each element in turn
+                if (node.Elements != null && node.Elements.Count > 0)
+                {
+                    foreach (var element in node.Elements)
+                    {
+                        NewLine();
+                        element.Accept(this);
+                    }
+                }
+
+                // if there are any elements, unindent and put the closing braces on a new line
+                node.Elements.IfNotNull(e => { if (e.Count > 0) { Unindent();  NewLine(); } });
+                OutputPossibleLineBreak('}');
+                MarkSegment(node, null, node.CloseBrace);
+                SetContextOutputPosition(node.CloseBrace);
+
+                if (wrapInParens)
+                {
+                    OutputPossibleLineBreak(')');
+                }
+            }
+        }
+
+        public void Visit(ComprehensionNode node)
+        {
+            if (node != null)
+            {
+                // array is the default (0) so check for generator
+                OutputPossibleLineBreak(node.ComprehensionType == ComprehensionType.Generator ? '(' : '[');
+                MarkSegment(node, null, node.OpenDelimiter);
+
+                if (node.MozillaOrdering)
+                {
+                    // Mozilla order implemented by Firefox - they want the expression first,
+                    // then the for-clause(s) followed by an optional single if-clause
+                    if (node.Expression != null)
+                    {
+                        node.Expression.Accept(this);
+                    }
+
+                    // skip the AstNodeList part and just output the clauses
+                    // because the list will add commas
+                    foreach (var clause in node.Clauses)
+                    {
+                        clause.Accept(this);
+                    }
+                }
+                else
+                {
+                    // spec'd ES6 format
+                    // a for-clause followed by any number of for- or if-clauses, followed by the expression
+                    // skip the AstNodeList part and just output the clauses
+                    // because the list will add commas
+                    foreach (var clause in node.Clauses)
+                    {
+                        clause.Accept(this);
+                    }
+
+                    if (node.Expression != null)
+                    {
+                        node.Expression.Accept(this);
+                    }
+                }
+
+                OutputPossibleLineBreak(node.ComprehensionType == ComprehensionType.Generator ? ')' : ']');
+                MarkSegment(node, null, node.CloseDelimiter);
+            }
+        }
+
+        public void Visit(ComprehensionForClause node)
+        {
+            if (node != null)
+            {
+                Output("for");
+                MarkSegment(node, null, node.OperatorContext);
+                OutputPossibleLineBreak('(');
+                MarkSegment(node, null, node.OpenContext);
+
+                if (node.Binding != null)
+                {
+                    node.Binding.Accept(this);
+                }
+
+                Output(node.IsInOperation ? "in" : "of");
+                MarkSegment(node, null, node.OfContext);
+
+                if (node.Expression != null)
+                {
+                    node.Expression.Accept(this);
+                }
+
+                OutputPossibleLineBreak(')');
+                MarkSegment(node, null, node.CloseContext);
+            }
+        }
+
+        public void Visit(ComprehensionIfClause node)
+        {
+            if (node != null)
+            {
+                Output("if");
+                MarkSegment(node, null, node.OperatorContext);
+                OutputPossibleLineBreak('(');
+                MarkSegment(node, null, node.OpenContext);
+
+                if (node.Condition != null)
+                {
+                    node.Condition.Accept(this);
+                }
+
+                OutputPossibleLineBreak(')');
+                MarkSegment(node, null, node.CloseContext);
+            }
+        }
+
         public void Visit(ConditionalCompilationComment node)
         {
             if (node != null)
@@ -637,7 +862,7 @@ namespace Microsoft.Ajax.Utilities
                 if (m_outputCCOn && m_settings.IsModificationAllowed(TreeModifications.RemoveUnnecessaryCCOnStatements))
                 {
                     while (ndx < node.Statements.Count
-                        && (node.Statements[ndx].HideFromOutput || node.Statements[ndx] is ConditionalCompilationOn))
+                        && node.Statements[ndx] is ConditionalCompilationOn)
                     {
                         ++ndx;
                     }
@@ -676,9 +901,9 @@ namespace Microsoft.Ajax.Utilities
                     while (++ndx < node.Statements.Count)
                     {
                         statement = node.Statements[ndx];
-                        if (statement != null && !statement.HideFromOutput)
+                        if (statement != null)
                         {
-                            if (prevStatement != null && prevStatement.RequiresSeparator)
+                            if (prevStatement != null && m_requiresSeparator.Query(prevStatement))
                             {
                                 OutputPossibleLineBreak(';');
                                 MarkSegment(prevStatement, null, prevStatement.TerminatingContext);
@@ -1021,19 +1246,18 @@ namespace Microsoft.Ajax.Utilities
                 SetContextOutputPosition(node.Context);
 
                 m_startOfStatement = false;
-                if (!string.IsNullOrEmpty(node.Label))
+                if (!node.Label.IsNullOrWhiteSpace())
                 {
                     // NO PAGE BREAKS ALLOWED HERE
                     m_noLineBreaks = true;
-                    if (m_settings.LocalRenaming != LocalRenaming.KeepAll
-                        && m_settings.IsModificationAllowed(TreeModifications.LocalRenaming))
+                    if (node.LabelInfo.IfNotNull(li => !li.MinLabel.IsNullOrWhiteSpace()))
                     {
-                        // minify the label -- only depends on nesting level
-                        Output(CrunchEnumerator.CrunchedLabel(node.NestLevel) ?? node.Label);
+                        // output minified label
+                        Output(node.LabelInfo.MinLabel);
                     }
                     else
                     {
-                        // not minified -- just output label
+                        // not minified -- just output original label
                         Output(node.Label);
                     }
 
@@ -1055,7 +1279,7 @@ namespace Microsoft.Ajax.Utilities
                 if (!code.IsNullOrWhiteSpace())
                 {
                     var symbol = StartSymbol(node);
-                    Output(node.ToCode());
+                    Output(code);
                     MarkSegment(node, null, node.Context);
                     SetContextOutputPosition(node.Context);
                     EndSymbol(symbol);
@@ -1124,7 +1348,7 @@ namespace Microsoft.Ajax.Utilities
                     m_startOfStatement = true;
                     node.Body[0].Accept(this);
 
-                    if (node.Body[0].RequiresSeparator)
+                    if (m_requiresSeparator.Query(node.Body[0]))
                     {
                         // because the next thing we are going to output is a while keyword, if the
                         // semicolon would be at the end of a line, we can skip it and just let the
@@ -1186,6 +1410,83 @@ namespace Microsoft.Ajax.Utilities
                 OutputPossibleLineBreak(';');
                 MarkSegment(node, null, node.Context);
                 SetContextOutputPosition(node.Context);
+            }
+        }
+
+        public void Visit(ExportNode node)
+        {
+            if (node != null)
+            {
+                var symbol = StartSymbol(node);
+                Output("export");
+                MarkSegment(node, null, node.Context);
+                SetContextOutputPosition(node.Context);
+                SetContextOutputPosition(node.KeywordContext);
+                m_startOfStatement = false;
+
+                if (node.IsDefault)
+                {
+                    Output("default");
+
+                    // there should only be a single element in the list, and it should be
+                    // and assignment expression.
+                    if (node.Count > 0)
+                    {
+                        node[0].Accept(this);
+                    }
+                }
+                else
+                {
+                    if (node.Count == 1
+                        && (node[0] is Declaration || node[0] is FunctionObject || node[0] is ClassNode))
+                    {
+                        // exporting a declaration (var/const/let), a function declaration, or a class node
+                        node[0].Accept(this);
+                    }
+                    else
+                    {
+                        // the array should be an export specifier set. If there's nothing there, it's a star
+                        if (node.Count == 0)
+                        {
+                            OutputPossibleLineBreak('*');
+                            SetContextOutputPosition(node.OpenContext);
+                        }
+                        else
+                        {
+                            OutputPossibleLineBreak('{');
+                            SetContextOutputPosition(node.OpenContext);
+
+                            var first = true;
+                            foreach (var specifier in node.Children)
+                            {
+                                if (first)
+                                {
+                                    first = false;
+                                }
+                                else
+                                {
+                                    OutputPossibleLineBreak(',');
+                                }
+
+                                specifier.Accept(this);
+                            }
+
+                            OutputPossibleLineBreak('}');
+                            SetContextOutputPosition(node.CloseContext);
+                        }
+
+                        if (node.ModuleName != null)
+                        {
+                            Output("from");
+                            SetContextOutputPosition(node.FromContext);
+
+                            Output(EscapeString(node.ModuleName));
+                            SetContextOutputPosition(node.ModuleContext);
+                        }
+                    }
+                }
+
+                EndSymbol(symbol);
             }
         }
 
@@ -1297,6 +1598,42 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        private void OutputFunctionPrefix(FunctionObject node, string functionName)
+        {
+            if (node.FunctionType == FunctionType.Method)
+            {
+                if (node.IsGenerator)
+                {
+                    Output('*');
+                    MarkSegment(node, functionName, node.Context);
+                    SetContextOutputPosition(node.Context);
+                }
+            }
+            else if (node.FunctionType == FunctionType.Getter)
+            {
+                Output("get");
+                MarkSegment(node, functionName, node.Context);
+                SetContextOutputPosition(node.Context);
+            }
+            else if (node.FunctionType == FunctionType.Setter)
+            {
+                Output("set");
+                MarkSegment(node, functionName, node.Context);
+                SetContextOutputPosition(node.Context);
+            }
+            else
+            {
+                Output("function");
+                MarkSegment(node, functionName, node.Context);
+                SetContextOutputPosition(node.Context);
+
+                if (node.IsGenerator)
+                {
+                    Output('*');
+                }
+            }
+        }
+
         public void Visit(FunctionObject node)
         {
             if (node != null)
@@ -1306,94 +1643,99 @@ namespace Microsoft.Ajax.Utilities
                 var isNoIn = m_noIn;
                 m_noIn = false;
 
-                var encloseInParens = node.IsExpression && m_startOfStatement;
-                if (encloseInParens)
+                if (node.FunctionType == FunctionType.ArrowFunction)
                 {
-                    OutputPossibleLineBreak('(');
+                    // arrow functions are simple...
+                    OutputFunctionArgsAndBody(node);
                 }
-
-                // get the function name we will use for symbol references.
-                // use the function's real name if:
-                //    1. there is one AND
-                //      2a. the function is a declaration OR
-                //      2b. the refcount is greater than zero OR
-                //      2c. we aren't going to remove function expression names
-                // otherwise use the name guess.
-                var hasName = !node.Name.IsNullOrWhiteSpace()
-                        && (!node.IsExpression
-                        || node.RefCount > 0
-                        || !m_settings.RemoveFunctionExpressionNames
-                        || !m_settings.IsModificationAllowed(TreeModifications.RemoveFunctionExpressionNames));
-                var fullFunctionName = hasName
-                        ? node.Name
-                        : node.NameGuess;
-
-                Output("function");
-                MarkSegment(node, fullFunctionName, node.Context);
-                SetContextOutputPosition(node.Context);
-
-                m_startOfStatement = false;
-                bool isAnonymous = true;
-                if (!node.Name.IsNullOrWhiteSpace())
+                else
                 {
-                    isAnonymous = false;
-                    var minFunctionName = node.VariableField != null
-                        ? node.VariableField.ToString()
-                        : node.Name;
-                    if (m_settings.SymbolsMap != null)
+                    var encloseInParens = node.IsExpression && m_startOfStatement;
+                    if (encloseInParens)
                     {
-                        m_functionStack.Push(minFunctionName);
+                        OutputPossibleLineBreak('(');
                     }
 
-                    if (hasName)
+                    // get the function name we will use for symbol references.
+                    // use the function's real name if:
+                    //    1. there is one AND
+                    //      2a. the function is not an expression (declaration, method, getter/setter) OR
+                    //      2b. the refcount is greater than zero OR
+                    //      2c. we aren't going to remove function expression names
+                    // otherwise use the name guess.
+                    var hasName = (node.Binding != null && !node.Binding.Name.IsNullOrWhiteSpace())
+                            && (node.FunctionType != FunctionType.Expression
+                                || node.Binding.VariableField.RefCount > 0
+                                || !m_settings.RemoveFunctionExpressionNames
+                                || !m_settings.IsModificationAllowed(TreeModifications.RemoveFunctionExpressionNames));
+                    var fullFunctionName = hasName
+                            ? node.Binding.Name
+                            : node.NameGuess;
+
+                    if (node.IsStatic)
                     {
-                        // all identifier should be treated as if they start with a valid
-                        // identifier character. That might not always be the case, like when
-                        // we consider an ASP.NET block to output the start of an identifier.
-                        // so let's FORCE the insert-space logic here.
-                        if (JSScanner.IsValidIdentifierPart(m_lastCharacter))
+                        Output("static");
+                    }
+
+                    OutputFunctionPrefix(node, fullFunctionName);
+                    m_startOfStatement = false;
+                    bool isAnonymous = true;
+                    if (node.Binding != null && !node.Binding.Name.IsNullOrWhiteSpace())
+                    {
+                        isAnonymous = false;
+                        var minFunctionName = node.Binding.VariableField != null
+                            ? node.Binding.VariableField.ToString()
+                            : node.Binding.Name;
+                        if (m_settings.SymbolsMap != null)
                         {
-                            Output(' ');
+                            m_functionStack.Push(minFunctionName);
                         }
 
-                        Output(minFunctionName);
-                        MarkSegment(node, node.Name, node.IdContext);
-                        SetContextOutputPosition(node.NameContext);
-                    }
-                }
+                        if (hasName)
+                        {
+                            // all identifier should be treated as if they start with a valid
+                            // identifier character. That might not always be the case, like when
+                            // we consider an ASP.NET block to output the start of an identifier.
+                            // so let's FORCE the insert-space logic here.
+                            if (JSScanner.IsValidIdentifierPart(m_lastCharacter))
+                            {
+                                Output(' ');
+                            }
 
-                if (m_settings.SymbolsMap != null && isAnonymous)
-                {
-                    BinaryOperator binaryOperator = node.Parent as BinaryOperator;
-                    if (binaryOperator != null && binaryOperator.Operand1 is Lookup)
+                            Output(minFunctionName);
+                            MarkSegment(node, node.Binding.Name, node.Binding.Context);
+                            SetContextOutputPosition(node.Context);
+                        }
+                    }
+
+                    if (m_settings.SymbolsMap != null && isAnonymous)
                     {
-                        m_functionStack.Push("(anonymous) [{0}]".FormatInvariant(binaryOperator.Operand1));
+                        BinaryOperator binaryOperator = node.Parent as BinaryOperator;
+                        if (binaryOperator != null && binaryOperator.Operand1 is Lookup)
+                        {
+                            m_functionStack.Push("(anonymous) [{0}]".FormatInvariant(binaryOperator.Operand1));
+                        }
+                        else
+                        {
+                            m_functionStack.Push("(anonymous)");
+                        }
                     }
-                    else
+
+                    OutputFunctionArgsAndBody(node);
+
+                    if (encloseInParens)
                     {
-                        m_functionStack.Push("(anonymous)");
+                        OutputPossibleLineBreak(')');
                     }
-                }
-
-                OutputFunctionArgsAndBody(node, m_settings.RemoveUnneededCode
-                    && node.EnclosingScope.IsKnownAtCompileTime
-                    && m_settings.MinifyCode
-                    && m_settings.IsModificationAllowed(TreeModifications.RemoveUnusedParameters));
-
-                if (encloseInParens)
-                {
-                    OutputPossibleLineBreak(')');
                 }
 
                 m_noIn = isNoIn;
-
                 EndSymbol(symbol);
-
                 if (m_settings.SymbolsMap != null)
                 {
                     m_functionStack.Pop();
                 }
-            }
+           }
         }
 
         public void Visit(GetterSetter node)
@@ -1494,7 +1836,7 @@ namespace Microsoft.Ajax.Utilities
                     }
 
                     if (node.FalseBlock != null && node.FalseBlock.Count > 0
-                        && node.TrueBlock[0].RequiresSeparator)
+                        && m_requiresSeparator.Query(node.TrueBlock[0]))
                     {
                         // we have only one statement, we did not wrap it in braces,
                         // and we have an else-block, and the one true-statement needs
@@ -1616,32 +1958,157 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        public void Visit(ImportExportSpecifier node)
+        {
+            if (node != null)
+            {
+                if (node.Parent is ImportNode)
+                {
+                    // import specifier: external (as local)
+                    if (!node.ExternalName.IsNullOrWhiteSpace())
+                    {
+                        Output(node.ExternalName);
+                        SetContextOutputPosition(node.Context);
+                        SetContextOutputPosition(node.NameContext);
+
+                        Output("as");
+                        SetContextOutputPosition(node.AsContext);
+                    }
+
+                    // the local identiier should ALWAYS be present, but just in case...
+                    if (node.LocalIdentifier != null)
+                    {
+                        node.LocalIdentifier.Accept(this);
+                        if (node.ExternalName.IsNullOrWhiteSpace())
+                        {
+                            // if there was no external name, then this is the first (and only)
+                            // part of the node output, so set the node's context position from it.
+                            SetContextOutputPosition(node.Context);
+                        }
+                    }
+                }
+                else
+                {
+                    // export specifier: local (as external)
+                    // local identifier should always be present...
+                    if (node.LocalIdentifier != null)
+                    {
+                        node.LocalIdentifier.Accept(this);
+                        SetContextOutputPosition(node.Context);
+                    }
+
+                    if (!node.ExternalName.IsNullOrWhiteSpace())
+                    {
+                        Output("as");
+                        SetContextOutputPosition(node.AsContext);
+
+                        Output(node.ExternalName);
+                        SetContextOutputPosition(node.NameContext);
+                    }
+                }
+            }
+        }
+
+        public void Visit(ImportNode node)
+        {
+            if (node != null)
+            {
+                Output("import");
+                SetContextOutputPosition(node.Context);
+                SetContextOutputPosition(node.KeywordContext);
+                m_startOfStatement = false;
+
+                // ANY specifier or identifier is optional
+                if (node.Count > 0)
+                {
+                    if (node.Count == 1 && node[0] is BindingIdentifier)
+                    {
+                        // identifier without braces
+                        node[0].Accept(this);
+                    }
+                    else
+                    {
+                        // specifier list enclosed in braces
+                        OutputPossibleLineBreak('{');
+                        SetContextOutputPosition(node.OpenContext);
+
+                        var first = true;
+                        foreach (var specifier in node.Children)
+                        {
+                            if (first)
+                            {
+                                first = false;
+                            }
+                            else
+                            {
+                                OutputPossibleLineBreak(',');
+                            }
+
+                            specifier.Accept(this);
+                        }
+
+                        OutputPossibleLineBreak('}');
+                        SetContextOutputPosition(node.CloseContext);
+                    }
+
+                    Output("from");
+                    SetContextOutputPosition(node.FromContext);
+                }
+
+                // module is mandatory, but if it's null we didn't have one.
+                if (node.ModuleName != null)
+                {
+                    Output(EscapeString(node.ModuleName));
+                    SetContextOutputPosition(node.ModuleContext);
+                }
+            }
+        }
+
+        public void Visit(InitializerNode node)
+        {
+            if (node != null)
+            {
+                if (node.Binding != null)
+                {
+                    node.Binding.Accept(this);
+                }
+
+                OutputPossibleLineBreak('=');
+                MarkSegment(node, null, node.AssignContext);
+
+                if (node.Initializer != null)
+                {
+                    node.Initializer.Accept(this);
+                }
+            }
+        }
+
         public void Visit(LabeledStatement node)
         {
             if (node != null)
             {
                 var symbol = StartSymbol(node);
 
-                if (m_settings.LocalRenaming != LocalRenaming.KeepAll
-                    && m_settings.IsModificationAllowed(TreeModifications.LocalRenaming))
+                if (!node.Label.IsNullOrWhiteSpace())
                 {
-                    // we're minifying the labels.
-                    // we want to output our label as per our nested level.
-                    // top-level is "a", next level is "b", etc.
-                    // we don't need to worry about collisions with variables.
-                    Output(CrunchEnumerator.CrunchedLabel(node.NestCount) ?? node.Label);
-                }
-                else
-                {
-                    // not minifying -- just output our label
-                    Output(node.Label);
+                    if (node.LabelInfo.IfNotNull(li => !li.MinLabel.IsNullOrWhiteSpace()))
+                    {
+                        // output minified label
+                        Output(node.LabelInfo.MinLabel);
+                    }
+                    else
+                    {
+                        // not minified -- just output original label
+                        Output(node.Label);
+                    }
+
+                    MarkSegment(node, null, node.Context);
+                    SetContextOutputPosition(node.Context);
+                    OutputPossibleLineBreak(':');
+                    MarkSegment(node, null, node.ColonContext);
                 }
 
-                MarkSegment(node, null, node.Context);
-                SetContextOutputPosition(node.Context);
-                OutputPossibleLineBreak(':');
-                MarkSegment(node, null, node.ColonContext);
-                if (node.Statement != null && !node.Statement.HideFromOutput)
+                if (node.Statement != null)
                 {
                     m_startOfStatement = true;
                     node.Statement.Accept(this);
@@ -1782,7 +2249,7 @@ namespace Microsoft.Ajax.Utilities
                                     // if the second "digit" isn't a number, then we have 0x or 0b or 0o, so we don't have to do
                                     // any further tests -- we know we don't need the extra decimal point. Otherwise we need to
                                     // make sure this
-                                    if (char.IsDigit(numericText[1]))
+                                    if (JSScanner.IsDigit(numericText[1]))
                                     {
                                         // the second character is a digit, so we know we aren't 0x, 0b, or 0o. But we start with
                                         // a zero -- so we need to test to see if this is an octal literal, because they do NOT need
@@ -1835,6 +2302,62 @@ namespace Microsoft.Ajax.Utilities
                 m_noIn = isNoIn;
 
                 EndSymbol(symbol);
+            }
+        }
+
+        public void Visit(ModuleDeclaration node)
+        {
+            if (node != null)
+            {
+                if (node.IsImplicit)
+                {
+                    // implicit module declarations just skip the module part and output only the body.
+                    if (node.Body != null)
+                    {
+                        node.Body.Accept(this);
+                    }
+                }
+                else
+                {
+                    // explicit module statement
+                    Output("module");
+                    SetContextOutputPosition(node.Context);
+                    SetContextOutputPosition(node.ModuleContext);
+
+                    if (node.Binding != null)
+                    {
+                        // bind entire external module to an identifier
+                        node.Binding.Accept(this);
+                        Output("from");
+                        SetContextOutputPosition(node.FromContext);
+
+                        if (node.ModuleName != null)
+                        {
+                            Output(EscapeString(node.ModuleName));
+                            SetContextOutputPosition(node.ModuleContext);
+                        }
+                    }
+                    else
+                    {
+                        // inline module declaration
+                        m_noLineBreaks = true;
+                        if (node.ModuleName != null)
+                        {
+                            Output(EscapeString(node.ModuleName));
+                            SetContextOutputPosition(node.ModuleContext);
+                        }
+
+                        if (node.Body != null)
+                        {
+                            node.Body.Accept(this);
+                        }
+                        else
+                        {
+                            // no body; add an empty one.
+                            Output("{}");
+                        }
+                    }
+                }
             }
         }
 
@@ -1923,7 +2446,7 @@ namespace Microsoft.Ajax.Utilities
                     var propertyName = node.ToString();
                     if (!string.IsNullOrEmpty(propertyName)
                         && JSScanner.IsSafeIdentifier(propertyName)
-                        && !JSScanner.IsKeyword(propertyName, node.EnclosingScope.UseStrict))
+                        && !JSScanner.IsKeyword(propertyName, node.EnclosingScope.IfNotNull(s => s.UseStrict)))
                     {
                         Output(propertyName);
                         MarkSegment(node, null, node.Context);
@@ -1942,7 +2465,6 @@ namespace Microsoft.Ajax.Utilities
 
                 OutputPossibleLineBreak(':');
                 MarkSegment(node, null, node.ColonContext);
-
                 if (m_settings.OutputMode == OutputMode.MultipleLines)
                 {
                     OutputPossibleLineBreak(' ');
@@ -1956,18 +2478,14 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                if (node.Name != null)
+                // getter/setter will be handled by the value, which is the function object
+                if (node.Name != null && !(node.Name is GetterSetter))
                 {
                     node.Name.Accept(this);
                     SetContextOutputPosition(node.Context);
                 }
 
-                if (node.Name is GetterSetter)
-                {
-                    // always output the parameters
-                    OutputFunctionArgsAndBody(node.Value as FunctionObject, false);
-                }
-                else if (node.Value != null)
+                if (node.Value != null)
                 {
                     AcceptNodeWithParens(node.Value, node.Value.Precedence == OperatorPrecedence.Comma);
                 }
@@ -1978,10 +2496,36 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
-                // just output the node's name
-                Output(node.VariableField == null ? node.Name : node.VariableField.ToString());
-                MarkSegment(node, node.Name, node.Context);
-                SetContextOutputPosition(node.Context);
+                if (node.HasRest)
+                {
+                    Output(OperatorString(JSToken.RestSpread));
+                    MarkSegment(node, null, node.Context);
+                    SetContextOutputPosition(node.Context);
+                }
+
+                // output the binding
+                node.Binding.IfNotNull(b => b.Accept(this));
+
+                // optional initializer
+                if (node.Initializer != null)
+                {
+                    if (m_settings.OutputMode == OutputMode.MultipleLines && m_settings.IndentSize > 0)
+                    {
+                        OutputPossibleLineBreak(' ');
+                        OutputPossibleLineBreak('=');
+                        BreakLine(false);
+                        if (!m_onNewLine)
+                        {
+                            OutputPossibleLineBreak(' ');
+                        }
+                    }
+                    else
+                    {
+                        OutputPossibleLineBreak('=');
+                    }
+
+                    AcceptNodeWithParens(node.Initializer, node.Initializer.Precedence == OperatorPrecedence.Comma);
+                }
             }
         }
 
@@ -2078,7 +2622,7 @@ namespace Microsoft.Ajax.Utilities
                     var switchCase = node.Cases[ndx];
                     if (switchCase != null)
                     {
-                        if (prevSwitchCase != null && prevSwitchCase.RequiresSeparator)
+                        if (prevSwitchCase != null && m_requiresSeparator.Query(prevSwitchCase))
                         {
                             // because the next switch-case will always start with either the case or default
                             // keyword, if the semicolon we are about the output would be at the end of a newline,
@@ -2136,9 +2680,9 @@ namespace Microsoft.Ajax.Utilities
                     for (var ndx = 0; ndx < node.Statements.Count; ++ndx)
                     {
                         var statement = node.Statements[ndx];
-                        if (statement != null && !statement.HideFromOutput)
+                        if (statement != null)
                         {
-                            if (prevStatement != null && prevStatement.RequiresSeparator)
+                            if (prevStatement != null && m_requiresSeparator.Query(prevStatement))
                             {
                                 OutputPossibleLineBreak(';');
                                 MarkSegment(prevStatement, null, prevStatement.TerminatingContext);
@@ -2155,6 +2699,62 @@ namespace Microsoft.Ajax.Utilities
                 }
 
                 EndSymbol(symbol);
+            }
+        }
+
+        public virtual void Visit(TemplateLiteral node)
+        {
+            if (node != null)
+            {
+                if (node.Function != null)
+                {
+                    node.Function.Accept(this);
+                    m_startOfStatement = false;
+                }
+
+                // get the text string to output. If we don't want to minify string literals,
+                // then we should also not minify template literals (since they're just special strings)
+                var text = node.Text;
+                if (node.TextContext != null && !m_settings.IsModificationAllowed(TreeModifications.MinifyStringLiterals))
+                {
+                    // use the raw version of the text source
+                    text = node.TextContext.Code;
+                }
+
+                if (!text.IsNullOrWhiteSpace())
+                {
+                    Output(text);
+                    MarkSegment(node, null, node.TextContext ?? node.Context);
+                    SetContextOutputPosition(node.TextContext);
+                    m_startOfStatement = false;
+                }
+
+                if (node.Expressions != null && node.Expressions.Count > 0)
+                {
+                    node.Expressions.ForEach<TemplateLiteralExpression>(expr =>
+                        {
+                            expr.Accept(this);
+                        });
+                }
+            }
+        }
+
+        public virtual void Visit(TemplateLiteralExpression node)
+        {
+            if (node != null)
+            {
+                if (node.Expression != null)
+                {
+                    node.Expression.Accept(this);
+                }
+
+                if (!node.Text.IsNullOrWhiteSpace())
+                {
+                    Output(node.Text);
+                    MarkSegment(node, null, node.TextContext);
+                    SetContextOutputPosition(node.TextContext);
+                    m_startOfStatement = false;
+                }
             }
         }
 
@@ -2205,7 +2805,7 @@ namespace Microsoft.Ajax.Utilities
                 OutputTryBranch(node);
 
                 var hasCatchBlock = false;
-                if (!string.IsNullOrEmpty(node.CatchVarName))
+                if (node.CatchParameter != null)
                 {
                     hasCatchBlock = true;
                     OutputCatchBranch(node);
@@ -2255,12 +2855,7 @@ namespace Microsoft.Ajax.Utilities
         {
             NewLine();
             Output("catch(");
-            MarkSegment(node, null, node.CatchVarContext);
-            if (node.CatchParameter != null)
-            {
-                node.CatchParameter.Accept(this);
-            }
-
+            node.CatchParameter.IfNotNull(p => p.Accept(this));
             OutputPossibleLineBreak(')');
 
             if (node.CatchBlock == null || node.CatchBlock.Count == 0)
@@ -2373,11 +2968,8 @@ namespace Microsoft.Ajax.Utilities
             {
                 var symbol = StartSymbol(node);
 
-                // output the name (use the field is possible)
-                Output(node.VariableField != null ? node.VariableField.ToString() : node.Identifier);
-                MarkSegment(node, node.Name, node.Context);
-                SetContextOutputPosition(node.Context);
-                node.VariableField.IfNotNull(f => SetContextOutputPosition(f.OriginalContext));
+                // output the binding
+                node.Binding.IfNotNull(b => b.Accept(this));
 
                 m_startOfStatement = false;
                 if (node.Initializer != null)
@@ -2400,7 +2992,6 @@ namespace Microsoft.Ajax.Utilities
                     }
                     else
                     {
-
                         if (m_settings.OutputMode == OutputMode.MultipleLines && m_settings.IndentSize > 0)
                         {
                             OutputPossibleLineBreak(' ');
@@ -2453,6 +3044,14 @@ namespace Microsoft.Ajax.Utilities
                     MarkSegment(node, null, node.OperatorContext);
                     m_startOfStatement = false;
                 }
+                else if (node.OperatorToken == JSToken.RestSpread)
+                {
+                    // spread operator. Output the spread token followed by the
+                    // operand. I don't think we need parentheses or anything.
+                    Output(OperatorString(JSToken.RestSpread));
+                    MarkSegment(node, null, node.OperatorContext ?? node.Context);
+                    node.Operand.IfNotNull(o => o.Accept(this));
+                }
                 else
                 {
                     if (node.OperatorInConditionalCompilationComment)
@@ -2482,6 +3081,12 @@ namespace Microsoft.Ajax.Utilities
                         Output(OperatorString(node.OperatorToken));
                         MarkSegment(node, null, node.OperatorContext ?? node.Context);
                         SetContextOutputPosition(node.Context);
+                        
+                        // if this is a yield delegator, output the asterisk
+                        if (node.OperatorToken == JSToken.Yield && node.IsDelegator)
+                        {
+                            Output('*');
+                        }
                     }
 
                     m_startOfStatement = false;
@@ -2668,7 +3273,7 @@ namespace Microsoft.Ajax.Utilities
                     OutputSpaceOrLineBreak();
                 }
             }
-            else if ((m_lastCharacter == '@' || JSScanner.IsValidIdentifierPart(m_lastCharacter)) && JSScanner.IsValidIdentifierPart(text))
+            else if ((m_lastCharacter == '@' || JSScanner.IsValidIdentifierPart(m_lastCharacter)) && JSScanner.StartsWithValidIdentifierPart(text))
             {
                 // either the last character is a valid part of an identifier and the current character is, too;
                 // OR the last part was numeric and the current character is a .
@@ -3008,6 +3613,11 @@ namespace Microsoft.Ajax.Utilities
                 case JSToken.DivideAssign: return "/=";
                 case JSToken.Let: return "let";
                 case JSToken.Const: return "const";
+                case JSToken.ArrowFunction: return "=>";
+                case JSToken.RestSpread: return "...";
+                case JSToken.Yield: return "yield";
+                case JSToken.Get: return "get";
+                case JSToken.Set: return "set";
 
                 default: return string.Empty;
             }
@@ -3048,51 +3658,38 @@ namespace Microsoft.Ajax.Utilities
         /// Output everything for a function except the initial keyword
         /// </summary>
         /// <param name="node"></param>
-        private void OutputFunctionArgsAndBody(FunctionObject node, bool removeUnused)
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
+        private void OutputFunctionArgsAndBody(FunctionObject node)
         {
             if (node != null)
             {
-                m_startOfStatement = false;
                 if (node.ParameterDeclarations != null)
                 {
                     Indent();
-                    OutputPossibleLineBreak('(');
-                    MarkSegment(node, null, node.ParametersContext); 
 
-                    // figure out the last referenced argument so we can skip
-                    // any that aren't actually referenced
-                    int lastRef = node.ParameterDeclarations.Count - 1;
+                    // we need to wrap the parens for all function object other than arrow functions,
+                    // and for arrow functions where there are zero or more than one parameter.
+                    // if it IS an arrow function with a single parameter, we still want to wrap the
+                    // parameter in parens if it's a rest argument.
+                    var wrapInParens = node.FunctionType != FunctionType.ArrowFunction 
+                        || node.ParameterDeclarations.Count != 1
+                        || (node.ParameterDeclarations[0] as ParameterDeclaration).IfNotNull(d => d.HasRest, true);
 
-                    // if we're not known at compile time, then we can't leave off unreferenced parameters
-                    // (also don't leave things off if we're not hypercrunching)
-                    // (also check the kill flag for removing unused parameters)
-                    if (removeUnused)
+                    if (wrapInParens)
                     {
-                        while (lastRef >= 0)
-                        {
-                            // we want to loop backwards until we either find a parameter that is referenced.
-                            // at that point, lastRef will be the index of the last referenced parameter so
-                            // we can output from 0 to lastRef
-                            var argumentField = (node.ParameterDeclarations[lastRef] as ParameterDeclaration).IfNotNull(p => p.VariableField);
-                            if (argumentField != null && !argumentField.IsReferenced)
-                            {
-                                --lastRef;
-                            }
-                            else
-                            {
-                                // found a referenced parameter, or something weird -- stop looking
-                                break;
-                            }
-                        }
+                        m_startOfStatement = false;
+                        OutputPossibleLineBreak('(');
+                        MarkSegment(node, null, node.ParameterDeclarations.Context);
                     }
 
                     AstNode paramDecl = null;
-                    for (var ndx = 0; ndx <= lastRef; ++ndx)
+                    for (var ndx = 0; ndx < node.ParameterDeclarations.Count; ++ndx)
                     {
                         if (ndx > 0)
                         {
                             OutputPossibleLineBreak(',');
-                            MarkSegment(node, null, paramDecl.IfNotNull(p => p.TerminatingContext) ?? node.ParametersContext);
+                            MarkSegment(node, null, paramDecl.IfNotNull(p => p.TerminatingContext) ?? node.ParameterDeclarations.Context);
+
                             if (m_settings.OutputMode == OutputMode.MultipleLines)
                             {
                                 OutputPossibleLineBreak(' ');
@@ -3107,8 +3704,32 @@ namespace Microsoft.Ajax.Utilities
                     }
 
                     Unindent();
+                    if (wrapInParens)
+                    {
+                        OutputPossibleLineBreak(')');
+                        MarkSegment(node, null, node.ParameterDeclarations.Context);
+                    }
+                }
+                else if (node.FunctionType == FunctionType.ArrowFunction)
+                {
+                    // empty arrow function parameters need the empty parentheses
+                    OutputPossibleLineBreak('(');
                     OutputPossibleLineBreak(')');
-                    MarkSegment(node, null, node.ParametersContext); 
+                    m_startOfStatement = false;
+                }
+
+                if (node.FunctionType == FunctionType.ArrowFunction)
+                {
+                    if (m_settings.OutputMode == OutputMode.MultipleLines)
+                    {
+                        OutputPossibleLineBreak(' ');
+                    }
+
+                    Output(OperatorString(JSToken.ArrowFunction));
+                    if (m_settings.OutputMode == OutputMode.MultipleLines)
+                    {
+                        OutputPossibleLineBreak(' ');
+                    }
                 }
 
                 if (node.Body == null || node.Body.Count == 0)
@@ -3117,8 +3738,21 @@ namespace Microsoft.Ajax.Utilities
                     MarkSegment(node, null, node.Body.IfNotNull(b => b.Context));
                     BreakLine(false);
                 }
+                else if (node.FunctionType == FunctionType.ArrowFunction
+                    && node.Body.Count == 1
+                    && node.Body.IsConcise)
+                {
+                    // the arrow function body has only one "statement" and it's not a return.
+                    // assume it's a concise expression body and just output it
+                    node.Body[0].Accept(this);
+                }
                 else
                 {
+                    if (node.FunctionType == FunctionType.ArrowFunction)
+                    {
+                        Indent();
+                    }
+
                     if (m_settings.BlocksStartOnSameLine == BlockStart.NewLine
                         || (m_settings.BlocksStartOnSameLine == BlockStart.UseSource && node.Body.BraceOnNewLine))
                     {
@@ -3130,6 +3764,11 @@ namespace Microsoft.Ajax.Utilities
                     }
 
                     node.Body.Accept(this);
+
+                    if (node.FunctionType == FunctionType.ArrowFunction)
+                    {
+                        Unindent();
+                    }
                 }
             }
         }
@@ -3156,13 +3795,7 @@ namespace Microsoft.Ajax.Utilities
             {
                 Indent();
                 NewLine();
-                if (block[0].HideFromOutput)
-                {
-                    // semicolon-replacement cannot generate an empty statement
-                    OutputPossibleLineBreak(';');
-                    MarkSegment(block, null, block.Context);
-                }
-                else if (block[0] is ImportantComment)
+                if (block[0] is ImportantComment)
                 {
                     // not a REAL statement, so follow the comment with a semicolon to
                     // be the actual statement for this block.
@@ -3663,15 +4296,18 @@ namespace Microsoft.Ajax.Utilities
             // otherwise there are more single-quotes than double-quotes (or equal values)
             // and it's okay to use double-quotes
             int quoteFactor = 0;
-            for (int index = 0; index < text.Length; ++index)
+            if (!text.IsNullOrWhiteSpace())
             {
-                if (text[index] == '\'')
+                for (int index = 0; index < text.Length; ++index)
                 {
-                    ++quoteFactor;
-                }
-                else if (text[index] == '"')
-                {
-                    --quoteFactor;
+                    if (text[index] == '\'')
+                    {
+                        ++quoteFactor;
+                    }
+                    else if (text[index] == '"')
+                    {
+                        --quoteFactor;
+                    }
                 }
             }
 

@@ -14,8 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     public class ConstantWrapperPP : Expression
@@ -24,8 +22,8 @@ namespace Microsoft.Ajax.Utilities
 
         public bool ForceComments { get; set; }
 
-        public ConstantWrapperPP(Context context, JSParser parser)
-            : base(context, parser)
+        public ConstantWrapperPP(Context context)
+            : base(context)
         {
         }
 

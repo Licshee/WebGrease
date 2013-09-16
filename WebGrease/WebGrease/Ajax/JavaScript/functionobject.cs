@@ -14,29 +14,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Reflection;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
-    public sealed class FunctionObject : AstNode, INameDeclaration
+    public class FunctionObject : AstNode
     {
-        private Block m_body;
+        private BindingIdentifier m_binding;
         private AstNodeList m_parameters;
+        private Block m_body;
 
-        public Block Body
+        public bool IsStatic { get; set; }
+
+        public Context StaticContext { get; set; }
+
+        public BindingIdentifier Binding
         {
-            get { return m_body; }
+            get { return m_binding; }
             set
             {
-                m_body.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
-                m_body = value;
-                m_body.IfNotNull(n => n.Parent = this);
+                m_binding.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_binding = value;
+                m_binding.IfNotNull(n => n.Parent = this);
             }
         }
+
+        public string NameGuess { get; set; }
 
         public AstNodeList ParameterDeclarations
         {
@@ -49,77 +52,61 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public FunctionType FunctionType { get; set; }
-
-        public AstNode Initializer { get { return null; } }
-
-        public Context NameContext { get { return IdContext; } }
-
-        public bool RenameNotAllowed
+        public Block Body
         {
-            get
+            get { return m_body; }
+            set
             {
-                return VariableField == null ? true : !VariableField.CanCrunch;
+                m_body.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_body = value;
+                m_body.IfNotNull(n => n.Parent = this);
             }
         }
 
-        public string Name
+        public override bool IsDeclaration
         {
-            get;
-            set;
+            get
+            {
+                // this is for determining whether statements after a return/break/continue
+                // is a declaration and should be kept, or a statement that can be removed.
+                // don't bother checking for getter/setter/method, which should only be inside
+                // class delcarations or object literals.
+                return FunctionType == FunctionType.Declaration;
+            }
         }
 
-        public string NameGuess
-        {
-            get;
-            set;
-        }
-
-        public Context IdContext { get; set; }
-        public Context ParametersContext { get; set; }
+        public FunctionType FunctionType { get; set; }
 
         public override bool IsExpression
         {
             get
             {
-                // if this is a declaration, then it's not an expression. Otherwise treat it 
-                // as if it were an expression.
-                return !(FunctionType == FunctionType.Declaration);
+                // if this is a declaration or a method, then it's not an expression. 
+                return FunctionType != FunctionType.Declaration
+                    && FunctionType != FunctionType.Method;
             }
         }
+
+        /// <summary>
+        /// Gets or sets whether this function object is a generator
+        /// </summary>
+        public bool IsGenerator { get; set; }
 
         // when parsed, this flag indicates that a function declaration is in the
         // proper source-element location
-        public bool IsSourceElement
-        {
-            get;
-            set;
-        }
-
-        public JSVariableField VariableField { get; set; }
-        public int RefCount { get { return (VariableField == null ? 0 : VariableField.RefCount); } }
-
-        public FunctionScope FunctionScope { get; set; }
-
-        public override ActivationObject EnclosingScope
-        {
-            get
-            {
-                return FunctionScope;
-            }
-        }
+        public bool IsSourceElement { get; set; }
 
         public override OperatorPrecedence Precedence
         {
             get
             {
-                // just assume primary -- should only get called for expressions anyway
-                return OperatorPrecedence.Primary;
+                // arow functions are assignment precedence, function expression are primary
+                return FunctionType == FunctionType.ArrowFunction ? OperatorPrecedence.Assignment : OperatorPrecedence.Primary;
             }
         }
 
-        public FunctionObject(Context functionContext, JSParser parser)
-            : base(functionContext, parser)
+        public FunctionObject(Context functionContext)
+            : base(functionContext)
         {
         }
 
@@ -131,6 +118,10 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        /// <summary>
+        /// Check to see if this function is referenced. Perform a cyclic check
+        /// because being referenced by an unreferenced function is still unreferenced.
+        /// </summary>
         public bool IsReferenced
         {
             get
@@ -153,26 +144,26 @@ namespace Microsoft.Ajax.Utilities
                 {
                     // this is a function declaration, so it better have it's variable field set.
                     // if the variable (and therefore the function) is defined in the global scope,
-                    // then this function declaration is called by a global function and therefore is
-                    // referenced.
-                    if (VariableField.OwningScope is GlobalScope)
+                    // or if it's exported from inside a module, then consider it possibly referenced
+                    // from outside code, whether or not it actually is from inside our own code.
+                    if (Binding.VariableField.IfNotNull(v => v.FieldType == FieldType.Global || v.IsExported))
                     {
                         return true;
                     }
 
                     // not defined in the global scope. Check its references.
-                    foreach (var reference in VariableField.References)
+                    foreach (var reference in Binding.VariableField.References)
                     {
                         var referencingScope = reference.VariableScope;
-                        if (referencingScope is GlobalScope)
+                        if (referencingScope == null || referencingScope is GlobalScope)
                         {
                             // referenced by a lookup in the global scope -- we're good to go.
                             return true;
                         }
                         else
                         {
-                            var functionScope = referencingScope as FunctionScope;
-                            if (functionScope != null && functionScope.FunctionObject.SafeIsReferenced(visited))
+                            var functionObject = referencingScope.Owner as FunctionObject;
+                            if (functionObject != null && functionObject.SafeIsReferenced(visited))
                             {
                                 // as soon as we find one that's referenced, we stop
                                 return true;
@@ -195,61 +186,32 @@ namespace Microsoft.Ajax.Utilities
         {
             get
             {
-                return EnumerateNonNullNodes(ParameterDeclarations, Body);
+                return EnumerateNonNullNodes(Binding, ParameterDeclarations, Body);
             }
         }
 
         public override bool ReplaceChild(AstNode oldNode, AstNode newNode)
         {
-            if (Body == oldNode)
+            if (Binding == oldNode)
+            {
+                Binding = newNode as BindingIdentifier;
+                return true;
+            }
+            else if (Body == oldNode)
             {
                 Body = ForceToBlock(newNode);
                 return true;
             }
             else if (ParameterDeclarations == oldNode)
             {
-                var newList = newNode as AstNodeList;
-                if (newNode == null || newList != null)
-                {
-                    ParameterDeclarations = newList;
-                    return true;
-                }
+                return (newNode as AstNodeList).IfNotNull(list =>
+                    {
+                        ParameterDeclarations = list;
+                        return true;
+                    });
             }
 
             return false;
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get { return HideFromOutput; }
-        }
-
-        internal bool IsArgumentTrimmable(JSVariableField targetArgumentField)
-        {
-            // walk backward until we either find the given argument field or the
-            // first parameter that is referenced. 
-            // If we find the argument field, then we can trim it because there are no
-            // referenced parameters after it.
-            // if we find a referenced argument, then the parameter is not trimmable.
-            JSVariableField argumentField = null;
-            if (ParameterDeclarations != null)
-            {
-                for (int index = ParameterDeclarations.Count - 1; index >= 0; --index)
-                {
-                    // better be a parameter declaration
-                    argumentField = (ParameterDeclarations[index] as ParameterDeclaration).IfNotNull(p => p.VariableField);
-                    if (argumentField != null
-                        && (argumentField == targetArgumentField || argumentField.IsReferenced))
-                    {
-                        break;
-                    }
-                }
-            }
-
-            // if the argument field we landed on is the same as the target argument field,
-            // then we found the target argument BEFORE we found a referenced parameter. Therefore
-            // the argument can be trimmed.
-            return (argumentField == targetArgumentField);
         }
     }
 
@@ -258,6 +220,8 @@ namespace Microsoft.Ajax.Utilities
         Declaration,
         Expression,
         Getter,
-        Setter
+        Setter,
+        ArrowFunction,
+        Method
     }
 }

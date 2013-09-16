@@ -18,8 +18,8 @@ namespace Microsoft.Ajax.Utilities
 {
     public class ConditionalCompilationEnd : ConditionalCompilationStatement
     {
-        public ConditionalCompilationEnd(Context context, JSParser parser)
-            : base(context, parser)
+        public ConditionalCompilationEnd(Context context)
+            : base(context)
         {
         }
 

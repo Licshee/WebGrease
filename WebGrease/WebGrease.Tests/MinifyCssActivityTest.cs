@@ -109,8 +109,9 @@ namespace WebGrease.Tests
                 exception = workflowException;
             }
 
-            // Assertions
-            Assert.IsNotNull(exception);
+            // shouldn't assert, but should log the error and NOT create output file
+            Assert.IsNull(exception);
+            Assert.IsFalse(File.Exists(minifyCssActivity.DestinationFile));
         }
 
         /// <summary>A test for Css pipeline for banned selectors.</summary>

@@ -16,7 +16,6 @@
 
 namespace Microsoft.Ajax.Utilities
 {
-
     public enum JSError
     {
         //0 - 1000 legacy scripting errors, not JScript specific.
@@ -33,12 +32,15 @@ namespace Microsoft.Ajax.Utilities
         NoRightCurly = 1009, // "Expected '}'"
         NoIdentifier = 1010, // "Expected identifier"
         NoEqual = 1011, // "Expected '='"
+        IllegalAssignment = 1012, // "Illegal assignment"
+        RegExpSyntax = 1013, // "Syntax error in regular expression"
         IllegalChar = 1014, // "Invalid character"
         UnterminatedString = 1015, // "Unterminated string constant"
         NoCommentEnd = 1016, // "Unterminated comment"
         BadReturn = 1018, // "'return' statement outside of function"
         BadBreak = 1019, // "Can't have 'break' outside of loop"
         BadContinue = 1020, // "Can't have 'continue' outside of loop"
+        UnusedLabel = 1021, // unused label
         BadHexEscapeSequence = 1023, // "Expected hexadecimal digit"
         NoWhile = 1024, // "Expected 'while'"
         BadLabel = 1025, // "Label redefined"
@@ -59,7 +61,6 @@ namespace Microsoft.Ajax.Utilities
         UndeclaredVariable = 1135, // "Variable has not been declared"
         KeywordUsedAsIdentifier = 1137, // "'xxxx' is a new reserved word and should not be used as an identifier"
         UndeclaredFunction = 1138, // "Function has not been declared"
-        NoCommaOrTypeDefinitionError = 1191, // "Expected ',' or illegal type declaration, write '<Identifier> : <Type>' not '<Type> <Identifier>'"
         NoRightParenthesisOrComma = 1193, // "Expected ',' or ')'"
         NoRightBracketOrComma = 1194, // "Expected ',' or ']'"
         ExpressionExpected = 1195, // "Expected expression"
@@ -111,13 +112,35 @@ namespace Microsoft.Ajax.Utilities
         SuspectEquality = 1309, // suspect equality comparison
         SemicolonInsertion = 1310, // semicolon insertion
         ArrayLiteralTrailingComma = 1311, // array literal trailing commas has cross-browser difference
+        StrictModeCatchName = 1312, // strict mode does not allow certain catch error binding names
+        BindingPatternRequiresInitializer = 1313, // binding patterns in var statements require initializer
+        ImplicitPropertyNameMustBeIdentifier = 1314, // implicit object property name must be identifier
+        SetterMustHaveOneParameter = 1315, // setter method must have a single format argument
+        RestParameterNotLast = 1316, // rest parameter can only be last parameter
+        UnableToConvertToBinding = 1317, // unable to convert to binding syntax
+        UnableToConvertFromBinding = 1318, // unable to convert from binding syntax
+        BadBindingSyntax = 1319, // invalid binding syntax
+        MethodsNotAllowedInBindings = 1320, // methods not allowed in object literal bindings
+        NoForOrIf = 1321, // expected for or if keyword
+        ClassElementExpected = 1322, // expected class element
+        DuplicateClassElementName = 1323, // duplicate class element name
+        SpecialConstructor = 1324, // class constructor must be regular method
+        StaticPrototype = 1325, // class static method cannot be named 'prototype'
+        NoBinding = 1326, // expected binding
+        MultipleDefaultExports = 1327, // multiple default exports
+        ImportNoModuleName = 1328, // import statement must include module name
+        DuplicateModuleDeclaration = 1329, // duplicate module declaration
+        NoDefaultModuleExport = 1330, // imported module has no default export
+        NoModuleExport = 1331, // imported module does not export name
+        NoExpectedFrom = 1332, // expected "from"
+        NoStringLiteral = 1333, // expected string literal
+        NewLineNotAllowed = 1334, // new line not allowed
+        NoSpecifierSet = 1335, // expected specifier set
+        ExportNotAtModuleLevel = 1336, // export not at module level
+        ArrowCannotBeConstructor = 1337, // arrow functions cannot be constructors
 
-        //5000 - 6000 JScript errors that can occur during execution. 
-        IllegalAssignment = 5008, // "Illegal assignment"
-        RegExpSyntax = 5017, // "Syntax error in regular expression"
-        UncaughtException = 5022, // "Exception thrown and not caught"
-
-        // this error means something bad happened in the application causing failure
-        ApplicationError = 7000
+        // these errora means something bad happened in the application causing failure
+        ApplicationError = 7000,
+        NoSource = 7001,
     }
 }

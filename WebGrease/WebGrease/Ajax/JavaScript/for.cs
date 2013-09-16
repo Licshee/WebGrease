@@ -14,9 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -49,7 +47,6 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Incrementer")]
         public AstNode Incrementer
         {
             get { return m_incrementer; }
@@ -78,8 +75,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public ForNode(Context context, JSParser parser)
-            : base(context, parser)
+        public ForNode(Context context)
+            : base(context)
         {
         }
 
@@ -88,15 +85,6 @@ namespace Microsoft.Ajax.Utilities
             if (visitor != null)
             {
                 visitor.Visit(this);
-            }
-        }
-		
-		internal override bool RequiresSeparator
-        {
-            get
-            {
-                // requires a separator if the body does
-                return Body == null ? false : Body.RequiresSeparator;
             }
         }
 

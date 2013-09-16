@@ -36,8 +36,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public GroupingOperator(Context context, JSParser parser)
-            : base(context, parser)
+        public GroupingOperator(Context context)
+            : base(context)
         {
         }
 

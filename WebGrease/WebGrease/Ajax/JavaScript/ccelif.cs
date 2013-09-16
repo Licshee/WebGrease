@@ -33,8 +33,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public ConditionalCompilationElseIf(Context context, JSParser parser)
-            : base(context, parser)
+        public ConditionalCompilationElseIf(Context context)
+            : base(context)
         {
         }
 

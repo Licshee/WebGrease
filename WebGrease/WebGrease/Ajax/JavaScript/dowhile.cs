@@ -14,9 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -38,21 +36,9 @@ namespace Microsoft.Ajax.Utilities
 
         public Context WhileContext { get; set; }
 
-        public DoWhile(Context context, JSParser parser)
-            : base(context, parser)
+        public DoWhile(Context context)
+            : base(context)
         {
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // do-while statements TECHNICALLY should end with a semicolon.
-                // but IE seems to parse do-while statements WITHOUT the semicolon, so
-                // the terminating semicolon ends up being an empty statement AFTER the
-                // do-while. Which throws off else or other do-while while-clauses.
-                return true;
-            }
         }
 
         public override void Accept(IVisitor visitor)

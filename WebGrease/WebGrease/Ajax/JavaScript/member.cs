@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -38,8 +37,8 @@ namespace Microsoft.Ajax.Utilities
         public string Name { get; set; }
         public Context NameContext { get; set; }
 
-        public Member(Context context, JSParser parser)
-            : base(context, parser)
+        public Member(Context context)
+            : base(context)
         {
         }
 
@@ -70,15 +69,6 @@ namespace Microsoft.Ajax.Utilities
         internal override string GetFunctionGuess(AstNode target)
         {
             return Root.GetFunctionGuess(this) + '.' + Name;
-        }
-
-        internal override bool IsDebuggerStatement
-        {
-            get
-            {
-                // depends on whether the root is
-                return Root.IsDebuggerStatement;
-            }
         }
 
         public override IEnumerable<AstNode> Children

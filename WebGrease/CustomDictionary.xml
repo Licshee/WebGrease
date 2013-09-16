@@ -7,6 +7,7 @@
       <Word>Ast</Word>
       <Word>Attrib</Word>
       <Word>Vars</Word>
+      <Word>Ecma</Word>
       <Word>Exp</Word>
       <Word>javascript</Word>
       <Word>msg</Word>
@@ -15,9 +16,11 @@
       <Word>Rgb</Word>
       <Word>combinator</Word>
       <Word>expr</Word>
+      <Word>renameable</Word>
       <Word>rulesets</Word>
       <Word>ruleset</Word>
       <Word>ident</Word>
+      <Word>incrementer</Word>
       <Word>eval</Word>
       <Word>ascii</Word>
       <Word>minifier</Word>

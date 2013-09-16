@@ -16,10 +16,6 @@
 
 namespace Microsoft.Ajax.Utilities
 {
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.Text;
-
     #region public enums
 
     /// <summary>

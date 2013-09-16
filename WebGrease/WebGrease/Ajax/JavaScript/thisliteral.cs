@@ -19,8 +19,8 @@ namespace Microsoft.Ajax.Utilities
     public sealed class ThisLiteral : Expression
     {
 
-        public ThisLiteral(Context context, JSParser parser)
-            : base(context, parser)
+        public ThisLiteral(Context context)
+            : base(context)
         {
         }
 

@@ -14,10 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Globalization;
-using System.Text.RegularExpressions;
-
 namespace Microsoft.Ajax.Utilities
 {
     public sealed class RegExpLiteral : Expression
@@ -33,8 +29,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public RegExpLiteral(Context context, JSParser parser)
-            : base(context, parser)
+        public RegExpLiteral(Context context)
+            : base(context)
         {
         }
 

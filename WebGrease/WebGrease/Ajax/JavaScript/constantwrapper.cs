@@ -100,15 +100,11 @@ namespace Microsoft.Ajax.Utilities
             get
             {
                 // first off, it has to BE an integer value.
-                if (IsIntegerLiteral)
-                {
-                    // and then it has to be within the range of -2^53 and +2^53. Every integer in that range can
-                    // be EXACTLY represented in a 64-bit IEEE double value. Outside that range and the source characters
-                    // may not be exactly what we would get if we turn this value to a string because the gap between
-                    // consecutive available numbers is larger than one.
-                    return -0x20000000000000 <= (double)Value && (double)Value <= 0x20000000000000;
-                }
-                return false;
+                // and then it has to be within the range of -2^53 and +2^53 EXCLUSIVE. Every integer in that range can
+                // be EXACTLY represented in a 64-bit IEEE double value. Outside that range and the source characters
+                // may not be exactly what we would get if we turn this value to a string because the gap between
+                // consecutive available numbers is larger than one.
+                return IsIntegerLiteral && Math.Abs((double)Value) <= 0x1FFFFFFFFFFFFF;
             }
         }
 
@@ -186,8 +182,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public ConstantWrapper(Object value, PrimitiveType primitiveType, Context context, JSParser parser)
-            : base(context, parser)
+        public ConstantWrapper(Object value, PrimitiveType primitiveType, Context context)
+            : base(context)
         {
             PrimitiveType = primitiveType;
 
@@ -740,7 +736,7 @@ namespace Microsoft.Ajax.Utilities
             // if text is null, return false. 
             // Otherwise return true if ALL the characters are decimal digits, 
             // or false is ANY ONE character isn't.
-            return text.IfNotNull(s => !s.Any(c => !char.IsDigit(c)));
+            return text.IfNotNull(s => !s.Any(c => !JSScanner.IsDigit(c)));
         }
     }
 

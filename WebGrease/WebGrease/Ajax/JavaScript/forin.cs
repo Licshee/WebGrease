@@ -15,7 +15,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
@@ -59,8 +58,8 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        public ForIn(Context context, JSParser parser)
-            : base(context, parser)
+        public ForIn(Context context)
+            : base(context)
         {
         }
 
@@ -104,15 +103,6 @@ namespace Microsoft.Ajax.Utilities
         {
             // pass the query on to the body
             return Body == null ? false : Body.EncloseBlock(type);
-        }
-
-        internal override bool RequiresSeparator
-        {
-            get
-            {
-                // requires a separator if the body does
-                return Body == null || Body.Count == 0 ? false : Body.RequiresSeparator;
-            }
         }
     }
 }

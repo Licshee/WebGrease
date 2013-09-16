@@ -14,84 +14,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
-    public sealed class VariableDeclaration : AstNode, INameDeclaration, INameReference
+    public sealed class VariableDeclaration : InitializerNode
     {
-        private AstNode m_initializer;
-
-        public AstNode Initializer
-        {
-            get { return m_initializer; }
-            set
-            {
-                m_initializer.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
-                m_initializer = value;
-                m_initializer.IfNotNull(n => n.Parent = this);
-            }
-        }
-
-        public string Identifier { get; set; }
-        public Context NameContext { get; set; }
-
-        public Context AssignContext { get; set; }
-
-        public bool HasInitializer { get { return Initializer != null; } }
-
-        public JSVariableField VariableField { get; set; }
         public bool IsCCSpecialCase { get; set; }
         public bool UseCCOn { get; set; }
 
-        public string Name
-        {
-            get { return Identifier; }
-        }
-
-        public bool RenameNotAllowed
-        {
-            get
-            {
-                return VariableField == null ? true : !VariableField.CanCrunch;
-            }
-        }
-
-        private bool m_isGenerated;
-        public bool IsGenerated
-        {
-            get { return m_isGenerated; }
-            set
-            {
-                m_isGenerated = value;
-                if (VariableField != null)
-                {
-                    VariableField.IsGenerated = m_isGenerated;
-                }
-            }
-        }
-
-        public bool IsAssignment
-        {
-            get
-            {
-                // if there is an initializer, we are an assignment
-                return Initializer != null;
-            }
-        }
-
-        public AstNode AssignmentValue
-        {
-            get
-            {
-                return Initializer;
-            }
-        }
-
-        public VariableDeclaration(Context context, JSParser parser)
-            : base(context, parser)
+        public VariableDeclaration(Context context)
+            : base(context)
         {
         }
 
@@ -113,59 +44,5 @@ namespace Microsoft.Ajax.Utilities
                 return true;
             }
         }
-
-        internal override string GetFunctionGuess(AstNode target)
-        {
-            return Identifier;
-        }
-
-        public override IEnumerable<AstNode> Children
-        {
-            get
-            {
-                return EnumerateNonNullNodes(Initializer);
-            }
-        }
-
-        public override bool ReplaceChild(AstNode oldNode, AstNode newNode)
-        {
-            if (Initializer == oldNode)
-            {
-                Initializer = newNode;
-                return true;
-            }
-            return false;
-        }
-
-        public override bool IsEquivalentTo(AstNode otherNode)
-        {
-            JSVariableField otherField = null;
-            Lookup otherLookup;
-            var otherVarDecl = otherNode as VariableDeclaration;
-            if (otherVarDecl != null)
-            {
-                otherField = otherVarDecl.VariableField;
-            }
-            else if ((otherLookup = otherNode as Lookup) != null)
-            {
-                otherField = otherLookup.VariableField;
-            }
-
-            // if we get here, we're not equivalent
-            return this.VariableField != null && this.VariableField.IsSameField(otherField);
-        }
-
-        #region INameReference Members
-
-        public ActivationObject VariableScope
-        {
-            get
-            {
-                // if we don't have a field, return null. Otherwise it's the field's owning scope.
-                return this.VariableField.IfNotNull(f => f.OwningScope);
-            }
-        }
-
-        #endregion
     }
 }

@@ -14,10 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
     /// <summary>
@@ -29,8 +25,8 @@ namespace Microsoft.Ajax.Utilities
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix", Justification="AST statement")]
     public class ConstStatement : Declaration
     {
-        public ConstStatement(Context context, JSParser parser)
-            : base(context, parser)
+        public ConstStatement(Context context)
+            : base(context)
         {
         }
 

@@ -23,53 +23,56 @@ using System.Reflection;
 
 namespace Microsoft.Ajax.Utilities
 {
+    public enum ScriptVersion
+    {
+        None = 0,
+        EcmaScript5,
+        EcmaScript6,
+    }
+
     /// <summary>
     /// Class used to parse JavaScript source code into an abstract syntax tree.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1506:AvoidExcessiveClassCoupling")]
     public class JSParser
     {
-        private const int c_MaxSkippedTokenNumber = 50;
+        #region private fields
 
-        private DocumentContext m_document;
+        private GlobalScope m_globalScope;
         private JSScanner m_scanner;
         private Context m_currentToken;
 
-        // used for errors to flag that the same token has to be returned.
-        // We could have used just a boolean but having a Context does not
-        // add any overhead and allow to really save the info, if that will ever be needed
-        private bool m_useCurrentForNext;
-        private int m_tokensSkipped;
-        private NoSkipTokenSet m_noSkipTokenSet;
-        private long m_goodTokensProcessed;
-
         private bool m_newModule;
+
+        private CodeSettings m_settings;// = null;
+
+        private bool m_foundEndOfLine;
+        private IList<Context> m_importantComments;
+
+        private Dictionary<string, LabelInfo> m_labelInfo;
+
+        #endregion
+
+        #region private properties
+
+        private Context CurrentPositionContext
+        {
+            get
+            {
+                return m_currentToken.FlattenToStart();
+            }
+        }
+
+        #endregion
+
+        #region public properties
 
         // we're going to copy the debug lookups from the settings passed to us,
         // then use this collection, because we might programmatically add more
         // as we process the code, and we don't want to change the settings object.
         public ICollection<string> DebugLookups { get; private set; }
 
-        // label related info
-        private List<BlockType> m_blockType;
-        private Dictionary<string, LabelInfo> m_labelTable;
-        enum BlockType { Block, Loop, Switch, Finally }
-        private int m_finallyEscaped;
-
-        private bool m_foundEndOfLine;
-        private IList<Context> m_importantComments;
-
-        private class LabelInfo
-        {
-            public readonly int BlockIndex;
-            public readonly int NestLevel;
-
-            public LabelInfo(int blockIndex, int nestLevel)
-            {
-                BlockIndex = blockIndex;
-                NestLevel = nestLevel;
-            }
-        }
+        public ScriptVersion ParsedVersion { get; private set; }
 
         public CodeSettings Settings
         {
@@ -83,20 +86,18 @@ namespace Microsoft.Ajax.Utilities
                 }
                 return m_settings;
             }
+            set
+            {
+                // if setting null, use the default settings object
+                m_settings = value ?? new CodeSettings();
+            }
         }
-        private CodeSettings m_settings;// = null;
-
-        private int m_breakRecursion;// = 0;
-        private int m_severity;
 
         /// <summary>
         /// Gets or sets a TextWriter instance to which raw preprocessed input will be
         /// written when Parse is called.
         /// </summary>
         public TextWriter EchoWriter { get; set; }
-
-        public event EventHandler<JScriptExceptionEventArgs> CompilerError;
-        public event EventHandler<UndefinedReferenceEventArgs> UndefinedReference;
 
         public GlobalScope GlobalScope
         {
@@ -126,144 +127,146 @@ namespace Microsoft.Ajax.Utilities
                 }
             }
         }
-        private GlobalScope m_globalScope;
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters", MessageId = "Microsoft.Ajax.Utilities.ContextError.#ctor(System.Boolean,System.Int32,System.String,System.String,System.String,System.String,System.Int32,System.Int32,System.Int32,System.Int32,System.String)")]
-        internal bool OnCompilerError(JScriptException se)
+        /// <summary>
+        /// Gets the array of timing points from a Parse run
+        /// </summary>
+        private long[] m_timingPoints;
+        public IList<long> TimingPoints { get { return m_timingPoints; } }
+
+        #endregion
+
+        #region public events
+
+        /// <summary>
+        /// Event sent whenever an error or warning is encountered during parsing
+        /// </summary>
+        public event EventHandler<ContextErrorEventArgs> CompilerError;
+
+        /// <summary>
+        /// Sent for undefined references found during parsing
+        /// </summary>
+        public event EventHandler<UndefinedReferenceEventArgs> UndefinedReference;
+
+        #endregion
+
+        #region public constructor
+
+        /// <summary>
+        /// Creates an instance of the JavaScript parser object
+        /// </summary>
+        public JSParser()
         {
-            if (CompilerError != null && !m_settings.IgnoreAllErrors)
-            {
-                // format the error code
-                string errorCode = "JS{0}".FormatInvariant((int)se.ErrorCode);
-                if (m_settings != null && !m_settings.IgnoreErrorCollection.Contains(errorCode))
-                {
-                    // get the offending context
-                    string context = se.ErrorSegment;
-
-                    // if the context is empty, use the whole line
-                    if (!context.IsNullOrWhiteSpace())
-                    {
-                        context = ": " + context;
-                    }
-
-                    CompilerError(this, new JScriptExceptionEventArgs(se, new ContextError(
-                        se.IsError,
-                        se.Severity,
-                        GetSeverityString(se.Severity),
-                        errorCode,
-                        null,
-                        se.FileContext,
-                        se.Line,
-                        se.Column,
-                        se.EndLine,
-                        se.EndColumn,
-                        se.Message + context)));
-                }
-            }
-
-            //true means carry on with compilation.
-            return se.CanRecover;
-        }
-
-        private static string GetSeverityString(int severity)
-        {
-            // From jscriptexception.js:
-            //
-            //guide: 0 == there will be a run-time error if this code executes
-            //       1 == the programmer probably did not intend to do this
-            //       2 == this can lead to problems in the future.
-            //       3 == this can lead to performance problems
-            //       4 == this is just not right
-            switch (severity)
-            {
-                case 0:
-                    return JScript.Severity0;
-
-                case 1:
-                    return JScript.Severity1;
-
-                case 2:
-                    return JScript.Severity2;
-
-                case 3:
-                    return JScript.Severity3;
-
-                case 4:
-                    return JScript.Severity4;
-
-                default:
-                    return JScript.SeverityUnknown.FormatInvariant(severity);
-            }
-        }
-
-        internal void OnUndefinedReference(UndefinedReferenceException ex)
-        {
-            if (UndefinedReference != null)
-            {
-                UndefinedReference(this, new UndefinedReferenceEventArgs(ex));
-            }
+            m_importantComments = new List<Context>();
+            m_labelInfo = new Dictionary<string, LabelInfo>();
         }
 
         /// <summary>
         /// Creates an instance of the JSParser class that can be used to parse the given source code.
         /// </summary>
         /// <param name="source">Source code to parse.</param>
-        public JSParser(string source)
+        [Obsolete("This Constructor will be removed in version 6. Please use the default constructor.", false)]
+        public JSParser(string source) : this()
         {
-            m_severity = 5;
-            m_blockType = new List<BlockType>(16);
-            m_labelTable = new Dictionary<string, LabelInfo>();
-            m_noSkipTokenSet = new NoSkipTokenSet();
-            m_importantComments = new List<Context>();
+            // set the source now using an empty context
+            SetDocumentContext(new DocumentContext(source));
+        }
 
-            m_document = new DocumentContext(this, source);
-            m_scanner = new JSScanner(new Context(m_document));
-            m_currentToken = new Context(m_document);
+        #endregion
 
-            // if the scanner encounters a special "globals" comment, it'll fire this event
-            // at which point we will define a field with that name in the global scope. 
-            m_scanner.GlobalDefine += (sender, ea) =>
-                {
-                    var globalScope = GlobalScope;
-                    if (globalScope[ea.Name] == null)
-                    {
-                        var field = globalScope.CreateField(ea.Name, null, FieldAttributes.SpecialName);
-                        globalScope.AddField(field);
-                    }
-                };
+        #region public methods
 
-            // this event is fired whenever a ///#SOURCE comment is encountered
-            m_scanner.NewModule += (sender, ea) =>
-                {
-                    m_newModule = true;
+        /// <summary>
+        /// Parse the given source context into an abstract syntax tree
+        /// </summary>
+        /// <param name="sourceContext">source code with context</param>
+        /// <returns>a Block object representing the series of statements in abstract syntax tree form</returns>
+        public Block Parse(DocumentContext sourceContext)
+        {
+            SetDocumentContext(sourceContext);
 
-                    // we also want to assume that we found a newline character after
-                    // the comment
-                    m_foundEndOfLine = true;
-                };
+            // if a settings object hasn't been set yet, create a default settings object now
+            if (m_settings == null)
+            {
+                m_settings = new CodeSettings();
+            }
+
+            // clear out some collections in case there was stuff left over from
+            // a previous parse run
+            m_importantComments.Clear();
+            m_labelInfo.Clear();
+
+            return InternalParse();
         }
 
         /// <summary>
-        /// Gets or sets the file context for the given source code. This context will be used when generating any error messages.
+        /// Parse the given source with context into an abstract syntax tree using the given settings
         /// </summary>
-        public string FileContext
+        /// <param name="sourceContext">source code with context</param>
+        /// <param name="settings">settings to use for the parse operation</param>
+        /// <returns>a Block object representing the series of statements in abstract syntax tree form</returns>
+        public Block Parse(DocumentContext sourceContext, CodeSettings settings)
         {
-            get 
-            { 
-                return m_document.FileContext; 
-            }
-            set 
-            { 
-                m_document.FileContext = value; 
-            }
+            this.Settings = settings;
+            return Parse(sourceContext);
         }
 
-        private void InitializeScanner(CodeSettings settings)
+        /// <summary>
+        /// Parse the given source into an abstract syntax tree with no context
+        /// </summary>
+        /// <param name="source">source code with no context</param>
+        /// <returns>a Block object representing the series of statements in abstract syntax tree form</returns>
+        public Block Parse(string source)
         {
+            return Parse(new DocumentContext(source));
+        }
+
+        /// <summary>
+        /// Parse the given source into an abstract syntax tree using the given settings
+        /// </summary>
+        /// <param name="source">source code to parse</param>
+        /// <param name="settings">settings to use for the parse operation</param>
+        /// <returns>a Block object representing the series of statements in abstract syntax tree form</returns>
+        public Block Parse(string source, CodeSettings settings)
+        {
+            this.Settings = settings;
+            return Parse(source);
+        }
+
+        /// <summary>
+        /// Parse the source code using the given settings, getting back an abstract syntax tree Block node as the root
+        /// representing the list of statements in the source code.
+        /// </summary>
+        /// <param name="settings">code settings to use to process the source code</param>
+        /// <returns>root Block node representing the top-level statements</returns>
+        [Obsolete("This method will be removed in version 6. Please use the default constructor and use a Parse override that is passed the source.", false)]
+        public Block Parse(CodeSettings settings)
+        {
+            if (m_scanner == null)
+            {
+                throw new InvalidOperationException(JScript.NoSource);
+            }
+
+            // initialize the scanner with our settings
+            // make sure the RawTokens setting is OFF or we won't be able to create our AST
             // save the settings
             // if we are passed null, just create a default settings object
             m_settings = settings = settings ?? new CodeSettings();
 
+            return InternalParse();
+        }
+
+        #endregion
+
+        #region common parse entry point
+
+        /// <summary>
+        /// Parse the document source using the scanner and settings that have all been set up already
+        /// through various combinations of constructor/properties/Parse methods.
+        /// </summary>
+        /// <returns>Parsed Block node</returns>
+        private Block InternalParse()
+        {
             // if the settings list is not null, use it to initialize a new list
             // with the same settings. If it is null, initialize an empty list 
             // because we already determined that we want to strip debug statements,
@@ -289,69 +292,9 @@ namespace Microsoft.Ajax.Utilities
             // Alternately, we will keep those blocks in the output is this flag is
             // set to false OR we define "DEBUG" in the preprocessor defines.
             m_scanner.StripDebugCommentBlocks = m_settings.StripDebugStatements;
-        }
 
-        #region pre-process only
-
-        /// <summary>
-        /// Obsolete - set the PreprocessOnly property on the CodeSettings class to true and call Parse method.
-        /// Preprocess the input only - don't generate an AST tree or do any other code analysis, just return the processed code as a string. 
-        /// </summary>
-        /// <param name="settings">settings to use in the scanner</param>
-        /// <returns>the source as processed by the preprocessor</returns>
-        [Obsolete("Set EchoWriter property to and call Parse method with PreprocessOnly property on the CodeSettings object set to true", true)]
-        public string PreprocessOnly(CodeSettings settings)
-        {
-            // create an empty string builder
-            using (var outputStream = new StringWriter(CultureInfo.InvariantCulture))
-            {
-                // output to the string builder
-                PreprocessOnly(settings, outputStream);
-
-                // return the resulting text
-                return outputStream.ToString();
-            }
-        }
-
-        /// <summary>
-        /// Preprocess the input only - don't generate a syntax tree or do any other code analysis. Just write the processed
-        /// code to the provided text stream.
-        /// </summary>
-        /// <param name="settings">settings to use in the scanner</param>
-        /// <param name="outputStream">output stream to which to write the processed source</param>
-        [Obsolete("Set EchoWriter property to and call Parse method with PreprocessOnly property on the CodeSettings object set to true", true)]
-        public void PreprocessOnly(CodeSettings settings, TextWriter outputStream)
-        {
-            if (outputStream != null)
-            {
-                EchoWriter = outputStream;
-                Parse(settings);
-                EchoWriter = null;
-
-                if (m_settings.TermSemicolons)
-                {
-                    // if we want to make sure this file has a terminating semicolon, start a new line
-                    // (to make sure any single-line comments are terminated) and output a semicolon
-                    // followed by another line break.
-                    outputStream.WriteLine();
-                    outputStream.WriteLine(';');
-                }
-            }
-        }
-
-        #endregion
-
-        /// <summary>
-        /// Parse the source code using the given settings, getting back an abstract syntax tree Block node as the root
-        /// representing the list of statements in the source code.
-        /// </summary>
-        /// <param name="settings">code settings to use to process the source code</param>
-        /// <returns>root Block node representing the top-level statements</returns>
-        public Block Parse(CodeSettings settings)
-        {
-            // initialize the scanner with our settings
-            // make sure the RawTokens setting is OFF or we won't be able to create our AST
-            InitializeScanner(settings);
+            // assume ES5 unless we find ES6-specific constructs
+            ParsedVersion = ScriptVersion.EcmaScript5;
 
             // make sure we initialize the global scope's strict mode to our flag, whether or not it
             // is true. This means if the setting is false, we will RESET the flag to false if we are 
@@ -365,77 +308,120 @@ namespace Microsoft.Ajax.Utilities
             // start of a new module
             m_newModule = true;
 
+            var timePoints = m_timingPoints = new long[9];
+            var timeIndex = timePoints.Length;
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            // get the first token.
+            GetNextToken();
+
             Block scriptBlock = null;
             Block returnBlock = null;
-            try
+            switch (m_settings.SourceMode)
             {
-                switch (m_settings.SourceMode)
-                {
-                    case JavaScriptSourceMode.Program:
-                        // simply parse a block of statements
-                        returnBlock = scriptBlock = ParseStatements();
-                        break;
-
-                    case JavaScriptSourceMode.Expression:
-                        // create a block, get the first token, add in the parse of a single expression, 
-                        // and we'll go fron there.
-                        returnBlock = scriptBlock = new Block(CurrentPositionContext(), this);
-                        GetNextToken();
-                        try
+                case JavaScriptSourceMode.Program:
+                    // simply parse a block of statements.
+                    // however, when parsing this block, we mght determine it's really part of
+                    // a larger structure, and we could return a different block that we would need
+                    // to continue processing.
+                    scriptBlock = returnBlock = ParseStatements(new Block(CurrentPositionContext)
                         {
-                            var expr = ParseExpression();
-                            if (expr != null)
-                            {
-                                scriptBlock.Append(expr);
-                                scriptBlock.UpdateWith(expr.Context);
-                            }
-                        }
-                        catch (EndOfStreamException)
+                            EnclosingScope = this.GlobalScope
+                        });
+                    break;
+
+                case JavaScriptSourceMode.Module:
+                    // an implicit module as referenced by an import statement.
+                    // create a root block with the global scope, add a module with its module body,
+                    // then parse the input as statements into the module body.
+                    returnBlock = scriptBlock = new Block(CurrentPositionContext)
                         {
-                            Debug.WriteLine("EOF");
+                            EnclosingScope = this.GlobalScope
+                        };
+                    var module = new ModuleDeclaration(CurrentPositionContext)
+                        {
+                            IsImplicit = true,
+                            Body = new Block(CurrentPositionContext)
+                                {
+                                    IsModule = true
+                                }
+                        };
+                    scriptBlock.Append(module);
+
+                    // we just created an implicit ES6 module, so we are already parsing as ES6
+                    ParsedVersion = ScriptVersion.EcmaScript6;
+
+                    // we don't need to worry about this function returning a different block, because
+                    // we've already created the module structure.
+                    ParseStatements(module.Body);
+                    break;
+
+                case JavaScriptSourceMode.Expression:
+                    // create a block, get the first token, add in the parse of a single expression, 
+                    // and we'll go fron there.
+                    returnBlock = scriptBlock = new Block(CurrentPositionContext)
+                        {
+                            EnclosingScope = this.GlobalScope
+                        };
+                    try
+                    {
+                        var expr = ParseExpression();
+                        if (expr != null)
+                        {
+                            scriptBlock.Append(expr);
+                            scriptBlock.UpdateWith(expr.Context);
                         }
-                        break;
+                    }
+                    catch (EndOfStreamException)
+                    {
+                        Debug.WriteLine("EOF");
+                    }
+                    break;
 
-                    case JavaScriptSourceMode.EventHandler:
-                        // we're going to create the global block, add in a function expression with a single
-                        // parameter named "event", and then we're going to parse the input as the body of that
-                        // function expression. We're going to resolve the global block, but only return the body
-                        // of the function.
-                        scriptBlock = new Block(null, this);
+                case JavaScriptSourceMode.EventHandler:
+                    // we're going to create the global block, add in a function expression with a single
+                    // parameter named "event", and then we're going to parse the input as the body of that
+                    // function expression. We're going to resolve the global block, but only return the body
+                    // of the function.
+                    scriptBlock = new Block(CurrentPositionContext)
+                        {
+                            EnclosingScope = this.GlobalScope
+                        };
 
-                        var parameters = new AstNodeList(null, this);
-                        parameters.Append(new ParameterDeclaration(null, this)
+                    var parameters = new AstNodeList(CurrentPositionContext);
+                    parameters.Append(new ParameterDeclaration(CurrentPositionContext)
+                        {
+                            Binding = new BindingIdentifier(CurrentPositionContext)
                             {
                                 Name = "event",
                                 RenameNotAllowed = true
-                            });
+                            }
+                        });
 
-                        var funcExpression = new FunctionObject(null, this)
-                            {
-                                FunctionType = FunctionType.Expression,
-                                ParameterDeclarations = parameters
-                            };
-                        scriptBlock.Append(funcExpression);
-                        funcExpression.Body = returnBlock = ParseStatements();
-                        break;
+                    var funcExpression = new FunctionObject(CurrentPositionContext)
+                        {
+                            FunctionType = FunctionType.Expression,
+                            ParameterDeclarations = parameters,
+                            Body = new Block(CurrentPositionContext)
+                        };
+                    scriptBlock.Append(funcExpression);
+                    ParseFunctionBody(funcExpression.Body);
 
-                    default:
-                        Debug.Fail("Unexpected source mode enumeration");
-                        return null;
-                }
-            }
-            catch (RecoveryTokenException)
-            {
-                // this should never happen but let's make SURE we don't expose our
-                // private exception object to the outside world
-                m_currentToken.HandleError(JSError.ApplicationError, true);
+                    // but we ONLY want to return the body
+                    returnBlock = funcExpression.Body;
+                    break;
+
+                default:
+                    Debug.Fail("Unexpected source mode enumeration");
+                    return null;
             }
 
-            if (scriptBlock != null)
-            {
-                // resolve everything
-                ResolutionVisitor.Apply(scriptBlock, GlobalScope, m_settings);
-            }
+            timePoints[--timeIndex] = stopWatch.ElapsedTicks;
+
+            // resolve everything
+            ResolutionVisitor.Apply(scriptBlock, GlobalScope, this);
+            timePoints[--timeIndex] = stopWatch.ElapsedTicks;
 
             if (scriptBlock != null && Settings.MinifyCode && !Settings.PreprocessOnly)
             {
@@ -443,14 +429,20 @@ namespace Microsoft.Ajax.Utilities
                 // unnests blocks, identifies prologue directives, and sets the strict mode on scopes. 
                 ReorderScopeVisitor.Apply(scriptBlock, this);
 
+                timePoints[--timeIndex] = stopWatch.ElapsedTicks;
+
                 // analyze the entire node tree (needed for hypercrunch)
                 // root to leaf (top down)
                 var analyzeVisitor = new AnalyzeNodeVisitor(this);
                 scriptBlock.Accept(analyzeVisitor);
 
+                timePoints[--timeIndex] = stopWatch.ElapsedTicks;
+
                 // analyze the scope chain (also needed for hypercrunch)
                 // root to leaf (top down)
                 GlobalScope.AnalyzeScope();
+
+                timePoints[--timeIndex] = stopWatch.ElapsedTicks;
 
                 // if we want to crunch any names....
                 if (m_settings.LocalRenaming != LocalRenaming.KeepAll
@@ -462,6 +454,8 @@ namespace Microsoft.Ajax.Utilities
                     GlobalScope.AutoRenameFields();
                 }
 
+                timePoints[--timeIndex] = stopWatch.ElapsedTicks;
+
                 // if we want to evaluate literal expressions, do so now
                 if (m_settings.EvalLiteralExpressions)
                 {
@@ -469,41 +463,71 @@ namespace Microsoft.Ajax.Utilities
                     scriptBlock.Accept(visitor);
                 }
 
+                timePoints[--timeIndex] = stopWatch.ElapsedTicks;
+
                 // make the final cleanup pass
-                FinalPassVisitor.Apply(scriptBlock, this);
+                FinalPassVisitor.Apply(scriptBlock, m_settings);
+
+                timePoints[--timeIndex] = stopWatch.ElapsedTicks;
 
                 // we want to walk all the scopes to make sure that any generated
                 // variables that haven't been crunched have been assigned valid
                 // variable names that don't collide with any existing variables.
                 GlobalScope.ValidateGeneratedNames();
+
+                timePoints[--timeIndex] = stopWatch.ElapsedTicks;
+                stopWatch.Stop();
             }
 
-            if (returnBlock != null && returnBlock.Parent != null)
+            // mark all child scopes under the global scope as existing so we don't go and re-optimize
+            // them again should we parse another piece of source code using the same parser
+            foreach (var childScope in GlobalScope.ChildScopes)
             {
+                childScope.Existing = true;
+            }
+
+            // if the return block is not the entire script block, then we don't want to include
+            // any thing we must've generated in the process of building our code. Take the scope
+            // from the parent, but break the tree relationship.
+            if (returnBlock != scriptBlock)
+            {
+                returnBlock.EnclosingScope = returnBlock.Parent.EnclosingScope;
                 returnBlock.Parent = null;
             }
 
             return returnBlock;
         }
 
-        /// <summary>
-        /// Parse an expression from the source code and return a block node containing just that expression.
-        /// The block node is needed because we might perform optimization on the expression that creates
-        /// a new expression, and we need a parent to contain it.
-        /// </summary>
-        /// <param name="codeSettings">settings to use</param>
-        /// <returns>a block node containing the parsed expression as its only child</returns>
-        [Obsolete("This property is deprecated; call Parse with CodeSettings.SourceMode set to JavaScriptSourceMode.Expression instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public Block ParseExpression(CodeSettings settings)
+        #endregion
+
+        #region event methods
+
+        internal void OnUndefinedReference(UndefinedReference ex)
         {
-            // we need to make sure the settings object has the expression source mode property set,
-            // but let's not modify the settings object passed in. So clone it, set the property on the
-            // clone, and use that object for parsing.
-            settings = settings == null ? new CodeSettings() : settings.Clone();
-            settings.SourceMode = JavaScriptSourceMode.Expression;
-            return Parse(settings);
+            if (UndefinedReference != null)
+            {
+                UndefinedReference(this, new UndefinedReferenceEventArgs(ex));
+            }
         }
+
+        internal void OnCompilerError(ContextError se)
+        {
+            if (CompilerError != null && !m_settings.IgnoreAllErrors)
+            {
+                // format the error code
+                if (m_settings != null && !m_settings.IgnoreErrorCollection.Contains(se.ErrorCode))
+                {
+                    CompilerError(this, new ContextErrorEventArgs()
+                        {
+                            Error = se
+                        });
+                }
+            }
+        }
+
+        #endregion
+
+        #region ParseStatements
 
         //---------------------------------------------------------------------------------------
         // ParseStatements
@@ -513,123 +537,114 @@ namespace Microsoft.Ajax.Utilities
         //   statement statements
         //
         //---------------------------------------------------------------------------------------
-        private Block ParseStatements()
+        private Block ParseStatements(Block block)
         {
-            var program = new Block(CurrentPositionContext(), this);
-            m_blockType.Add(BlockType.Block);
-            m_useCurrentForNext = false;
+            // by default we should return the block we were passed in.
+            // the only time we might return a different block is if we decide later on if
+            // this block is really an implicit module body, in which case we will return a
+            // different block that contains the module declaration with the passed-in block
+            // as the body.
+            var returnBlock = block;
             try
             {
-                // get the first token
-                GetNextToken();
-                
-                // if the block doesn't have a proper file context, then let's set it from the 
-                // first token -- that token might have had a ///#source directive!
-                if (string.IsNullOrEmpty(program.Context.Document.FileContext))
+                var possibleDirectivePrologue = true;
+                int lastEndPosition = m_currentToken.EndPosition;
+                while (m_currentToken.IsNot(JSToken.EndOfFile))
                 {
-                    program.Context.Document.FileContext = m_currentToken.Document.FileContext;
-                }
+                    AstNode ast = null;
+                    // parse a statement -- pass true because we really want a SourceElement,
+                    // which is a Statement OR a FunctionDeclaration. Technically, FunctionDeclarations
+                    // are not statements!
+                    ast = ParseStatement(true);
 
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_TopLevelNoSkipTokenSet);
-
-                try
-                {
-                    var possibleDirectivePrologue = true;
-                    int lastEndPosition = m_currentToken.EndPosition;
-                    while (m_currentToken.Token != JSToken.EndOfFile)
+                    // if we are still possibly looking for directive prologues
+                    if (possibleDirectivePrologue)
                     {
-                        AstNode ast = null;
-                        try
+                        var constantWrapper = ast as ConstantWrapper;
+                        if (constantWrapper != null && constantWrapper.PrimitiveType == PrimitiveType.String)
                         {
-                            // parse a statement -- pass true because we really want a SourceElement,
-                            // which is a Statement OR a FunctionDeclaration. Technically, FunctionDeclarations
-                            // are not statements!
-                            ast = ParseStatement(true);
-
-                            // if we are still possibly looking for directive prologues
-                            if (possibleDirectivePrologue)
+                            if (!(constantWrapper is DirectivePrologue))
                             {
-                                var constantWrapper = ast as ConstantWrapper;
-                                if (constantWrapper != null && constantWrapper.PrimitiveType == PrimitiveType.String)
-                                {
-                                    if (!(constantWrapper is DirectivePrologue))
+                                // use a directive prologue node instead
+                                ast = new DirectivePrologue(constantWrapper.Value.ToString(), ast.Context)
                                     {
-                                        // use a directive prologue node instead
-                                        ast = new DirectivePrologue(constantWrapper.Value.ToString(), ast.Context, ast.Parser)
-                                            {
-                                                MayHaveIssues = constantWrapper.MayHaveIssues
-                                            };
-                                    }
-                                }
-                                else if (!m_newModule)
-                                {
-                                    // nope -- no longer finding directive prologues
-                                    possibleDirectivePrologue = false;
-                                }
-                            }
-                            else if (m_newModule)
-                            {
-                                // we aren't looking for directive prologues anymore, but we did scan
-                                // into a new module after that last AST, so reset the flag because that
-                                // new module might have directive prologues for next time
-                                possibleDirectivePrologue = true;
+                                        MayHaveIssues = constantWrapper.MayHaveIssues
+                                    };
                             }
                         }
-                        catch (RecoveryTokenException exc)
+                        else if (!m_newModule)
                         {
-                            if (TokenInList(NoSkipTokenSet.s_TopLevelNoSkipTokenSet, exc)
-                                || TokenInList(NoSkipTokenSet.s_StartStatementNoSkipTokenSet, exc))
-                            {
-                                ast = exc._partiallyComputedNode;
-                                GetNextToken();
-                            }
-                            else
-                            {
-                                m_useCurrentForNext = false;
-                                do
-                                {
-                                    GetNextToken();
-                                } while (m_currentToken.Token != JSToken.EndOfFile && !TokenInList(NoSkipTokenSet.s_TopLevelNoSkipTokenSet, m_currentToken.Token)
-                                  && !TokenInList(NoSkipTokenSet.s_StartStatementNoSkipTokenSet, m_currentToken.Token));
-                            }
-                        }
-
-                        if (null != ast)
-                        {
-                            // append the token to the program
-                            program.Append(ast);
-
-                            // set the last end position to be the start of the current token.
-                            // if we parse the next statement and the end is still the start, we know
-                            // something is up and might get into an infinite loop.
-                            lastEndPosition = m_currentToken.EndPosition;
-                        }
-                        else if (!m_scanner.IsEndOfFile && m_currentToken.StartLinePosition == lastEndPosition)
-                        {
-                            // didn't parse a statement, we're not at the EOF, and we didn't move
-                            // anywhere in the input stream. If we just keep looping around, we're going
-                            // to get into an infinite loop. Break it.
-                            m_currentToken.HandleError(JSError.ApplicationError, true);
-                            break;
+                            // nope -- no longer finding directive prologues
+                            possibleDirectivePrologue = false;
                         }
                     }
+                    else if (m_newModule)
+                    {
+                        // we aren't looking for directive prologues anymore, but we did scan
+                        // into a new module after that last AST, so reset the flag because that
+                        // new module might have directive prologues for next time
+                        possibleDirectivePrologue = true;
+                    }
 
-                    AppendImportantComments(program);
+                    if (ast != null)
+                    {
+                        // append the statement to the program
+                        block.Append(ast);
+
+                        // if this was an export statement, then we know the block as a module.
+                        // if we didn't know that before, then we have some conversion to take
+                        // care of.
+                        if (ast is ExportNode && !block.IsModule)
+                        {
+                            // this block will be the module body
+                            block.IsModule = true;
+
+                            // should only happen if we are processing a root program
+                            if (block.Parent == null)
+                            {
+                                // create a new block that has the global scope and remove the
+                                // global scope from this block
+                                returnBlock = new Block(block.Context.Clone())
+                                    {
+                                        EnclosingScope = block.EnclosingScope
+                                    };
+                                block.EnclosingScope = null;
+
+                                // add a new implicit module declaration to the new global block, with the block
+                                // we've been processing as its body. we'll return the new global block.
+                                returnBlock.Append(new ModuleDeclaration(new Context(m_currentToken.Document))
+                                    {
+                                        IsImplicit = true,
+                                        Body = block,
+                                    });
+                            }
+                        }
+
+                        // set the last end position to be the start of the current token.
+                        // if we parse the next statement and the end is still the start, we know
+                        // something is up and might get into an infinite loop.
+                        lastEndPosition = m_currentToken.EndPosition;
+                    }
+                    else if (!m_scanner.IsEndOfFile && m_currentToken.StartLinePosition == lastEndPosition)
+                    {
+                        // didn't parse a statement, we're not at the EOF, and we didn't move
+                        // anywhere in the input stream. If we just keep looping around, we're going
+                        // to get into an infinite loop. Break it.
+                        m_currentToken.HandleError(JSError.ApplicationError, true);
+                        break;
+                    }
                 }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_TopLevelNoSkipTokenSet);
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
-                }
+
+                AppendImportantComments(block);
 
             }
             catch (EndOfStreamException)
             {
+                // we're done
             }
 
-            program.UpdateWith(CurrentPositionContext());
-            return program;
+            block.UpdateWith(CurrentPositionContext);
+            return returnBlock;
         }
 
         //---------------------------------------------------------------------------------------
@@ -666,7 +681,7 @@ namespace Microsoft.Ajax.Utilities
         // ParseStatement deals with the end of statement issue (EOL vs ';') so if any of the
         // ParseXXX routine does it as well, it should return directly from the switch statement
         // without any further execution in the ParseStatement
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private AstNode ParseStatement(bool fSourceElement, bool skipImportantComment = false)
         {
             AstNode statement = null;
@@ -678,269 +693,144 @@ namespace Microsoft.Ajax.Utilities
                 m_importantComments.Clear();
             }
 
-            if (m_importantComments.Count > 0 
+            if (m_importantComments.Count > 0
                 && m_settings.PreserveImportantComments
                 && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
             {
                 // we have at least one important comment before the upcoming statement.
                 // pop the first important comment off the queue, return that node instead.
                 // don't advance the token -- we'll probably be coming back again for the next one (if any)
-                statement = new ImportantComment(m_importantComments[0], this);
+                statement = new ImportantComment(m_importantComments[0]);
                 m_importantComments.RemoveAt(0);
             }
             else
             {
-                String id = null;
-                var isNewModule = m_newModule;
-
                 switch (m_currentToken.Token)
                 {
                     case JSToken.EndOfFile:
-                        EOFError(JSError.ErrorEndOfFile);
-                        throw new EndOfStreamException(); // abort parsing, get back to the main parse routine
+                        ReportError(JSError.ErrorEndOfFile);
+                        return null; // abort parsing, get back to the main parse routine
+
                     case JSToken.Semicolon:
                         // make an empty statement
-                        statement = new EmptyStatement(m_currentToken.Clone(), this);
+                        statement = new EmptyStatement(m_currentToken.Clone());
                         GetNextToken();
                         return statement;
+
                     case JSToken.RightCurly:
                         ReportError(JSError.SyntaxError);
-                        SkipTokensAndThrow();
+                        GetNextToken();
                         break;
+
                     case JSToken.LeftCurly:
                         return ParseBlock();
+
                     case JSToken.Debugger:
                         return ParseDebuggerStatement();
+
                     case JSToken.Var:
                     case JSToken.Const:
                     case JSToken.Let:
                         return ParseVariableStatement();
+
                     case JSToken.If:
                         return ParseIfStatement();
+
                     case JSToken.For:
                         return ParseForStatement();
+
                     case JSToken.Do:
                         return ParseDoStatement();
+
                     case JSToken.While:
                         return ParseWhileStatement();
+
                     case JSToken.Continue:
-                        statement = ParseContinueStatement();
-                        if (null == statement)
-                            return new Block(CurrentPositionContext(), this);
-                        else
-                            return statement;
+                        return ParseContinueStatement();
+
                     case JSToken.Break:
-                        statement = ParseBreakStatement();
-                        if (null == statement)
-                            return new Block(CurrentPositionContext(), this);
-                        else
-                            return statement;
+                        return ParseBreakStatement();
+
                     case JSToken.Return:
-                        statement = ParseReturnStatement();
-                        if (null == statement)
-                            return new Block(CurrentPositionContext(), this);
-                        else
-                            return statement;
+                        return ParseReturnStatement();
+
                     case JSToken.With:
                         return ParseWithStatement();
+
                     case JSToken.Switch:
                         return ParseSwitchStatement();
+
                     case JSToken.Throw:
-                        statement = ParseThrowStatement();
-                        if (statement == null)
-                            return new Block(CurrentPositionContext(), this);
-                        else
-                            break;
+                        return ParseThrowStatement();
+
                     case JSToken.Try:
                         return ParseTryStatement();
+
                     case JSToken.Function:
                         // parse a function declaration
-                        FunctionObject function = ParseFunction(FunctionType.Declaration, m_currentToken.Clone());
+                        var function = ParseFunction(FunctionType.Declaration, m_currentToken.Clone());
                         function.IsSourceElement = fSourceElement;
                         return function;
+
+                    case JSToken.Class:
+                        return ParseClassNode(ClassType.Declaration);
+
                     case JSToken.Else:
                         ReportError(JSError.InvalidElse);
-                        SkipTokensAndThrow();
+                        GetNextToken();
                         break;
+
                     case JSToken.ConditionalCommentStart:
                         return ParseStatementLevelConditionalComment(fSourceElement);
+
                     case JSToken.ConditionalCompilationOn:
-                        {
-                            ConditionalCompilationOn ccOn = new ConditionalCompilationOn(m_currentToken.Clone(), this);
-                            GetNextToken();
-                            return ccOn;
-                        }
+                        var ccOn = new ConditionalCompilationOn(m_currentToken.Clone());
+                        GetNextToken();
+                        return ccOn;
+
                     case JSToken.ConditionalCompilationSet:
                         return ParseConditionalCompilationSet();
+
                     case JSToken.ConditionalCompilationIf:
                         return ParseConditionalCompilationIf(false);
+
                     case JSToken.ConditionalCompilationElseIf:
                         return ParseConditionalCompilationIf(true);
+
                     case JSToken.ConditionalCompilationElse:
-                        {
-                            ConditionalCompilationElse elseStatement = new ConditionalCompilationElse(m_currentToken.Clone(), this);
-                            GetNextToken();
-                            return elseStatement;
-                        }
+                        var elseStatement = new ConditionalCompilationElse(m_currentToken.Clone());
+                        GetNextToken();
+                        return elseStatement;
+
                     case JSToken.ConditionalCompilationEnd:
+                        var endStatement = new ConditionalCompilationEnd(m_currentToken.Clone());
+                        GetNextToken();
+                        return endStatement;
+
+                    case JSToken.Import:
+                        // import can't be an identifier name, so it must be an import statement
+                        return ParseImport();
+
+                    case JSToken.Export:
+                        // export can't be an identifier name, so it must be an export statement
+                        return ParseExport();
+
+                    case JSToken.Identifier:
+                        if (m_currentToken.Is("module"))
                         {
-                            ConditionalCompilationEnd endStatement = new ConditionalCompilationEnd(m_currentToken.Clone(), this);
-                            GetNextToken();
-                            return endStatement;
+                            goto case JSToken.Module;
                         }
+                        goto default;
+
+                    case JSToken.Module:
+                        if (PeekCanBeModule())
+                        {
+                            return ParseModule();
+                        }
+                        goto default;
 
                     default:
-                        m_noSkipTokenSet.Add(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet);
-                        bool exprError = false;
-                        try
-                        {
-                            bool bAssign;
-                            statement = ParseUnaryExpression(out bAssign, false);
-
-                            // look for labels
-                            if (statement is Lookup && JSToken.Colon == m_currentToken.Token)
-                            {
-                                // can be a label
-                                id = statement.ToString();
-                                if (m_labelTable.ContainsKey(id))
-                                {
-                                    // there is already a label with that name. Ignore the current label
-                                    ReportError(JSError.BadLabel, statement.Context.Clone(), true);
-                                    id = null;
-                                    GetNextToken(); // skip over ':'
-                                    return new Block(CurrentPositionContext(), this);
-                                }
-                                else
-                                {
-                                    var colonContext = m_currentToken.Clone();
-                                    GetNextToken();
-                                    int labelNestCount = m_labelTable.Count + 1;
-                                    m_labelTable.Add(id, new LabelInfo(m_blockType.Count, labelNestCount));
-                                    if (JSToken.EndOfFile != m_currentToken.Token)
-                                    {
-                                        // ignore any important comments between the label and its statement
-                                        // because important comments are treated like statements, and we want
-                                        // to make sure the label is attached to the right REAL statement.
-                                        statement = new LabeledStatement(statement.Context.Clone(), this)
-                                            {
-                                                Label = id,
-                                                ColonContext = colonContext,
-                                                NestCount = labelNestCount,
-                                                Statement = ParseStatement(fSourceElement, true)
-                                            };
-                                    }
-                                    else
-                                    {
-                                        // end of the file!
-                                        //just pass null for the labeled statement
-                                        statement = new LabeledStatement(statement.Context.Clone(), this)
-                                            {
-                                                Label = id,
-                                                ColonContext = colonContext,
-                                                NestCount = labelNestCount
-                                            };
-                                    }
-                                    m_labelTable.Remove(id);
-                                    return statement;
-                                }
-                            }
-                            statement = ParseExpression(statement, false, bAssign, JSToken.None);
-
-                            // if we just started a new module and this statement happens to be an expression statement...
-                            if (isNewModule && statement.IsExpression)
-                            {
-                                // see if it's a constant wrapper
-                                var constantWrapper = statement as ConstantWrapper;
-                                if (constantWrapper != null && constantWrapper.PrimitiveType == PrimitiveType.String)
-                                {
-                                    // we found a string constant expression statement right after the start of a new
-                                    // module. Let's make it a DirectivePrologue if it isn't already
-                                    if (!(statement is DirectivePrologue))
-                                    {
-                                        statement = new DirectivePrologue(constantWrapper.Value.ToString(), constantWrapper.Context, this)
-                                            {
-                                                MayHaveIssues = constantWrapper.MayHaveIssues
-                                            };
-                                    }
-                                }
-                            }
-
-                            var binaryOp = statement as BinaryOperator;
-                            if (binaryOp != null
-                                && (binaryOp.OperatorToken == JSToken.Equal || binaryOp.OperatorToken == JSToken.StrictEqual))
-                            {
-                                // an expression statement with equality operator? Doesn't really do anything.
-                                // Did the developer intend this to be an assignment operator instead? Low-pri warning.
-                                binaryOp.OperatorContext.IfNotNull(c => c.HandleError(JSError.SuspectEquality, false));
-                            }
-
-                            var lookup = statement as Lookup;
-                            if (lookup != null
-                                && lookup.Name.StartsWith("<%=", StringComparison.Ordinal) && lookup.Name.EndsWith("%>", StringComparison.Ordinal))
-                            {
-                                // single lookup, but it's actually one or more ASP.NET blocks.
-                                // convert back to an asp.net block node
-                                statement = new AspNetBlockNode(statement.Context, this)
-                                {
-                                    AspNetBlockText = lookup.Name
-                                };
-                            }
-
-                            var aspNetBlock = statement as AspNetBlockNode;
-                            if (aspNetBlock != null && JSToken.Semicolon == m_currentToken.Token)
-                            {
-                                aspNetBlock.IsTerminatedByExplicitSemicolon = true;
-                                statement.IfNotNull(s => s.TerminatingContext = m_currentToken.Clone());
-                                GetNextToken();
-                            }
-
-                            // we just parsed an expression statement. Now see if we have an appropriate
-                            // semicolon to terminate it.
-                            if (JSToken.Semicolon == m_currentToken.Token)
-                            {
-                                statement.IfNotNull(s => s.TerminatingContext = m_currentToken.Clone());
-                                GetNextToken();
-                            }
-                            else if (m_foundEndOfLine || JSToken.RightCurly == m_currentToken.Token || JSToken.EndOfFile == m_currentToken.Token)
-                            {
-                                // semicolon insertion rules
-                                // (if there was no statement parsed, then don't fire a warning)
-                                // a right-curly or an end of line is something we don't WANT to throw a warning for. 
-                                // Just too common and doesn't really warrant a warning (in my opinion)
-                                if (statement != null
-                                    && JSToken.RightCurly != m_currentToken.Token && JSToken.EndOfFile != m_currentToken.Token)
-                                {
-                                    ReportError(JSError.SemicolonInsertion, statement.Context.IfNotNull(c => c.FlattenToEnd()), true);
-                                }
-                            }
-                            else
-                            {
-                                ReportError(JSError.NoSemicolon, true);
-                            }
-                        }
-                        catch (RecoveryTokenException exc)
-                        {
-                            if (exc._partiallyComputedNode != null)
-                                statement = exc._partiallyComputedNode;
-
-                            if (statement == null)
-                            {
-                                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet);
-                                exprError = true;
-                                SkipTokensAndThrow();
-                            }
-
-                            if (IndexOfToken(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet, exc) == -1)
-                            {
-                                exc._partiallyComputedNode = statement;
-                                throw;
-                            }
-                        }
-                        finally
-                        {
-                            if (!exprError)
-                                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet);
-                        }
+                        statement = ParseExpressionStatement(fSourceElement);
                         break;
                 }
             }
@@ -948,17 +838,158 @@ namespace Microsoft.Ajax.Utilities
             return statement;
         }
 
-        AstNode ParseStatementLevelConditionalComment(bool fSourceElement)
+        private AstNode ParseExpressionStatement(bool fSourceElement)
         {
-            Context context = m_currentToken.Clone();
-            ConditionalCompilationComment conditionalComment = new ConditionalCompilationComment(context, this);
+            bool bAssign;
+            var isNewModule = m_newModule;
+            var statement = ParseUnaryExpression(out bAssign, false);
+            if (statement != null)
+            {
+                // look for labels
+                var lookup = statement as Lookup;
+                if (lookup != null && m_currentToken.Is(JSToken.Colon))
+                {
+                    statement = ParseLabeledStatement(lookup, fSourceElement);
+                }
+                else
+                {
+                    // finish off the expression using the unary as teh starting point
+                    statement = ParseExpression(statement, false, bAssign, JSToken.None);
+
+                    // if we just started a new module and this statement happens to be an expression statement...
+                    if (isNewModule && statement.IsExpression)
+                    {
+                        // see if it's a constant wrapper
+                        var constantWrapper = statement as ConstantWrapper;
+                        if (constantWrapper != null && constantWrapper.PrimitiveType == PrimitiveType.String)
+                        {
+                            // we found a string constant expression statement right after the start of a new
+                            // module. Let's make it a DirectivePrologue if it isn't already
+                            if (!(statement is DirectivePrologue))
+                            {
+                                statement = new DirectivePrologue(constantWrapper.Value.ToString(), constantWrapper.Context)
+                                {
+                                    MayHaveIssues = constantWrapper.MayHaveIssues
+                                };
+                            }
+                        }
+                    }
+
+                    var binaryOp = statement as BinaryOperator;
+                    if (binaryOp != null
+                        && (binaryOp.OperatorToken == JSToken.Equal || binaryOp.OperatorToken == JSToken.StrictEqual))
+                    {
+                        // an expression statement with equality operator? Doesn't really do anything.
+                        // Did the developer intend this to be an assignment operator instead? Low-pri warning.
+                        binaryOp.OperatorContext.IfNotNull(c => c.HandleError(JSError.SuspectEquality, false));
+                    }
+
+                    lookup = statement as Lookup;
+                    if (lookup != null
+                        && lookup.Name.StartsWith("<%=", StringComparison.Ordinal) && lookup.Name.EndsWith("%>", StringComparison.Ordinal))
+                    {
+                        // single lookup, but it's actually one or more ASP.NET blocks.
+                        // convert back to an asp.net block node
+                        statement = new AspNetBlockNode(statement.Context)
+                        {
+                            AspNetBlockText = lookup.Name
+                        };
+                    }
+
+                    var aspNetBlock = statement as AspNetBlockNode;
+                    if (aspNetBlock != null && m_currentToken.Is(JSToken.Semicolon))
+                    {
+                        aspNetBlock.IsTerminatedByExplicitSemicolon = true;
+                        statement.IfNotNull(s => s.TerminatingContext = m_currentToken.Clone());
+                        GetNextToken();
+                    }
+
+                    // we just parsed an expression statement. Now see if we have an appropriate
+                    // semicolon to terminate it.
+                    ExpectSemicolon(statement);
+                }
+            }
+            else
+            {
+                // couldn't parse a statement and couldn't parse an expression; skip it
+                // TODO: error node?
+                GetNextToken();
+            }
+
+            return statement;
+        }
+
+        private LabeledStatement ParseLabeledStatement(Lookup lookup, bool fSourceElement)
+        {
+            // can be a label
+            var id = lookup.Name;
+            var colonContext = m_currentToken.Clone();
+
+            LabelInfo labelInfo;
+            var removeInfo = true;
+            if (m_labelInfo.TryGetValue(id, out labelInfo))
+            {
+                // already exists! throw an error and mark this label as having an error
+                labelInfo.HasIssues = true;
+                removeInfo = false;
+                lookup.Context.HandleError(JSError.BadLabel, true);
+            }
+            else
+            {
+                // zero-based nest level corresponds to how many labels we are working with
+                // so far. and a zero reference count
+                labelInfo = new LabelInfo { NestLevel = m_labelInfo.Count, RefCount = 0 };
+                m_labelInfo.Add(id, labelInfo);
+            }
 
             GetNextToken();
-            while(m_currentToken.Token != JSToken.ConditionalCommentEnd && m_currentToken.Token != JSToken.EndOfFile)
+            LabeledStatement labeledStatement;
+            if (m_currentToken.IsNot(JSToken.EndOfFile))
+            {
+                // ignore any important comments between the label and its statement
+                // because important comments are treated like statements, and we want
+                // to make sure the label is attached to the right REAL statement.
+                labeledStatement = new LabeledStatement(lookup.Context.Clone())
+                {
+                    Label = id,
+                    LabelContext = lookup.Context,
+                    LabelInfo = labelInfo,
+                    ColonContext = colonContext,
+                    Statement = ParseStatement(fSourceElement, true)
+                };
+            }
+            else
+            {
+                // end of the file!
+                // just pass null for the labeled statement
+                labeledStatement = new LabeledStatement(lookup.Context.Clone())
+                {
+                    Label = id,
+                    LabelContext = lookup.Context,
+                    LabelInfo = labelInfo,
+                    ColonContext = colonContext,
+                };
+            }
+
+            if (removeInfo)
+            {
+                m_labelInfo.Remove(id);
+            }
+
+            return labeledStatement;
+        }
+
+        private AstNode ParseStatementLevelConditionalComment(bool fSourceElement)
+        {
+            Context context = m_currentToken.Clone();
+            ConditionalCompilationComment conditionalComment = new ConditionalCompilationComment(context);
+
+            GetNextToken();
+            while (m_currentToken.IsNot(JSToken.ConditionalCommentEnd) && m_currentToken.IsNot(JSToken.EndOfFile))
             {
                 // if we get ANOTHER start token, it's superfluous and we should ignore it.
                 // otherwise parse another statement and keep going
-                if (m_currentToken.Token == JSToken.ConditionalCommentStart)
+                if (m_currentToken.Is(JSToken.ConditionalCommentStart))
                 {
                     GetNextToken();
                 }
@@ -975,18 +1006,18 @@ namespace Microsoft.Ajax.Utilities
             return conditionalComment.Statements.Count > 0 ? conditionalComment : null;
         }
 
-        ConditionalCompilationSet ParseConditionalCompilationSet()
+        private ConditionalCompilationSet ParseConditionalCompilationSet()
         {
             Context context = m_currentToken.Clone();
             string variableName = null;
             AstNode value = null;
             GetNextToken();
-            if (m_currentToken.Token == JSToken.ConditionalCompilationVariable)
+            if (m_currentToken.Is(JSToken.ConditionalCompilationVariable))
             {
                 context.UpdateWith(m_currentToken);
                 variableName = m_currentToken.Code;
                 GetNextToken();
-                if (m_currentToken.Token == JSToken.Assign)
+                if (m_currentToken.Is(JSToken.Assign))
                 {
                     context.UpdateWith(m_currentToken);
                     GetNextToken();
@@ -1010,19 +1041,19 @@ namespace Microsoft.Ajax.Utilities
                 m_currentToken.HandleError(JSError.NoIdentifier);
             }
 
-            return new ConditionalCompilationSet(context, this)
+            return new ConditionalCompilationSet(context)
                 {
                     VariableName = variableName,
                     Value = value
                 };
         }
 
-        ConditionalCompilationStatement ParseConditionalCompilationIf(bool isElseIf)
+        private ConditionalCompilationStatement ParseConditionalCompilationIf(bool isElseIf)
         {
             Context context = m_currentToken.Clone();
             AstNode condition = null;
             GetNextToken();
-            if (m_currentToken.Token == JSToken.LeftParenthesis)
+            if (m_currentToken.Is(JSToken.LeftParenthesis))
             {
                 context.UpdateWith(m_currentToken);
                 GetNextToken();
@@ -1036,7 +1067,7 @@ namespace Microsoft.Ajax.Utilities
                     m_currentToken.HandleError(JSError.ExpressionExpected);
                 }
 
-                if (m_currentToken.Token == JSToken.RightParenthesis)
+                if (m_currentToken.Is(JSToken.RightParenthesis))
                 {
                     context.UpdateWith(m_currentToken);
                     GetNextToken();
@@ -1053,13 +1084,13 @@ namespace Microsoft.Ajax.Utilities
 
             if (isElseIf)
             {
-                return new ConditionalCompilationElseIf(context, this)
+                return new ConditionalCompilationElseIf(context)
                     {
                         Condition = condition
                     };
             }
 
-            return new ConditionalCompilationIf(context, this)
+            return new ConditionalCompilationIf(context)
                 {
                     Condition = condition
                 };
@@ -1071,61 +1102,36 @@ namespace Microsoft.Ajax.Utilities
         //  Block :
         //    '{' OptionalStatements '}'
         //---------------------------------------------------------------------------------------
-        Block ParseBlock()
+        private Block ParseBlock()
         {
-            m_blockType.Add(BlockType.Block);
-
             // set the force-braces property to true because we are assuming this is only called
             // when we encounter a left-brace and we will want to keep it going forward. If we are optimizing
             // the code, we will reset these properties as we encounter them so that unneeded curly-braces 
             // can be removed.
-            Block codeBlock = new Block(m_currentToken.Clone(), this)
+            Block codeBlock = new Block(m_currentToken.Clone())
                 {
                     ForceBraces = true
                 };
             codeBlock.BraceOnNewLine = m_foundEndOfLine;
             GetNextToken();
 
-            m_noSkipTokenSet.Add(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
-            m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockNoSkipTokenSet);
-            try
+            while (m_currentToken.IsNot(JSToken.RightCurly) && m_currentToken.IsNot(JSToken.EndOfFile))
             {
-                try
-                {
-                    while (JSToken.RightCurly != m_currentToken.Token)
-                    {
-                        try
-                        {
-                            // pass false because we really only want Statements, and FunctionDeclarations
-                            // are technically not statements. We'll still handle them, but we'll issue a warning.
-                            codeBlock.Append(ParseStatement(false));
-                        }
-                        catch (RecoveryTokenException exc)
-                        {
-                            if (exc._partiallyComputedNode != null)
-                                codeBlock.Append(exc._partiallyComputedNode);
-                            if (IndexOfToken(NoSkipTokenSet.s_StartStatementNoSkipTokenSet, exc) == -1)
-                                throw;
-                        }
-                    }
-
-                    // make sure any important comments before the closing brace are kept
-                    AppendImportantComments(codeBlock);
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (IndexOfToken(NoSkipTokenSet.s_BlockNoSkipTokenSet, exc) == -1)
-                    {
-                        exc._partiallyComputedNode = codeBlock;
-                        throw;
-                    }
-                }
+                // pass false because we really only want Statements, and FunctionDeclarations
+                // are technically not statements. We'll still handle them, but we'll issue a warning.
+                codeBlock.Append(ParseStatement(false));
             }
-            finally
+
+            // make sure any important comments before the closing brace are kept
+            AppendImportantComments(codeBlock);
+
+            if (m_currentToken.IsNot(JSToken.RightCurly))
             {
-                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockNoSkipTokenSet);
-                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
-                m_blockType.RemoveAt(m_blockType.Count - 1);
+                ReportError(JSError.NoRightCurly);
+                if (m_currentToken.Is(JSToken.EndOfFile))
+                {
+                    ReportError(JSError.ErrorEndOfFile);
+                }
             }
 
             codeBlock.TerminatingContext = m_currentToken.Clone();
@@ -1149,31 +1155,11 @@ namespace Microsoft.Ajax.Utilities
         private AstNode ParseDebuggerStatement()
         {
             // clone the current context and skip it
-            var node = new DebuggerNode(m_currentToken.Clone(), this);
+            var node = new DebuggerNode(m_currentToken.Clone());
             GetNextToken();
 
             // this token can only be a stand-alone statement
-            if (JSToken.Semicolon == m_currentToken.Token)
-            {
-                // add the semicolon to the cloned context and skip it
-                node.TerminatingContext = m_currentToken.Clone();
-                GetNextToken();
-            }
-            else if (m_foundEndOfLine || JSToken.RightCurly == m_currentToken.Token || JSToken.EndOfFile == m_currentToken.Token)
-            {
-                // semicolon insertion rules applied
-                // a right-curly or an end of line is something we don't WANT to throw a warning for. 
-                // Just too common and doesn't really warrant a warning (in my opinion)
-                if (JSToken.RightCurly != m_currentToken.Token && JSToken.EndOfFile != m_currentToken.Token)
-                {
-                    ReportError(JSError.SemicolonInsertion, node.Context.IfNotNull(c => c.FlattenToEnd()), true);
-                }
-            }
-            else
-            {
-                // if it is anything else, it's an error
-                ReportError(JSError.NoSemicolon, true);
-            }
+            ExpectSemicolon(node);
 
             // return the new AST object
             return node;
@@ -1194,7 +1180,8 @@ namespace Microsoft.Ajax.Utilities
         //    VariableDeclaration ',' VariableDeclarationList
         //
         //  VariableDeclaration :
-        //    Identifier Initializer
+        //    Binding |
+        //    Binding Initializer
         //
         //  Initializer :
         //    <empty> |
@@ -1204,169 +1191,79 @@ namespace Microsoft.Ajax.Utilities
         {
             // create the appropriate statement: var- or const-statement
             Declaration varList;
-            if (m_currentToken.Token == JSToken.Var)
+            if (m_currentToken.Is(JSToken.Var))
             {
-                varList = new Var(m_currentToken.Clone(), this);
+                varList = new Var(m_currentToken.Clone())
+                    {
+                        StatementToken = m_currentToken.Token,
+                        KeywordContext = m_currentToken.Clone()
+                    };
             }
-            else if (m_currentToken.Token == JSToken.Const || m_currentToken.Token == JSToken.Let)
+            else if (m_currentToken.IsOne(JSToken.Const, JSToken.Let))
             {
-                if (m_currentToken.Token == JSToken.Const && m_settings.ConstStatementsMozilla)
+                if (m_currentToken.Is(JSToken.Const) && m_settings.ConstStatementsMozilla)
                 {
-                    varList = new ConstStatement(m_currentToken.Clone(), this);
+                    varList = new ConstStatement(m_currentToken.Clone())
+                        {
+                            StatementToken = m_currentToken.Token,
+                            KeywordContext = m_currentToken.Clone()
+                        };
                 }
                 else
                 {
-                    varList = new LexicalDeclaration(m_currentToken.Clone(), this)
+                    // this is EcmaScript6-specific statement
+                    ParsedVersion = ScriptVersion.EcmaScript6;
+                    varList = new LexicalDeclaration(m_currentToken.Clone())
                         {
-                            StatementToken = m_currentToken.Token
+                            StatementToken = m_currentToken.Token,
+                            KeywordContext = m_currentToken.Clone()
                         };
                 }
             }
             else
             {
                 Debug.Fail("shouldn't get here");
-                return null; 
+                return null;
             }
 
-            bool single = true;
-            AstNode vdecl = null;
-            AstNode identInit = null;
-
-            for (; ; )
+            do
             {
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_EndOfLineToken);
-                try
+                GetNextToken();
+                var varDecl = ParseVarDecl(JSToken.None);
+                if (varDecl != null)
                 {
-                    identInit = ParseIdentifierInitializer(JSToken.None);
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    // an exception is passing by, possibly bringing some info, save the info if any
-                    if (exc._partiallyComputedNode != null)
-                    {
-                        if (!single)
-                        {
-                            varList.Append(exc._partiallyComputedNode);
-                            varList.Context.UpdateWith(exc._partiallyComputedNode.Context);
-                            exc._partiallyComputedNode = varList;
-                        }
-                    }
-                    if (IndexOfToken(NoSkipTokenSet.s_EndOfLineToken, exc) == -1)
-                        throw;
-                    else
-                    {
-                        if (single)
-                            identInit = exc._partiallyComputedNode;
-                    }
-                }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_EndOfLineToken);
-                }
-
-                if (identInit != null)
-                {
-                    vdecl = identInit;
-                    varList.Append(vdecl);
-                }
-
-                if (m_currentToken.Token == JSToken.Comma)
-                {
-                    single = false;
-                    vdecl.IfNotNull(d => d.TerminatingContext = m_currentToken.Clone());
-                }
-                else if (m_currentToken.Token == JSToken.Semicolon)
-                {
-                    varList.TerminatingContext = m_currentToken.Clone();
-                    GetNextToken();
-                    break;
-                }
-                else if (m_foundEndOfLine || m_currentToken.Token == JSToken.RightCurly || m_currentToken.Token == JSToken.EndOfFile)
-                {
-                    // semicolon insertion rules
-                    // a right-curly or an end of line is something we don't WANT to throw a warning for. 
-                    // Just too common and doesn't really warrant a warning (in my opinion)
-                    if (JSToken.RightCurly != m_currentToken.Token && JSToken.EndOfFile != m_currentToken.Token)
-                    {
-                        ReportError(JSError.SemicolonInsertion, varList.Context.IfNotNull(c => c.FlattenToEnd()), true);
-                    }
-                    break;
-                }
-                else
-                {
-                    ReportError(JSError.NoSemicolon, false);
-                    break;
+                    varList.Append(varDecl);
+                    varList.Context.UpdateWith(varDecl.Context);
                 }
             }
+            while (m_currentToken.Is(JSToken.Comma));
 
-            if (vdecl != null)
-            {
-                varList.Context.UpdateWith(vdecl.Context);
-            }
+            ExpectSemicolon(varList);
             return varList;
         }
 
-        //---------------------------------------------------------------------------------------
-        // ParseIdentifierInitializer
-        //
-        //  Does the real work of parsing a single variable declaration.
-        //  inToken is JSToken.In whenever the potential expression that initialize a variable
-        //  cannot contain an 'in', as in the for statement. inToken is JSToken.None otherwise
-        //---------------------------------------------------------------------------------------
-        private AstNode ParseIdentifierInitializer(JSToken inToken)
+        private VariableDeclaration ParseVarDecl(JSToken inToken)
         {
-            string variableName = null;
-            AstNode assignmentExpr = null;
-            RecoveryTokenException except = null;
-
-            GetNextToken();
-            if (JSToken.Identifier != m_currentToken.Token)
-            {
-                String identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
-                if (null != identifier)
-                {
-                    variableName = identifier;
-                }
-                else
-                {
-                    // make up an identifier assume we're done with the var statement
-                    if (JSScanner.IsValidIdentifier(m_currentToken.Code))
-                    {
-                        // it's probably just a keyword
-                        ReportError(JSError.NoIdentifier, m_currentToken.Clone(), true);
-                        variableName = m_currentToken.Code;
-                    }
-                    else
-                    {
-                        ReportError(JSError.NoIdentifier);
-                        return null;
-                    }
-                }
-            }
-            else
-            {
-                variableName = m_scanner.Identifier;
-            }
-            Context idContext = m_currentToken.Clone();
             Context context = m_currentToken.Clone();
-            Context assignContext = null;
-
-            bool ccSpecialCase = false;
-            bool ccOn = false;
-            GetNextToken();
-
-            m_noSkipTokenSet.Add(NoSkipTokenSet.s_VariableDeclNoSkipTokenSet);
-            try
+            VariableDeclaration varDecl = null;
+            var binding = ParseBinding();
+            if (binding != null)
             {
-                if (m_currentToken.Token == JSToken.ConditionalCommentStart)
+                Context assignContext = null;
+                AstNode initializer = null;
+
+                bool ccSpecialCase = false;
+                bool ccOn = false;
+
+                if (m_currentToken.Is(JSToken.ConditionalCommentStart))
                 {
                     ccSpecialCase = true;
 
                     GetNextToken();
-                    if (m_currentToken.Token == JSToken.ConditionalCompilationOn)
+                    if (m_currentToken.Is(JSToken.ConditionalCompilationOn))
                     {
                         GetNextToken();
-                        if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                        if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                         {
                             // forget about it; just ignore the whole thing because it's empty
                             ccSpecialCase = false;
@@ -1378,18 +1275,17 @@ namespace Microsoft.Ajax.Utilities
                     }
                 }
 
-                if (JSToken.Assign == m_currentToken.Token || JSToken.Equal == m_currentToken.Token)
+                if (m_currentToken.IsOne(JSToken.Assign, JSToken.Equal))
                 {
                     assignContext = m_currentToken.Clone();
-                    if (JSToken.Equal == m_currentToken.Token)
+                    if (m_currentToken.Is(JSToken.Equal))
                     {
-                        ReportError(JSError.NoEqual, true);
+                        ReportError(JSError.NoEqual);
                     }
-
 
                     // move past the equals sign
                     GetNextToken();
-                    if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                    if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                     {
                         // so we have var id/*@ =@*/ or var id//@=<EOL>
                         // we only support the equal sign inside conditional comments IF
@@ -1399,21 +1295,10 @@ namespace Microsoft.Ajax.Utilities
                         GetNextToken();
                     }
 
-                    try
+                    initializer = ParseExpression(true, inToken);
+                    if (null != initializer)
                     {
-                        assignmentExpr = ParseExpression(true, inToken);
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        assignmentExpr = exc._partiallyComputedNode;
-                        throw;
-                    }
-                    finally
-                    {
-                        if (null != assignmentExpr)
-                        {
-                            context.UpdateWith(assignmentExpr.Context);
-                        }
+                        context.UpdateWith(initializer.Context);
                     }
                 }
                 else if (ccSpecialCase)
@@ -1424,7 +1309,7 @@ namespace Microsoft.Ajax.Utilities
                     m_currentToken.HandleError(JSError.ConditionalCompilationTooComplex);
 
                     // skip to end of conditional comment
-                    while (m_currentToken.Token != JSToken.EndOfFile && m_currentToken.Token != JSToken.ConditionalCommentEnd)
+                    while (m_currentToken.IsNot(JSToken.EndOfFile) && m_currentToken.IsNot(JSToken.ConditionalCommentEnd))
                     {
                         GetNextToken();
                     }
@@ -1433,7 +1318,7 @@ namespace Microsoft.Ajax.Utilities
 
                 // if the current token is not an end-of-conditional-comment token now,
                 // then we're not in our special case scenario
-                if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                 {
                     GetNextToken();
                 }
@@ -1444,54 +1329,88 @@ namespace Microsoft.Ajax.Utilities
                     ccSpecialCase = false;
                     m_currentToken.HandleError(JSError.ConditionalCompilationTooComplex);
 
-                    // the assignment expression was apparently wiothin the conditional compilation
+                    // the assignment expression was apparently within the conditional compilation
                     // comment, but we're going to ignore it. So clear it out.
-                    assignmentExpr = null;
+                    initializer = null;
 
                     // skip to end of conditional comment
-                    while (m_currentToken.Token != JSToken.EndOfFile && m_currentToken.Token != JSToken.ConditionalCommentEnd)
+                    while (m_currentToken.IsNot(JSToken.EndOfFile) && m_currentToken.IsNot(JSToken.ConditionalCommentEnd))
                     {
                         GetNextToken();
                     }
                     GetNextToken();
                 }
-            }
-            catch (RecoveryTokenException exc)
-            {
-                // If the exception is in the vardecl no-skip set then we successfully
-                // recovered to the end of the declaration and can just return
-                // normally.  Otherwise we re-throw after constructing the partial result.  
-                if (IndexOfToken(NoSkipTokenSet.s_VariableDeclNoSkipTokenSet, exc) == -1)
-                    except = exc;
-            }
-            finally
-            {
-                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_VariableDeclNoSkipTokenSet);
+
+                varDecl = new VariableDeclaration(context)
+                    {
+                        Binding = binding,
+                        AssignContext = assignContext,
+                        Initializer = initializer,
+                        IsCCSpecialCase = ccSpecialCase,
+                        UseCCOn = ccOn
+                    };
             }
 
-            VariableDeclaration result = new VariableDeclaration(context, this)
+            return varDecl;
+        }
+
+        //---------------------------------------------------------------------------------------
+        // ParseBinding
+        //
+        //  Does the real work of parsing a single binding.
+        //  inToken is JSToken.In whenever the potential expression that initialize a variable
+        //  cannot contain an 'in', as in the for statement. inToken is JSToken.None otherwise
+        //---------------------------------------------------------------------------------------
+        private AstNode ParseBinding()
+        {
+            AstNode binding = null;
+            if (m_currentToken.Is(JSToken.Identifier))
+            {
+                binding = new BindingIdentifier(m_currentToken.Clone())
+                    {
+                        Name = m_scanner.Identifier
+                    };
+                GetNextToken();
+            }
+            else if (m_currentToken.Is(JSToken.LeftBracket))
+            {
+                ParsedVersion = ScriptVersion.EcmaScript6;
+                binding = ParseArrayLiteral(true);
+            }
+            else if (m_currentToken.Is(JSToken.LeftCurly))
+            {
+                ParsedVersion = ScriptVersion.EcmaScript6;
+                binding = ParseObjectLiteral(true);
+            }
+            else
+            {
+                var identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
+                if (null != identifier)
                 {
-                    Identifier = variableName,
-                    NameContext = idContext,
-                    AssignContext = assignContext,
-                    Initializer = assignmentExpr
-                };
-
-            result.IsCCSpecialCase = ccSpecialCase;
-            if (ccSpecialCase)
-            {
-                // by default, set the flag depending on whether we encountered a @cc_on statement.
-                // might be overridden by the node in analyze phase
-                result.UseCCOn = ccOn;
+                    binding = new BindingIdentifier(m_currentToken.Clone())
+                        {
+                            Name = identifier
+                        };
+                    GetNextToken();
+                }
+                else if (JSScanner.IsValidIdentifier(identifier = m_currentToken.Code))
+                {
+                    // it's probably just a keyword
+                    ReportError(JSError.NoIdentifier);
+                    binding = new BindingIdentifier(m_currentToken.Clone())
+                        {
+                            Name = identifier
+                        };
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoIdentifier);
+                    return null;
+                }
             }
 
-            if (null != except)
-            {
-                except._partiallyComputedNode = result;
-                throw except;
-            }
-
-            return result;
+            return binding;
         }
 
         //---------------------------------------------------------------------------------------
@@ -1512,162 +1431,88 @@ namespace Microsoft.Ajax.Utilities
             AstNode falseBranch = null;
             Context elseCtx = null;
 
-            m_blockType.Add(BlockType.Block);
-            try
+            // parse condition
+            GetNextToken();
+            if (m_currentToken.IsNot(JSToken.LeftParenthesis))
             {
-                // parse condition
+                ReportError(JSError.NoLeftParenthesis);
+            }
+            else
+            {
+                // skip the opening paren
                 GetNextToken();
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                try
-                {
-                    if (JSToken.LeftParenthesis != m_currentToken.Token)
-                        ReportError(JSError.NoLeftParenthesis);
-                    GetNextToken();
-                    condition = ParseExpression();
+            }
 
-                    // parse statements
-                    if (JSToken.RightParenthesis != m_currentToken.Token)
-                    {
-                        ifCtx.UpdateWith(condition.Context);
-                        ReportError(JSError.NoRightParenthesis);
-                    }
-                    else
-                        ifCtx.UpdateWith(m_currentToken);
+            // get the condition
+            condition = ParseExpression();
 
-                    GetNextToken();
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    // make up an if condition
-                    if (exc._partiallyComputedNode != null)
-                        condition = exc._partiallyComputedNode;
-                    else
-                        condition = new ConstantWrapper(true, PrimitiveType.Boolean, CurrentPositionContext(), this);
+            // parse statements
+            if (m_currentToken.Is(JSToken.RightParenthesis))
+            {
+                ifCtx.UpdateWith(m_currentToken);
+                GetNextToken();
+            }
+            else
+            {
+                condition.IfNotNull(c => ifCtx.UpdateWith(c.Context));
+                ReportError(JSError.NoRightParenthesis);
+            }
 
-                    if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) == -1)
-                    {
-                        exc._partiallyComputedNode = null; // really not much to pass up
-                        // the if condition was so bogus we do not have a chance to make an If node, give up
-                        throw;
-                    }
-                    else
-                    {
-                        if (exc._token == JSToken.RightParenthesis)
-                            GetNextToken();
-                    }
-                }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                }
+            // if this is an assignment, throw a warning in case the developer
+            // meant to use == instead of =
+            // but no warning if the condition is wrapped in parens.
+            var binOp = condition as BinaryOperator;
+            if (binOp != null && binOp.OperatorToken == JSToken.Assign)
+            {
+                condition.Context.HandleError(JSError.SuspectAssignment);
+            }
 
-                // if this is an assignment, throw a warning in case the developer
-                // meant to use == instead of =
-                // but no warning if the condition is wrapped in parens.
-                var binOp = condition as BinaryOperator;
-                if (binOp != null && binOp.OperatorToken == JSToken.Assign)
-                {
-                    condition.Context.HandleError(JSError.SuspectAssignment);
-                }
+            if (m_currentToken.Is(JSToken.Semicolon))
+            {
+                // if the next token is just a .semicolon, that's weird to have
+                // an empty true-block. flag a low-sev warning
+                m_currentToken.HandleError(JSError.SuspectSemicolon);
+            }
+            else if (m_currentToken.IsNot(JSToken.LeftCurly))
+            {
+                // if the statements aren't withing curly-braces, throw a possible error
+                ReportError(JSError.StatementBlockExpected, CurrentPositionContext);
+            }
 
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_IfBodyNoSkipTokenSet);
-                if (JSToken.Semicolon == m_currentToken.Token)
+            // parse a Statement, not a SourceElement
+            // and ignore any important comments that spring up right here.
+            trueBranch = ParseStatement(false, true);
+            if (trueBranch != null)
+            {
+                ifCtx.UpdateWith(trueBranch.Context);
+            }
+
+            // parse else, if any
+            if (m_currentToken.Is(JSToken.Else))
+            {
+                elseCtx = m_currentToken.Clone();
+                GetNextToken();
+                if (m_currentToken.Is(JSToken.Semicolon))
                 {
+                    // again, an empty else-block is kinda weird.
                     m_currentToken.HandleError(JSError.SuspectSemicolon);
                 }
-                else if (JSToken.LeftCurly != m_currentToken.Token)
+                else if (m_currentToken.IsNot(JSToken.LeftCurly) && m_currentToken.IsNot(JSToken.If))
                 {
-                    // if the statements aren't withing curly-braces, throw a possible error
-                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
+                    // if the statements aren't withing curly-braces (or start another if-statement), throw a possible error
+                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext);
                 }
 
-                try
+                // parse a Statement, not a SourceElement
+                // and ignore any important comments that spring up right here.
+                falseBranch = ParseStatement(false, true);
+                if (falseBranch != null)
                 {
-                    // parse a Statement, not a SourceElement
-                    // and ignore any important comments that spring up right here.
-                    trueBranch = ParseStatement(false, true);
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    // make up a block for the if part
-                    if (exc._partiallyComputedNode != null)
-                        trueBranch = exc._partiallyComputedNode;
-                    else
-                        trueBranch = new Block(CurrentPositionContext(), this);
-                    if (IndexOfToken(NoSkipTokenSet.s_IfBodyNoSkipTokenSet, exc) == -1)
-                    {
-                        // we have to pass the exception to someone else, make as much as you can from the if
-                        exc._partiallyComputedNode = new IfNode(ifCtx, this)
-                            {
-                                Condition = condition,
-                                TrueBlock = AstNode.ForceToBlock(trueBranch)
-                            };
-                        throw;
-                    }
-                }
-                finally
-                {
-                    if (trueBranch != null)
-                    {
-                        ifCtx.UpdateWith(trueBranch.Context);
-                    }
-
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_IfBodyNoSkipTokenSet);
-                }
-
-                // parse else, if any
-                if (JSToken.Else == m_currentToken.Token)
-                {
-                    elseCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    if (JSToken.Semicolon == m_currentToken.Token)
-                    {
-                        m_currentToken.HandleError(JSError.SuspectSemicolon);
-                    }
-                    else if (JSToken.LeftCurly != m_currentToken.Token
-                      && JSToken.If != m_currentToken.Token)
-                    {
-                        // if the statements aren't withing curly-braces (or start another if-statement), throw a possible error
-                        ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
-                    }
-
-                    try
-                    {
-                        // parse a Statement, not a SourceElement
-                        // and ignore any important comments that spring up right here.
-                        falseBranch = ParseStatement(false, true);
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        // make up a block for the else part
-                        if (exc._partiallyComputedNode != null)
-                            falseBranch = exc._partiallyComputedNode;
-                        else
-                            falseBranch = new Block(CurrentPositionContext(), this);
-                        exc._partiallyComputedNode = new IfNode(ifCtx, this)
-                            {
-                                Condition = condition,
-                                TrueBlock = AstNode.ForceToBlock(trueBranch),
-                                ElseContext = elseCtx,
-                                FalseBlock = AstNode.ForceToBlock(falseBranch)
-                            };
-                        throw;
-                    }
-                    finally
-                    {
-                        if (falseBranch != null)
-                        {
-                            ifCtx.UpdateWith(falseBranch.Context);
-                        }
-                    }
+                    ifCtx.UpdateWith(falseBranch.Context);
                 }
             }
-            finally
-            {
-                m_blockType.RemoveAt(m_blockType.Count - 1);
-            }
 
-            return new IfNode(ifCtx, this)
+            return new IfNode(ifCtx)
                 {
                     Condition = condition,
                     TrueBlock = AstNode.ForceToBlock(trueBranch),
@@ -1696,322 +1541,163 @@ namespace Microsoft.Ajax.Utilities
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private AstNode ParseForStatement()
         {
-            m_blockType.Add(BlockType.Loop);
             AstNode forNode = null;
-            try
+            Context forCtx = m_currentToken.Clone();
+            GetNextToken();
+            if (m_currentToken.Is(JSToken.LeftParenthesis))
             {
-                Context forCtx = m_currentToken.Clone();
                 GetNextToken();
-                if (JSToken.LeftParenthesis != m_currentToken.Token)
+            }
+            else
+            {
+                ReportError(JSError.NoLeftParenthesis);
+            }
+
+            AstNode initializer = null, condOrColl = null, increment = null;
+            Context operatorContext = null;
+            Context separator1Context = null;
+            Context separator2Context = null;
+
+            if (m_currentToken.IsOne(JSToken.Var, JSToken.Let, JSToken.Const))
+            {
+                Declaration declaration;
+                if (m_currentToken.Is(JSToken.Var))
                 {
-                    ReportError(JSError.NoLeftParenthesis);
-                }
-
-                GetNextToken();
-                bool isForIn = false, recoveryInForIn = false;
-                AstNode lhs = null, initializer = null, condOrColl = null, increment = null;
-                Context operatorContext = null;
-                Context separator1Context = null;
-                Context separator2Context = null;
-
-                try
-                {
-                    if (JSToken.Var == m_currentToken.Token
-                        || JSToken.Let == m_currentToken.Token
-                        || JSToken.Const == m_currentToken.Token)
-                    {
-                        isForIn = true;
-                        Declaration declaration;
-                        if (m_currentToken.Token == JSToken.Var)
+                    declaration = new Var(m_currentToken.Clone())
                         {
-                            declaration = new Var(m_currentToken.Clone(), this);
-                        }
-                        else
-                        {
-                            declaration = new LexicalDeclaration(m_currentToken.Clone(), this)
-                                {
-                                    StatementToken = m_currentToken.Token
-                                };
-                        }
- 
-                        declaration.Append(ParseIdentifierInitializer(JSToken.In));
-
-                        // a list of variable initializers is allowed only in a for(;;)
-                        while (JSToken.Comma == m_currentToken.Token)
-                        {
-                            isForIn = false;
-                            declaration.Append(ParseIdentifierInitializer(JSToken.In));
-                            //initializer = new Comma(initializer.context.CombineWith(var.context), initializer, var);
-                        }
-
-                        initializer = declaration;
-
-                        // if it could still be a for..in, now it's time to get the 'in'
-                        // TODO: for ES6 might be 'of'
-                        if (isForIn)
-                        {
-                            if (JSToken.In == m_currentToken.Token
-                                || (m_currentToken.Token == JSToken.Identifier && string.CompareOrdinal(m_currentToken.Code, "of") == 0))
-                            {
-                                operatorContext = m_currentToken.Clone();
-                                GetNextToken();
-                                condOrColl = ParseExpression();
-                            }
-                            else
-                            {
-                                isForIn = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (JSToken.Semicolon != m_currentToken.Token)
-                        {
-                            bool isLHS;
-                            initializer = ParseUnaryExpression(out isLHS, false);
-                            if (isLHS && (JSToken.In == m_currentToken.Token
-                                || (m_currentToken.Token == JSToken.Identifier && string.CompareOrdinal(m_currentToken.Code, "of") == 0)))
-                            {
-                                isForIn = true;
-                                operatorContext = m_currentToken.Clone();
-
-                                lhs = initializer;
-                                initializer = null;
-                                GetNextToken();
-                                m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                                try
-                                {
-                                    condOrColl = ParseExpression();
-                                }
-                                catch (RecoveryTokenException exc)
-                                {
-                                    if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) == -1)
-                                    {
-                                        exc._partiallyComputedNode = null;
-                                        throw;
-                                    }
-                                    else
-                                    {
-                                        if (exc._partiallyComputedNode == null)
-                                            condOrColl = new ConstantWrapper(true, PrimitiveType.Boolean, CurrentPositionContext(), this); // what could we put here?
-                                        else
-                                            condOrColl = exc._partiallyComputedNode;
-                                    }
-                                    if (exc._token == JSToken.RightParenthesis)
-                                    {
-                                        GetNextToken();
-                                        recoveryInForIn = true;
-                                    }
-                                }
-                                finally
-                                {
-                                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                                }
-                            }
-                            else
-                            {
-                                initializer = ParseExpression(initializer, false, isLHS, JSToken.In);
-                            }
-                        }
-                    }
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    // error is too early abort for
-                    exc._partiallyComputedNode = null;
-                    throw;
-                }
-
-                // at this point we know whether or not is a for..in
-                if (isForIn)
-                {
-                    if (!recoveryInForIn)
-                    {
-                        if (JSToken.RightParenthesis != m_currentToken.Token)
-                            ReportError(JSError.NoRightParenthesis);
-                        forCtx.UpdateWith(m_currentToken);
-                        GetNextToken();
-                    }
-
-                    AstNode body = null;
-                    // if the statements aren't withing curly-braces, throw a possible error
-                    if (JSToken.LeftCurly != m_currentToken.Token)
-                    {
-                        ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
-                    }
-                    try
-                    {
-                        // parse a Statement, not a SourceElement
-                        // and ignore any important comments that spring up right here.
-                        body = ParseStatement(false, true);
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        if (exc._partiallyComputedNode == null)
-                            body = new Block(CurrentPositionContext(), this);
-                        else
-                            body = exc._partiallyComputedNode;
-                        exc._partiallyComputedNode = new ForIn(forCtx, this)
-                            {
-                                Variable = (lhs != null ? lhs : initializer),
-                                OperatorContext = operatorContext,
-                                Collection = condOrColl,
-                                Body = AstNode.ForceToBlock(body),
-                            };
-                        throw;
-                    }
-
-                    // for (a in b)
-                    //      lhs = a, initializer = null
-                    // for (var a in b)
-                    //      lhs = null, initializer = var a
-                    forNode = new ForIn(forCtx, this)
-                        {
-                            Variable = (lhs != null ? lhs : initializer),
-                            OperatorContext = operatorContext,
-                            Collection = condOrColl,
-                            Body = AstNode.ForceToBlock(body),
+                            StatementToken = m_currentToken.Token,
+                            KeywordContext = m_currentToken.Clone()
                         };
                 }
                 else
                 {
-                    m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                    try
-                    {
-                        if (JSToken.Semicolon == m_currentToken.Token)
+                    ParsedVersion = ScriptVersion.EcmaScript6;
+                    declaration = new LexicalDeclaration(m_currentToken.Clone())
                         {
-                            separator1Context = m_currentToken.Clone();
-                        }
-                        else
-                        {
-                            ReportError(JSError.NoSemicolon);
-                            if (JSToken.Colon == m_currentToken.Token)
-                            {
-                                m_noSkipTokenSet.Add(NoSkipTokenSet.s_VariableDeclNoSkipTokenSet);
-                                try
-                                {
-                                    SkipTokensAndThrow();
-                                }
-                                catch (RecoveryTokenException)
-                                {
-                                    if (JSToken.Semicolon == m_currentToken.Token)
-                                    {
-                                        m_useCurrentForNext = false;
-                                    }
-                                    else
-                                    {
-                                        throw;
-                                    }
-                                }
-                                finally
-                                {
-                                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_VariableDeclNoSkipTokenSet);
-                                }
-                            }
-                        }
-
-                        GetNextToken();
-                        if (JSToken.Semicolon != m_currentToken.Token)
-                        {
-                            condOrColl = ParseExpression();
-                            if (JSToken.Semicolon != m_currentToken.Token)
-                            {
-                                ReportError(JSError.NoSemicolon);
-                            }
-                        }
-
-                        separator2Context = m_currentToken.Clone();
-                        GetNextToken();
-
-                        if (JSToken.RightParenthesis != m_currentToken.Token)
-                        {
-                            increment = ParseExpression();
-                        }
-
-                        if (JSToken.RightParenthesis != m_currentToken.Token)
-                        {
-                            ReportError(JSError.NoRightParenthesis);
-                        }
-
-                        forCtx.UpdateWith(m_currentToken);
-                        GetNextToken();
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) == -1)
-                        {
-                            exc._partiallyComputedNode = null;
-                            throw;
-                        }
-                        else
-                        {
-                            // discard any partial info, just genrate empty condition and increment and keep going
-                            exc._partiallyComputedNode = null;
-                            if (condOrColl == null)
-                                condOrColl = new ConstantWrapper(true, PrimitiveType.Boolean, CurrentPositionContext(), this);
-                        }
-                        if (exc._token == JSToken.RightParenthesis)
-                        {
-                            GetNextToken();
-                        }
-                    }
-                    finally
-                    {
-                        m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                    }
-
-                    // if this is an assignment, throw a warning in case the developer
-                    // meant to use == instead of =
-                    // but no warning if the condition is wrapped in parens.
-                    var binOp = condOrColl as BinaryOperator;
-                    if (binOp != null && binOp.OperatorToken == JSToken.Assign)
-                    {
-                        condOrColl.Context.HandleError(JSError.SuspectAssignment);
-                    }
-
-                    AstNode body = null;
-                    // if the statements aren't withing curly-braces, throw a possible error
-                    if (JSToken.LeftCurly != m_currentToken.Token)
-                    {
-                        ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
-                    }
-                    try
-                    {
-                        // parse a Statement, not a SourceElement
-                        // and ignore any important comments that spring up right here.
-                        body = ParseStatement(false, true);
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        if (exc._partiallyComputedNode == null)
-                            body = new Block(CurrentPositionContext(), this);
-                        else
-                            body = exc._partiallyComputedNode;
-                        exc._partiallyComputedNode = new ForNode(forCtx, this)
-                            {
-                                Initializer = initializer,
-                                Separator1Context = separator1Context,
-                                Condition = condOrColl,
-                                Separator2Context = separator2Context,
-                                Incrementer = increment,
-                                Body = AstNode.ForceToBlock(body)
-                            };
-                        throw;
-                    }
-                    forNode = new ForNode(forCtx, this)
-                        {
-                            Initializer = initializer,
-                            Separator1Context = separator1Context,
-                            Condition = condOrColl,
-                            Separator2Context = separator2Context,
-                            Incrementer = increment,
-                            Body = AstNode.ForceToBlock(body)
+                            StatementToken = m_currentToken.Token,
+                            KeywordContext = m_currentToken.Clone()
                         };
                 }
+
+                GetNextToken();
+                declaration.Append(ParseVarDecl(JSToken.In));
+
+                while (m_currentToken.Is(JSToken.Comma))
+                {
+                    // a list of variable initializers is ONLY allowed in a for(;;) statement,
+                    // so we now know we are NOT a for..in or for..of statement.
+                    GetNextToken();
+                    declaration.Append(ParseVarDecl(JSToken.In));
+                    //initializer = new Comma(initializer.context.CombineWith(var.context), initializer, var);
+                }
+
+                initializer = declaration;
             }
-            finally
+            else if (m_currentToken.IsNot(JSToken.Semicolon))
             {
-                m_blockType.RemoveAt(m_blockType.Count - 1);
+                // not a declaration (var, const, let), so parse an expression with the no-in target
+                initializer = ParseExpression(false, JSToken.In);
+            }
+
+            // either we are at a semicolon or an in/of token
+            var isForIn = m_currentToken.Is(JSToken.In) || m_currentToken.Is("of");
+            if (isForIn)
+            {
+                // this IS a for..in or for..of statement
+                if (m_currentToken.IsNot(JSToken.In))
+                {
+                    ParsedVersion = ScriptVersion.EcmaScript6;
+                }
+
+                operatorContext = m_currentToken.Clone();
+                GetNextToken();
+
+                // parse the collection expression
+                condOrColl = ParseExpression();
+            }
+            else
+            {
+                // NOT a for..in/for..of; this is a for(;;) statement
+                if (m_currentToken.Is(JSToken.Semicolon))
+                {
+                    separator1Context = m_currentToken.Clone();
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoSemicolon);
+                }
+
+                if (m_currentToken.IsNot(JSToken.Semicolon))
+                {
+                    condOrColl = ParseExpression();
+                }
+
+                if (m_currentToken.Is(JSToken.Semicolon))
+                {
+                    separator2Context = m_currentToken.Clone();
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoSemicolon);
+                }
+
+                if (m_currentToken.IsNot(JSToken.RightParenthesis))
+                {
+                    increment = ParseExpression();
+                }
+            }
+
+            if (m_currentToken.Is(JSToken.RightParenthesis))
+            {
+                forCtx.UpdateWith(m_currentToken);
+                GetNextToken();
+            }
+            else
+            {
+                ReportError(JSError.NoRightParenthesis);
+            }
+
+            // if the statements aren't withing curly-braces, throw a possible error
+            if (m_currentToken.IsNot(JSToken.LeftCurly))
+            {
+                ReportError(JSError.StatementBlockExpected, CurrentPositionContext);
+            }
+
+            // parse a Statement, not a SourceElement
+            // and ignore any important comments that spring up right here.
+            var body = ParseStatement(false, true);
+            if (isForIn)
+            {
+                forNode = new ForIn(forCtx)
+                    {
+                        Variable = initializer,
+                        OperatorContext = operatorContext,
+                        Collection = condOrColl,
+                        Body = AstNode.ForceToBlock(body),
+                    };
+            }
+            else
+            {
+                // if the condition is an assignment, throw a warning in case the developer
+                // meant to use == instead of =
+                // but no warning if the condition is wrapped in parens.
+                var binOp = condOrColl as BinaryOperator;
+                if (binOp != null && binOp.OperatorToken == JSToken.Assign)
+                {
+                    condOrColl.Context.HandleError(JSError.SuspectAssignment);
+                }
+
+                forNode = new ForNode(forCtx)
+                    {
+                        Initializer = initializer,
+                        Separator1Context = separator1Context,
+                        Condition = condOrColl,
+                        Separator2Context = separator2Context,
+                        Incrementer = increment,
+                        Body = AstNode.ForceToBlock(body)
+                    };
             }
 
             return forNode;
@@ -2030,119 +1716,62 @@ namespace Microsoft.Ajax.Utilities
             Context terminatorContext = null;
             AstNode body = null;
             AstNode condition = null;
-            m_blockType.Add(BlockType.Loop);
-            try
+
+            // skip the do-token
+            GetNextToken();
+
+            // if the statements aren't withing curly-braces, throw a possible error
+            if (m_currentToken.IsNot(JSToken.LeftCurly))
             {
-                GetNextToken();
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_DoWhileBodyNoSkipTokenSet);
-                // if the statements aren't withing curly-braces, throw a possible error
-                if (JSToken.LeftCurly != m_currentToken.Token)
-                {
-                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
-                }
-                try
-                {
-                    // parse a Statement, not a SourceElement
-                    // and ignore any important comments that spring up right here.
-                    body = ParseStatement(false, true);
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    // make up a block for the do while
-                    if (exc._partiallyComputedNode != null)
-                        body = exc._partiallyComputedNode;
-                    else
-                        body = new Block(CurrentPositionContext(), this);
-                    if (IndexOfToken(NoSkipTokenSet.s_DoWhileBodyNoSkipTokenSet, exc) == -1)
-                    {
-                        // we have to pass the exception to someone else, make as much as you can from the 'do while'
-                        exc._partiallyComputedNode = new DoWhile(doCtx.UpdateWith(CurrentPositionContext()), this)
-                            {
-                                Body = AstNode.ForceToBlock(body),
-                                Condition = new ConstantWrapper(false, PrimitiveType.Boolean, CurrentPositionContext(), this)
-                            };
-                        throw;
-                    }
-                }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_DoWhileBodyNoSkipTokenSet);
-                }
+                ReportError(JSError.StatementBlockExpected, CurrentPositionContext);
+            }
 
-                if (JSToken.While != m_currentToken.Token)
-                {
-                    ReportError(JSError.NoWhile);
-                }
+            // parse a Statement, not a SourceElement
+            // and ignore any important comments that spring up right here.
+            body = ParseStatement(false, true);
 
+            if (m_currentToken.IsNot(JSToken.While))
+            {
+                ReportError(JSError.NoWhile);
+            }
+            else
+            {
                 whileContext = m_currentToken.Clone();
                 doCtx.UpdateWith(whileContext);
                 GetNextToken();
-
-                if (JSToken.LeftParenthesis != m_currentToken.Token)
-                {
-                    ReportError(JSError.NoLeftParenthesis);
-                }
-
-                GetNextToken();
-                // catch here so the body of the do_while is not thrown away
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                try
-                {
-                    condition = ParseExpression();
-                    if (JSToken.RightParenthesis != m_currentToken.Token)
-                    {
-                        ReportError(JSError.NoRightParenthesis);
-                        doCtx.UpdateWith(condition.Context);
-                    }
-                    else
-                    {
-                        doCtx.UpdateWith(m_currentToken);
-                    }
-
-                    GetNextToken();
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    // make up a condition
-                    if (exc._partiallyComputedNode != null)
-                        condition = exc._partiallyComputedNode;
-                    else
-                        condition = new ConstantWrapper(false, PrimitiveType.Boolean, CurrentPositionContext(), this);
-
-                    if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) == -1)
-                    {
-                        exc._partiallyComputedNode = new DoWhile(doCtx, this)
-                            {
-                                Body = AstNode.ForceToBlock(body),
-                                WhileContext = whileContext,
-                                Condition = condition
-                            };
-                        throw;
-                    }
-                    else
-                    {
-                        if (JSToken.RightParenthesis == m_currentToken.Token)
-                            GetNextToken();
-                    }
-                }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                }
-                if (JSToken.Semicolon == m_currentToken.Token)
-                {
-                    // JScript 5 allowed statements like
-                    //   do{print(++x)}while(x<10) print(0)
-                    // even though that does not strictly follow the automatic semicolon insertion
-                    // rules for the required semi after the while().  For backwards compatibility
-                    // we should continue to support this.
-                    terminatorContext = m_currentToken.Clone();
-                    GetNextToken();
-                }
             }
-            finally
+
+            if (m_currentToken.IsNot(JSToken.LeftParenthesis))
             {
-                m_blockType.RemoveAt(m_blockType.Count - 1);
+                ReportError(JSError.NoLeftParenthesis);
+            }
+            else
+            {
+                GetNextToken();
+            }
+
+            // catch here so the body of the do_while is not thrown away
+            condition = ParseExpression();
+            if (m_currentToken.IsNot(JSToken.RightParenthesis))
+            {
+                ReportError(JSError.NoRightParenthesis);
+                doCtx.UpdateWith(condition.Context);
+            }
+            else
+            {
+                doCtx.UpdateWith(m_currentToken);
+                GetNextToken();
+            }
+
+            if (m_currentToken.Is(JSToken.Semicolon))
+            {
+                // JScript 5 allowed statements like
+                //   do{print(++x)}while(x<10) print(0)
+                // even though that does not strictly follow the automatic semicolon insertion
+                // rules for the required semi after the while().  For backwards compatibility
+                // we should continue to support this.
+                terminatorContext = m_currentToken.Clone();
+                GetNextToken();
             }
 
             // if this is an assignment, throw a warning in case the developer
@@ -2154,7 +1783,7 @@ namespace Microsoft.Ajax.Utilities
                 condition.Context.HandleError(JSError.SuspectAssignment);
             }
 
-            return new DoWhile(doCtx, this)
+            return new DoWhile(doCtx)
                 {
                     Body = AstNode.ForceToBlock(body),
                     WhileContext = whileContext,
@@ -2174,96 +1803,49 @@ namespace Microsoft.Ajax.Utilities
             Context whileCtx = m_currentToken.Clone();
             AstNode condition = null;
             AstNode body = null;
-            m_blockType.Add(BlockType.Loop);
-            try
+
+            GetNextToken();
+            if (m_currentToken.IsNot(JSToken.LeftParenthesis))
+            {
+                ReportError(JSError.NoLeftParenthesis);
+            }
+            else
             {
                 GetNextToken();
-                if (JSToken.LeftParenthesis != m_currentToken.Token)
-                {
-                    ReportError(JSError.NoLeftParenthesis);
-                }
-                GetNextToken();
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                try
-                {
-                    condition = ParseExpression();
-                    if (JSToken.RightParenthesis != m_currentToken.Token)
-                    {
-                        ReportError(JSError.NoRightParenthesis);
-                        whileCtx.UpdateWith(condition.Context);
-                    }
-                    else
-                        whileCtx.UpdateWith(m_currentToken);
-
-                    GetNextToken();
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) == -1)
-                    {
-                        // abort the while there is really no much to do here
-                        exc._partiallyComputedNode = null;
-                        throw;
-                    }
-                    else
-                    {
-                        // make up a condition
-                        if (exc._partiallyComputedNode != null)
-                            condition = exc._partiallyComputedNode;
-                        else
-                            condition = new ConstantWrapper(false, PrimitiveType.Boolean, CurrentPositionContext(), this);
-
-                        if (JSToken.RightParenthesis == m_currentToken.Token)
-                            GetNextToken();
-                    }
-                }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                }
-
-                // if this is an assignment, throw a warning in case the developer
-                // meant to use == instead of =
-                // but no warning if the condition is wrapped in parens.
-                var binOp = condition as BinaryOperator;
-                if (binOp != null && binOp.OperatorToken == JSToken.Assign)
-                {
-                    condition.Context.HandleError(JSError.SuspectAssignment);
-                }
-
-                // if the statements aren't withing curly-braces, throw a possible error
-                if (JSToken.LeftCurly != m_currentToken.Token)
-                {
-                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
-                }
-                try
-                {
-                    // parse a Statement, not a SourceElement
-                    // and ignore any important comments that spring up right here.
-                    body = ParseStatement(false, true);
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (exc._partiallyComputedNode != null)
-                        body = exc._partiallyComputedNode;
-                    else
-                        body = new Block(CurrentPositionContext(), this);
-
-                    exc._partiallyComputedNode = new WhileNode(whileCtx, this)
-                        {
-                            Condition = condition,
-                            Body = AstNode.ForceToBlock(body)
-                        };
-                    throw;
-                }
-
             }
-            finally
+
+            condition = ParseExpression();
+            if (m_currentToken.IsNot(JSToken.RightParenthesis))
             {
-                m_blockType.RemoveAt(m_blockType.Count - 1);
+                ReportError(JSError.NoRightParenthesis);
+                whileCtx.UpdateWith(condition.Context);
+            }
+            else
+            {
+                whileCtx.UpdateWith(m_currentToken);
+                GetNextToken();
             }
 
-            return new WhileNode(whileCtx, this)
+            // if this is an assignment, throw a warning in case the developer
+            // meant to use == instead of =
+            // but no warning if the condition is wrapped in parens.
+            var binOp = condition as BinaryOperator;
+            if (binOp != null && binOp.OperatorToken == JSToken.Assign)
+            {
+                condition.Context.HandleError(JSError.SuspectAssignment);
+            }
+
+            // if the statements aren't withing curly-braces, throw a possible error
+            if (m_currentToken.IsNot(JSToken.LeftCurly))
+            {
+                ReportError(JSError.StatementBlockExpected, CurrentPositionContext);
+            }
+
+            // parse a Statement, not a SourceElement
+            // and ignore any important comments that spring up right here.
+            body = ParseStatement(false, true);
+
+            return new WhileNode(whileCtx)
                 {
                     Condition = condition,
                     Body = AstNode.ForceToBlock(body)
@@ -2287,85 +1869,35 @@ namespace Microsoft.Ajax.Utilities
         //---------------------------------------------------------------------------------------
         private ContinueNode ParseContinueStatement()
         {
-            var continueNode = new ContinueNode(m_currentToken.Clone(), this);
+            var continueNode = new ContinueNode(m_currentToken.Clone());
             GetNextToken();
 
-            var blocks = 0;
             string label = null;
-            if (!m_foundEndOfLine && (JSToken.Identifier == m_currentToken.Token || (label = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null))
+            if (!m_foundEndOfLine && (m_currentToken.Is(JSToken.Identifier) || (label = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null))
             {
                 continueNode.UpdateWith(m_currentToken);
                 continueNode.LabelContext = m_currentToken.Clone();
                 continueNode.Label = label ?? m_scanner.Identifier;
 
-                // get the label block
-                if (!m_labelTable.ContainsKey(continueNode.Label))
+                // see if the label is already known
+                LabelInfo labelInfo;
+                if (m_labelInfo.TryGetValue(continueNode.Label, out labelInfo))
                 {
-                    // the label does not exist. Continue anyway
-                    ReportError(JSError.NoLabel, true);
+                    // increment the refcount so we know this label is referenced
+                    // and save a reference to the label info in this node.
+                    ++labelInfo.RefCount;
+                    continueNode.LabelInfo = labelInfo;
                 }
                 else
                 {
-                    var labelInfo = m_labelTable[continueNode.Label];
-                    continueNode.NestLevel = labelInfo.NestLevel;
-
-                    blocks = labelInfo.BlockIndex;
-                    if (m_blockType[blocks] != BlockType.Loop)
-                    {
-                        ReportError(JSError.BadContinue, continueNode.Context, true);
-                    }
+                    // no such label!
+                    continueNode.LabelContext.HandleError(JSError.NoLabel, true);
                 }
 
                 GetNextToken();
             }
-            else
-            {
-                blocks = m_blockType.Count - 1;
-                while (blocks >= 0 && m_blockType[blocks] != BlockType.Loop) blocks--;
-                if (blocks < 0)
-                {
-                    // the continue is malformed. Continue as if there was no continue at all
-                    ReportError(JSError.BadContinue, continueNode.Context, true);
-                    return null;
-                }
-            }
 
-            if (JSToken.Semicolon == m_currentToken.Token)
-            {
-                continueNode.TerminatingContext = m_currentToken.Clone();
-                GetNextToken();
-            }
-            else if (m_foundEndOfLine || m_currentToken.Token == JSToken.RightCurly || m_currentToken.Token == JSToken.EndOfFile)
-            {
-                // semicolon insertion rules
-                // a right-curly or an end of line is something we don't WANT to throw a warning for. 
-                // Just too common and doesn't really warrant a warning (in my opinion)
-                if (JSToken.RightCurly != m_currentToken.Token && JSToken.EndOfFile != m_currentToken.Token)
-                {
-                    ReportError(JSError.SemicolonInsertion, continueNode.Context.IfNotNull(c => c.FlattenToEnd()), true);
-                }
-            }
-            else
-            {
-                ReportError(JSError.NoSemicolon, false);
-            }
-
-            // must ignore the Finally block
-            var finallyNum = 0;
-            for (int i = blocks, n = m_blockType.Count; i < n; i++)
-            {
-                if (m_blockType[i] == BlockType.Finally)
-                {
-                    blocks++;
-                    finallyNum++;
-                }
-            }
-
-            if (finallyNum > m_finallyEscaped)
-            {
-                m_finallyEscaped = finallyNum;
-            }
-
+            ExpectSemicolon(continueNode);
             return continueNode;
         }
 
@@ -2382,82 +1914,35 @@ namespace Microsoft.Ajax.Utilities
         //---------------------------------------------------------------------------------------
         private Break ParseBreakStatement()
         {
-            var breakNode = new Break(m_currentToken.Clone(), this);
+            var breakNode = new Break(m_currentToken.Clone());
             GetNextToken();
 
-            var blocks = 0;
             string label = null;
-            if (!m_foundEndOfLine && (JSToken.Identifier == m_currentToken.Token || (label = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null))
+            if (!m_foundEndOfLine && (m_currentToken.Is(JSToken.Identifier) || (label = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null))
             {
                 breakNode.UpdateWith(m_currentToken);
                 breakNode.LabelContext = m_currentToken.Clone();
                 breakNode.Label = label ?? m_scanner.Identifier;
 
-                // get the label block
-                if (!m_labelTable.ContainsKey(breakNode.Label))
+                // see if the label is already known
+                LabelInfo labelInfo;
+                if (m_labelInfo.TryGetValue(breakNode.Label, out labelInfo))
                 {
-                    // as if it was a non label case
-                    ReportError(JSError.NoLabel, true);
+                    // increment the refcount so we know this label is referenced
+                    // and save a reference to the label info in this node.
+                    ++labelInfo.RefCount;
+                    breakNode.LabelInfo = labelInfo;
                 }
                 else
                 {
-                    LabelInfo labelInfo = m_labelTable[breakNode.Label];
-                    breakNode.NestLevel = labelInfo.NestLevel;
-                    blocks = labelInfo.BlockIndex - 1; // the outer block
-                    Debug.Assert(m_blockType[blocks] != BlockType.Finally);
+                    // no such label!
+                    breakNode.LabelContext.HandleError(JSError.NoLabel, true);
                 }
 
                 GetNextToken();
             }
-            else
-            {
-                blocks = m_blockType.Count - 1;
-                // search for an enclosing loop, if there is no loop it is an error
-                while ((m_blockType[blocks] == BlockType.Block || m_blockType[blocks] == BlockType.Finally) && --blocks >= 0) ;
-                --blocks;
-                if (blocks < 0)
-                {
-                    ReportError(JSError.BadBreak, breakNode.Context, true);
-                    return null;
-                }
-            }
 
-            if (JSToken.Semicolon == m_currentToken.Token)
-            {
-                breakNode.TerminatingContext = m_currentToken.Clone();
-                GetNextToken();
-            }
-            else if (m_foundEndOfLine || m_currentToken.Token == JSToken.RightCurly || m_currentToken.Token == JSToken.EndOfFile)
-            {
-                // semicolon insertion rules
-                // a right-curly or an end of line is something we don't WANT to throw a warning for. 
-                // Just too common and doesn't really warrant a warning (in my opinion)
-                if (JSToken.RightCurly != m_currentToken.Token && JSToken.EndOfFile != m_currentToken.Token)
-                {
-                    ReportError(JSError.SemicolonInsertion, breakNode.Context.IfNotNull(c => c.FlattenToEnd()), true);
-                }
-            }
-            else
-            {
-                ReportError(JSError.NoSemicolon, false);
-            }
-
-            // must ignore the Finally block
-            var finallyNum = 0;
-            for (int i = blocks, n = m_blockType.Count; i < n; i++)
-            {
-                if (m_blockType[i] == BlockType.Finally)
-                {
-                    blocks++;
-                    finallyNum++;
-                }
-            }
-
-            if (finallyNum > m_finallyEscaped)
-            {
-                m_finallyEscaped = finallyNum;
-            }
-
+            ExpectSemicolon(breakNode);
             return breakNode;
         }
 
@@ -2474,57 +1959,27 @@ namespace Microsoft.Ajax.Utilities
         //---------------------------------------------------------------------------------------
         private ReturnNode ParseReturnStatement()
         {
-            var returnNode = new ReturnNode(m_currentToken.Clone(), this);
+            var returnNode = new ReturnNode(m_currentToken.Clone());
             GetNextToken();
 
+            // CAN'T have a line-break between the "return" and its expression.
             if (!m_foundEndOfLine)
             {
-                if (JSToken.Semicolon != m_currentToken.Token && JSToken.RightCurly != m_currentToken.Token)
+                if (m_currentToken.IsNot(JSToken.Semicolon) && m_currentToken.IsNot(JSToken.RightCurly))
                 {
-                    m_noSkipTokenSet.Add(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet);
-                    try
+                    returnNode.Operand = ParseExpression();
+                    if (returnNode.Operand != null)
                     {
-                        returnNode.Operand = ParseExpression();
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        returnNode.Operand = exc._partiallyComputedNode;
-                        if (IndexOfToken(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet, exc) == -1)
-                        {
-                            exc._partiallyComputedNode = returnNode;
-                            throw;
-                        }
-                    }
-                    finally
-                    {
-                        if (returnNode.Operand != null)
-                        {
-                            returnNode.UpdateWith(returnNode.Operand.Context);
-                        }
-
-                        m_noSkipTokenSet.Remove(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet);
+                        returnNode.UpdateWith(returnNode.Operand.Context);
                     }
                 }
 
-                if (JSToken.Semicolon == m_currentToken.Token)
-                {
-                    returnNode.TerminatingContext = m_currentToken.Clone();
-                    GetNextToken();
-                }
-                else if (m_foundEndOfLine || m_currentToken.Token == JSToken.RightCurly || m_currentToken.Token == JSToken.EndOfFile)
-                {
-                    // semicolon insertion rules
-                    // a right-curly or an end of line is something we don't WANT to throw a warning for. 
-                    // Just too common and doesn't really warrant a warning (in my opinion)
-                    if (JSToken.RightCurly != m_currentToken.Token && JSToken.EndOfFile != m_currentToken.Token)
-                    {
-                        ReportError(JSError.SemicolonInsertion, returnNode.Context.IfNotNull(c => c.FlattenToEnd()), true);
-                    }
-                }
-                else
-                {
-                    ReportError(JSError.NoSemicolon, false);
-                }
+                ExpectSemicolon(returnNode);
+            }
+            else
+            {
+                // but we did find a line-break -- semicolon-insertion rules have kicked in
+                ReportError(JSError.SemicolonInsertion, returnNode.Context.FlattenToEnd());
             }
 
             return returnNode;
@@ -2540,104 +1995,43 @@ namespace Microsoft.Ajax.Utilities
         {
             Context withCtx = m_currentToken.Clone();
             AstNode obj = null;
-            Block block = null;
-            m_blockType.Add(BlockType.Block);
-            try
+
+            GetNextToken();
+            if (m_currentToken.IsNot(JSToken.LeftParenthesis))
+            {
+                ReportError(JSError.NoLeftParenthesis);
+            }
+            else
             {
                 GetNextToken();
-                if (JSToken.LeftParenthesis != m_currentToken.Token)
-                    ReportError(JSError.NoLeftParenthesis);
-                GetNextToken();
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                try
-                {
-                    obj = ParseExpression();
-                    if (JSToken.RightParenthesis != m_currentToken.Token)
-                    {
-                        withCtx.UpdateWith(obj.Context);
-                        ReportError(JSError.NoRightParenthesis);
-                    }
-                    else
-                        withCtx.UpdateWith(m_currentToken);
-                    GetNextToken();
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) == -1)
-                    {
-                        // give up
-                        exc._partiallyComputedNode = null;
-                        throw;
-                    }
-                    else
-                    {
-                        if (exc._partiallyComputedNode == null)
-                            obj = new ConstantWrapper(true, PrimitiveType.Boolean, CurrentPositionContext(), this);
-                        else
-                            obj = exc._partiallyComputedNode;
-                        withCtx.UpdateWith(obj.Context);
-
-                        if (exc._token == JSToken.RightParenthesis)
-                            GetNextToken();
-                    }
-                }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                }
-
-                // if the statements aren't withing curly-braces, throw a possible error
-                if (JSToken.LeftCurly != m_currentToken.Token)
-                {
-                    ReportError(JSError.StatementBlockExpected, CurrentPositionContext(), true);
-                }
-
-                try
-                {
-                    // parse a Statement, not a SourceElement
-                    // and ignore any important comments that spring up right here.
-                    AstNode statement = ParseStatement(false, true);
-
-                    // but make sure we save it as a block
-                    block = statement as Block;
-                    if (block == null)
-                    {
-                        block = new Block(statement.Context, this);
-                        block.Append(statement);
-                    }
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (exc._partiallyComputedNode == null)
-                    {
-                        block = new Block(CurrentPositionContext(), this);
-                    }
-                    else
-                    {
-                        block = exc._partiallyComputedNode as Block;
-                        if (block == null)
-                        {
-                            block = new Block(exc._partiallyComputedNode.Context, this);
-                            block.Append(exc._partiallyComputedNode);
-                        }
-                    }
-                    exc._partiallyComputedNode = new WithNode(withCtx, this)
-                        {
-                            WithObject = obj,
-                            Body = block
-                        };
-                    throw;
-                }
             }
-            finally
+
+            obj = ParseExpression();
+            if (m_currentToken.IsNot(JSToken.RightParenthesis))
             {
-                m_blockType.RemoveAt(m_blockType.Count - 1);
+                withCtx.UpdateWith(obj.Context);
+                ReportError(JSError.NoRightParenthesis);
+            }
+            else
+            {
+                withCtx.UpdateWith(m_currentToken);
+                GetNextToken();
             }
 
-            return new WithNode(withCtx, this)
+            // if the statements aren't withing curly-braces, throw a possible error
+            if (m_currentToken.IsNot(JSToken.LeftCurly))
+            {
+                ReportError(JSError.StatementBlockExpected, CurrentPositionContext);
+            }
+
+            // parse a Statement, not a SourceElement
+            // and ignore any important comments that spring up right here.
+            var statement = ParseStatement(false, true);
+
+            return new WithNode(withCtx)
                 {
                     WithObject = obj,
-                    Body = block
+                    Body = AstNode.ForceToBlock(statement)
                 };
         }
 
@@ -2669,246 +2063,108 @@ namespace Microsoft.Ajax.Utilities
             AstNodeList cases = null;
             var braceOnNewLine = false;
             Context braceContext = null;
-            m_blockType.Add(BlockType.Switch);
-            try
+
+            // read switch(expr)
+            GetNextToken();
+            if (m_currentToken.IsNot(JSToken.LeftParenthesis))
             {
-                // read switch(expr)
+                ReportError(JSError.NoLeftParenthesis);
+            }
+            else
+            {
                 GetNextToken();
-                if (JSToken.LeftParenthesis != m_currentToken.Token)
-                    ReportError(JSError.NoLeftParenthesis);
+            }
+
+            expr = ParseExpression();
+
+            if (m_currentToken.IsNot(JSToken.RightParenthesis))
+            {
+                ReportError(JSError.NoRightParenthesis);
+            }
+            else
+            {
                 GetNextToken();
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_SwitchNoSkipTokenSet);
-                try
+            }
+
+            if (m_currentToken.IsNot(JSToken.LeftCurly))
+            {
+                ReportError(JSError.NoLeftCurly);
+            }
+            else
+            {
+                braceOnNewLine = m_foundEndOfLine;
+                braceContext = m_currentToken.Clone();
+                GetNextToken();
+            }
+
+            // parse the switch body
+            cases = new AstNodeList(CurrentPositionContext);
+            bool defaultStatement = false;
+            while (m_currentToken.IsNot(JSToken.RightCurly))
+            {
+                SwitchCase caseClause = null;
+                AstNode caseValue = null;
+                var caseCtx = m_currentToken.Clone();
+                Context colonContext = null;
+                if (m_currentToken.Is(JSToken.Case))
                 {
-                    expr = ParseExpression();
-
-                    if (JSToken.RightParenthesis != m_currentToken.Token)
-                    {
-                        ReportError(JSError.NoRightParenthesis);
-                    }
-
+                    // get the case
                     GetNextToken();
-                    if (JSToken.LeftCurly != m_currentToken.Token)
-                    {
-                        ReportError(JSError.NoLeftCurly);
-                    }
-
-                    braceOnNewLine = m_foundEndOfLine;
-                    braceContext = m_currentToken.Clone();
-                    GetNextToken();
-
+                    caseValue = ParseExpression();
                 }
-                catch (RecoveryTokenException exc)
+                else if (m_currentToken.Is(JSToken.Default))
                 {
-                    if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) == -1
-                          && IndexOfToken(NoSkipTokenSet.s_SwitchNoSkipTokenSet, exc) == -1)
+                    // get the default
+                    if (defaultStatement)
                     {
-                        // give up
-                        exc._partiallyComputedNode = null;
-                        throw;
+                        // we report an error but we still accept the default
+                        ReportError(JSError.DupDefault);
                     }
                     else
                     {
-                        if (exc._partiallyComputedNode == null)
-                            expr = new ConstantWrapper(true, PrimitiveType.Boolean, CurrentPositionContext(), this);
-                        else
-                            expr = exc._partiallyComputedNode;
-
-                        if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) != -1)
-                        {
-                            if (exc._token == JSToken.RightParenthesis)
-                                GetNextToken();
-
-                            if (JSToken.LeftCurly != m_currentToken.Token)
-                            {
-                                ReportError(JSError.NoLeftCurly);
-                            }
-                            braceOnNewLine = m_foundEndOfLine;
-                            braceContext = m_currentToken.Clone();
-                            GetNextToken();
-                        }
-
+                        defaultStatement = true;
                     }
+                    GetNextToken();
                 }
-                finally
+                else
                 {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_SwitchNoSkipTokenSet);
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
+                    // This is an error, there is no case or default. Assume a default was missing and keep going
+                    defaultStatement = true;
+                    ReportError(JSError.BadSwitch);
                 }
 
-                // parse the switch body
-                cases = new AstNodeList(CurrentPositionContext(), this);
-                bool defaultStatement = false;
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockNoSkipTokenSet);
-                try
+                if (m_currentToken.IsNot(JSToken.Colon))
                 {
-                    while (JSToken.RightCurly != m_currentToken.Token)
+                    ReportError(JSError.NoColon);
+                }
+                else
+                {
+                    colonContext = m_currentToken.Clone();
+                    GetNextToken();
+                }
+
+                // read the statements inside the case or default
+                var statements = new Block(m_currentToken.Clone());
+                while (m_currentToken.IsNotAny(JSToken.RightCurly, JSToken.Case, JSToken.Default, JSToken.EndOfFile))
+                {
+                    // parse a Statement, not a SourceElement
+                    statements.Append(ParseStatement(false));
+                }
+
+                caseCtx.UpdateWith(statements.Context);
+                caseClause = new SwitchCase(caseCtx)
                     {
-                        SwitchCase caseClause = null;
-                        AstNode caseValue = null;
-                        var caseCtx = m_currentToken.Clone();
-                        Context colonContext = null;
-                        m_noSkipTokenSet.Add(NoSkipTokenSet.s_CaseNoSkipTokenSet);
-                        try
-                        {
-                            if (JSToken.Case == m_currentToken.Token)
-                            {
-                                // get the case
-                                GetNextToken();
-                                caseValue = ParseExpression();
-                            }
-                            else if (JSToken.Default == m_currentToken.Token)
-                            {
-                                // get the default
-                                if (defaultStatement)
-                                {
-                                    // we report an error but we still accept the default
-                                    ReportError(JSError.DupDefault, true);
-                                }
-                                else
-                                {
-                                    defaultStatement = true;
-                                }
-                                GetNextToken();
-                            }
-                            else
-                            {
-                                // This is an error, there is no case or default. Assume a default was missing and keep going
-                                defaultStatement = true;
-                                ReportError(JSError.BadSwitch);
-                            }
-
-                            if (JSToken.Colon != m_currentToken.Token)
-                            {
-                                ReportError(JSError.NoColon);
-                            }
-                            else
-                            {
-                                colonContext = m_currentToken.Clone();
-                            }
-
-                            // read the statements inside the case or default
-                            GetNextToken();
-                        }
-                        catch (RecoveryTokenException exc)
-                        {
-                            // right now we can only get here for the 'case' statement
-                            if (IndexOfToken(NoSkipTokenSet.s_CaseNoSkipTokenSet, exc) == -1)
-                            {
-                                // ignore the current case or default
-                                exc._partiallyComputedNode = null;
-                                throw;
-                            }
-                            else
-                            {
-                                caseValue = exc._partiallyComputedNode;
-
-                                if (exc._token == JSToken.Colon)
-                                {
-                                    GetNextToken();
-                                }
-                            }
-                        }
-                        finally
-                        {
-                            m_noSkipTokenSet.Remove(NoSkipTokenSet.s_CaseNoSkipTokenSet);
-                        }
-
-                        m_blockType.Add(BlockType.Block);
-                        try
-                        {
-                            var statements = new Block(m_currentToken.Clone(), this);
-                            m_noSkipTokenSet.Add(NoSkipTokenSet.s_SwitchNoSkipTokenSet);
-                            m_noSkipTokenSet.Add(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
-                            try
-                            {
-                                while (JSToken.RightCurly != m_currentToken.Token && JSToken.Case != m_currentToken.Token && JSToken.Default != m_currentToken.Token)
-                                {
-                                    try
-                                    {
-                                        // parse a Statement, not a SourceElement
-                                        statements.Append(ParseStatement(false));
-                                    }
-                                    catch (RecoveryTokenException exc)
-                                    {
-                                        if (exc._partiallyComputedNode != null)
-                                        {
-                                            statements.Append(exc._partiallyComputedNode);
-                                            exc._partiallyComputedNode = null;
-                                        }
-
-                                        if (IndexOfToken(NoSkipTokenSet.s_StartStatementNoSkipTokenSet, exc) == -1)
-                                        {
-                                            throw;
-                                        }
-                                    }
-                                }
-                            }
-                            catch (RecoveryTokenException exc)
-                            {
-                                if (IndexOfToken(NoSkipTokenSet.s_SwitchNoSkipTokenSet, exc) == -1)
-                                {
-                                    caseClause = new SwitchCase(caseCtx, this)
-                                        {
-                                            CaseValue = caseValue,
-                                            ColonContext = colonContext,
-                                            Statements = statements
-                                        };
-                                    cases.Append(caseClause);
-                                    throw;
-                                }
-                            }
-                            finally
-                            {
-                                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
-                                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_SwitchNoSkipTokenSet);
-                            }
-
-                            caseCtx.UpdateWith(statements.Context);
-                            caseClause = new SwitchCase(caseCtx, this)
-                                {
-                                    CaseValue = caseValue,
-                                    ColonContext = colonContext,
-                                    Statements = statements
-                                };
-                            cases.Append(caseClause);
-                        }
-                        finally
-                        {
-                            m_blockType.RemoveAt(m_blockType.Count - 1);
-                        }
-                    }
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (IndexOfToken(NoSkipTokenSet.s_BlockNoSkipTokenSet, exc) == -1)
-                    {
-                        //save what you can a rethrow
-                        switchCtx.UpdateWith(CurrentPositionContext());
-                        exc._partiallyComputedNode = new Switch(switchCtx, this)
-                            {
-                                Expression = expr,
-                                BraceContext = braceContext,
-                                Cases = cases,
-                                BraceOnNewLine = braceOnNewLine
-                            };
-                        throw;
-                    }
-                }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockNoSkipTokenSet);
-                }
-                switchCtx.UpdateWith(m_currentToken);
-                GetNextToken();
-            }
-            finally
-            {
-                m_blockType.RemoveAt(m_blockType.Count - 1);
+                        CaseValue = caseValue,
+                        ColonContext = colonContext,
+                        Statements = statements
+                    };
+                cases.Append(caseClause);
             }
 
-            return new Switch(switchCtx, this)
+            switchCtx.UpdateWith(m_currentToken);
+            GetNextToken();
+
+            return new Switch(switchCtx)
                 {
                     Expression = expr,
                     BraceContext = braceContext,
@@ -2926,57 +2182,26 @@ namespace Microsoft.Ajax.Utilities
         //---------------------------------------------------------------------------------------
         private AstNode ParseThrowStatement()
         {
-            var throwNode = new ThrowNode(m_currentToken.Clone(), this);
+            var throwNode = new ThrowNode(m_currentToken.Clone());
             GetNextToken();
 
+            // cannot have a line break between "throw" and it's expression
             if (!m_foundEndOfLine)
             {
-                if (JSToken.Semicolon != m_currentToken.Token)
+                if (m_currentToken.IsNot(JSToken.Semicolon))
                 {
-                    m_noSkipTokenSet.Add(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet);
-                    try
+                    throwNode.Operand = ParseExpression();
+                    if (throwNode.Operand != null)
                     {
-                        throwNode.Operand = ParseExpression();
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        throwNode.Operand = exc._partiallyComputedNode;
-                        if (IndexOfToken(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet, exc) == -1)
-                        {
-                            exc._partiallyComputedNode = throwNode;
-                            throw;
-                        }
-                    }
-                    finally
-                    {
-                        if (throwNode.Operand != null)
-                        {
-                            throwNode.UpdateWith(throwNode.Operand.Context);
-                        }
-
-                        m_noSkipTokenSet.Remove(NoSkipTokenSet.s_EndOfStatementNoSkipTokenSet);
+                        throwNode.UpdateWith(throwNode.Operand.Context);
                     }
                 }
 
-                if (m_currentToken.Token == JSToken.Semicolon)
-                {
-                    throwNode.TerminatingContext = m_currentToken.Clone();
-                    GetNextToken();
-                }
-                else if (m_foundEndOfLine || m_currentToken.Token == JSToken.RightCurly || m_currentToken.Token == JSToken.EndOfFile)
-                {
-                    // semicolon insertion rules
-                    // a right-curly or an end of line is something we don't WANT to throw a warning for. 
-                    // Just too common and doesn't really warrant a warning (in my opinion)
-                    if (JSToken.RightCurly != m_currentToken.Token && JSToken.EndOfFile != m_currentToken.Token)
-                    {
-                        ReportError(JSError.SemicolonInsertion, throwNode.Context.IfNotNull(c => c.FlattenToEnd()), true);
-                    }
-                }
-                else
-                {
-                    ReportError(JSError.NoSemicolon, false);
-                }
+                ExpectSemicolon(throwNode);
+            }
+            else
+            {
+                ReportError(JSError.SemicolonInsertion, throwNode.Context.FlattenToEnd());
             }
 
             return throwNode;
@@ -2998,213 +2223,492 @@ namespace Microsoft.Ajax.Utilities
         private AstNode ParseTryStatement()
         {
             Context tryCtx = m_currentToken.Clone();
-            Context catchContext = null;
-            Context finallyContext = null;
             Block body = null;
-            Context idContext = null;
-            Block handler = null;
-            Block finally_block = null;
-            RecoveryTokenException excInFinally = null;
-            m_blockType.Add(BlockType.Block);
-            try
+            Context catchContext = null;
+            ParameterDeclaration catchParameter = null;
+            Block catchBlock = null;
+            Context finallyContext = null;
+            Block finallyBlock = null;
+
+            bool catchOrFinally = false;
+            GetNextToken();
+            if (m_currentToken.IsNot(JSToken.LeftCurly))
             {
-                bool catchOrFinally = false;
+                ReportError(JSError.NoLeftCurly);
+            }
+
+            body = ParseBlock();
+
+            if (m_currentToken.Is(JSToken.Catch))
+            {
+                catchOrFinally = true;
+                catchContext = m_currentToken.Clone();
                 GetNextToken();
-                if (JSToken.LeftCurly != m_currentToken.Token)
+                if (m_currentToken.IsNot(JSToken.LeftParenthesis))
+                {
+                    ReportError(JSError.NoLeftParenthesis);
+                }
+                else
+                {
+                    GetNextToken();
+                }
+
+                var catchBinding = ParseBinding();
+                if (catchBinding == null)
+                {
+                    ReportError(JSError.NoBinding);
+                }
+                else
+                {
+                    catchParameter = new ParameterDeclaration(catchBinding.Context.Clone())
+                    {
+                        Binding = catchBinding
+                    };
+                }
+
+                if (m_currentToken.IsNot(JSToken.RightParenthesis))
+                {
+                    ReportError(JSError.NoRightParenthesis);
+                }
+                else
+                {
+                    GetNextToken();
+                }
+
+                if (m_currentToken.IsNot(JSToken.LeftCurly))
                 {
                     ReportError(JSError.NoLeftCurly);
                 }
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_NoTrySkipTokenSet);
-                try
+
+                // parse the block
+                catchBlock = ParseBlock();
+
+                tryCtx.UpdateWith(catchBlock.Context);
+            }
+
+            if (m_currentToken.Is(JSToken.Finally))
+            {
+                catchOrFinally = true;
+                finallyContext = m_currentToken.Clone();
+                GetNextToken();
+
+                if (m_currentToken.IsNot(JSToken.LeftCurly))
+                {
+                    ReportError(JSError.NoLeftCurly);
+                }
+
+                finallyBlock = ParseBlock();
+                tryCtx.UpdateWith(finallyBlock.Context);
+            }
+
+            if (!catchOrFinally)
+            {
+                ReportError(JSError.NoCatch);
+            }
+
+            return new TryNode(tryCtx)
+                {
+                    TryBlock = body,
+                    CatchContext = catchContext,
+                    CatchParameter = catchParameter,
+                    CatchBlock = catchBlock,
+                    FinallyContext = finallyContext,
+                    FinallyBlock = finallyBlock
+                };
+        }
+
+        private AstNode ParseModule()
+        {
+            // we know we're parsing an ES6 module
+            ParsedVersion = ScriptVersion.EcmaScript6;
+            var context = m_currentToken.Clone();
+            GetNextToken();
+
+            string moduleName = null;
+            Context moduleContext = null;
+            Block body = null;
+            BindingIdentifier binding = null;
+            Context fromContext = null;
+            if (m_currentToken.Is(JSToken.StringLiteral))
+            {
+                if (m_foundEndOfLine)
+                {
+                    // throw an error, but keep on parsing
+                    ReportError(JSError.NewLineNotAllowed, null, true);
+                }
+
+                moduleName = m_scanner.StringLiteralValue;
+                moduleContext = m_currentToken.Clone();
+                context.UpdateWith(moduleContext);
+                GetNextToken();
+
+                if (m_currentToken.IsNot(JSToken.LeftCurly))
+                {
+                    ReportError(JSError.NoLeftCurly);
+                }
+                else
                 {
                     body = ParseBlock();
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (IndexOfToken(NoSkipTokenSet.s_NoTrySkipTokenSet, exc) == -1)
+                    if (body != null)
                     {
-                        // do nothing and just return the containing block, if any
-                        throw;
-                    }
-                    else
-                    {
-                        body = exc._partiallyComputedNode as Block;
-                        if (body == null)
-                        {
-                            body = new Block(exc._partiallyComputedNode.Context, this);
-                            body.Append(exc._partiallyComputedNode);
-                        }
+                        context.UpdateWith(body.Context);
+                        body.IsModule = true;
                     }
                 }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_NoTrySkipTokenSet);
-                }
-                if (JSToken.Catch == m_currentToken.Token)
-                {
-                    m_noSkipTokenSet.Add(NoSkipTokenSet.s_NoTrySkipTokenSet);
-                    try
-                    {
-                        catchOrFinally = true;
-                        catchContext = m_currentToken.Clone();
-                        GetNextToken();
-                        if (JSToken.LeftParenthesis != m_currentToken.Token)
-                        {
-                            ReportError(JSError.NoLeftParenthesis);
-                        }
+            }
+            else if (m_currentToken.Is(JSToken.Identifier) || JSKeyword.CanBeIdentifier(m_currentToken.Token) != null)
+            {
+                binding = (BindingIdentifier)ParseBinding();
+                context.UpdateWith(binding.Context);
 
+                if (m_currentToken.Is("from"))
+                {
+                    fromContext = m_currentToken.Clone();
+                    context.UpdateWith(fromContext);
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoExpectedFrom);
+                }
+
+                if (m_currentToken.Is(JSToken.StringLiteral))
+                {
+                    moduleName = m_scanner.StringLiteralValue;
+                    moduleContext = m_currentToken.Clone();
+                    context.UpdateWith(moduleContext);
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoStringLiteral);
+                }
+            }
+            else
+            {
+                ReportError(JSError.NoIdentifier);
+            }
+
+            var moduleDecl = new ModuleDeclaration(context)
+                {
+                    ModuleName = moduleName,
+                    ModuleContext = moduleContext,
+                    Body = body,
+                    Binding = binding,
+                    FromContext = fromContext
+                };
+
+            if (binding != null)
+            {
+                ExpectSemicolon(moduleDecl);
+            }
+
+            return moduleDecl;
+        }
+
+        private AstNode ParseExport()
+        {
+            // we know we're parsing an ES6 export
+            ParsedVersion = ScriptVersion.EcmaScript6;
+            var exportNode = new ExportNode(m_currentToken.Clone())
+                {
+                    KeywordContext = m_currentToken.Clone(),
+                };
+            GetNextToken();
+            if (m_currentToken.IsOne(JSToken.Var, JSToken.Const, JSToken.Let, JSToken.Function, JSToken.Class))
+            {
+                // export var/const/let/funcdecl/classdecl
+                var declaration = ParseStatement(true, true);
+                if (declaration != null)
+                {
+                    exportNode.Append(declaration);
+                }
+                else
+                {
+                    // this shouldn't happen -- we already had the right token, so why didn't it parse???
+                    // we probably already output another error, but throw a syntax error here, just in case.
+                    ReportError(JSError.SyntaxError);
+                }
+            }
+            else if (m_currentToken.Is(JSToken.Default))
+            {
+                // export default assignmentexpression ;
+                exportNode.IsDefault = true;
+                exportNode.DefaultContext = m_currentToken.Clone();
+                exportNode.Context.UpdateWith(m_currentToken);
+                GetNextToken();
+
+                var expression = ParseExpression(true);
+                if (expression != null)
+                {
+                    exportNode.Append(expression);
+                }
+                else
+                {
+                    ReportError(JSError.ExpressionExpected);
+                }
+
+                ExpectSemicolon(exportNode);
+            }
+            else 
+            {
+                if (m_currentToken.Is(JSToken.Identifier) || JSKeyword.CanBeIdentifier(m_currentToken.Token) != null)
+                {
+                    // export identifier ;
+                    var lookup = new Lookup(m_currentToken.Clone())
+                    {
+                        Name = m_scanner.Identifier
+                    };
+                    exportNode.Append(lookup);
+                    GetNextToken();
+                } 
+                else if (m_currentToken.Is(JSToken.Multiply))
+                {
+                    // export * (from "module")?
+                    exportNode.OpenContext = m_currentToken.Clone();
+                    exportNode.UpdateWith(exportNode.OpenContext);
+                    GetNextToken();
+                }
+                else if (m_currentToken.Is(JSToken.LeftCurly))
+                {
+                    // export { specifier (, specifier)* ,? } (from "module")?
+                    exportNode.OpenContext = m_currentToken.Clone();
+                    exportNode.UpdateWith(exportNode.OpenContext);
+
+                    do
+                    {
                         GetNextToken();
-                        if (JSToken.Identifier != m_currentToken.Token)
+                        if (m_currentToken.IsNot(JSToken.RightCurly))
                         {
-                            string identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
-                            if (null != identifier)
+                            string identifier = null;
+                            if (m_currentToken.Is(JSToken.Identifier) || (identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token)) != null)
                             {
-                                idContext = m_currentToken.Clone();
+                                var specifierContext = m_currentToken.Clone();
+                                var lookup = new Lookup(m_currentToken.Clone())
+                                    {
+                                        Name = identifier ?? m_scanner.Identifier
+                                    };
+                                GetNextToken();
+
+                                Context asContext = null;
+                                Context nameContext = null;
+                                string externalName = null;
+                                if (m_currentToken.Is("as"))
+                                {
+                                    asContext = m_currentToken.Clone();
+                                    specifierContext.UpdateWith(asContext);
+                                    GetNextToken();
+
+                                    externalName = m_scanner.Identifier;
+                                    if (externalName != null)
+                                    {
+                                        nameContext = m_currentToken.Clone();
+                                        specifierContext.UpdateWith(nameContext);
+                                        GetNextToken();
+                                    }
+                                    else
+                                    {
+                                        ReportError(JSError.NoIdentifier);
+                                    }
+                                }
+
+                                var specifier = new ImportExportSpecifier(specifierContext)
+                                    {
+                                        LocalIdentifier = lookup,
+                                        AsContext = asContext,
+                                        ExternalName = externalName,
+                                        NameContext = nameContext
+                                    };
+                                exportNode.Append(specifier);
+
+                                if (m_currentToken.Is(JSToken.Comma))
+                                {
+                                    specifier.TerminatingContext = m_currentToken.Clone();
+                                }
                             }
                             else
                             {
                                 ReportError(JSError.NoIdentifier);
                             }
                         }
-                        else
-                        {
-                            idContext = m_currentToken.Clone();
-                        }
+                    }
+                    while (m_currentToken.Is(JSToken.Comma));
 
+                    if (m_currentToken.Is(JSToken.RightCurly))
+                    {
+                        exportNode.CloseContext = m_currentToken.Clone();
+                        exportNode.UpdateWith(exportNode.CloseContext);
                         GetNextToken();
-                        m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                        try
+                    }
+                    else
+                    {
+                        ReportError(JSError.NoRightCurly);
+                    }
+                }
+                else
+                {
+                    ReportError(JSError.NoSpecifierSet);
+                }
+
+                if (m_currentToken.Is("from"))
+                {
+                    // re-exporting from another module.
+                    exportNode.FromContext = m_currentToken.Clone();
+                    exportNode.UpdateWith(exportNode.FromContext);
+                    GetNextToken();
+
+                    if (m_currentToken.Is(JSToken.StringLiteral))
+                    {
+                        exportNode.ModuleContext = m_currentToken.Clone();
+                        exportNode.UpdateWith(exportNode.ModuleContext);
+                        exportNode.ModuleName = m_scanner.StringLiteralValue;
+                        GetNextToken();
+                    }
+                    else
+                    {
+                        ReportError(JSError.NoStringLiteral);
+                    }
+                }
+
+                ExpectSemicolon(exportNode);
+            }
+
+            return exportNode;
+        }
+
+        private AstNode ParseImport()
+        {
+            // we know we're parsing an ES6 import
+            ParsedVersion = ScriptVersion.EcmaScript6;
+            var importNode = new ImportNode(m_currentToken.Clone())
+                {
+                    KeywordContext = m_currentToken.Clone(),
+                };
+            GetNextToken();
+            if (m_currentToken.Is(JSToken.StringLiteral))
+            {
+                // import "module" ;
+                importNode.ModuleName = m_scanner.StringLiteralValue;
+                importNode.ModuleContext = m_currentToken.Clone();
+                GetNextToken();
+            }
+            else
+            {
+                if (m_currentToken.Is(JSToken.LeftCurly))
+                {
+                    // import { specifier (, specifier)* ,? } from "module"
+                    importNode.OpenContext = m_currentToken.Clone();
+                    importNode.UpdateWith(importNode.OpenContext);
+
+                    do
+                    {
+                        GetNextToken();
+                        if (m_currentToken.IsNot(JSToken.RightCurly))
                         {
-                            if (JSToken.RightParenthesis != m_currentToken.Token)
+                            var externalName = m_scanner.Identifier;
+                            if (externalName != null)
                             {
-                                ReportError(JSError.NoRightParenthesis);
-                            }
-                            GetNextToken();
-                        }
-                        catch (RecoveryTokenException exc)
-                        {
-                            if (IndexOfToken(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet, exc) == -1)
-                            {
-                                exc._partiallyComputedNode = null;
-                                // rethrow
-                                throw;
+                                var nameContext = m_currentToken.Clone();
+                                var specifierContext = nameContext.Clone();
+                                GetNextToken();
+
+                                Context asContext = null;
+                                AstNode localIdentifier = null;
+                                if (m_currentToken.Is("as"))
+                                {
+                                    asContext = m_currentToken.Clone();
+                                    GetNextToken();
+
+                                    if (m_currentToken.Is(JSToken.Identifier) || JSKeyword.CanBeIdentifier(m_currentToken.Token) != null)
+                                    {
+                                        localIdentifier = ParseBinding();
+                                    }
+                                    else
+                                    {
+                                        ReportError(JSError.NoIdentifier);
+                                    }
+                                }
+                                else
+                                {
+                                    // the external name is also the local binding
+                                    localIdentifier = new BindingIdentifier(nameContext)
+                                        {
+                                            Name = externalName
+                                        };
+                                    externalName = null;
+                                    nameContext = null;
+                                }
+
+                                var specifier = new ImportExportSpecifier(specifierContext)
+                                {
+                                    ExternalName = externalName,
+                                    NameContext = nameContext,
+                                    AsContext = asContext,
+                                    LocalIdentifier = localIdentifier,
+                                };
+                                importNode.Append(specifier);
+
+                                if (m_currentToken.Is(JSToken.Comma))
+                                {
+                                    importNode.TerminatingContext = m_currentToken.Clone();
+                                }
                             }
                             else
                             {
-                                if (m_currentToken.Token == JSToken.RightParenthesis)
-                                {
-                                    GetNextToken();
-                                }
+                                ReportError(JSError.NoIdentifier);
                             }
                         }
-                        finally
-                        {
-                            m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockConditionNoSkipTokenSet);
-                        }
-
-                        if (JSToken.LeftCurly != m_currentToken.Token)
-                        {
-                            ReportError(JSError.NoLeftCurly);
-                        }
-
-                        // parse the block
-                        handler = ParseBlock();
-
-                        tryCtx.UpdateWith(handler.Context);
                     }
-                    catch (RecoveryTokenException exc)
-                    {
-                        if (exc._partiallyComputedNode == null)
-                        {
-                            handler = new Block(CurrentPositionContext(), this);
-                        }
-                        else
-                        {
-                            handler = exc._partiallyComputedNode as Block;
-                            if (handler == null)
-                            {
-                                handler = new Block(exc._partiallyComputedNode.Context, this);
-                                handler.Append(exc._partiallyComputedNode);
-                            }
-                        }
-                        if (IndexOfToken(NoSkipTokenSet.s_NoTrySkipTokenSet, exc) == -1)
-                        {
-                            throw;
-                        }
-                    }
-                    finally
-                    {
-                        m_noSkipTokenSet.Remove(NoSkipTokenSet.s_NoTrySkipTokenSet);
-                    }
-                }
+                    while (m_currentToken.Is(JSToken.Comma));
 
-                try
-                {
-                    if (JSToken.Finally == m_currentToken.Token)
+                    if (m_currentToken.Is(JSToken.RightCurly))
                     {
-                        finallyContext = m_currentToken.Clone();
+                        importNode.CloseContext = m_currentToken.Clone();
+                        importNode.UpdateWith(importNode.CloseContext);
                         GetNextToken();
-                        m_blockType.Add(BlockType.Finally);
-                        try
-                        {
-                            finally_block = ParseBlock();
-                            catchOrFinally = true;
-                        }
-                        finally
-                        {
-                            m_blockType.RemoveAt(m_blockType.Count - 1);
-                        }
-                        tryCtx.UpdateWith(finally_block.Context);
+                    }
+                    else
+                    {
+                        ReportError(JSError.NoRightCurly);
                     }
                 }
-                catch (RecoveryTokenException exc)
+                else if (m_currentToken.Is(JSToken.Identifier) || JSKeyword.CanBeIdentifier(m_currentToken.Token) != null)
                 {
-                    excInFinally = exc; // thrown later so we can execute code below
+                    // import identifier from "module"
+                    importNode.Append(ParseBinding());
                 }
 
-                if (!catchOrFinally)
+                if (m_currentToken.Is("from"))
                 {
-                    ReportError(JSError.NoCatch, true);
-                    finally_block = new Block(CurrentPositionContext(), this); // make a dummy empty block
+                    importNode.FromContext = m_currentToken.Clone();
+                    importNode.UpdateWith(importNode.FromContext);
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoExpectedFrom);
+                }
+
+                if (m_currentToken.Is(JSToken.StringLiteral))
+                {
+                    importNode.ModuleName = m_scanner.StringLiteralValue;
+                    importNode.ModuleContext = m_currentToken.Clone();
+                    importNode.UpdateWith(importNode.ModuleContext);
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoStringLiteral);
                 }
             }
-            finally
-            {
-                m_blockType.RemoveAt(m_blockType.Count - 1);
-            }
 
-            ParameterDeclaration catchParameter = null;
-            if (idContext != null)
-            {
-                catchParameter = new ParameterDeclaration(idContext, this)
-                    {
-                        Name = idContext.Code
-                    };
-            }
-
-            if (excInFinally != null)
-            {
-                excInFinally._partiallyComputedNode = new TryNode(tryCtx, this)
-                    {
-                        TryBlock = body,
-                        CatchContext = catchContext,
-                        CatchParameter = catchParameter,
-                        CatchBlock = handler,
-                        FinallyContext = finallyContext,
-                        FinallyBlock = finally_block
-                    };
-                throw excInFinally;
-            }
-            return new TryNode(tryCtx, this)
-                {
-                    TryBlock = body,
-                    CatchContext = catchContext,
-                    CatchParameter = catchParameter,
-                    CatchBlock = handler,
-                    FinallyContext = finallyContext,
-                    FinallyBlock = finally_block
-                };
+            ExpectSemicolon(importNode);
+            return importNode;
         }
+
+        #endregion
+
+        #region ParseFunction
 
         //---------------------------------------------------------------------------------------
         // ParseFunction
@@ -3224,18 +2728,30 @@ namespace Microsoft.Ajax.Utilities
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private FunctionObject ParseFunction(FunctionType functionType, Context fncCtx)
         {
-            Lookup name = null;
+            BindingIdentifier name = null;
             AstNodeList formalParameters = null;
             Block body = null;
             bool inExpression = (functionType == FunctionType.Expression);
-            Context paramsContext = null;
 
-            GetNextToken();
+            // skip the opening token (function, get, or set).
+            // methods will start off with no prefix -- right to the name.
+            if (functionType != FunctionType.Method)
+            {
+                GetNextToken();
+            }
+
+            var isGenerator = m_currentToken.Is(JSToken.Multiply);
+            if (isGenerator)
+            {
+                // skip the asterisk
+                GetNextToken();
+                ParsedVersion = ScriptVersion.EcmaScript6;
+            }
 
             // get the function name or make an anonymous function if in expression "position"
-            if (JSToken.Identifier == m_currentToken.Token)
+            if (m_currentToken.Is(JSToken.Identifier))
             {
-                name = new Lookup(m_currentToken.Clone(), this)
+                name = new BindingIdentifier(m_currentToken.Clone())
                     {
                         Name = m_scanner.Identifier
                     };
@@ -3246,7 +2762,7 @@ namespace Microsoft.Ajax.Utilities
                 string identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
                 if (null != identifier)
                 {
-                    name = new Lookup(m_currentToken.Clone(), this)
+                    name = new BindingIdentifier(m_currentToken.Clone())
                         {
                             Name = identifier
                         };
@@ -3258,15 +2774,15 @@ namespace Microsoft.Ajax.Utilities
                     {
                         // if this isn't a function expression, then we need to throw an error because
                         // function DECLARATIONS always need a valid identifier name
-                        ReportError(JSError.NoIdentifier, m_currentToken.Clone(), true);
+                        ReportError(JSError.NoIdentifier);
 
                         // BUT if the current token is a left paren, we don't want to use it as the name.
                         // (fix for issue #14152)
-                        if (m_currentToken.Token != JSToken.LeftParenthesis
-                            && m_currentToken.Token != JSToken.LeftCurly)
+                        if (m_currentToken.IsNot(JSToken.LeftParenthesis)
+                            && m_currentToken.IsNot(JSToken.LeftCurly))
                         {
                             identifier = m_currentToken.Code;
-                            name = new Lookup(CurrentPositionContext(), this)
+                            name = new BindingIdentifier(CurrentPositionContext)
                                 {
                                     Name = identifier
                                 };
@@ -3276,283 +2792,357 @@ namespace Microsoft.Ajax.Utilities
                 }
             }
 
-            // make a new state and save the old one
-            List<BlockType> blockType = m_blockType;
-            m_blockType = new List<BlockType>(16);
-            Dictionary<string, LabelInfo> labelTable = m_labelTable;
-            m_labelTable = new Dictionary<string, LabelInfo>();
+            if (m_currentToken.IsNot(JSToken.LeftParenthesis))
+            {
+                // we expect a left paren at this point for standard cross-browser support.
+                // BUT -- some versions of IE allow an object property expression to be a function name, like window.onclick. 
+                // we still want to throw the error, because it syntax errors on most browsers, but we still want to
+                // be able to parse it and return the intended results. 
+                // Skip to the open paren and use whatever is in-between as the function name. Doesn't matter that it's 
+                // an invalid identifier; it won't be accessible as a valid field anyway.
+                bool expandedIndentifier = false;
+                while (m_currentToken.IsNot(JSToken.LeftParenthesis)
+                    && m_currentToken.IsNot(JSToken.LeftCurly)
+                    && m_currentToken.IsNot(JSToken.Semicolon)
+                    && m_currentToken.IsNot(JSToken.EndOfFile))
+                {
+                    name.Context.UpdateWith(m_currentToken);
+                    GetNextToken();
+                    expandedIndentifier = true;
+                }
+
+                // if we actually expanded the identifier context, then we want to report that
+                // the function name needs to be an identifier. Otherwise we didn't expand the 
+                // name, so just report that we expected an open paren at this point.
+                if (expandedIndentifier)
+                {
+                    name.Name = name.Context.Code;
+                    name.Context.HandleError(JSError.FunctionNameMustBeIdentifier, false);
+                }
+                else
+                {
+                    ReportError(JSError.NoLeftParenthesis);
+                }
+            }
+
+            // get the formal parameters
+            formalParameters = ParseFormalParameters();
+            fncCtx.UpdateWith(formalParameters.IfNotNull(p => p.Context));
+
+            // read the function body of non-abstract functions.
+            if (m_currentToken.IsNot(JSToken.LeftCurly))
+            {
+                ReportError(JSError.NoLeftCurly);
+            }
 
             try
             {
-                // get the formal parameters
-                if (JSToken.LeftParenthesis != m_currentToken.Token)
-                {
-                    // we expect a left paren at this point for standard cross-browser support.
-                    // BUT -- some versions of IE allow an object property expression to be a function name, like window.onclick. 
-                    // we still want to throw the error, because it syntax errors on most browsers, but we still want to
-                    // be able to parse it and return the intended results. 
-                    // Skip to the open paren and use whatever is in-between as the function name. Doesn't matter that it's 
-                    // an invalid identifier; it won't be accessible as a valid field anyway.
-                    bool expandedIndentifier = false;
-                    while (m_currentToken.Token != JSToken.LeftParenthesis
-                        && m_currentToken.Token != JSToken.LeftCurly
-                        && m_currentToken.Token != JSToken.Semicolon
-                        && m_currentToken.Token != JSToken.EndOfFile)
-                    {
-                        name.Context.UpdateWith(m_currentToken);
-                        GetNextToken();
-                        expandedIndentifier = true;
-                    }
+                // parse the block locally to get the exact end of function
+                body = new Block(m_currentToken.Clone());
+                body.BraceOnNewLine = m_foundEndOfLine;
+                GetNextToken();
 
-                    // if we actually expanded the identifier context, then we want to report that
-                    // the function name needs to be an identifier. Otherwise we didn't expand the 
-                    // name, so just report that we expected an open paren at this point.
-                    if (expandedIndentifier)
+                // parse the function body statements
+                ParseFunctionBody(body);
+
+                if (m_currentToken.Is(JSToken.RightCurly))
+                {
+                    body.Context.UpdateWith(m_currentToken);
+                    GetNextToken();
+                }
+                else
+                {
+                    if (m_currentToken.Is(JSToken.EndOfFile))
                     {
-                        name.Name = name.Context.Code;
-                        name.Context.HandleError(JSError.FunctionNameMustBeIdentifier, false);
+                        fncCtx.HandleError(JSError.UnclosedFunction, true);
+                        ReportError(JSError.ErrorEndOfFile);
                     }
                     else
                     {
-                        ReportError(JSError.NoLeftParenthesis, true);
+                        ReportError(JSError.NoRightCurly);
                     }
                 }
 
-                if (m_currentToken.Token == JSToken.LeftParenthesis)
-                {
-                    // create the parameter list
-                    formalParameters = new AstNodeList(m_currentToken.Clone(), this);
-                    paramsContext = m_currentToken.Clone();
-
-                    // skip the open paren
-                    GetNextToken();
-
-                    // create the list of arguments and update the context
-                    while (JSToken.RightParenthesis != m_currentToken.Token)
-                    {
-                        String id = null;
-                        m_noSkipTokenSet.Add(NoSkipTokenSet.s_FunctionDeclNoSkipTokenSet);
-                        try
-                        {
-                            ParameterDeclaration paramDecl = null;
-                            if (JSToken.Identifier != m_currentToken.Token && (id = JSKeyword.CanBeIdentifier(m_currentToken.Token)) == null)
-                            {
-                                if (JSToken.LeftCurly == m_currentToken.Token)
-                                {
-                                    ReportError(JSError.NoRightParenthesis);
-                                    break;
-                                }
-                                else if (JSToken.Comma == m_currentToken.Token)
-                                {
-                                    // We're missing an argument (or previous argument was malformed and
-                                    // we skipped to the comma.)  Keep trying to parse the argument list --
-                                    // we will skip the comma below.
-                                    ReportError(JSError.SyntaxError, true);
-                                }
-                                else
-                                {
-                                    ReportError(JSError.SyntaxError, true);
-                                    SkipTokensAndThrow();
-                                }
-                            }
-                            else
-                            {
-                                if (null == id)
-                                {
-                                    id = m_scanner.Identifier;
-                                }
-
-                                paramDecl = new ParameterDeclaration(m_currentToken.Clone(), this)
-                                    {
-                                        Name = id,
-                                        Position = formalParameters.Count
-                                    };
-                                formalParameters.Append(paramDecl);
-                                GetNextToken();
-                            }
-
-                            // got an arg, it should be either a ',' or ')'
-                            if (JSToken.RightParenthesis == m_currentToken.Token)
-                            {
-                                break;
-                            }
-                            else if (JSToken.Comma == m_currentToken.Token)
-                            {
-                                // append the comma context as the terminator for the parameter
-                                paramDecl.IfNotNull(p => p.TerminatingContext = m_currentToken.Clone());
-                            }
-                            else
-                            {
-                                // deal with error in some "intelligent" way
-                                if (JSToken.LeftCurly == m_currentToken.Token)
-                                {
-                                    ReportError(JSError.NoRightParenthesis);
-                                    break;
-                                }
-                                else
-                                {
-                                    if (JSToken.Identifier == m_currentToken.Token)
-                                    {
-                                        // it's possible that the guy was writing the type in C/C++ style (i.e. int x)
-                                        ReportError(JSError.NoCommaOrTypeDefinitionError);
-                                    }
-                                    else
-                                        ReportError(JSError.NoComma);
-                                }
-                            }
-
-                            GetNextToken();
-                        }
-                        catch (RecoveryTokenException exc)
-                        {
-                            if (IndexOfToken(NoSkipTokenSet.s_FunctionDeclNoSkipTokenSet, exc) == -1)
-                                throw;
-                        }
-                        finally
-                        {
-                            m_noSkipTokenSet.Remove(NoSkipTokenSet.s_FunctionDeclNoSkipTokenSet);
-                        }
-                    }
-
-                    fncCtx.UpdateWith(m_currentToken);
-                    GetNextToken();
-                }
-
-                // read the function body of non-abstract functions.
-                if (JSToken.LeftCurly != m_currentToken.Token)
-                    ReportError(JSError.NoLeftCurly, true);
-
-                m_blockType.Add(BlockType.Block);
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_BlockNoSkipTokenSet);
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
-                try
-                {
-                    // parse the block locally to get the exact end of function
-                    body = new Block(m_currentToken.Clone(), this);
-                    body.BraceOnNewLine = m_foundEndOfLine;
-                    GetNextToken();
-
-                    var possibleDirectivePrologue = true;
-                    while (JSToken.RightCurly != m_currentToken.Token)
-                    {
-                        try
-                        {
-                            // function body's are SourceElements (Statements + FunctionDeclarations)
-                            var statement = ParseStatement(true);
-                            if (possibleDirectivePrologue)
-                            {
-                                var constantWrapper = statement as ConstantWrapper;
-                                if (constantWrapper != null && constantWrapper.PrimitiveType == PrimitiveType.String)
-                                {
-                                    // if it's already a directive prologues, we're good to go
-                                    if (!(constantWrapper is DirectivePrologue))
-                                    {
-                                        // make the statement a directive prologue instead of a constant wrapper
-                                        statement = new DirectivePrologue(constantWrapper.Value.ToString(), constantWrapper.Context, constantWrapper.Parser)
-                                            {
-                                                MayHaveIssues = constantWrapper.MayHaveIssues
-                                            };
-                                    }
-                                }
-                                else if (!m_newModule)
-                                {
-                                    // no longer considering constant wrappers
-                                    possibleDirectivePrologue = false;
-                                }
-                            }
-                            else if (m_newModule)
-                            {
-                                // we scanned into a new module -- we might find directive prologues again
-                                possibleDirectivePrologue = true;
-                            }
-
-                            // add it to the body
-                            body.Append(statement);
-                        }
-                        catch (RecoveryTokenException exc)
-                        {
-                            if (exc._partiallyComputedNode != null)
-                            {
-                                body.Append(exc._partiallyComputedNode);
-                            }
-                            if (IndexOfToken(NoSkipTokenSet.s_StartStatementNoSkipTokenSet, exc) == -1)
-                                throw;
-                        }
-                    }
-
-                    // make sure any important comments before the closing brace are kept
-                    AppendImportantComments(body);
-
-                    body.Context.UpdateWith(m_currentToken);
-                    fncCtx.UpdateWith(m_currentToken);
-                }
-                catch (EndOfStreamException)
-                {
-                    // if we get an EOF here, we never had a chance to find the closing curly-brace
-                    fncCtx.HandleError(JSError.UnclosedFunction, true);
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (IndexOfToken(NoSkipTokenSet.s_BlockNoSkipTokenSet, exc) == -1)
-                    {
-                        exc._partiallyComputedNode = new FunctionObject(fncCtx, this)
-                            {
-                                FunctionType = (inExpression ? FunctionType.Expression : FunctionType.Declaration),
-                                IdContext = name.IfNotNull(n => n.Context),
-                                Name = name.IfNotNull(n => n.Name),
-                                ParameterDeclarations = formalParameters,
-                                ParametersContext = paramsContext,
-                                Body = body
-                            };
-                        throw;
-                    }
-                }
-                finally
-                {
-                    m_blockType.RemoveAt(m_blockType.Count - 1);
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_StartStatementNoSkipTokenSet);
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BlockNoSkipTokenSet);
-                }
-
-                GetNextToken();
+                fncCtx.UpdateWith(body.Context);
             }
-            finally
+            catch (EndOfStreamException)
             {
-                // restore state
-                m_blockType = blockType;
-                m_labelTable = labelTable;
+                // if we get an EOF here, we never had a chance to find the closing curly-brace
+                fncCtx.HandleError(JSError.UnclosedFunction, true);
             }
 
-            return new FunctionObject(fncCtx, this)
+            return new FunctionObject(fncCtx)
                 {
                     FunctionType = functionType,
-                    IdContext = name.IfNotNull(n => n.Context),
-                    Name = name.IfNotNull(n => n.Name),
+                    Binding = name,
                     ParameterDeclarations = formalParameters,
-                    ParametersContext = paramsContext,
-                    Body = body
+                    Body = body,
+                    IsGenerator = isGenerator
                 };
         }
 
-        private void AppendImportantComments(Block block)
+        private void ParseFunctionBody(Block body)
         {
-            if (block != null)
+            var possibleDirectivePrologue = true;
+            while (m_currentToken.IsNot(JSToken.RightCurly)
+                && m_currentToken.IsNot(JSToken.EndOfFile))
             {
-                // make sure any important comments before the closing brace are kept
-                if (m_importantComments.Count > 0
-                    && m_settings.PreserveImportantComments
-                    && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
+                // function body's are SourceElements (Statements + FunctionDeclarations)
+                var statement = ParseStatement(true);
+                if (possibleDirectivePrologue)
                 {
-                    // we have important comments before the EOF. Add the comment(s) to the program.
-                    foreach (var importantComment in m_importantComments)
+                    var constantWrapper = statement as ConstantWrapper;
+                    if (constantWrapper != null && constantWrapper.PrimitiveType == PrimitiveType.String)
                     {
-                        block.Append(new ImportantComment(importantComment, this));
+                        // if it's already a directive prologues, we're good to go
+                        if (!(constantWrapper is DirectivePrologue))
+                        {
+                            // make the statement a directive prologue instead of a constant wrapper
+                            statement = new DirectivePrologue(constantWrapper.Value.ToString(), constantWrapper.Context)
+                            {
+                                MayHaveIssues = constantWrapper.MayHaveIssues
+                            };
+                        }
+                    }
+                    else if (!m_newModule)
+                    {
+                        // no longer considering constant wrappers
+                        possibleDirectivePrologue = false;
+                    }
+                }
+                else if (m_newModule)
+                {
+                    // we scanned into a new module -- we might find directive prologues again
+                    possibleDirectivePrologue = true;
+                }
+
+                // add it to the body
+                body.Append(statement);
+            }
+
+            // make sure any important comments before the closing brace are kept
+            AppendImportantComments(body);
+        }
+
+        private AstNodeList ParseFormalParameters()
+        {
+            AstNodeList formalParameters = null;
+            if (m_currentToken.Is(JSToken.LeftParenthesis))
+            {
+                // create the parameter list
+                formalParameters = new AstNodeList(m_currentToken.Clone());
+
+                // create the list of arguments and update the context
+                var token = JSToken.Comma;
+                while (token == JSToken.Comma)
+                {
+                    ParameterDeclaration paramDecl = null;
+                    GetNextToken();
+                    if (m_currentToken.IsNot(JSToken.RightParenthesis))
+                    {
+                        Context restContext = null;
+                        if (m_currentToken.Is(JSToken.RestSpread))
+                        {
+                            ParsedVersion = ScriptVersion.EcmaScript6;
+                            restContext = m_currentToken.Clone();
+                            GetNextToken();
+                        }
+
+                        var binding = ParseBinding();
+                        if (binding != null)
+                        {
+                            paramDecl = new ParameterDeclaration(binding.Context.Clone())
+                            {
+                                Binding = binding,
+                                Position = formalParameters.Count,
+                                HasRest = restContext != null,
+                                RestContext = restContext,
+                            };
+                            formalParameters.Append(paramDecl);
+                        }
+                        else
+                        {
+                            // We're missing an argument (or previous argument was malformed and
+                            // we skipped to the comma.)  Keep trying to parse the argument list --
+                            // we will skip the comma below.
+                            ReportError(JSError.NoBinding);
+                        }
+
+                        // see if we have an optional default value
+                        if (m_currentToken.Is(JSToken.Assign))
+                        {
+                            ParsedVersion = ScriptVersion.EcmaScript6;
+                            paramDecl.IfNotNull(p => p.AssignContext = m_currentToken.Clone());
+                            GetNextToken();
+
+                            // parse an assignment expression
+                            var initializer = ParseExpression(true);
+                            paramDecl.IfNotNull(p => p.Initializer = initializer);
+                        }
                     }
 
-                    m_importantComments.Clear();
+                    // by now we should have either a comma, which means we need to parse another parameter,
+                    // or a right-parentheses, which means we are done. Anything else and it's an error.
+                    token = m_currentToken.Token;
+                    if (token == JSToken.Comma)
+                    {
+                        // append the comma context as the terminator for the parameter
+                        paramDecl.IfNotNull(p => p.TerminatingContext = m_currentToken.Clone());
+                    }
+                    else if (token != JSToken.RightParenthesis)
+                    {
+                        ReportError(JSError.NoRightParenthesisOrComma);
+                    }
+                }
+
+                if (m_currentToken.Is(JSToken.RightParenthesis))
+                {
+                    formalParameters.UpdateWith(m_currentToken);
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoRightParenthesis);
                 }
             }
+
+            return formalParameters;
         }
+
+        private ClassNode ParseClassNode(ClassType classType)
+        {
+            ClassNode classNode = null;
+            var classContext = m_currentToken.Clone();
+            var context = classContext.Clone();
+            GetNextToken();
+
+            // [ or { will get parsed as a binding array/object, so we don't REALLY want to do that.
+            // besides, if '{' is right after class, then there is no name or heritage.
+            AstNode binding = null;
+            if (m_currentToken.IsNot(JSToken.LeftCurly) && m_currentToken.IsNot(JSToken.Extends))
+            {
+                binding = ParseBinding();
+            }
+
+            var bindingIdentifier = binding as BindingIdentifier;
+            if (bindingIdentifier == null && classType == ClassType.Declaration)
+            {
+                ReportError(JSError.NoIdentifier, binding.IfNotNull(b => b.Context));
+            }
+
+            Context extendsContext = null;
+            AstNode heritage = null;
+            Context openBrace = null;
+            Context closeBrace = null;
+            if (m_currentToken.Is(JSToken.Extends))
+            {
+                extendsContext = m_currentToken.Clone();
+                context.UpdateWith(extendsContext);
+                GetNextToken();
+
+                heritage = ParseExpression(true);
+                if (heritage != null)
+                {
+                    context.UpdateWith(heritage.Context);
+                }
+                else
+                {
+                    ReportError(JSError.ExpressionExpected);
+                }
+            }
+
+            AstNodeList elements = null;
+            if (m_currentToken.Is(JSToken.LeftCurly))
+            {
+                openBrace = m_currentToken.Clone();
+                context.UpdateWith(openBrace);
+                GetNextToken();
+
+                elements = new AstNodeList(m_currentToken.FlattenToStart());
+                while (m_currentToken.IsNot(JSToken.EndOfFile) && m_currentToken.IsNot(JSToken.RightCurly))
+                {
+                    if (m_currentToken.Is(JSToken.Semicolon))
+                    {
+                        // skip the semicolon
+                        GetNextToken();
+                    }
+                    else
+                    {
+                        var element = ParseClassElement();
+                        if (element != null)
+                        {
+                            elements.Append(element);
+                            context.UpdateWith(element.Context);
+                        }
+                        else
+                        {
+                            ReportError(JSError.ClassElementExpected);
+                        }
+                    }
+                }
+
+                if (m_currentToken.Is(JSToken.RightCurly))
+                {
+                    closeBrace = m_currentToken.Clone();
+                    context.UpdateWith(closeBrace);
+                    GetNextToken();
+                }
+                else
+                {
+                    ReportError(JSError.NoRightCurly);
+                }
+            }
+            else
+            {
+                ReportError(JSError.NoLeftCurly);
+            }
+
+            // create the class
+            classNode = new ClassNode(context)
+                {
+                    ClassType = classType,
+                    ClassContext = classContext,
+                    Binding = binding,
+                    ExtendsContext = extendsContext,
+                    Heritage = heritage,
+                    OpenBrace = openBrace,
+                    Elements = elements,
+                    CloseBrace = closeBrace,
+                };
+
+            return classNode;
+        }
+
+        private AstNode ParseClassElement()
+        {
+            // see if we're a static method
+            var staticContext = m_currentToken.Is(JSToken.Static)
+                ? m_currentToken.Clone()
+                : null;
+            if (staticContext != null)
+            {
+                GetNextToken();
+            }
+
+            // see if this is a getter/setter or a regular method
+            var funcType = m_currentToken.Is(JSToken.Get)
+                ? FunctionType.Getter
+                : m_currentToken.Is(JSToken.Set) ? FunctionType.Setter : FunctionType.Method;
+
+            // right now the ES6 spec just has method declarations.
+            var method = ParseFunction(funcType, m_currentToken.FlattenToStart());
+            if (method != null && staticContext != null)
+            {
+                method.IsStatic = true;
+                method.StaticContext = staticContext;
+            }
+
+            return method;
+        }
+
+        #endregion
+
+        #region ParseExpression
 
         //---------------------------------------------------------------------------------------
         // ParseExpression
@@ -3641,21 +3231,7 @@ namespace Microsoft.Ajax.Utilities
         //    UnaryExpression '/' MultiplicativeExpression |
         //    UnaryExpression '%' MultiplicativeExpression
         //---------------------------------------------------------------------------------------
-        private AstNode ParseExpression()
-        {
-            bool bAssign;
-            AstNode lhs = ParseUnaryExpression(out bAssign, false);
-            return ParseExpression(lhs, false, bAssign, JSToken.None);
-        }
-
-        private AstNode ParseExpression(bool single)
-        {
-            bool bAssign;
-            AstNode lhs = ParseUnaryExpression(out bAssign, false);
-            return ParseExpression(lhs, single, bAssign, JSToken.None);
-        }
-
-        private AstNode ParseExpression(bool single, JSToken inToken)
+        private AstNode ParseExpression(bool single = false, JSToken inToken = JSToken.None)
         {
             bool bAssign;
             AstNode lhs = ParseUnaryExpression(out bAssign, false);
@@ -3673,150 +3249,162 @@ namespace Microsoft.Ajax.Utilities
             termStack.Push(leftHandSide);
 
             AstNode expr = null;
-
-            try
+            for (; ; )
             {
-                for (; ; )
+                // if 'binary op' or 'conditional'
+                // if we are looking for a single expression, then also bail when we hit a comma
+                // inToken is a special case because of the for..in syntax. When ParseExpression is called from
+                // for, inToken = JSToken.In which excludes JSToken.In from the list of operators, otherwise
+                // inToken = JSToken.None which is always true if the first condition is true
+                if (JSScanner.IsProcessableOperator(m_currentToken.Token)
+                    && m_currentToken.IsNot(inToken)
+                    && (!single || m_currentToken.IsNot(JSToken.Comma)))
                 {
-                    // if 'binary op' or 'conditional'
-                    // if we are looking for a single expression, then also bail when we hit a comma
-                    // inToken is a special case because of the for..in syntax. When ParseExpression is called from
-                    // for, inToken = JSToken.In which excludes JSToken.In from the list of operators, otherwise
-                    // inToken = JSToken.None which is always true if the first condition is true
-                    if (JSScanner.IsProcessableOperator(m_currentToken.Token)
-                        && inToken != m_currentToken.Token
-                        && (!single || m_currentToken.Token != JSToken.Comma))
+                    // for the current token, get the operator precedence and whether it's a right-association operator
+                    var prec = JSScanner.GetOperatorPrecedence(m_currentToken);
+                    bool rightAssoc = JSScanner.IsRightAssociativeOperator(m_currentToken.Token);
+
+                    // while the current operator has lower precedence than the operator at the top of the stack
+                    // or it has the same precedence and it is left associative (that is, no 'assign op' or 'conditional')
+                    var stackPrec = JSScanner.GetOperatorPrecedence(opsStack.Peek());
+                    while (prec < stackPrec || prec == stackPrec && !rightAssoc)
                     {
-                        // for the current token, get the operator precedence and whether it's a right-association operator
-                        var prec = JSScanner.GetOperatorPrecedence(m_currentToken);
-                        bool rightAssoc = JSScanner.IsRightAssociativeOperator(m_currentToken.Token);
+                        // pop the top two elements off the stack along with the current operator, 
+                        // combine them, then push the results back onto the term stack
+                        AstNode operand2 = termStack.Pop();
+                        AstNode operand1 = termStack.Pop();
+                        expr = CreateExpressionNode(opsStack.Pop(), operand1, operand2);
+                        termStack.Push(expr);
 
-                        // while the current operator has lower precedence than the operator at the top of the stack
-                        // or it has the same precedence and it is left associative (that is, no 'assign op' or 'conditional')
-                        var stackPrec = JSScanner.GetOperatorPrecedence(opsStack.Peek());
-                        while (prec < stackPrec || prec == stackPrec && !rightAssoc)
+                        // get the precendence of the current item on the top of the op stack
+                        stackPrec = JSScanner.GetOperatorPrecedence(opsStack.Peek());
+                    }
+
+                    // now the current operator has higher precedence that every scanned operators on the stack, or
+                    // it has the same precedence as the one at the top of the stack and it is right associative
+                    // push operator and next term
+
+                    // but first: special case conditional '?:'
+                    if (m_currentToken.Is(JSToken.ConditionalIf))
+                    {
+                        // pop term stack
+                        AstNode condition = termStack.Pop();
+
+                        // if this is an assignment, throw a warning in case the developer
+                        // meant to use == instead of =
+                        // but no warning if the condition is wrapped in parens.
+                        var binOp = condition as BinaryOperator;
+                        if (binOp != null && binOp.OperatorToken == JSToken.Assign)
                         {
-                            // pop the top two elements off the stack along with the current operator, 
-                            // combine them, then push the results back onto the term stack
-                            AstNode operand2 = termStack.Pop();
-                            AstNode operand1 = termStack.Pop();
-                            expr = CreateExpressionNode(opsStack.Pop(), operand1, operand2);
-                            termStack.Push(expr);
-
-                            // get the precendence of the current item on the top of the op stack
-                            stackPrec = JSScanner.GetOperatorPrecedence(opsStack.Peek());
+                            condition.Context.HandleError(JSError.SuspectAssignment);
                         }
 
-                        // now the current operator has higher precedence that every scanned operators on the stack, or
-                        // it has the same precedence as the one at the top of the stack and it is right associative
-                        // push operator and next term
+                        var questionCtx = m_currentToken.Clone();
+                        GetNextToken();
 
-                        // but first: special case conditional '?:'
-                        if (JSToken.ConditionalIf == m_currentToken.Token)
+                        // get expr1 in logOrExpr ? expr1 : expr2
+                        AstNode operand1 = ParseExpression(true);
+
+                        Context colonCtx = null;
+                        if (m_currentToken.IsNot(JSToken.Colon))
                         {
-                            // pop term stack
-                            AstNode condition = termStack.Pop();
-
-                            // if this is an assignment, throw a warning in case the developer
-                            // meant to use == instead of =
-                            // but no warning if the condition is wrapped in parens.
-                            var binOp = condition as BinaryOperator;
-                            if (binOp != null && binOp.OperatorToken == JSToken.Assign)
-                            {
-                                condition.Context.HandleError(JSError.SuspectAssignment);
-                            }
-
-                            var questionCtx = m_currentToken.Clone();
-                            GetNextToken();
-
-                            // get expr1 in logOrExpr ? expr1 : expr2
-                            AstNode operand1 = ParseExpression(true);
-
-                            Context colonCtx = null;
-                            if (JSToken.Colon != m_currentToken.Token)
-                            {
-                                ReportError(JSError.NoColon);
-                            }
-                            else
-                            {
-                                colonCtx = m_currentToken.Clone();
-                            }
-
-                            GetNextToken();
-
-                            // get expr2 in logOrExpr ? expr1 : expr2
-                            AstNode operand2 = ParseExpression(true, inToken);
-
-                            expr = new Conditional(condition.Context.CombineWith(operand2.Context), this)
-                                {
-                                    Condition = condition,
-                                    QuestionContext = questionCtx,
-                                    TrueExpression = operand1,
-                                    ColonContext = colonCtx,
-                                    FalseExpression = operand2
-                                };
-                            termStack.Push(expr);
+                            ReportError(JSError.NoColon);
                         }
                         else
                         {
-                            if (JSScanner.IsAssignmentOperator(m_currentToken.Token))
-                            {
-                                if (!bCanAssign)
-                                {
-                                    ReportError(JSError.IllegalAssignment);
-                                    SkipTokensAndThrow();
-                                }
-                            }
-                            else
-                            {
-                                // if the operator is a comma, we can get another assign; otherwise we can't
-                                bCanAssign = (m_currentToken.Token == JSToken.Comma);
-                            }
-
-                            // push the operator onto the operators stack
-                            opsStack.Push(m_currentToken.Clone());
-
-                            // push new term
-                            GetNextToken();
-                            if (bCanAssign)
-                            {
-                                termStack.Push(ParseUnaryExpression(out bCanAssign, false));
-                            }
-                            else
-                            {
-                                bool dummy;
-                                termStack.Push(ParseUnaryExpression(out dummy, false));
-                            }
+                            colonCtx = m_currentToken.Clone();
                         }
+
+                        GetNextToken();
+
+                        // get expr2 in logOrExpr ? expr1 : expr2
+                        AstNode operand2 = ParseExpression(true, inToken);
+
+                        expr = new Conditional(condition.Context.CombineWith(operand2.Context))
+                            {
+                                Condition = condition,
+                                QuestionContext = questionCtx,
+                                TrueExpression = operand1,
+                                ColonContext = colonCtx,
+                                FalseExpression = operand2
+                            };
+                        termStack.Push(expr);
                     }
                     else
                     {
-                        // done with expression; go and unwind the stack of expressions/operators
-                        break; 
+                        if (JSScanner.IsAssignmentOperator(m_currentToken.Token))
+                        {
+                            if (!bCanAssign)
+                            {
+                                ReportError(JSError.IllegalAssignment);
+                            }
+                        }
+                        else
+                        {
+                            // if the operator is a comma, we can get another assign; otherwise we can't
+                            bCanAssign = (m_currentToken.Is(JSToken.Comma));
+                        }
+
+                        // push the operator onto the operators stack
+                        opsStack.Push(m_currentToken.Clone());
+
+                        // push new term
+                        GetNextToken();
+                        if (bCanAssign)
+                        {
+                            termStack.Push(ParseUnaryExpression(out bCanAssign, false));
+                        }
+                        else
+                        {
+                            bool dummy;
+                            termStack.Push(ParseUnaryExpression(out dummy, false));
+                        }
                     }
                 }
-
-                // there are still operators to be processed
-                while (opsStack.Peek() != null)
+                else
                 {
-                    // pop the top two term and the top operator, combine them into a new term,
-                    // and push the results back onto the term stacck
-                    AstNode operand2 = termStack.Pop();
-                    AstNode operand1 = termStack.Pop();
-                    expr = CreateExpressionNode(opsStack.Pop(), operand1, operand2);
-
-                    // push node onto the stack
-                    termStack.Push(expr);
+                    // done with expression; go and unwind the stack of expressions/operators.
+                    break;
                 }
+            }
 
-                Debug.Assert(termStack.Count == 1);
-                return termStack.Pop();
-            }
-            catch (RecoveryTokenException exc)
+            // there are still operators to be processed
+            while (opsStack.Peek() != null)
             {
-                exc._partiallyComputedNode = leftHandSide;
-                throw;
+                // pop the top two term and the top operator, combine them into a new term,
+                // and push the results back onto the term stacck
+                AstNode operand2 = termStack.Pop();
+                AstNode operand1 = termStack.Pop();
+                expr = CreateExpressionNode(opsStack.Pop(), operand1, operand2);
+
+                // push node onto the stack
+                termStack.Push(expr);
             }
+
+            Debug.Assert(termStack.Count == 1);
+
+            // see if the one remaining term is "yield". If so, that means we had a lone
+            // yield token -- it might be a Mozilla yield operator
+            var term = termStack.Pop();
+            if (term != null)
+            {
+                if (term.Context.Token == JSToken.Yield && term is Lookup)
+                {
+                    var expression = ParseExpression(true);
+                    if (expression != null)
+                    {
+                        // yield expression
+                        term = new UnaryOperator(term.Context.CombineWith(expression.Context))
+                            {
+                                OperatorToken = JSToken.Yield,
+                                OperatorContext = term.Context,
+                                Operand = expression
+                            };
+                    }
+                }
+            }
+
+            return term;
         }
 
         //---------------------------------------------------------------------------------------
@@ -3842,107 +3430,37 @@ namespace Microsoft.Ajax.Utilities
             Context exprCtx = null;
             AstNode expr = null;
 
-            TryItAgain:
+        TryItAgain:
             AstNode ast = null;
-            switch (m_currentToken.Token)
+            var opToken = m_currentToken.Token;
+            switch (opToken)
             {
+                case JSToken.RestSpread:
+                    // technically, we don't want rest operators ANYWHERE. But we need to handle them
+                    // here specifically for formal parameter lists for arrow functions. 
+                    // TODO: we want to error if we aren't immediately preceeded by a comma operator,
+                    // and if after parsing the next unary expression, we're aren't at a closing parenthesis.
+                    ParsedVersion = ScriptVersion.EcmaScript6;
+                    goto case JSToken.Void;
+
                 case JSToken.Void:
-                    exprCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    expr = ParseUnaryExpression(out dummy, false);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
-                        {
-                            Operand = expr,
-                            OperatorContext = exprCtx,
-                            OperatorToken = JSToken.Void
-                        };
-                    break;
                 case JSToken.TypeOf:
-                    exprCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    expr = ParseUnaryExpression(out dummy, false);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
-                        {
-                            Operand = expr,
-                            OperatorContext = exprCtx,
-                            OperatorToken = JSToken.TypeOf
-                        };
-                    break;
                 case JSToken.Plus:
-                    exprCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    expr = ParseUnaryExpression(out dummy, false);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
-                        {
-                            Operand = expr,
-                            OperatorContext = exprCtx,
-                            OperatorToken = JSToken.Plus
-                        };
-                    break;
                 case JSToken.Minus:
-                    exprCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    expr = ParseUnaryExpression(out dummy, true);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
-                        {
-                            Operand = expr,
-                            OperatorContext = exprCtx,
-                            OperatorToken = JSToken.Minus
-                        };
-                    break;
                 case JSToken.BitwiseNot:
-                    exprCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    expr = ParseUnaryExpression(out dummy, false);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
-                        {
-                            Operand = expr,
-                            OperatorContext = exprCtx,
-                            OperatorToken = JSToken.BitwiseNot
-                        };
-                    break;
                 case JSToken.LogicalNot:
-                    exprCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    expr = ParseUnaryExpression(out dummy, false);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
-                        {
-                            Operand = expr,
-                            OperatorContext = exprCtx,
-                            OperatorToken = JSToken.LogicalNot
-                        };
-                    break;
                 case JSToken.Delete:
-                    exprCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    expr = ParseUnaryExpression(out dummy, false);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
-                        {
-                            Operand = expr,
-                            OperatorContext = exprCtx,
-                            OperatorToken = JSToken.Delete
-                        };
-                    break;
                 case JSToken.Increment:
-                    exprCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    expr = ParseUnaryExpression(out dummy, false);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
-                        {
-                            Operand = expr,
-                            OperatorContext = exprCtx,
-                            OperatorToken = JSToken.Increment
-                        };
-                    break;
                 case JSToken.Decrement:
+                    // normal unary operators all follow the same pattern
                     exprCtx = m_currentToken.Clone();
                     GetNextToken();
                     expr = ParseUnaryExpression(out dummy, false);
-                    ast = new UnaryOperator(exprCtx.Clone().UpdateWith(expr.Context), this)
+                    ast = new UnaryOperator(exprCtx.CombineWith(expr.Context))
                         {
                             Operand = expr,
                             OperatorContext = exprCtx,
-                            OperatorToken = JSToken.Decrement
+                            OperatorToken = opToken
                         };
                     break;
 
@@ -3950,20 +3468,20 @@ namespace Microsoft.Ajax.Utilities
                     // skip past the start to the next token
                     exprCtx = m_currentToken.Clone();
                     GetNextToken();
-                    if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                    if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                     {
                         // empty conditional-compilation comment -- ignore
                         GetNextToken();
                         goto TryItAgain;
                     }
-                    else if (m_currentToken.Token == JSToken.ConditionalCompilationOn)
+                    else if (m_currentToken.Is(JSToken.ConditionalCompilationOn))
                     {
                         // /*@cc_on -- check for @IDENT@*/ or !@*/
                         GetNextToken();
-                        if (m_currentToken.Token == JSToken.ConditionalCompilationVariable)
+                        if (m_currentToken.Is(JSToken.ConditionalCompilationVariable))
                         {
                             // /*@cc_on@IDENT -- check for @*/
-                            ast = new ConstantWrapperPP(m_currentToken.Clone(), this)
+                            ast = new ConstantWrapperPP(m_currentToken.Clone())
                                 {
                                     VarName = m_currentToken.Code,
                                     ForceComments = true
@@ -3971,7 +3489,7 @@ namespace Microsoft.Ajax.Utilities
 
                             GetNextToken();
 
-                            if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                            if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                             {
                                 // skip the close and keep going
                                 GetNextToken();
@@ -3983,19 +3501,19 @@ namespace Microsoft.Ajax.Utilities
                                 goto TryItAgain;
                             }
                         }
-                        else if (m_currentToken.Token == JSToken.LogicalNot)
+                        else if (m_currentToken.Is(JSToken.LogicalNot))
                         {
                             // /*@cc_on! -- check for @*/
                             var operatorContext = m_currentToken.Clone();
                             GetNextToken();
-                            if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                            if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                             {
                                 // we have /*@cc_on!@*/
                                 GetNextToken();
                                 expr = ParseUnaryExpression(out dummy, false);
                                 exprCtx.UpdateWith(expr.Context);
 
-                                var unary = new UnaryOperator(exprCtx, this)
+                                var unary = new UnaryOperator(exprCtx)
                                     {
                                         Operand = expr,
                                         OperatorContext = operatorContext,
@@ -4019,19 +3537,19 @@ namespace Microsoft.Ajax.Utilities
                             goto TryItAgain;
                         }
                     }
-                    else if (m_currentToken.Token == JSToken.LogicalNot)
+                    else if (m_currentToken.Is(JSToken.LogicalNot))
                     {
                         // /*@! -- check for @*/
                         var operatorContext = m_currentToken.Clone();
                         GetNextToken();
-                        if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                        if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                         {
                             // we have /*@!@*/
                             GetNextToken();
                             expr = ParseUnaryExpression(out dummy, false);
                             exprCtx.UpdateWith(expr.Context);
 
-                            var unary = new UnaryOperator(exprCtx, this)
+                            var unary = new UnaryOperator(exprCtx)
                                 {
                                     Operand = expr,
                                     OperatorContext = operatorContext,
@@ -4047,17 +3565,17 @@ namespace Microsoft.Ajax.Utilities
                             goto TryItAgain;
                         }
                     }
-                    else if (m_currentToken.Token == JSToken.ConditionalCompilationVariable)
+                    else if (m_currentToken.Is(JSToken.ConditionalCompilationVariable))
                     {
                         // @IDENT -- check for @*/
-                        ast = new ConstantWrapperPP(m_currentToken.Clone(), this)
+                        ast = new ConstantWrapperPP(m_currentToken.Clone())
                             {
                                 VarName = m_currentToken.Code,
                                 ForceComments = true
                             };
                         GetNextToken();
 
-                        if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                        if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                         {
                             // skip the close and keep going
                             GetNextToken();
@@ -4080,49 +3598,12 @@ namespace Microsoft.Ajax.Utilities
                     break;
 
                 default:
-                    m_noSkipTokenSet.Add(NoSkipTokenSet.s_PostfixExpressionNoSkipTokenSet);
-                    try
-                    {
-                        ast = ParseLeftHandSideExpression(isMinus);
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        if (IndexOfToken(NoSkipTokenSet.s_PostfixExpressionNoSkipTokenSet, exc) == -1)
-                        {
-                            throw;
-                        }
-                        else
-                        {
-                            if (exc._partiallyComputedNode == null)
-                                SkipTokensAndThrow();
-                            else
-                                ast = exc._partiallyComputedNode;
-                        }
-                    }
-                    finally
-                    {
-                        m_noSkipTokenSet.Remove(NoSkipTokenSet.s_PostfixExpressionNoSkipTokenSet);
-                    }
+                    ast = ParseLeftHandSideExpression(isMinus);
                     ast = ParsePostfixExpression(ast, out isLeftHandSideExpr);
                     break;
             }
 
             return ast;
-        }
-
-        private void CCTooComplicated(Context context)
-        {
-            // we ONLY support /*@id@*/ or /*@cc_on@id@*/ or /*@!@*/ or /*@cc_on!@*/ in expressions right now. 
-            // throw an error, skip to the end of the comment, then ignore it and start
-            // looking for the next token.
-            (context ?? m_currentToken).HandleError(JSError.ConditionalCompilationTooComplex);
-
-            // skip to end of conditional comment
-            while (m_currentToken.Token != JSToken.EndOfFile && m_currentToken.Token != JSToken.ConditionalCommentEnd)
-            {
-                GetNextToken();
-            }
-            GetNextToken();
         }
 
         //---------------------------------------------------------------------------------------
@@ -4142,12 +3623,12 @@ namespace Microsoft.Ajax.Utilities
             {
                 if (!m_foundEndOfLine)
                 {
-                    if (JSToken.Increment == m_currentToken.Token)
+                    if (m_currentToken.Is(JSToken.Increment))
                     {
                         isLeftHandSideExpr = false;
                         exprCtx = ast.Context.Clone();
                         exprCtx.UpdateWith(m_currentToken);
-                        ast = new UnaryOperator(exprCtx, this)
+                        ast = new UnaryOperator(exprCtx)
                             {
                                 Operand = ast,
                                 OperatorToken = m_currentToken.Token,
@@ -4156,12 +3637,12 @@ namespace Microsoft.Ajax.Utilities
                             };
                         GetNextToken();
                     }
-                    else if (JSToken.Decrement == m_currentToken.Token)
+                    else if (m_currentToken.Is(JSToken.Decrement))
                     {
                         isLeftHandSideExpr = false;
                         exprCtx = ast.Context.Clone();
                         exprCtx.UpdateWith(m_currentToken);
-                        ast = new UnaryOperator(exprCtx, this)
+                        ast = new UnaryOperator(exprCtx)
                             {
                                 Operand = ast,
                                 OperatorToken = m_currentToken.Token,
@@ -4172,6 +3653,7 @@ namespace Microsoft.Ajax.Utilities
                     }
                 }
             }
+
             return ast;
         }
 
@@ -4196,17 +3678,17 @@ namespace Microsoft.Ajax.Utilities
         //    <empty> |
         //    Identifier
         //---------------------------------------------------------------------------------------
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1505:AvoidUnmaintainableCode"), 
+         System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private AstNode ParseLeftHandSideExpression(bool isMinus)
         {
             AstNode ast = null;
-            bool skipToken = true;
             List<Context> newContexts = null;
 
-            TryItAgain:
+        TryItAgain:
 
             // new expression
-            while (JSToken.New == m_currentToken.Token)
+            while (m_currentToken.Is(JSToken.New))
             {
                 if (null == newContexts)
                     newContexts = new List<Context>(4);
@@ -4218,19 +3700,24 @@ namespace Microsoft.Ajax.Utilities
             {
                 // primary expression
                 case JSToken.Identifier:
-                    ast = new Lookup(m_currentToken.Clone(), this)
+                    ast = new Lookup(m_currentToken.Clone())
                         {
                             Name = m_scanner.Identifier
                         };
+                    GetNextToken();
+                    break;
+
+                case JSToken.TemplateLiteral:
+                    ast = ParseTemplateLiteral();
                     break;
 
                 case JSToken.ConditionalCommentStart:
                     // skip past the start to the next token
                     GetNextToken();
-                    if (m_currentToken.Token == JSToken.ConditionalCompilationVariable)
+                    if (m_currentToken.Is(JSToken.ConditionalCompilationVariable))
                     {
                         // we have /*@id
-                        ast = new ConstantWrapperPP(m_currentToken.Clone(), this)
+                        ast = new ConstantWrapperPP(m_currentToken.Clone())
                             {
                                 VarName = m_currentToken.Code,
                                 ForceComments = true
@@ -4238,7 +3725,7 @@ namespace Microsoft.Ajax.Utilities
 
                         GetNextToken();
 
-                        if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                        if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                         {
                             // skip past the closing comment
                             GetNextToken();
@@ -4253,7 +3740,7 @@ namespace Microsoft.Ajax.Utilities
                             goto TryItAgain;
                         }
                     }
-                    else if (m_currentToken.Token == JSToken.ConditionalCommentEnd)
+                    else if (m_currentToken.Is(JSToken.ConditionalCommentEnd))
                     {
                         // empty conditional comment! Ignore.
                         GetNextToken();
@@ -4267,7 +3754,7 @@ namespace Microsoft.Ajax.Utilities
                         m_currentToken.HandleError(JSError.ConditionalCompilationTooComplex);
 
                         // skip to end of conditional comment
-                        while (m_currentToken.Token != JSToken.EndOfFile && m_currentToken.Token != JSToken.ConditionalCommentEnd)
+                        while (m_currentToken.IsNot(JSToken.EndOfFile) && m_currentToken.IsNot(JSToken.ConditionalCommentEnd))
                         {
                             GetNextToken();
                         }
@@ -4277,14 +3764,16 @@ namespace Microsoft.Ajax.Utilities
                     break;
 
                 case JSToken.This:
-                    ast = new ThisLiteral(m_currentToken.Clone(), this);
+                    ast = new ThisLiteral(m_currentToken.Clone());
+                    GetNextToken();
                     break;
 
                 case JSToken.StringLiteral:
-                    ast = new ConstantWrapper(m_scanner.StringLiteralValue, PrimitiveType.String, m_currentToken.Clone(), this)
+                    ast = new ConstantWrapper(m_scanner.StringLiteralValue, PrimitiveType.String, m_currentToken.Clone())
                         {
                             MayHaveIssues = m_scanner.LiteralHasIssues
                         };
+                    GetNextToken();
                     break;
 
                 case JSToken.IntegerLiteral:
@@ -4299,15 +3788,15 @@ namespace Microsoft.Ajax.Utilities
                             var mayHaveIssues = m_scanner.LiteralHasIssues;
                             if (doubleValue == double.MaxValue)
                             {
-                                ReportError(JSError.NumericMaximum, numericContext, true);
+                                ReportError(JSError.NumericMaximum, numericContext);
                             }
                             else if (isMinus && -doubleValue == double.MinValue)
                             {
-                                ReportError(JSError.NumericMinimum, numericContext, true);
+                                ReportError(JSError.NumericMinimum, numericContext);
                             }
 
                             // create the constant wrapper from the value
-                            ast = new ConstantWrapper(doubleValue, PrimitiveType.Number, numericContext, this)
+                            ast = new ConstantWrapper(doubleValue, PrimitiveType.Number, numericContext)
                                 {
                                     MayHaveIssues = mayHaveIssues
                                 };
@@ -4320,45 +3809,50 @@ namespace Microsoft.Ajax.Utilities
                             {
                                 // overflow
                                 // and if we ARE an overflow, report it
-                                ReportError(JSError.NumericOverflow, numericContext, true);
+                                ReportError(JSError.NumericOverflow, numericContext);
                             }
 
                             // regardless, we're going to create a special constant wrapper
                             // that simply echos the input as-is
-                            ast = new ConstantWrapper(m_currentToken.Code, PrimitiveType.Other, numericContext, this)
+                            ast = new ConstantWrapper(m_currentToken.Code, PrimitiveType.Other, numericContext)
                             {
                                 MayHaveIssues = true
                             };
                         }
+
+                        GetNextToken();
                         break;
                     }
 
                 case JSToken.True:
-                    ast = new ConstantWrapper(true, PrimitiveType.Boolean, m_currentToken.Clone(), this);
+                    ast = new ConstantWrapper(true, PrimitiveType.Boolean, m_currentToken.Clone());
+                    GetNextToken();
                     break;
 
                 case JSToken.False:
-                    ast = new ConstantWrapper(false, PrimitiveType.Boolean, m_currentToken.Clone(), this);
+                    ast = new ConstantWrapper(false, PrimitiveType.Boolean, m_currentToken.Clone());
+                    GetNextToken();
                     break;
 
                 case JSToken.Null:
-                    ast = new ConstantWrapper(null, PrimitiveType.Null, m_currentToken.Clone(), this);
+                    ast = new ConstantWrapper(null, PrimitiveType.Null, m_currentToken.Clone());
+                    GetNextToken();
                     break;
 
                 case JSToken.ConditionalCompilationVariable:
-                    ast = new ConstantWrapperPP(m_currentToken.Clone(), this)
+                    ast = new ConstantWrapperPP(m_currentToken.Clone())
                         {
                             VarName = m_currentToken.Code,
                             ForceComments = false
                         };
+                    GetNextToken();
                     break;
 
-                case JSToken.DivideAssign:
                 // normally this token is not allowed on the left-hand side of an expression.
                 // BUT, this might be the start of a regular expression that begins with an equals sign!
                 // we need to test to see if we can parse a regular expression, and if not, THEN
                 // we can fail the parse.
-
+                case JSToken.DivideAssign:
                 case JSToken.Divide:
                     // could it be a regexp?
                     ast = ScanRegularExpression();
@@ -4371,418 +3865,1218 @@ namespace Microsoft.Ajax.Utilities
                     // nope -- go to the default branch
                     goto default;
 
+                case JSToken.Modulo:
+                    // could it be a replacement token in the format %name%? If so, we 
+                    // want to treat that as a constant wrapper.
+                    ast = ScanReplacementToken();
+                    if (ast != null)
+                    {
+                        break;
+                    }
+
+                    goto default;
+
                 // expression
                 case JSToken.LeftParenthesis:
                     {
-                        var groupingOp = new GroupingOperator(m_currentToken.Clone(), this);
-                        ast = groupingOp;
+                        var leftParen = m_currentToken.Clone();
                         GetNextToken();
-                        m_noSkipTokenSet.Add(NoSkipTokenSet.s_ParenExpressionNoSkipToken);
-                        try
+                        if (m_currentToken.Is(JSToken.For))
                         {
-                            // parse an expression
-                            groupingOp.Operand = ParseExpression();
-                            if (JSToken.RightParenthesis != m_currentToken.Token)
+                            // generator comprehension in ES6 format
+                            ast = ParseComprehension(false, leftParen, null);
+                        }
+                        else
+                        {
+                            if (m_currentToken.Is(JSToken.RightParenthesis))
                             {
-                                ReportError(JSError.NoRightParenthesis);
-                            }
-                            else
-                            {
+                                // shortcut the empty parenthetical grouping
+                                // normally not allowed; however this might be the (empty) parameter list
+                                // to an arrow function.
                                 // add the closing paren to the expression context
-                                ast.Context.UpdateWith(m_currentToken);
+                                ast = new GroupingOperator(leftParen);
+                                ast.UpdateWith(m_currentToken);
+                                GetNextToken();
                             }
-                        }
-                        catch (RecoveryTokenException exc)
-                        {
-                            if (IndexOfToken(NoSkipTokenSet.s_ParenExpressionNoSkipToken, exc) == -1)
-                                throw;
+                            else if (m_currentToken.Is(JSToken.RestSpread))
+                            {
+                                // we have (...
+                                // parse an assignment expression, make it the operand of a unary with the rest.
+                                var restContext = m_currentToken.Clone();
+                                GetNextToken();
+                                ast = ParseExpression(true);
+                                if (ast != null)
+                                {
+                                    ast = new UnaryOperator(restContext.CombineWith(ast.Context))
+                                        {
+                                            OperatorContext = restContext,
+                                            OperatorToken = JSToken.RestSpread,
+                                            Operand = ast
+                                        };
+                                }
+
+                                // now, we want to continue parsing if there is a comma
+                                if (m_currentToken.Is(JSToken.Comma))
+                                {
+                                    ast = ParseExpression(ast, false, true, JSToken.None);
+                                }
+
+                                if (m_currentToken.Is(JSToken.RightParenthesis))
+                                {
+                                    ast = new GroupingOperator(leftParen)
+                                        {
+                                            Operand = ast
+                                        };
+                                    ast.UpdateWith(m_currentToken);
+                                    GetNextToken();
+                                }
+                                else
+                                {
+                                    ReportError(JSError.NoRightParenthesis);
+                                }
+                            }
                             else
-                                groupingOp.Operand = exc._partiallyComputedNode;
-                        }
-                        finally
-                        {
-                            m_noSkipTokenSet.Remove(NoSkipTokenSet.s_ParenExpressionNoSkipToken);
+                            {
+                                // parse an expression
+                                var operand = ParseExpression();
+                                if (m_currentToken.Is(JSToken.For))
+                                {
+                                    // generator comprehension in Mozille format
+                                    ast = ParseComprehension(false, leftParen, operand);
+                                }
+                                else
+                                {
+                                    ast = new GroupingOperator(leftParen)
+                                        {
+                                            Operand = operand
+                                        };
+                                    ast.UpdateWith(operand.Context);
+
+                                    if (m_currentToken.IsNot(JSToken.RightParenthesis))
+                                    {
+                                        ReportError(JSError.NoRightParenthesis);
+                                    }
+                                    else
+                                    {
+                                        // add the closing paren to the expression context
+                                        ast.UpdateWith(m_currentToken);
+                                        GetNextToken();
+                                    }
+                                }
+                            }
                         }
                     }
                     break;
 
                 // array initializer
                 case JSToken.LeftBracket:
-                    Context listCtx = m_currentToken.Clone();
-                    GetNextToken();
-                    AstNodeList list = new AstNodeList(CurrentPositionContext(), this);
-                    var hasTrailingCommas = false;
-                    while (JSToken.RightBracket != m_currentToken.Token)
-                    {
-                        if (JSToken.Comma != m_currentToken.Token)
-                        {
-                            m_noSkipTokenSet.Add(NoSkipTokenSet.s_ArrayInitNoSkipTokenSet);
-                            try
-                            {
-                                var expression = ParseExpression(true);
-                                list.Append(expression);
-                                if (JSToken.Comma != m_currentToken.Token)
-                                {
-                                    if (JSToken.RightBracket != m_currentToken.Token)
-                                    {
-                                        ReportError(JSError.NoRightBracket);
-                                    }
-
-                                    break;
-                                }
-                                else
-                                {
-                                    // we have a comma -- skip it after adding it as a terminator
-                                    // on the previous expression
-                                    var commaContext = m_currentToken.Clone();
-                                    expression.IfNotNull(e => e.TerminatingContext = commaContext);
-                                    GetNextToken();
-
-                                    // if the next token is the closing brackets, then we need to
-                                    // add a missing value to the array because we end in a comma and
-                                    // we need to keep it for cross-platform compat.
-                                    // TECHNICALLY, that puts an extra item into the array for most modern browsers, but not ALL.
-                                    if (m_currentToken.Token == JSToken.RightBracket)
-                                    {
-                                        hasTrailingCommas = true;
-                                        list.Append(new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.Clone(), this));
-
-                                        // throw a cross-browser warning about trailing commas
-                                        commaContext.HandleError(JSError.ArrayLiteralTrailingComma);
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (RecoveryTokenException exc)
-                            {
-                                if (exc._partiallyComputedNode != null)
-                                    list.Append(exc._partiallyComputedNode);
-                                if (IndexOfToken(NoSkipTokenSet.s_ArrayInitNoSkipTokenSet, exc) == -1)
-                                {
-                                    listCtx.UpdateWith(CurrentPositionContext());
-                                    exc._partiallyComputedNode = new ArrayLiteral(listCtx, this)
-                                        {
-                                            Elements = list,
-                                            MayHaveIssues = true
-                                        };
-                                    throw;
-                                }
-                                else
-                                {
-                                    if (JSToken.RightBracket == m_currentToken.Token)
-                                        break;
-                                }
-                            }
-                            finally
-                            {
-                                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_ArrayInitNoSkipTokenSet);
-                            }
-                        }
-                        else
-                        {
-                            // comma -- missing array item in the list
-                            var commaContext = m_currentToken.Clone();
-                            list.Append(new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.Clone(), this)
-                                {
-                                    TerminatingContext = commaContext
-                                });
-
-                            // skip over the comma
-                            GetNextToken();
-
-                            // if the next token is the closing brace, then we end with a comma -- and we need to
-                            // add ANOTHER missing value to make sure this last comma doesn't get left off.
-                            // TECHNICALLY, that puts an extra item into the array for most modern browsers, but not ALL.
-                            if (m_currentToken.Token == JSToken.RightBracket)
-                            {
-                                hasTrailingCommas = true;
-                                list.Append(new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.Clone(), this));
-
-                                // throw a cross-browser warning about trailing commas
-                                commaContext.HandleError(JSError.ArrayLiteralTrailingComma);
-                                break;
-                            }
-                        }
-                    }
-
-                    listCtx.UpdateWith(m_currentToken);
-                    ast = new ArrayLiteral(listCtx, this)
-                        {
-                            Elements = list,
-                            MayHaveIssues = hasTrailingCommas
-                        };
+                    ast = ParseArrayLiteral(false);
                     break;
 
                 // object initializer
                 case JSToken.LeftCurly:
-                    Context objCtx = m_currentToken.Clone();
-                    GetNextToken();
-
-                    var propertyList = new AstNodeList(CurrentPositionContext(), this);
-
-                    if (JSToken.RightCurly != m_currentToken.Token)
-                    {
-                        for (; ; )
-                        {
-                            ObjectLiteralField field = null;
-                            AstNode value = null;
-                            bool getterSetter = false;
-                            string ident;
-
-                            switch (m_currentToken.Token)
-                            {
-                                case JSToken.Identifier:
-                                    field = new ObjectLiteralField(m_scanner.Identifier, PrimitiveType.String, m_currentToken.Clone(), this);
-                                    break;
-
-                                case JSToken.StringLiteral:
-                                    field = new ObjectLiteralField(m_scanner.StringLiteralValue, PrimitiveType.String, m_currentToken.Clone(), this)
-                                        {
-                                            MayHaveIssues = m_scanner.LiteralHasIssues
-                                        };
-                                    break;
-
-                                case JSToken.IntegerLiteral:
-                                case JSToken.NumericLiteral:
-                                    {
-                                        double doubleValue;
-                                        if (ConvertNumericLiteralToDouble(m_currentToken.Code, (m_currentToken.Token == JSToken.IntegerLiteral), out doubleValue))
-                                        {
-                                            // conversion worked fine
-                                            field = new ObjectLiteralField(
-                                              doubleValue,
-                                              PrimitiveType.Number,
-                                              m_currentToken.Clone(),
-                                              this
-                                              );
-                                        }
-                                        else
-                                        {
-                                            // something went wrong and we're not sure the string representation in the source is 
-                                            // going to convert to a numeric value well
-                                            if (double.IsInfinity(doubleValue))
-                                            {
-                                                ReportError(JSError.NumericOverflow, m_currentToken.Clone(), true);
-                                            }
-
-                                            // use the source as the field name, not the numeric value
-                                            field = new ObjectLiteralField(
-                                                m_currentToken.Code,
-                                                PrimitiveType.Other,
-                                                m_currentToken.Clone(),
-                                                this);
-                                        }
-                                        break;
-                                    }
-
-                                case JSToken.Get:
-                                case JSToken.Set:
-                                    if (PeekToken() == JSToken.Colon)
-                                    {
-                                        // the field is either "get" or "set" and isn't the special Mozilla getter/setter
-                                        field = new ObjectLiteralField(m_currentToken.Code, PrimitiveType.String, m_currentToken.Clone(), this);
-                                    }
-                                    else
-                                    {
-                                        // ecma-script get/set property construct
-                                        getterSetter = true;
-                                        bool isGet = (m_currentToken.Token == JSToken.Get);
-                                        value = ParseFunction(
-                                          (JSToken.Get == m_currentToken.Token ? FunctionType.Getter : FunctionType.Setter),
-                                          m_currentToken.Clone()
-                                          );
-                                        FunctionObject funcExpr = value as FunctionObject;
-                                        if (funcExpr != null)
-                                        {
-                                            // getter/setter is just the literal name with a get/set flag
-                                            field = new GetterSetter(
-                                              funcExpr.Name,
-                                              isGet,
-                                              funcExpr.IdContext.Clone(),
-                                              this
-                                              );
-                                        }
-                                        else
-                                        {
-                                            ReportError(JSError.FunctionExpressionExpected);
-                                        }
-                                    }
-                                    break;
-
-                                default:
-                                    // NOT: identifier token, string, number, or getter/setter.
-                                    // see if it's a token that COULD be an identifierName.
-                                    ident = m_scanner.Identifier;
-                                    if (JSScanner.IsValidIdentifier(ident))
-                                    {
-                                        // BY THE SPEC, if it's a valid identifierName -- which includes reserved words -- then it's
-                                        // okay for object literal syntax. However, reserved words here won't work in all browsers,
-                                        // so if it is a reserved word, let's throw a low-sev cross-browser warning on the code.
-                                        if (JSKeyword.CanBeIdentifier(m_currentToken.Token) == null)
-                                        {
-                                            ReportError(JSError.ObjectLiteralKeyword, m_currentToken.Clone(), true);
-                                        }
-
-                                        field = new ObjectLiteralField(ident, PrimitiveType.String, m_currentToken.Clone(), this);
-                                    }
-                                    else
-                                    {
-                                        // throw an error but use it anyway, since that's what the developer has going on
-                                        ReportError(JSError.NoMemberIdentifier, m_currentToken.Clone(), true);
-                                        field = new ObjectLiteralField(m_currentToken.Code, PrimitiveType.String, m_currentToken.Clone(), this);
-                                    }
-                                    break;
-                            }
-
-                            if (field != null)
-                            {
-                                if (!getterSetter)
-                                {
-                                    GetNextToken();
-                                }
-
-                                m_noSkipTokenSet.Add(NoSkipTokenSet.s_ObjectInitNoSkipTokenSet);
-                                try
-                                {
-                                    if (!getterSetter)
-                                    {
-                                        // get the value
-                                        if (JSToken.Colon != m_currentToken.Token)
-                                        {
-                                            ReportError(JSError.NoColon, true);
-                                            value = ParseExpression(true);
-                                        }
-                                        else
-                                        {
-                                            field.ColonContext = m_currentToken.Clone();
-                                            GetNextToken();
-                                            value = ParseExpression(true);
-                                        }
-                                    }
-
-                                    // put the pair into the list of fields
-                                    var propCtx = field.Context.Clone().CombineWith(value.IfNotNull(v => v.Context));
-                                    var property = new ObjectLiteralProperty(propCtx, this)
-                                        {
-                                            Name = field,
-                                            Value = value
-                                        };
-
-                                    propertyList.Append(property);
-
-                                    if (JSToken.RightCurly == m_currentToken.Token)
-                                    {
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        if (JSToken.Comma == m_currentToken.Token)
-                                        {
-                                            // skip the comma after adding it to the property as a terminating context
-                                            property.IfNotNull(p => p.TerminatingContext = m_currentToken.Clone());
-                                            GetNextToken();
-
-                                            // if the next token is the right-curly brace, then we ended 
-                                            // the list with a comma, which is perfectly fine
-                                            if (m_currentToken.Token == JSToken.RightCurly)
-                                            {
-                                                break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (m_foundEndOfLine)
-                                            {
-                                                ReportError(JSError.NoRightCurly);
-                                            }
-                                            else
-                                                ReportError(JSError.NoComma, true);
-                                            SkipTokensAndThrow();
-                                        }
-                                    }
-                                }
-                                catch (RecoveryTokenException exc)
-                                {
-                                    if (exc._partiallyComputedNode != null)
-                                    {
-                                        // the problem was in ParseExpression trying to determine value
-                                        value = exc._partiallyComputedNode;
-
-                                        var propCtx = field.Context.Clone().CombineWith(value.IfNotNull(v => v.Context));
-                                        var property = new ObjectLiteralProperty(propCtx, this)
-                                        {
-                                            Name = field,
-                                            Value = value
-                                        };
-
-                                        propertyList.Append(property);
-                                    }
-
-                                    if (IndexOfToken(NoSkipTokenSet.s_ObjectInitNoSkipTokenSet, exc) == -1)
-                                    {
-                                        exc._partiallyComputedNode = new ObjectLiteral(objCtx, this)
-                                            {
-                                                Properties = propertyList
-                                            };
-                                        throw;
-                                    }
-                                    else
-                                    {
-                                        if (JSToken.Comma == m_currentToken.Token)
-                                            GetNextToken();
-                                        if (JSToken.RightCurly == m_currentToken.Token)
-                                            break;
-                                    }
-                                }
-                                finally
-                                {
-                                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_ObjectInitNoSkipTokenSet);
-                                }
-                            }
-                        }
-                    }
-                    objCtx.UpdateWith(m_currentToken);
-                    ast = new ObjectLiteral(objCtx, this)
-                        {
-                            Properties = propertyList
-                        };
+                    ast = ParseObjectLiteral(false);
                     break;
 
                 // function expression
                 case JSToken.Function:
                     ast = ParseFunction(FunctionType.Expression, m_currentToken.Clone());
-                    skipToken = false;
+                    break;
+
+                // class expression
+                case JSToken.Class:
+                    ast = ParseClassNode(ClassType.Expression);
                     break;
 
                 case JSToken.AspNetBlock:
-                    ast = new AspNetBlockNode(m_currentToken.Clone(), this)
+                    ast = new AspNetBlockNode(m_currentToken.Clone())
                         {
                             AspNetBlockText = m_currentToken.Code
                         };
+                    GetNextToken();
+                    break;
+
+                case JSToken.Yield:
+                    {
+                        // TODO: not sure if this is the right place to hook for the ES6 YieldExpression semantics!
+                        if (ParsedVersion == ScriptVersion.EcmaScript6 || m_settings.ScriptVersion == ScriptVersion.EcmaScript6)
+                        {
+                            // we already KNOW we're ES6 code, so just parse this as a yield expression.
+                            // in fact, we SHOULD already know, since yield should only be used within a generator
+                            // function, which for ES6 code should have the "*" generator indicator, which when
+                            // parsed should have already set the ES6 flag.
+                            ast = ParseYieldExpression();
+                        }
+                        else
+                        {
+                            // we need to protect against non-ES6 code using "yield" as a variable name versus the
+                            // Mozilla yield syntax. We'll do that further upstream.
+                            ast = new Lookup(m_currentToken.Clone())
+                                {
+                                    Name = "yield"
+                                };
+                            GetNextToken();
+                        }
+                    }
                     break;
 
                 default:
-                    string identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
-                    if (null != identifier)
+                    var identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
+                    if (identifier != null)
                     {
-                        ast = new Lookup(m_currentToken.Clone(), this)
+                        ast = new Lookup(m_currentToken.Clone())
                             {
                                 Name = identifier
                             };
+                        GetNextToken();
                     }
                     else
                     {
                         ReportError(JSError.ExpressionExpected);
-                        SkipTokensAndThrow();
                     }
                     break;
             }
 
+            if (m_currentToken.Is(JSToken.ArrowFunction))
+            {
+                ParsedVersion = ScriptVersion.EcmaScript6;
+                ast = ParseArrowFunction(ast);
+            }
+
             // can be a CallExpression, that is, followed by '.' or '(' or '['
-            if (skipToken)
+            return ParseMemberExpression(ast, newContexts);
+        }
+
+        private RegExpLiteral ScanRegularExpression()
+        {
+            RegExpLiteral regExp = null;
+            m_currentToken = m_scanner.UpdateToken(UpdateHint.RegularExpression);
+            if (m_currentToken.Is(JSToken.RegularExpression))
+            {
+                var regexContext = m_currentToken.Clone();
+
+                // don't include the leading or trailing slash in the code
+                var pattern = m_currentToken.Code;
+                pattern = pattern.Substring(1, pattern.Length - 2);
                 GetNextToken();
 
-            return MemberExpression(ast, newContexts);
+                string flags = null;
+                if (m_currentToken.Is(JSToken.Identifier))
+                {
+                    regexContext.UpdateWith(m_currentToken);
+                    flags = m_scanner.Identifier;
+                    GetNextToken();
+                }
+
+                // create the regexp node. 
+                regExp = new RegExpLiteral(m_currentToken.Clone())
+                {
+                    Pattern = pattern,
+                    PatternSwitches = flags
+                };
+            }
+
+            // if we get here, there isn't a regular expression at the current position
+            return regExp;
+        }
+
+        private ConstantWrapper ScanReplacementToken()
+        {
+            ConstantWrapper constWrapper = null;
+            m_currentToken = m_scanner.UpdateToken(UpdateHint.ReplacementToken);
+            if (m_currentToken.Is(JSToken.ReplacementToken))
+            {
+                constWrapper = new ConstantWrapper(m_currentToken.Code, PrimitiveType.Other, m_currentToken.Clone());
+                GetNextToken();
+            }
+
+            return constWrapper;
+        }
+
+        private TemplateLiteral ParseTemplateLiteral()
+        {
+            // create the root literal node
+            ParsedVersion = ScriptVersion.EcmaScript6;
+            var literalContext = m_currentToken.Clone();
+            var textContext = m_currentToken.Clone();
+
+            Lookup lookup = null;
+            var text = m_scanner.StringLiteralValue;
+
+            // see if it starts with an identifier
+            var indexBackquote = text.IndexOf('`');
+            if (indexBackquote != 0)
+            {
+                var literalName = text.Substring(0, indexBackquote);
+                text = text.Substring(indexBackquote);
+                var tagContext = textContext.SplitStart(indexBackquote);
+
+                // TODO: figure out how to get a context on just the literal part!
+                lookup = new Lookup(tagContext)
+                    {
+                        Name = literalName
+                    };
+            }
+
+            // if the token doesn't end with a terminator, then we'll need to parse replacement expressions
+            var isContinue = text[text.Length - 1] != '`';
+
+            // create the literal node
+            var templateLiteral = new TemplateLiteral(literalContext)
+            {
+                Function = lookup,
+                Text = text,
+                TextContext = textContext,
+                Expressions = isContinue ? new AstNodeList(literalContext.FlattenToEnd()) : null
+            };
+
+            GetNextToken();
+            if (isContinue)
+            {
+                // keep going until we hit the final segment
+                do
+                {
+                    isContinue = false;
+
+                    // expression needs to be closed with a right-curly (whether or not we actually found an expression)
+                    var expression = ParseExpression();
+                    if (m_currentToken.Is(JSToken.RightCurly))
+                    {
+                        m_scanner.UpdateToken(UpdateHint.TemplateLiteral);
+                        if (m_currentToken.Is(JSToken.TemplateLiteral))
+                        {
+                            text = m_scanner.StringLiteralValue;
+                            var templateExpression = new TemplateLiteralExpression(expression.Context.Clone())
+                                {
+                                    Expression = expression,
+                                    Text = text
+                                };
+                            templateLiteral.UpdateWith(templateExpression.Context);
+                            templateLiteral.Expressions.Append(templateExpression);
+                            GetNextToken();
+
+                            isContinue = text[text.Length - 1] != '`';
+                        }
+                    }
+                    else
+                    {
+                        ReportError(JSError.NoRightCurly);
+                    }
+                }
+                while (isContinue);
+            }
+
+            return templateLiteral;
+        }
+
+        private AstNode ParseYieldExpression()
+        {
+            ParsedVersion = ScriptVersion.EcmaScript6;
+
+            // save the context of the yield operator, then skip past it
+            var context = m_currentToken.Clone();
+            var operatorContext = context.Clone();
+            GetNextToken();
+
+            var isDelegator = m_currentToken.Is(JSToken.Multiply);
+            if (isDelegator)
+            {
+                // delegator - move past the yield and the delegator token
+                GetNextToken();
+            }
+
+            // must be followed by an expression
+            var expression = ParseExpression(true);
+            if (expression == null)
+            {
+                // we only call this method if we KNOW we are ES6, so if there is no expression,
+                // then throw an error.
+                ReportError(JSError.ExpressionExpected);
+            }
+            else
+            {
+                context.UpdateWith(expression.Context);
+            }
+
+            return new UnaryOperator(context)
+                {
+                    OperatorContext = operatorContext,
+                    OperatorToken = JSToken.Yield,
+                    Operand = expression,
+                    IsDelegator = isDelegator
+                };
+        }
+
+        private FunctionObject ParseArrowFunction(AstNode parameters)
+        {
+            // we are on the arrow-function operator now
+            var arrowContext = m_currentToken.Clone();
+            GetNextToken();
+            ParsedVersion = ScriptVersion.EcmaScript6;
+
+            var functionObject = new FunctionObject(parameters.Context.Clone())
+                {
+                    ParameterDeclarations = BindingTransform.ToParameters(parameters),
+                    FunctionType = FunctionType.ArrowFunction,
+                };
+            functionObject.UpdateWith(arrowContext);
+            if (m_currentToken.Is(JSToken.LeftCurly))
+            {
+                functionObject.Body = ParseBlock();
+            }
+            else
+            {
+                // parse an assignment expression as a concise block
+                functionObject.Body = Block.ForceToBlock(ParseExpression(true));
+                functionObject.Body.IsConcise = true;
+            }
+
+            functionObject.Body.IfNotNull(b => functionObject.UpdateWith(b.Context));
+            return functionObject;
+        }
+
+        private AstNode ParseArrayLiteral(bool isBindingPattern)
+        {
+            var openDelimiter = m_currentToken.Clone();
+            var listCtx = openDelimiter.Clone();
+            var list = new AstNodeList(CurrentPositionContext);
+            var hasTrailingCommas = false;
+
+            Context commaContext = null;
+            do
+            {
+                GetNextToken();
+                AstNode element = null;
+                if (m_currentToken.Is(JSToken.Comma))
+                {
+                    // comma -- missing array item in the list
+                    element = new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.FlattenToStart());
+                }
+                else if (m_currentToken.Is(JSToken.RightBracket))
+                {
+                    // empty list just bails now
+                    if (list.Count == 0)
+                    {
+                        break;
+                    }
+
+                    // if we're parsing a binding pattern, we don't care about the final trailing comma
+                    if (!isBindingPattern)
+                    {
+                        // if the current token is the closing brace, then we ended with a comma -- and we need to
+                        // add ANOTHER missing value to make sure this last comma doesn't get left off.
+                        // TECHNICALLY, that puts an extra item into the array for most modern browsers, but not ALL.
+                        hasTrailingCommas = true;
+                        element = new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.FlattenToStart());
+
+                        // throw a cross-browser warning about trailing commas
+                        commaContext.HandleError(JSError.ArrayLiteralTrailingComma);
+                    }
+                }
+                else if (m_currentToken.Is(JSToken.For))
+                {
+                    // array comprehension
+                    return ParseComprehension(true, openDelimiter, null);
+                }
+                else
+                {
+                    // see if we have a spread token
+                    Context spreadContext = null;
+                    if (m_currentToken.Is(JSToken.RestSpread))
+                    {
+                        ParsedVersion = ScriptVersion.EcmaScript6;
+                        spreadContext = m_currentToken.Clone();
+                        GetNextToken();
+                    }
+
+                    if (isBindingPattern)
+                    {
+                        element = ParseBinding();
+                        if (m_currentToken.Is(JSToken.Assign))
+                        {
+                            var assignContext = m_currentToken.Clone();
+                            GetNextToken();
+                            element = new InitializerNode(assignContext.Clone())
+                            {
+                                Binding = element,
+                                AssignContext = assignContext,
+                                Initializer = ParseExpression(true)
+                            };
+                        }
+                    }
+                    else
+                    {
+                        element = ParseExpression(true);
+                    }
+
+                    // if we had a spread operator on this item, wrap it in a special unary node
+                    if (spreadContext != null)
+                    {
+                        element = new UnaryOperator(spreadContext.CombineWith(element.Context))
+                            {
+                                Operand = element,
+                                OperatorToken = JSToken.RestSpread,
+                                OperatorContext = spreadContext
+                            };
+                    }
+                }
+
+                if (m_currentToken.Is(JSToken.For))
+                {
+                    // mozilla-style array comprehension!
+                    return ParseComprehension(true, openDelimiter, element);
+                }
+
+                list.Append(element);
+                if (m_currentToken.Is(JSToken.Comma))
+                {
+                    commaContext = m_currentToken.Clone();
+                    element.IfNotNull(e => e.TerminatingContext = commaContext);
+                }
+            }
+            while (m_currentToken.Is(JSToken.Comma));
+
+            if (m_currentToken.Is(JSToken.RightBracket))
+            {
+                listCtx.UpdateWith(m_currentToken);
+                GetNextToken();
+            }
+            else
+            {
+                m_currentToken.HandleError(JSError.NoRightBracketOrComma, true);
+            }
+
+            return new ArrayLiteral(listCtx)
+                {
+                    Elements = list,
+                    MayHaveIssues = hasTrailingCommas
+                };
+        }
+
+        private ComprehensionNode ParseComprehension(bool isArray, Context openDelimiter, AstNode expression)
+        {
+            // we will be on the first FOR token, but Mozilla-style will have already
+            // parsed the expression node
+            var isMozilla = expression != null;
+            var context = openDelimiter.Clone();
+            Context closeDelimiter = null;
+            expression.IfNotNull(e => context.UpdateWith(e.Context));
+
+            var clauseList = new AstNodeList(m_currentToken.Clone());
+            do
+            {
+                if (m_currentToken.IsOne(JSToken.For, JSToken.If))
+                {
+                    var clause = ParseComprehensionClause();
+                    clause.IfNotNull(c => context.UpdateWith(c.Context));
+                    clauseList.Append(clause);
+                }
+                else
+                {
+                    ReportError(JSError.NoForOrIf);
+                }
+            }
+            while (m_currentToken.IsOne(JSToken.For, JSToken.If));
+            context.UpdateWith(clauseList.Context);
+
+            // if we didn't get an expression yet (and we shouldn't for ES6-spec comprehensions), 
+            // parse one now
+            if (expression == null)
+            {
+                expression = ParseExpression(true);
+                expression.IfNotNull(e => context.UpdateWith(e.Context));
+            }
+
+            // should be at the closing delimiter now
+            if (m_currentToken.IsNot(isArray ? JSToken.RightBracket : JSToken.RightParenthesis))
+            {
+                ReportError(isArray ? JSError.NoRightBracket : JSError.NoRightParenthesis);
+            }
+            else
+            {
+                closeDelimiter = m_currentToken.Clone();
+                context.UpdateWith(closeDelimiter);
+                GetNextToken();
+            }
+
+            ParsedVersion = ScriptVersion.EcmaScript6;
+            return new ComprehensionNode(context)
+                {
+                    OpenDelimiter = openDelimiter,
+                    Expression = expression,
+                    Clauses = clauseList,
+                    CloseDelimiter = closeDelimiter,
+                    ComprehensionType = isArray ? ComprehensionType.Array : ComprehensionType.Generator,
+                    MozillaOrdering = isMozilla
+                };
+        }
+
+        private ComprehensionClause ParseComprehensionClause()
+        {
+            // save the token
+            var forOrIfContext = m_currentToken.Clone();
+            var clauseContext = forOrIfContext.Clone();
+            GetNextToken();
+
+            // open parenthesis
+            Context leftParen = null;
+            if (m_currentToken.IsNot(JSToken.LeftParenthesis))
+            {
+                ReportError(JSError.NoLeftParenthesis, forOrIfContext);
+            }
+            else
+            {
+                leftParen = m_currentToken.Clone();
+                clauseContext.UpdateWith(leftParen);
+                GetNextToken();
+            }
+
+            AstNode expression = null;
+            AstNode binding = null;
+            Context ofContext = null;
+            var isInOperation = false;
+            if (forOrIfContext.Is(JSToken.For))
+            {
+                // for-clause
+                binding = ParseBinding();
+                binding.IfNotNull(b => clauseContext.UpdateWith(b.Context));
+
+                if (m_currentToken.Is(JSToken.In) || m_currentToken.Is("of"))
+                {
+                    isInOperation = m_currentToken.Is(JSToken.In);
+                    ofContext = m_currentToken.Clone();
+                    GetNextToken();
+                    clauseContext.UpdateWith(ofContext);
+                }
+                else
+                {
+                    ReportError(JSError.NoForOrIf);
+                }
+
+                expression = ParseExpression(true);
+                expression.IfNotNull(e => clauseContext.UpdateWith(e.Context));
+            }
+            else
+            {
+                // if-clause
+                expression = ParseExpression(true);
+                expression.IfNotNull(e => clauseContext.UpdateWith(e.Context));
+            }
+
+            // close paren
+            Context rightParen = null;
+            if (m_currentToken.IsNot(JSToken.RightParenthesis))
+            {
+                ReportError(JSError.NoRightParenthesis);
+            }
+            else
+            {
+                rightParen = m_currentToken.Clone();
+                clauseContext.UpdateWith(rightParen);
+                GetNextToken();
+            }
+
+            if (forOrIfContext.Is(JSToken.For))
+            {
+                // for-clause
+                return new ComprehensionForClause(clauseContext)
+                    {
+                        OperatorContext = forOrIfContext,
+                        OpenContext = leftParen,
+                        Binding = binding,
+                        IsInOperation = isInOperation,
+                        OfContext = ofContext,
+                        Expression = expression,
+                        CloseContext = rightParen,
+                    };
+            }
+            else //if (tokenContext.Is(JSToken.If))
+            {
+                // if-clause
+                return new ComprehensionIfClause(clauseContext)
+                    {
+                        OperatorContext = forOrIfContext,
+                        OpenContext = leftParen,
+                        Condition = expression,
+                        CloseContext = rightParen,
+                    };
+            }
+        }
+
+        private ObjectLiteral ParseObjectLiteral(bool isBindingPattern)
+        {
+            Context objCtx = m_currentToken.Clone();
+            var propertyList = new AstNodeList(CurrentPositionContext);
+
+            do
+            {
+                GetNextToken();
+
+                // a trailing comma after the last property gets ignored
+                if (m_currentToken.IsNot(JSToken.RightCurly))
+                {
+                    var property = ParseObjectLiteralProperty(isBindingPattern);
+                    propertyList.Append(property);
+                }
+            }
+            while (m_currentToken.Is(JSToken.Comma));
+
+            if (m_currentToken.Is(JSToken.RightCurly))
+            {
+                objCtx.UpdateWith(m_currentToken);
+                GetNextToken();
+            }
+            else
+            {
+                ReportError(JSError.NoRightCurly);
+            }
+
+            return new ObjectLiteral(objCtx) { Properties = propertyList };
+        }
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
+        private ObjectLiteralProperty ParseObjectLiteralProperty(bool isBindingPattern)
+        {
+            ObjectLiteralProperty property = null;
+            ObjectLiteralField field = null;
+            AstNode value = null;
+
+            // peek at the NEXT token so we can check if we have name followed by ':'
+            var nextToken = PeekToken();
+            Context propertyContext = m_currentToken.Clone();
+            if (nextToken == JSToken.Colon)
+            {
+                // regular field name followed by a colon
+                field = ParseObjectLiteralFieldName();
+                if (m_currentToken.Is(JSToken.Colon))
+                {
+                    field.IfNotNull(f => f.ColonContext = m_currentToken.Clone());
+                    GetNextToken();
+                    value = ParseObjectPropertyValue(isBindingPattern);
+
+                    if (isBindingPattern && m_currentToken.Is(JSToken.Assign))
+                    {
+                        var assignContext = m_currentToken.Clone();
+                        GetNextToken();
+                        value = new InitializerNode(assignContext.Clone())
+                        {
+                            Binding = value,
+                            AssignContext = assignContext,
+                            Initializer = ParseExpression(true)
+                        };
+                    }
+                }
+            }
+            else if (nextToken == JSToken.Comma || nextToken == JSToken.RightCurly || nextToken == JSToken.Assign)
+            {
+                // just a name lookup; the property name is implicit
+                ParsedVersion = ScriptVersion.EcmaScript6;
+                value = ParseObjectPropertyValue(isBindingPattern);
+
+                if (isBindingPattern && m_currentToken.Is(JSToken.Assign))
+                {
+                    var assignContext = m_currentToken.Clone();
+                    GetNextToken();
+                    value = new InitializerNode(assignContext.Clone())
+                    {
+                        Binding = value,
+                        AssignContext = assignContext,
+                        Initializer = ParseExpression(true)
+                    };
+                }
+            }
+            else if (m_currentToken.IsOne(JSToken.Get, JSToken.Set))
+            {
+                bool isGet = (m_currentToken.Is(JSToken.Get));
+                var funcContext = m_currentToken.Clone();
+                var funcExpr = ParseFunction(isGet ? FunctionType.Getter : FunctionType.Setter, funcContext);
+                if (funcExpr != null)
+                {
+                    // getter/setter is just the literal name with a get/set flag
+                    field = new GetterSetter(funcExpr.Binding.Name, isGet, funcExpr.Binding.Context.Clone());
+                    value = funcExpr;
+
+                    if (isBindingPattern)
+                    {
+                        funcContext.HandleError(JSError.MethodsNotAllowedInBindings, true);
+                    }
+                }
+                else
+                {
+                    ReportError(JSError.FunctionExpressionExpected);
+                }
+            }
+            else if (m_currentToken.Is(JSToken.Multiply) || nextToken == JSToken.LeftParenthesis)
+            {
+                // method declaration in ES6
+                // starts off right with the name. Don't set the name field -- the method
+                // itself takes care of it, like an implicit-named property
+                value = ParseFunction(FunctionType.Method, m_currentToken.Clone());
+                if (value != null)
+                {
+                    // definitely an ES6 construct
+                    ParsedVersion = ScriptVersion.EcmaScript6;
+                }
+            }
+
+            if (field != null || value != null)
+            {
+                // bundle the name/value pair into a property
+                field.IfNotNull(f => propertyContext.UpdateWith(f.Context));
+                value.IfNotNull(v => propertyContext.UpdateWith(v.Context));
+
+                property = new ObjectLiteralProperty(propertyContext)
+                {
+                    Name = field,
+                    Value = value,
+                };
+
+                if (m_currentToken.Is(JSToken.Comma))
+                {
+                    // skip the comma after adding it to the property as a terminating context
+                    property.IfNotNull(p => p.TerminatingContext = m_currentToken.Clone());
+                }
+            }
+
+            return property;
+        }
+
+        private ObjectLiteralField ParseObjectLiteralFieldName()
+        {
+            // simple property name
+            ObjectLiteralField field = null;
+            switch (m_currentToken.Token)
+            {
+                case JSToken.Identifier:
+                case JSToken.Get:
+                case JSToken.Set:
+                    field = new ObjectLiteralField(m_scanner.Identifier, PrimitiveType.String, m_currentToken.Clone())
+                        {
+                            IsIdentifier = true
+                        };
+                    break;
+
+                case JSToken.StringLiteral:
+                    field = new ObjectLiteralField(m_scanner.StringLiteralValue, PrimitiveType.String, m_currentToken.Clone())
+                        {
+                            MayHaveIssues = m_scanner.LiteralHasIssues
+                        };
+                    break;
+
+                case JSToken.IntegerLiteral:
+                case JSToken.NumericLiteral:
+                    {
+                        double doubleValue;
+                        if (ConvertNumericLiteralToDouble(m_currentToken.Code, (m_currentToken.Is(JSToken.IntegerLiteral)), out doubleValue))
+                        {
+                            // conversion worked fine
+                            field = new ObjectLiteralField(doubleValue, PrimitiveType.Number, m_currentToken.Clone());
+                        }
+                        else
+                        {
+                            // something went wrong and we're not sure the string representation in the source is 
+                            // going to convert to a numeric value well
+                            if (double.IsInfinity(doubleValue))
+                            {
+                                ReportError(JSError.NumericOverflow);
+                            }
+
+                            // use the source as the field name, not the numeric value
+                            field = new ObjectLiteralField(m_currentToken.Code, PrimitiveType.Other, m_currentToken.Clone());
+                        }
+                        break;
+                    }
+
+                default:
+                    // NOT: identifier token, string, number, or getter/setter.
+                    // see if it's a token that COULD be an identifierName.
+                    var ident = m_scanner.Identifier;
+                    if (JSScanner.IsValidIdentifier(ident))
+                    {
+                        // BY THE SPEC, if it's a valid identifierName -- which includes reserved words -- then it's
+                        // okay for object literal syntax. However, reserved words here won't work in all browsers,
+                        // so if it is a reserved word, let's throw a low-sev cross-browser warning on the code.
+                        if (JSKeyword.CanBeIdentifier(m_currentToken.Token) == null)
+                        {
+                            ReportError(JSError.ObjectLiteralKeyword);
+                        }
+
+                        field = new ObjectLiteralField(ident, PrimitiveType.String, m_currentToken.Clone());
+                    }
+                    else
+                    {
+                        // throw an error but use it anyway, since that's what the developer has going on
+                        ReportError(JSError.NoMemberIdentifier);
+                        field = new ObjectLiteralField(m_currentToken.Code, PrimitiveType.String, m_currentToken.Clone());
+                    }
+                    break;
+            }
+
+            GetNextToken();
+            return field;
+        }
+
+        private AstNode ParseObjectPropertyValue(bool isBindingPattern)
+        {
+            if (isBindingPattern)
+            {
+                // binding pattern
+                return ParseBinding();
+            }
+            else
+            {
+                // parse a single expression
+                return ParseExpression(true);
+            }
+        }
+
+        //---------------------------------------------------------------------------------------
+        // ParseMemberExpression
+        //
+        // Accessor :
+        //  <empty> |
+        //  Arguments Accessor
+        //  '[' Expression ']' Accessor |
+        //  '.' Identifier Accessor |
+        //
+        //  Don't have this function throwing an exception without checking all the calling sites.
+        //  There is state in instance variable that is saved on the calling stack in some function
+        //  (i.e ParseFunction and ParseClass) and you don't want to blow up the stack
+        //---------------------------------------------------------------------------------------
+        private AstNode ParseMemberExpression(AstNode expression, List<Context> newContexts)
+        {
+            for (; ; )
+            {
+                switch (m_currentToken.Token)
+                {
+                    case JSToken.LeftParenthesis:
+                        AstNodeList args = null;
+                        args = ParseExpressionList(JSToken.RightParenthesis);
+
+                        expression = new CallNode(expression.Context.CombineWith(args.Context))
+                            {
+                                Function = expression,
+                                Arguments = args,
+                                InBrackets = false
+                            };
+
+                        if (null != newContexts && newContexts.Count > 0)
+                        {
+                            (newContexts[newContexts.Count - 1]).UpdateWith(expression.Context);
+                            if (!(expression is CallNode))
+                            {
+                                expression = new CallNode(newContexts[newContexts.Count - 1])
+                                    {
+                                        Function = expression,
+                                        Arguments = new AstNodeList(CurrentPositionContext)
+                                    };
+                            }
+                            else
+                            {
+                                expression.Context = newContexts[newContexts.Count - 1];
+                            }
+
+                            ((CallNode)expression).IsConstructor = true;
+                            newContexts.RemoveAt(newContexts.Count - 1);
+                        }
+
+                        GetNextToken();
+                        break;
+
+                    case JSToken.LeftBracket:
+                        //
+                        // ROTOR parses a[b,c] as a call to a, passing in the arguments b and c.
+                        // the correct parse is a member lookup on a of c -- the "b,c" should be
+                        // a single expression with a comma operator that evaluates b but only
+                        // returns c.
+                        // So we'll change the default behavior from parsing an expression list to
+                        // parsing a single expression, but returning a single-item list (or an empty
+                        // list if there is no expression) so the rest of the code will work.
+                        //
+                        //args = ParseExpressionList(JSToken.RightBracket);
+                        GetNextToken();
+                        args = new AstNodeList(CurrentPositionContext);
+
+                        AstNode accessor = ParseExpression();
+                        if (accessor != null)
+                        {
+                            args.Append(accessor);
+                        }
+
+                        expression = new CallNode(expression.Context.CombineWith(m_currentToken.Clone()))
+                            {
+                                Function = expression,
+                                Arguments = args,
+                                InBrackets = true
+                            };
+
+                        // there originally was code here in the ROTOR sources that checked the new context list and
+                        // changed this member call to a constructor call, effectively combining the two. I believe they
+                        // need to remain separate.
+
+                        // remove the close bracket token
+                        GetNextToken();
+                        break;
+
+                    case JSToken.AccessField:
+                        ConstantWrapper id = null;
+                        Context nameContext = m_currentToken.Clone();
+                        GetNextToken();
+                        if (m_currentToken.IsNot(JSToken.Identifier))
+                        {
+                            string identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
+                            if (null != identifier)
+                            {
+                                // don't report an error here -- it's actually okay to have a property name
+                                // that is a keyword which is okay to be an identifier. For instance,
+                                // jQuery has a commonly-used method named "get" to make an ajax request
+                                //ForceReportInfo(JSError.KeywordUsedAsIdentifier);
+                                id = new ConstantWrapper(identifier, PrimitiveType.String, m_currentToken.Clone());
+                            }
+                            else if (JSScanner.IsValidIdentifier(m_currentToken.Code))
+                            {
+                                // it must be a keyword, because it can't technically be an identifier,
+                                // but it IS a valid identifier format. Throw a warning but still
+                                // create the constant wrapper so we can output it as-is
+                                ReportError(JSError.KeywordUsedAsIdentifier);
+                                id = new ConstantWrapper(m_currentToken.Code, PrimitiveType.String, m_currentToken.Clone());
+                            }
+                            else
+                            {
+                                ReportError(JSError.NoIdentifier);
+                            }
+                        }
+                        else
+                        {
+                            id = new ConstantWrapper(m_scanner.Identifier, PrimitiveType.String, m_currentToken.Clone());
+                        }
+
+                        GetNextToken();
+                        expression = new Member(expression.Context.CombineWith(id.Context))
+                            {
+                                Root = expression,
+                                Name = id.Context.Code,
+                                NameContext = nameContext.CombineWith(id.Context)
+                            };
+                        break;
+                    default:
+                        if (null != newContexts)
+                        {
+                            while (newContexts.Count > 0)
+                            {
+                                (newContexts[newContexts.Count - 1]).UpdateWith(expression.Context);
+                                expression = new CallNode(newContexts[newContexts.Count - 1])
+                                    {
+                                        Function = expression,
+                                        Arguments = new AstNodeList(CurrentPositionContext)
+                                    };
+                                ((CallNode)expression).IsConstructor = true;
+                                newContexts.RemoveAt(newContexts.Count - 1);
+                            }
+                        }
+                        return expression;
+                }
+            }
+        }
+
+        //---------------------------------------------------------------------------------------
+        // ParseExpressionList
+        //
+        //  Given a starting this.currentToken '(' or '[', parse a list of expression separated by
+        //  ',' until matching ')' or ']'
+        //---------------------------------------------------------------------------------------
+        private AstNodeList ParseExpressionList(JSToken terminator)
+        {
+            var list = new AstNodeList(m_currentToken.Clone());
+            do
+            {
+                // skip past the opening delimiter or comma
+                GetNextToken();
+                AstNode item = null;
+                if (m_currentToken.Is(JSToken.Comma))
+                {
+                    // a comma here means a missing element. Not really valid, but
+                    // let's be a little flexible here.
+                    item = new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.FlattenToStart());
+                    list.Append(item);
+                    list.UpdateWith(m_currentToken);
+                }
+                else if (m_currentToken.IsNot(terminator))
+                {
+                    // if there's a spread context, save it now
+                    Context spreadContext = null;
+                    if (m_currentToken.Is(JSToken.RestSpread))
+                    {
+                        ParsedVersion = ScriptVersion.EcmaScript6;
+                        spreadContext = m_currentToken.Clone();
+                        GetNextToken();
+                    }
+
+                    // parse an expression
+                    item = ParseExpression(true);
+
+                    if (spreadContext != null)
+                    {
+                        item = new UnaryOperator(spreadContext.CombineWith(item.Context))
+                            {
+                                Operand = item,
+                                OperatorToken = JSToken.RestSpread,
+                                OperatorContext = spreadContext
+                            };
+                    }
+
+                    list.Append(item);
+                }
+
+                if (m_currentToken.Is(JSToken.Comma))
+                {
+                    item.IfNotNull(i => i.TerminatingContext = m_currentToken.Clone());
+                }
+            }
+            while (m_currentToken.Is(JSToken.Comma));
+
+            if (m_currentToken.Is(terminator))
+            {
+                list.Context.UpdateWith(m_currentToken);
+            }
+            else if (terminator == JSToken.RightParenthesis)
+            {
+                //  in ASP+ it's easy to write a semicolon at the end of an expression
+                //  not realizing it is going to go inside a function call
+                //  (ie. Response.Write()), so make a special check here
+                if (m_currentToken.Is(JSToken.Semicolon)
+                    && PeekToken() == JSToken.RightParenthesis)
+                {
+                    ReportError(JSError.UnexpectedSemicolon);
+                    GetNextToken();
+                }
+                else
+                {
+                    // expected a right-parenthesis but don't have one
+                    ReportError(JSError.NoRightParenthesis);
+                }
+            }
+            else
+            {
+                // expected a right-bracket but didn't have one
+                ReportError(JSError.NoRightBracket);
+            }
+
+            return list;
+        }
+
+        #endregion
+
+        #region helper methods
+
+        /// <summary>
+        /// set the source by creating a document from the actual source and its context,
+        /// then create and initialize a scanner for that document.
+        /// </summary>
+        /// <param name="source">source code</param>
+        /// <param name="sourceContext">optional context for the source code</param>
+        private void SetDocumentContext(DocumentContext documentContext)
+        {
+            // set the document object to point to this parser.
+            documentContext.Parser = this;
+
+            // set up the scanner for the given document context
+            m_scanner = new JSScanner(documentContext);
+            m_currentToken = m_scanner.CurrentToken;
+
+            // if the scanner encounters a special "globals" comment, it'll fire this event
+            // at which point we will define a field with that name in the global scope. 
+            m_scanner.GlobalDefine += (sender, ea) =>
+            {
+                var globalScope = GlobalScope;
+                if (globalScope[ea.Name] == null)
+                {
+                    var field = globalScope.CreateField(ea.Name, null, FieldAttributes.SpecialName);
+                    globalScope.AddField(field);
+                }
+            };
+
+            // this event is fired whenever a ///#SOURCE comment is encountered
+            m_scanner.NewModule += (sender, ea) =>
+            {
+                m_newModule = true;
+
+                // we also want to assume that we found a newline character after
+                // the comment
+                m_foundEndOfLine = true;
+            };
+        }
+
+        //---------------------------------------------------------------------------------------
+        // CreateExpressionNode
+        //
+        //  Create the proper AST object according to operator
+        //---------------------------------------------------------------------------------------
+        private static AstNode CreateExpressionNode(Context operatorContext, AstNode operand1, AstNode operand2)
+        {
+            Debug.Assert(operatorContext != null);
+
+            // create a context, but protect against one or the other operand being null (syntax error during parsing)
+            var context = (operand1.IfNotNull(operand => operand.Context) ?? operatorContext)
+                .CombineWith(operand2.IfNotNull(operand => operand.Context));
+
+            switch (operatorContext.Token)
+            {
+                case JSToken.Assign:
+                case JSToken.BitwiseAnd:
+                case JSToken.BitwiseAndAssign:
+                case JSToken.BitwiseOr:
+                case JSToken.BitwiseOrAssign:
+                case JSToken.BitwiseXor:
+                case JSToken.BitwiseXorAssign:
+                case JSToken.Divide:
+                case JSToken.DivideAssign:
+                case JSToken.Equal:
+                case JSToken.GreaterThan:
+                case JSToken.GreaterThanEqual:
+                case JSToken.In:
+                case JSToken.InstanceOf:
+                case JSToken.LeftShift:
+                case JSToken.LeftShiftAssign:
+                case JSToken.LessThan:
+                case JSToken.LessThanEqual:
+                case JSToken.LogicalAnd:
+                case JSToken.LogicalOr:
+                case JSToken.Minus:
+                case JSToken.MinusAssign:
+                case JSToken.Modulo:
+                case JSToken.ModuloAssign:
+                case JSToken.Multiply:
+                case JSToken.MultiplyAssign:
+                case JSToken.NotEqual:
+                case JSToken.Plus:
+                case JSToken.PlusAssign:
+                case JSToken.RightShift:
+                case JSToken.RightShiftAssign:
+                case JSToken.StrictEqual:
+                case JSToken.StrictNotEqual:
+                case JSToken.UnsignedRightShift:
+                case JSToken.UnsignedRightShiftAssign:
+                    // regular binary operator
+                    return new BinaryOperator(context)
+                        {
+                            Operand1 = operand1,
+                            Operand2 = operand2,
+                            OperatorContext = operatorContext,
+                            OperatorToken = operatorContext.Token
+                        };
+
+                case JSToken.Comma:
+                    // use the special comma-operator class derived from binary operator.
+                    // it has special logic to combine adjacent comma operators into a single
+                    // node with an ast node list rather than nested binary operators
+                    return CommaOperator.CombineWithComma(context, operand1, operand2);
+
+                default:
+                    // shouldn't get here!
+                    Debug.Assert(false);
+                    return null;
+            }
         }
 
         /// <summary>
@@ -4854,7 +5148,7 @@ namespace Microsoft.Ajax.Utilities
                                 if (decimalValue != doubleValue)
                                 {
                                     // throw a warning!
-                                    ReportError(JSError.OctalLiteralsDeprecated, m_currentToken.Clone(), true);
+                                    ReportError(JSError.OctalLiteralsDeprecated);
 
                                     // return false because octals are deprecated and might have
                                     // cross-browser issues
@@ -4912,383 +5206,29 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        //---------------------------------------------------------------------------------------
-        // MemberExpression
-        //
-        // Accessor :
-        //  <empty> |
-        //  Arguments Accessor
-        //  '[' Expression ']' Accessor |
-        //  '.' Identifier Accessor |
-        //
-        //  Don't have this function throwing an exception without checking all the calling sites.
-        //  There is state in instance variable that is saved on the calling stack in some function
-        //  (i.e ParseFunction and ParseClass) and you don't want to blow up the stack
-        //---------------------------------------------------------------------------------------
-        private AstNode MemberExpression(AstNode expression, List<Context> newContexts)
+        private void AppendImportantComments(Block block)
         {
-            for (; ; )
+            if (block != null)
             {
-                m_noSkipTokenSet.Add(NoSkipTokenSet.s_MemberExprNoSkipTokenSet);
-                try
+                // make sure any important comments before the closing brace are kept
+                if (m_importantComments.Count > 0
+                    && m_settings.PreserveImportantComments
+                    && m_settings.IsModificationAllowed(TreeModifications.PreserveImportantComments))
                 {
-                    switch (m_currentToken.Token)
+                    // we have important comments before the EOF. Add the comment(s) to the program.
+                    foreach (var importantComment in m_importantComments)
                     {
-                        case JSToken.LeftParenthesis:
-                            AstNodeList args = null;
-                            RecoveryTokenException callError = null;
-                            m_noSkipTokenSet.Add(NoSkipTokenSet.s_ParenToken);
-                            try
-                            {
-                                args = ParseExpressionList(JSToken.RightParenthesis);
-                            }
-                            catch (RecoveryTokenException exc)
-                            {
-                                args = (AstNodeList)exc._partiallyComputedNode;
-                                if (IndexOfToken(NoSkipTokenSet.s_ParenToken, exc) == -1)
-                                    callError = exc; // thrown later on
-                            }
-                            finally
-                            {
-                                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_ParenToken);
-                            }
-
-                            expression = new CallNode(expression.Context.CombineWith(args.Context), this)
-                                {
-                                    Function = expression,
-                                    Arguments = args,
-                                    InBrackets = false
-                                };
-
-                            if (null != newContexts && newContexts.Count > 0)
-                            {
-                                (newContexts[newContexts.Count - 1]).UpdateWith(expression.Context);
-                                if (!(expression is CallNode))
-                                {
-                                    expression = new CallNode(newContexts[newContexts.Count - 1], this)
-                                        {
-                                            Function = expression,
-                                            Arguments = new AstNodeList(CurrentPositionContext(), this)
-                                        };
-                                }
-                                else
-                                {
-                                    expression.Context = newContexts[newContexts.Count - 1];
-                                }
-
-                                ((CallNode)expression).IsConstructor = true;
-                                newContexts.RemoveAt(newContexts.Count - 1);
-                            }
-
-                            if (callError != null)
-                            {
-                                callError._partiallyComputedNode = expression;
-                                throw callError;
-                            }
-
-                            GetNextToken();
-                            break;
-
-                        case JSToken.LeftBracket:
-                            m_noSkipTokenSet.Add(NoSkipTokenSet.s_BracketToken);
-                            try
-                            {
-                                //
-                                // ROTOR parses a[b,c] as a call to a, passing in the arguments b and c.
-                                // the correct parse is a member lookup on a of c -- the "b,c" should be
-                                // a single expression with a comma operator that evaluates b but only
-                                // returns c.
-                                // So we'll change the default behavior from parsing an expression list to
-                                // parsing a single expression, but returning a single-item list (or an empty
-                                // list if there is no expression) so the rest of the code will work.
-                                //
-                                //args = ParseExpressionList(JSToken.RightBracket);
-                                GetNextToken();
-                                args = new AstNodeList(CurrentPositionContext(), this);
-
-                                AstNode accessor = ParseExpression();
-                                if (accessor != null)
-                                {
-                                    args.Append(accessor);
-                                }
-                            }
-                            catch (RecoveryTokenException exc)
-                            {
-                                if (IndexOfToken(NoSkipTokenSet.s_BracketToken, exc) == -1)
-                                {
-                                    if (exc._partiallyComputedNode != null)
-                                    {
-                                        exc._partiallyComputedNode =
-                                           new CallNode(expression.Context.CombineWith(m_currentToken.Clone()), this)
-                                            {
-                                                Function = expression,
-                                                Arguments = (AstNodeList)exc._partiallyComputedNode,
-                                                InBrackets = true
-                                            };
-                                    }
-                                    else
-                                    {
-                                        exc._partiallyComputedNode = expression;
-                                    }
-                                    throw;
-                                }
-                                else
-                                    args = (AstNodeList)exc._partiallyComputedNode;
-                            }
-                            finally
-                            {
-                                m_noSkipTokenSet.Remove(NoSkipTokenSet.s_BracketToken);
-                            }
-                            expression = new CallNode(expression.Context.CombineWith(m_currentToken.Clone()), this)
-                                {
-                                    Function = expression,
-                                    Arguments = args,
-                                    InBrackets = true
-                                };
-
-                            // there originally was code here in the ROTOR sources that checked the new context list and
-                            // changed this member call to a constructor call, effectively combining the two. I believe they
-                            // need to remain separate.
-
-                            // remove the close bracket token
-                            GetNextToken();
-                            break;
-
-                        case JSToken.AccessField:
-                            ConstantWrapper id = null;
-                            Context nameContext = m_currentToken.Clone();
-                            GetNextToken();
-                            if (JSToken.Identifier != m_currentToken.Token)
-                            {
-                                string identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
-                                if (null != identifier)
-                                {
-                                    // don't report an error here -- it's actually okay to have a property name
-                                    // that is a keyword which is okay to be an identifier. For instance,
-                                    // jQuery has a commonly-used method named "get" to make an ajax request
-                                    //ForceReportInfo(JSError.KeywordUsedAsIdentifier);
-                                    id = new ConstantWrapper(identifier, PrimitiveType.String, m_currentToken.Clone(), this);
-                                }
-                                else if (JSScanner.IsValidIdentifier(m_currentToken.Code))
-                                {
-                                    // it must be a keyword, because it can't technically be an identifier,
-                                    // but it IS a valid identifier format. Throw a warning but still
-                                    // create the constant wrapper so we can output it as-is
-                                    ReportError(JSError.KeywordUsedAsIdentifier, m_currentToken.Clone(), true);
-                                    id = new ConstantWrapper(m_currentToken.Code, PrimitiveType.String, m_currentToken.Clone(), this);
-                                }
-                                else
-                                {
-                                    ReportError(JSError.NoIdentifier);
-                                    SkipTokensAndThrow(expression);
-                                }
-                            }
-                            else
-                            {
-                                id = new ConstantWrapper(m_scanner.Identifier, PrimitiveType.String, m_currentToken.Clone(), this);
-                            }
-                            GetNextToken();
-                            expression = new Member(expression.Context.CombineWith(id.Context), this)
-                                {
-                                    Root = expression,
-                                    Name = id.Context.Code,
-                                    NameContext = nameContext.CombineWith(id.Context)
-                                };
-                            break;
-                        default:
-                            if (null != newContexts)
-                            {
-                                while (newContexts.Count > 0)
-                                {
-                                    (newContexts[newContexts.Count - 1]).UpdateWith(expression.Context);
-                                    expression = new CallNode(newContexts[newContexts.Count - 1], this)
-                                        {
-                                            Function = expression,
-                                            Arguments = new AstNodeList(CurrentPositionContext(), this)
-                                        };
-                                    ((CallNode)expression).IsConstructor = true;
-                                    newContexts.RemoveAt(newContexts.Count - 1);
-                                }
-                            }
-                            return expression;
+                        block.Append(new ImportantComment(importantComment));
                     }
-                }
-                catch (RecoveryTokenException exc)
-                {
-                    if (IndexOfToken(NoSkipTokenSet.s_MemberExprNoSkipTokenSet, exc) != -1)
-                        expression = exc._partiallyComputedNode;
-                    else
-                    {
-                        Debug.Assert(exc._partiallyComputedNode == expression);
-                        throw;
-                    }
-                }
-                finally
-                {
-                    m_noSkipTokenSet.Remove(NoSkipTokenSet.s_MemberExprNoSkipTokenSet);
+
+                    m_importantComments.Clear();
                 }
             }
         }
 
-        //---------------------------------------------------------------------------------------
-        // ParseExpressionList
-        //
-        //  Given a starting this.currentToken '(' or '[', parse a list of expression separated by
-        //  ',' until matching ')' or ']'
-        //---------------------------------------------------------------------------------------
-        private AstNodeList ParseExpressionList(JSToken terminator)
-        {
-            Context listCtx = m_currentToken.Clone();
-            GetNextToken();
-            AstNodeList list = new AstNodeList(listCtx, this);
-            if (terminator != m_currentToken.Token)
-            {
-                for (; ; )
-                {
-                    m_noSkipTokenSet.Add(NoSkipTokenSet.s_ExpressionListNoSkipTokenSet);
-                    try
-                    {
-                        AstNode item;
-                        if (JSToken.Comma == m_currentToken.Token)
-                        {
-                            item = new ConstantWrapper(Missing.Value, PrimitiveType.Other, m_currentToken.Clone(), this);
-                            list.Append(item);
-                        }
-                        else if (terminator == m_currentToken.Token)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            item = ParseExpression(true);
-                            list.Append(item);
-                        }
+        #endregion
 
-                        if (terminator == m_currentToken.Token)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            if (JSToken.Comma == m_currentToken.Token)
-                            {
-                                item.IfNotNull(n => n.TerminatingContext = m_currentToken.Clone());
-                            }
-                            else
-                            {
-                                if (terminator == JSToken.RightParenthesis)
-                                {
-                                    //  in ASP+ it's easy to write a semicolon at the end of an expression
-                                    //  not realizing it is going to go inside a function call
-                                    //  (ie. Response.Write()), so make a special check here
-                                    if (JSToken.Semicolon == m_currentToken.Token)
-                                    {
-                                        if (JSToken.RightParenthesis == PeekToken())
-                                        {
-                                            ReportError(JSError.UnexpectedSemicolon, true);
-                                            GetNextToken();
-                                            break;
-                                        }
-                                    }
-
-                                    ReportError(JSError.NoRightParenthesisOrComma);
-                                }
-                                else
-                                {
-                                    ReportError(JSError.NoRightBracketOrComma);
-                                }
-
-                                SkipTokensAndThrow();
-                            }
-                        }
-                    }
-                    catch (RecoveryTokenException exc)
-                    {
-                        if (exc._partiallyComputedNode != null)
-                            list.Append(exc._partiallyComputedNode);
-                        if (IndexOfToken(NoSkipTokenSet.s_ExpressionListNoSkipTokenSet, exc) == -1)
-                        {
-                            exc._partiallyComputedNode = list;
-                            throw;
-                        }
-                    }
-                    finally
-                    {
-                        m_noSkipTokenSet.Remove(NoSkipTokenSet.s_ExpressionListNoSkipTokenSet);
-                    }
-                    GetNextToken();
-                }
-            }
-            listCtx.UpdateWith(m_currentToken);
-            return list;
-        }
-
-        //---------------------------------------------------------------------------------------
-        // CreateExpressionNode
-        //
-        //  Create the proper AST object according to operator
-        //---------------------------------------------------------------------------------------
-        private AstNode CreateExpressionNode(Context op, AstNode operand1, AstNode operand2)
-        {
-            Context context = operand1.Context.CombineWith(operand2.Context);
-            switch (op.Token)
-            {
-                case JSToken.Assign:
-                case JSToken.BitwiseAnd:
-                case JSToken.BitwiseAndAssign:
-                case JSToken.BitwiseOr:
-                case JSToken.BitwiseOrAssign:
-                case JSToken.BitwiseXor:
-                case JSToken.BitwiseXorAssign:
-                case JSToken.Divide:
-                case JSToken.DivideAssign:
-                case JSToken.Equal:
-                case JSToken.GreaterThan:
-                case JSToken.GreaterThanEqual:
-                case JSToken.In:
-                case JSToken.InstanceOf:
-                case JSToken.LeftShift:
-                case JSToken.LeftShiftAssign:
-                case JSToken.LessThan:
-                case JSToken.LessThanEqual:
-                case JSToken.LogicalAnd:
-                case JSToken.LogicalOr:
-                case JSToken.Minus:
-                case JSToken.MinusAssign:
-                case JSToken.Modulo:
-                case JSToken.ModuloAssign:
-                case JSToken.Multiply:
-                case JSToken.MultiplyAssign:
-                case JSToken.NotEqual:
-                case JSToken.Plus:
-                case JSToken.PlusAssign:
-                case JSToken.RightShift:
-                case JSToken.RightShiftAssign:
-                case JSToken.StrictEqual:
-                case JSToken.StrictNotEqual:
-                case JSToken.UnsignedRightShift:
-                case JSToken.UnsignedRightShiftAssign:
-                    // regular binary operator
-                    return new BinaryOperator(context, this)
-                        {
-                            Operand1 = operand1,
-                            Operand2 = operand2,
-                            OperatorContext = op,
-                            OperatorToken = op.Token
-                        };
-
-                case JSToken.Comma:
-                    // use the special comma-operator class derived from binary operator.
-                    // it has special logic to combine adjacent comma operators into a single
-                    // node with an ast node list rather than nested binary operators
-                    return CommaOperator.CombineWithComma(context, this, operand1, operand2);
-
-                default:
-                    // shouldn't get here!
-                    Debug.Assert(false);
-                    return null;
-            }
-        }
+        #region get/peek/scan tokens
 
         //---------------------------------------------------------------------------------------
         // GetNextToken
@@ -5301,72 +5241,30 @@ namespace Microsoft.Ajax.Utilities
         //---------------------------------------------------------------------------------------
         private void GetNextToken()
         {
-            if (m_useCurrentForNext)
-            {
-                // we just want to keep using the current token.
-                // but don't get into an infinite loop -- after a while,
-                // give up and grab the next token from the scanner anyway
-                m_useCurrentForNext = false;
-                if (m_breakRecursion++ > 10)
-                {
-                    m_currentToken = ScanNextToken();
-                }
-            }
-            else
-            {
-                m_goodTokensProcessed++;
-                m_breakRecursion = 0;
-
-                // the scanner reuses the same context object for performance,
-                // so if we ever mean to hold onto it later, we need to clone it.
-                m_currentToken = ScanNextToken();
-            }
-        }
-
-        private AstNode ScanRegularExpression()
-        {
-            var source = m_scanner.ScanRegExp();
-            if (source != null)
-            {
-                // parse the flags (if any)
-                var flags = m_scanner.ScanRegExpFlags();
-
-                // create the regexp node and return it 
-                return new RegExpLiteral(m_currentToken.Clone(), this)
-                {
-                    Pattern = source,
-                    PatternSwitches = flags
-                };
-            }
-
-            // if we get here, there isn't a regular expression at the current position
-            return null;
+            // the scanner reuses the same context object for performance,
+            // so if we ever mean to hold onto it later, we need to clone it.
+            m_currentToken = ScanNextToken();
         }
 
         private Context ScanNextToken()
         {
-            EchoWriter.IfNotNull(w => { if (m_currentToken.Token != JSToken.None) w.Write(m_currentToken.Code); });
+            EchoWriter.IfNotNull(w => { if (m_currentToken.IsNot(JSToken.None)) w.Write(m_currentToken.Code); });
 
             m_newModule = false;
             m_foundEndOfLine = false;
             m_importantComments.Clear();
 
-            var nextToken = m_scanner.ScanNextToken(false);
-            while (nextToken.Token == JSToken.WhiteSpace
-                || nextToken.Token == JSToken.EndOfLine
-                || nextToken.Token == JSToken.SingleLineComment
-                || nextToken.Token == JSToken.MultipleLineComment
-                || nextToken.Token == JSToken.Error
-                || nextToken.Token == JSToken.PreprocessorDirective)
+            var nextToken = m_scanner.ScanNextToken();
+            while (nextToken.IsOne(JSToken.WhiteSpace, JSToken.EndOfLine, JSToken.SingleLineComment, JSToken.MultipleLineComment, JSToken.PreprocessorDirective, JSToken.Error))
             {
-                if (nextToken.Token == JSToken.EndOfLine)
+                if (nextToken.Is(JSToken.EndOfLine))
                 {
                     m_foundEndOfLine = true;
                 }
-                else if (nextToken.Token == JSToken.MultipleLineComment || nextToken.Token == JSToken.SingleLineComment)
+                else if (nextToken.IsOne(JSToken.MultipleLineComment, JSToken.SingleLineComment))
                 {
-                    if (nextToken.HasCode 
-                        && ((nextToken.Code.Length > 2 && nextToken.Code[2] == '!') 
+                    if (nextToken.HasCode
+                        && ((nextToken.Code.Length > 2 && nextToken.Code[2] == '!')
                         || (nextToken.Code.IndexOf("@preserve", StringComparison.OrdinalIgnoreCase) >= 0)
                         || (nextToken.Code.IndexOf("@license", StringComparison.OrdinalIgnoreCase) >= 0)))
                     {
@@ -5377,10 +5275,10 @@ namespace Microsoft.Ajax.Utilities
 
                 // if we are preprocess-only, then don't output any preprocessor directive tokens
                 EchoWriter.IfNotNull(w => { if (!Settings.PreprocessOnly || nextToken.Token != JSToken.PreprocessorDirective) w.Write(nextToken.Code); });
-                nextToken = m_scanner.ScanNextToken(false);
+                nextToken = m_scanner.ScanNextToken();
             }
 
-            if (nextToken.Token == JSToken.EndOfFile)
+            if (nextToken.Is(JSToken.EndOfFile))
             {
                 m_foundEndOfLine = true;
             }
@@ -5393,296 +5291,227 @@ namespace Microsoft.Ajax.Utilities
             // clone the scanner, turn off any error reporting, and get the next token
             var clonedScanner = m_scanner.Clone();
             clonedScanner.SuppressErrors = true;
-            var peekToken = clonedScanner.ScanNextToken(false);
+            var peekToken = clonedScanner.ScanNextToken();
 
             // there are some tokens we really don't care about when we peek
             // for the next token
-            while (peekToken.Token == JSToken.WhiteSpace
-                || peekToken.Token == JSToken.EndOfLine
-                || peekToken.Token == JSToken.Error
-                || peekToken.Token == JSToken.SingleLineComment
-                || peekToken.Token == JSToken.MultipleLineComment
-                || peekToken.Token == JSToken.PreprocessorDirective
-                || peekToken.Token == JSToken.ConditionalCommentEnd
-                || peekToken.Token == JSToken.ConditionalCommentStart
-                || peekToken.Token == JSToken.ConditionalCompilationElse
-                || peekToken.Token == JSToken.ConditionalCompilationElseIf
-                || peekToken.Token == JSToken.ConditionalCompilationEnd
-                || peekToken.Token == JSToken.ConditionalCompilationIf
-                || peekToken.Token == JSToken.ConditionalCompilationOn
-                || peekToken.Token == JSToken.ConditionalCompilationSet
-                || peekToken.Token == JSToken.ConditionalCompilationVariable
-                || peekToken.Token == JSToken.ConditionalIf)
+            while (peekToken.IsOne(JSToken.WhiteSpace, JSToken.EndOfLine, JSToken.Error, JSToken.SingleLineComment,
+                JSToken.MultipleLineComment, JSToken.PreprocessorDirective, JSToken.ConditionalCommentEnd, JSToken.ConditionalCommentStart,
+                JSToken.ConditionalCompilationElse, JSToken.ConditionalCompilationElseIf, JSToken.ConditionalCompilationEnd,
+                JSToken.ConditionalCompilationIf, JSToken.ConditionalCompilationOn, JSToken.ConditionalCompilationSet,
+                JSToken.ConditionalCompilationVariable, JSToken.ConditionalIf))
             {
-                peekToken = clonedScanner.ScanNextToken(false);
+                peekToken = clonedScanner.ScanNextToken();
             }
 
             // return the token type
             return peekToken.Token;
         }
 
-        private Context CurrentPositionContext()
+        //private IEnumerable<Context> PeekTokens()
+        //{
+        //    // clone the scanner, turn off any error reporting, and get the next token
+        //    var clonedScanner = m_scanner.Clone();
+        //    clonedScanner.SuppressErrors = true;
+
+        //    Context peekToken;
+        //    while ((peekToken = clonedScanner.ScanNextToken()).IsNot(JSToken.EndOfFile))
+        //    {
+        //        // there are some tokens we really don't care about when we peek for the next token
+        //        while (peekToken.IsOne(JSToken.WhiteSpace, JSToken.EndOfLine, JSToken.Error, JSToken.SingleLineComment,
+        //            JSToken.MultipleLineComment, JSToken.PreprocessorDirective, JSToken.ConditionalCommentEnd, JSToken.ConditionalCommentStart,
+        //            JSToken.ConditionalCompilationElse, JSToken.ConditionalCompilationElseIf, JSToken.ConditionalCompilationEnd,
+        //            JSToken.ConditionalCompilationIf, JSToken.ConditionalCompilationOn, JSToken.ConditionalCompilationSet,
+        //            JSToken.ConditionalCompilationVariable, JSToken.ConditionalIf))
+        //        {
+        //            peekToken = clonedScanner.ScanNextToken();
+        //        }
+
+        //        // return the token type
+        //        yield return peekToken;
+        //    }
+        //}
+
+        private bool PeekCanBeModule()
         {
-            return m_currentToken.FlattenToStart();
+            // shortcut the whole process. If we KNOW we are parsing ES6, then yes: parse a module
+            if (ParsedVersion == ScriptVersion.EcmaScript6 || m_settings.ScriptVersion == ScriptVersion.EcmaScript6)
+            {
+                return true;
+            }
+
+            // clone the scanner, turn off any error reporting, and get the next token
+            var clonedScanner = m_scanner.Clone();
+            clonedScanner.SuppressErrors = true;
+            var peekToken = clonedScanner.ScanNextToken();
+
+            // skip whitespace, but not linebreaks
+            var lineBreak = false;
+            while (peekToken.IsOne(JSToken.WhiteSpace, JSToken.EndOfLine, JSToken.Error, JSToken.SingleLineComment,
+                JSToken.MultipleLineComment, JSToken.PreprocessorDirective, JSToken.ConditionalCommentEnd, JSToken.ConditionalCommentStart,
+                JSToken.ConditionalCompilationElse, JSToken.ConditionalCompilationElseIf, JSToken.ConditionalCompilationEnd,
+                JSToken.ConditionalCompilationIf, JSToken.ConditionalCompilationOn, JSToken.ConditionalCompilationSet,
+                JSToken.ConditionalCompilationVariable, JSToken.ConditionalIf))
+            {
+                if (peekToken.Is(JSToken.EndOfLine))
+                {
+                    lineBreak = true;
+                }
+
+                peekToken = clonedScanner.ScanNextToken();
+            }
+
+            // if we have a string literal with no linebreaks in between, or an identifier, then we're good to go.
+            return (peekToken.Is(JSToken.StringLiteral) && !lineBreak) || peekToken.Is(JSToken.Identifier) || JSKeyword.CanBeIdentifier(peekToken.Token) != null;
         }
 
-        //---------------------------------------------------------------------------------------
-        // ReportError
-        //
-        //  Generate a parser error.
-        //  When no context is provided the token is missing so the context is the current position
-        //---------------------------------------------------------------------------------------
-        private void ReportError(JSError errorId)
+        #endregion
+
+        #region error handlers
+
+        /// <summary>
+        /// Handle the expected semicolon at the current position for the given node.
+        /// </summary>
+        /// <param name="node">node that should end with a semicolon</param>
+        private void ExpectSemicolon(AstNode node)
         {
-            ReportError(errorId, false);
+            if (m_currentToken.Is(JSToken.Semicolon))
+            {
+                node.TerminatingContext = m_currentToken.Clone();
+                GetNextToken();
+            }
+            else if (m_foundEndOfLine || m_currentToken.IsOne(JSToken.RightCurly, JSToken.EndOfFile))
+            {
+                // semicolon insertion rules
+                // a right-curly or an end of line is something we don't WANT to throw a warning for. 
+                // Just too common and doesn't really warrant a warning (in my opinion)
+                if (m_currentToken.IsNot(JSToken.RightCurly) && m_currentToken.IsNot(JSToken.EndOfFile))
+                {
+                    ReportError(JSError.SemicolonInsertion, node.Context.IfNotNull(c => c.FlattenToEnd()));
+                }
+            }
+            else
+            {
+                ReportError(JSError.NoSemicolon, node.Context.IfNotNull(c => c.FlattenToEnd()));
+            }
         }
 
-        //---------------------------------------------------------------------------------------
-        // ReportError
-        //
-        //  Generate a parser error.
-        //  When no context is provided the token is missing so the context is the current position
-        //  The function is told whether or not next call to GetToken() should return the same
-        //  token or not
-        //---------------------------------------------------------------------------------------
-        private void ReportError(JSError errorId, bool skipToken)
+        /// <summary>
+        ///  Generate a parser error.
+        ///  The function is told whether or not next call to GetToken() should return the same
+        ///  token or not
+        /// </summary>
+        /// <param name="errorId">Error to report</param>
+        /// <param name="skipToken">true to move to the next token when GetNextToken is called; false to stay on this token</param>
+        /// <param name="context">context to report against, or current token if null</param>
+        /// <param name="forceToError">whether to force to an error, or use the default severity</param>
+        private void ReportError(JSError errorId, Context context = null, bool forceToError = false)
         {
-            // get the current position token
-            Context context = m_currentToken.Clone();
-            ReportError(errorId, context, skipToken);
-        }
-
-        //---------------------------------------------------------------------------------------
-        // ReportError
-        //
-        //  Generate a parser error.
-        //  The function is told whether or not next call to GetToken() should return the same
-        //  token or not
-        //---------------------------------------------------------------------------------------
-        private void ReportError(JSError errorId, Context context, bool skipToken)
-        {
-            Debug.Assert(context != null);
-            int previousSeverity = m_severity;
-            m_severity = JScriptException.GetSeverity(errorId);
+            context = context ?? m_currentToken.Clone();
             // EOF error is special and it's the last error we can possibly get
             if (JSToken.EndOfFile == context.Token)
-                EOFError(errorId); // EOF context is special
+            {
+                context.HandleError(errorId, true); // EOF context is special
+            }
             else
             {
-                // report the error if not in error condition and the
-                // error for this token is not worse than the one for the
-                // previous token
-                if (m_goodTokensProcessed > 0 || m_severity < previousSeverity)
-                    context.HandleError(errorId);
+                context.HandleError(errorId, forceToError);
+            }
+        }
 
-                // reset proper info
-                if (skipToken)
-                    m_goodTokensProcessed = -1;
+        private void CCTooComplicated(Context context)
+        {
+            // we ONLY support /*@id@*/ or /*@cc_on@id@*/ or /*@!@*/ or /*@cc_on!@*/ in expressions right now. 
+            // throw an error, skip to the end of the comment, then ignore it and start
+            // looking for the next token.
+            (context ?? m_currentToken).HandleError(JSError.ConditionalCompilationTooComplex);
+
+            // skip to end of conditional comment
+            while (m_currentToken.IsNot(JSToken.EndOfFile) && m_currentToken.IsNot(JSToken.ConditionalCommentEnd))
+            {
+                GetNextToken();
+            }
+            GetNextToken();
+        }
+
+        #endregion
+    }
+
+    public sealed class UndefinedReference
+    {
+        private Context m_context;
+
+        private Lookup m_lookup;
+        public AstNode LookupNode
+        {
+            get { return m_lookup; }
+        }
+
+        private string m_name;
+        private ReferenceType m_type;
+
+        public string Name
+        {
+            get { return m_name; }
+        }
+
+        public ReferenceType ReferenceType
+        {
+            get { return m_type; }
+        }
+
+        public int Column
+        {
+            get
+            {
+                if (m_context != null)
+                {
+                    // one-based
+                    return m_context.StartColumn + 1;
+                }
                 else
                 {
-                    m_useCurrentForNext = true;
-                    m_goodTokensProcessed = 0;
+                    return 0;
                 }
             }
         }
 
-        //---------------------------------------------------------------------------------------
-        // EOFError
-        //
-        //  Create a context for EOF error. The created context points to the end of the source
-        //  code. Assume the the scanner actually reached the end of file
-        //---------------------------------------------------------------------------------------
-        private void EOFError(JSError errorId)
+        public int Line
         {
-            Context eofCtx = m_currentToken.Clone();
-            eofCtx.StartLineNumber = m_scanner.CurrentLine;
-            eofCtx.StartLinePosition = m_scanner.StartLinePosition;
-            eofCtx.EndLineNumber = eofCtx.StartLineNumber;
-            eofCtx.EndLinePosition = eofCtx.StartLinePosition;
-            eofCtx.StartPosition = m_document.Source.Length;
-            eofCtx.EndPosition++;
-            eofCtx.HandleError(errorId);
-        }
-
-        //---------------------------------------------------------------------------------------
-        // SkipTokensAndThrow
-        //
-        //  Skip tokens until one in the no skip set is found.
-        //  A call to this function always ends in a throw statement that will be caught by the
-        //  proper rule
-        //---------------------------------------------------------------------------------------
-        private void SkipTokensAndThrow()
-        {
-            SkipTokensAndThrow(null);
-        }
-
-        private void SkipTokensAndThrow(AstNode partialAST)
-        {
-            m_useCurrentForNext = false; // make sure we go to the next token
-            bool checkForEndOfLine = m_noSkipTokenSet.HasToken(JSToken.EndOfLine);
-            while (!m_noSkipTokenSet.HasToken(m_currentToken.Token))
+            get
             {
-                if (checkForEndOfLine)
+                if (m_context != null)
                 {
-                    if (m_foundEndOfLine)
-                    {
-                        m_useCurrentForNext = true;
-                        throw new RecoveryTokenException(JSToken.EndOfLine, partialAST);
-                    }
+                    return m_context.StartLineNumber;
                 }
-                GetNextToken();
-                if (++m_tokensSkipped > c_MaxSkippedTokenNumber)
+                else
                 {
-                    m_currentToken.HandleError(JSError.TooManyTokensSkipped);
-                    throw new EndOfStreamException();
+                    return 0;
                 }
-                if (JSToken.EndOfFile == m_currentToken.Token)
-                    throw new EndOfStreamException();
-            }
-
-            m_useCurrentForNext = true;
-            // got a token in the no skip set, throw
-            throw new RecoveryTokenException(m_currentToken.Token, partialAST);
-        }
-
-        //---------------------------------------------------------------------------------------
-        // IndexOfToken
-        //
-        //  check whether the recovery token is a good one for the caller
-        //---------------------------------------------------------------------------------------
-        private int IndexOfToken(JSToken[] tokens, RecoveryTokenException exc)
-        {
-            return IndexOfToken(tokens, exc._token);
-        }
-
-        private int IndexOfToken(JSToken[] tokens, JSToken token)
-        {
-            int i, c;
-            for (i = 0, c = tokens.Length; i < c; i++)
-                if (tokens[i] == token)
-                    break;
-            if (i >= c)
-                i = -1;
-            else
-            {
-                // assume that the caller will deal with the token so move the state back to normal
-                m_useCurrentForNext = false;
-            }
-            return i;
-        }
-
-        private bool TokenInList(JSToken[] tokens, JSToken token)
-        {
-            return (-1 != IndexOfToken(tokens, token));
-        }
-
-        private bool TokenInList(JSToken[] tokens, RecoveryTokenException exc)
-        {
-            return (-1 != IndexOfToken(tokens, exc._token));
-        }
-
-        // helper classes
-        //***************************************************************************************
-        //
-        //***************************************************************************************
-
-        // this is a private exception used by the parser to handle syntax errors and partially-computed
-        // AST nodes. It will never make it outside the parser, so forget about serializing and proper constructors,
-        // and being public to begin with. We KNOW this will never get out because we have a try/catch in the
-        // Parse method that will catch any strays that happen to make it out and throw a syntax error.
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2237:MarkISerializableTypesWithSerializable"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1032:ImplementStandardExceptionConstructors"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1064:ExceptionsShouldBePublic")]
-        private sealed class RecoveryTokenException : Exception
-        {
-            internal JSToken _token;
-            internal AstNode _partiallyComputedNode;
-
-            internal RecoveryTokenException() { }
-
-            internal RecoveryTokenException(JSToken token, AstNode partialAST)
-                : base()
-            {
-                _token = token;
-                _partiallyComputedNode = partialAST;
             }
         }
 
-        //***************************************************************************************
-        // NoSkipTokenSet
-        //
-        //  This class is a possible implementation of the no skip token set. It relies on the
-        //  fact that the array passed in are static. Should you change it, this implementation
-        //  should change as well.
-        //  It keeps a linked list of token arrays that are passed in during parsing, on error
-        //  condition the list is traversed looking for a matching token. If a match is found
-        //  the token should not be skipped and an exception is thrown to let the proper
-        //  rule deal with the token
-        //***************************************************************************************
-        private class NoSkipTokenSet
+        internal UndefinedReference(Lookup lookup, Context context)
         {
-            private List<JSToken[]> m_tokenSetList;
+            m_lookup = lookup;
+            m_name = lookup.Name;
+            m_type = lookup.RefType;
+            m_context = context;
+        }
 
-            internal NoSkipTokenSet()
-            {
-                m_tokenSetList = new List<JSToken[]>();
-            }
+        public override string ToString()
+        {
+            return m_name;
+        }
+    }
 
-            internal void Add(JSToken[] tokens)
-            {
-                m_tokenSetList.Add(tokens);
-            }
+    public class UndefinedReferenceEventArgs : EventArgs
+    {
+        public UndefinedReference Reference { get; private set; }
 
-            internal void Remove(JSToken[] tokens)
-            {
-                bool wasRemoved = m_tokenSetList.Remove(tokens);
-                Debug.Assert(wasRemoved, "Token set not in no-skip list");
-            }
-
-            internal bool HasToken(JSToken token)
-            {
-                foreach (JSToken[] tokenSet in m_tokenSetList)
-                {
-                    for (int ndx = 0; ndx < tokenSet.Length; ++ndx)
-                    {
-                        if (tokenSet[ndx] == token)
-                        {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }
-
-            // list of static no skip token set for specifc rules
-            internal static readonly JSToken[] s_ArrayInitNoSkipTokenSet = new JSToken[] { JSToken.RightBracket, JSToken.Comma };
-            internal static readonly JSToken[] s_BlockConditionNoSkipTokenSet = new JSToken[] { JSToken.RightParenthesis, JSToken.LeftCurly, JSToken.EndOfLine };
-            internal static readonly JSToken[] s_BlockNoSkipTokenSet = new JSToken[] { JSToken.RightCurly };
-            internal static readonly JSToken[] s_BracketToken = new JSToken[] { JSToken.RightBracket };
-            internal static readonly JSToken[] s_CaseNoSkipTokenSet = new JSToken[] { JSToken.Case, JSToken.Default, JSToken.Colon, JSToken.EndOfLine };
-            internal static readonly JSToken[] s_DoWhileBodyNoSkipTokenSet = new JSToken[] { JSToken.While };
-            internal static readonly JSToken[] s_EndOfLineToken = new JSToken[] { JSToken.EndOfLine };
-            internal static readonly JSToken[] s_EndOfStatementNoSkipTokenSet = new JSToken[] { JSToken.Semicolon, JSToken.EndOfLine };
-            internal static readonly JSToken[] s_ExpressionListNoSkipTokenSet = new JSToken[] { JSToken.Comma };
-            internal static readonly JSToken[] s_FunctionDeclNoSkipTokenSet = new JSToken[] { JSToken.RightParenthesis, JSToken.LeftCurly, JSToken.Comma };
-            internal static readonly JSToken[] s_IfBodyNoSkipTokenSet = new JSToken[] { JSToken.Else };
-            internal static readonly JSToken[] s_MemberExprNoSkipTokenSet = new JSToken[] { JSToken.LeftBracket, JSToken.LeftParenthesis, JSToken.AccessField };
-            internal static readonly JSToken[] s_NoTrySkipTokenSet = new JSToken[] { JSToken.Catch, JSToken.Finally };
-            internal static readonly JSToken[] s_ObjectInitNoSkipTokenSet = new JSToken[] { JSToken.RightCurly, JSToken.Comma };
-            internal static readonly JSToken[] s_ParenExpressionNoSkipToken = new JSToken[] { JSToken.RightParenthesis };
-            internal static readonly JSToken[] s_ParenToken = new JSToken[] { JSToken.RightParenthesis };
-            internal static readonly JSToken[] s_PostfixExpressionNoSkipTokenSet = new JSToken[] { JSToken.Increment, JSToken.Decrement };
-            internal static readonly JSToken[] s_StartStatementNoSkipTokenSet = new JSToken[]{JSToken.LeftCurly,
-                                                                                               JSToken.Var,
-                                                                                               JSToken.Const,
-                                                                                               JSToken.If,
-                                                                                               JSToken.For,
-                                                                                               JSToken.Do,
-                                                                                               JSToken.While,
-                                                                                               JSToken.With,
-                                                                                               JSToken.Switch,
-                                                                                               JSToken.Try};
-            internal static readonly JSToken[] s_SwitchNoSkipTokenSet = new JSToken[] { JSToken.Case, JSToken.Default };
-            internal static readonly JSToken[] s_TopLevelNoSkipTokenSet = new JSToken[] { JSToken.Function };
-            internal static readonly JSToken[] s_VariableDeclNoSkipTokenSet = new JSToken[] { JSToken.Comma, JSToken.Semicolon };
+        public UndefinedReferenceEventArgs(UndefinedReference reference)
+        {
+            Reference = reference;
         }
     }
 }

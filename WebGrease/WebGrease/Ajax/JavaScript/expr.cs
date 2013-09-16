@@ -14,14 +14,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-
 namespace Microsoft.Ajax.Utilities
 {
     public abstract class Expression : AstNode
     {
-        protected Expression(Context context, JSParser parser)
-            : base(context, parser)
+        protected Expression(Context context)
+            : base(context)
         {
         }
 

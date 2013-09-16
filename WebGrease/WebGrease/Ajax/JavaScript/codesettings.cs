@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Text;
 
 namespace Microsoft.Ajax.Utilities
@@ -80,7 +79,10 @@ namespace Microsoft.Ajax.Utilities
         Expression,
 
         /// <summary>Input is an implicit function block, as in the value of an HTML onclick attribute</summary>
-        EventHandler
+        EventHandler,
+
+        /// <summary>Input is an implicit module block, as referenced by an import statement</summary>
+        Module,
     }
 
     /// <summary>
@@ -128,9 +130,8 @@ namespace Microsoft.Ajax.Utilities
             // no default globals
             this.m_knownGlobals = new HashSet<string>();
 
-            // by default there are five names in the debug lookup collection
-            var initialList = new string[] { "Debug", "$Debug", "WAssert", "Msn.Debug", "Web.Debug" };
-            this.m_debugLookups = new HashSet<string>(initialList);
+            // default is no debug namespaces
+            this.m_debugLookups = new HashSet<string>();
 
             // by default, let's NOT rename $super, so we don't break the Prototype library.
             // going to try to come up with a better solution, so this is just a stop-gap for now.
@@ -327,30 +328,6 @@ namespace Microsoft.Ajax.Utilities
 
         private HashSet<string> m_noRenameSet;
 
-        /// <summary>
-        /// read-only collection of identifiers we do not want renamed
-        /// </summary>
-        [Obsolete("This property is deprecated; use NoAutoRenameCollection instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public ReadOnlyCollection<string> NoAutoRenameIdentifiers
-        {
-            get
-            {
-                return new ReadOnlyCollection<string>(new List<string>(NoAutoRenameCollection));
-            }
-        }
-
-        /// <summary>
-        /// sets the collection of known global names to the array of string passed to this method
-        /// </summary>
-        /// <param name="globalArray">array of known global names</param>
-        [Obsolete("This property is deprecated; use SetnoAutoRenames instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public int SetNoAutoRename(params string[] noRenameNames)
-        {
-            return SetNoAutoRenames(noRenameNames);
-        }
-
         public IEnumerable<string> NoAutoRenameCollection { get { return m_noRenameSet; } }
 
         /// <summary>
@@ -423,30 +400,6 @@ namespace Microsoft.Ajax.Utilities
         #region known globals
 
         private HashSet<string> m_knownGlobals;
-        
-        /// <summary>
-        /// read-only collection of known global names
-        /// </summary>
-        [Obsolete("This property is deprecated; use KnownGlobalsCollection instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public ReadOnlyCollection<string> KnownGlobalNames
-        {
-            get
-            {
-                return new ReadOnlyCollection<string>(new List<string>(KnownGlobalCollection));
-            }
-        }
-
-        /// <summary>
-        /// sets the collection of known global names to the array of string passed to this method
-        /// </summary>
-        /// <param name="globalArray">array of known global names</param>
-        [Obsolete("This property is deprecated; use SetKnownGlobalIdentifiers instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public int SetKnownGlobalNames(params string[] globalArray)
-        {
-            return SetKnownGlobalIdentifiers(globalArray);
-        }
 
         /// <summary>
         /// Gets the known global name collection
@@ -530,34 +483,9 @@ namespace Microsoft.Ajax.Utilities
         private HashSet<string> m_debugLookups;
 
         /// <summary>
-        /// Collection of "debug" lookup identifiers
-        /// </summary>
-        [Obsolete("This property is deprecated; use DebugLookupCollection instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public ReadOnlyCollection<string> DebugLookups
-        {
-            get
-            {
-                return new ReadOnlyCollection<string>(new List<string>(DebugLookupCollection));
-            }
-        }
-
-        /// <summary>
         /// Gets the set of debug lookups
         /// </summary>
         public IEnumerable<string> DebugLookupCollection { get { return m_debugLookups; } }
-
-        /// <summary>
-        /// Set the collection of debug "lookup" identifiers
-        /// </summary>
-        /// <param name="definedNames">array of debug lookup identifier strings</param>
-        /// <returns>number of names successfully added to the collection</returns>
-        [Obsolete("This property is deprecated; use SetDebugNamespaces instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public int SetDebugLookups(params string[] debugLookups)
-        {
-            return SetDebugNamespaces(debugLookups);
-        }
 
         /// <summary>
         /// Set the collection of debug "lookup" identifiers
@@ -692,31 +620,9 @@ namespace Microsoft.Ajax.Utilities
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether eval-statements are "safe."
-        /// Deprecated in favor of <see cref="CodeSettings.EvalTreatment" />, which is an enumeration
-        /// allowing for more options than just true or false.
-        /// True for this property is the equivalent of EvalTreament.Ignore;
-        /// False is the equivalent to EvalTreament.MakeAllSafe
-        /// </summary>
-        [Obsolete("This property is deprecated; use EvalTreatment instead")]
-        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-        public bool EvalsAreSafe
-        {
-            get
-            {
-                return EvalTreatment == EvalTreatment.Ignore;
-            }
-            set
-            {
-                EvalTreatment = (value ? EvalTreatment.Ignore : EvalTreatment.MakeAllSafe);
-            }
-        }
-
-        /// <summary>
         /// Evaluate expressions containing only literal bool, string, numeric, or null values [true]
         /// Leave literal expressions alone and do not evaluate them [false]. Default is true.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Eval")]
         public bool EvalLiteralExpressions
         {
             get;
@@ -730,7 +636,6 @@ namespace Microsoft.Ajax.Utilities
         /// MakeAllSafe assumes eval-statements will reference any accessible local variable or function.
         /// Local variables that we assume may be referenced by eval-statements cannot be automatically renamed.
         /// </summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Eval")]
         public EvalTreatment EvalTreatment
         {
             get; set;
@@ -890,6 +795,17 @@ namespace Microsoft.Ajax.Utilities
         public bool RemoveUnneededCode
         {
             get; set;
+        }
+
+        /// <summary>
+        /// Gets or sets an enumeration that gives the parser a hint as to which version of EcmaScript standards to parse the source as.
+        /// See <see cref="JSParser.ParsedVersion"/> after parsing for which version the parser thought it had based on features found in the script.
+        /// Errors/warnings, and optimized output may change based on this settings value.
+        /// </summary>
+        public ScriptVersion ScriptVersion
+        {
+            get;
+            set;
         }
 
         /// <summary>

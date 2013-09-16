@@ -14,19 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
     public sealed class Break : AstNode
     {
-        public int NestLevel { get; set; }
-
         public string Label { get; set; }
         public Context LabelContext { get; set; }
 
-        public Break(Context context, JSParser parser)
-            : base(context, parser)
+        public LabelInfo LabelInfo { get; set; }
+
+        public Break(Context context)
+            : base(context)
         {
         }
 

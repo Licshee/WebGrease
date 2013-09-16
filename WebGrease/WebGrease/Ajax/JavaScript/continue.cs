@@ -14,20 +14,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Text;
-
 namespace Microsoft.Ajax.Utilities
 {
 
     public sealed class ContinueNode : AstNode
     {
-        public int NestLevel { get; set; }
-
         public string Label { get; set; }
         public Context LabelContext { get; set; }
 
-        public ContinueNode(Context context, JSParser parser)
-            : base(context, parser)
+        public LabelInfo LabelInfo { get; set; }
+
+        public ContinueNode(Context context)
+            : base(context)
         {
         }
 

@@ -14,24 +14,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 
 namespace Microsoft.Ajax.Utilities
 {
     public class CommaOperator : BinaryOperator
     {
-        public CommaOperator(Context context, JSParser parser)
-            : base(context, parser)
+        public CommaOperator(Context context)
+            : base(context)
         {
             this.OperatorToken = JSToken.Comma;
         }
 
-        public static AstNode CombineWithComma(Context context, JSParser parser, AstNode operand1, AstNode operand2)
+        public static AstNode CombineWithComma(Context context, AstNode operand1, AstNode operand2)
         {
-            var comma = new CommaOperator(context, parser);
+            var comma = new CommaOperator(context);
 
             // if the left is a comma-operator already....
             var leftBinary = operand1 as BinaryOperator;
@@ -48,7 +44,7 @@ namespace Microsoft.Ajax.Utilities
                 {
                     // the right is ALSO a comma operator. Create a new list, append all the rest of the operands
                     // and set our right-hand side to be the list
-                    list = new AstNodeList(null, parser);
+                    list = new AstNodeList(leftBinary.Context.FlattenToStart());
                     list.Append(leftBinary.Operand2).Append(rightBinary.Operand1).Append(rightBinary.Operand2);
                 }
                 else
@@ -60,7 +56,7 @@ namespace Microsoft.Ajax.Utilities
                     {
                         // it's not a list already
                         // create a new list with the left's right and our right and set it to our right
-                        list = new AstNodeList(null, parser);
+                        list = new AstNodeList(leftBinary.Operand2.Context.FlattenToStart());
                         list.Append(leftBinary.Operand2);
                     }
 
@@ -87,7 +83,7 @@ namespace Microsoft.Ajax.Utilities
                 else
                 {
                     // it's not -- create a new list containing the operands
-                    rightList = new AstNodeList(rightBinary.Context, parser);
+                    rightList = new AstNodeList(rightBinary.Context);
                     rightList.Append(rightBinary.Operand1);
                     rightList.Append(rightBinary.Operand2);
                 }

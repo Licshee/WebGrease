@@ -14,28 +14,86 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
+
 namespace Microsoft.Ajax.Utilities
 {
-    public sealed class ParameterDeclaration : AstNode, INameDeclaration
+    public sealed class ParameterDeclaration : AstNode
     {
-        public string Name
-        {
-            get;
-            set;
-        }
+        private AstNode m_binding;
+        private AstNode m_initializer;
 
+        /// <summary>
+        /// Gets or sets parameter order position, zero-based
+        /// </summary>
         public int Position { get; set; }
 
-        public bool RenameNotAllowed { get; set; }
+        /// <summary>
+        /// Gets or sets whether this parameter is prefixed with the rest token (...)
+        /// </summary>
+        public bool HasRest { get; set; }
 
-        public JSVariableField VariableField { get; set; }
+        /// <summary>
+        /// Gets or sets the source context for the rest token (if any)
+        /// </summary>
+        public Context RestContext { get; set; }
 
-        public AstNode Initializer { get { return null; } }
+        /// <summary>
+        // Gets or sets the binding node
+        /// </summary>
+        public AstNode Binding 
+        {
+            get { return m_binding; }
+            set
+            {
+                m_binding.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_binding = value;
+                m_binding.IfNotNull(n => n.Parent = this);
+            }
+        }
 
-        public Context NameContext { get { return Context; } }
+        /// <summary>
+        /// Gets or sets the context for the optional default-value assignment token
+        /// </summary>
+        public Context AssignContext { get; set; }
 
-        public ParameterDeclaration(Context context, JSParser parser)
-            : base(context, parser)
+        /// <summary>
+        /// Gets or sets the optional default value for the parameter
+        /// </summary>
+        public AstNode Initializer 
+        {
+            get { return m_initializer; }
+            set
+            {
+                m_initializer.IfNotNull(n => n.Parent = (n.Parent == this) ? null : n.Parent);
+                m_initializer = value;
+                m_initializer.IfNotNull(n => n.Parent = this);
+            }
+        }
+
+        public bool IsReferenced
+        {
+            get
+            {
+                // the entire parameter is referenced if ANY of the binding declarations 
+                // within it have a reference
+                foreach(var nameDecl in BindingsVisitor.Bindings(this))
+                {
+                    // if there is no variable field (although there SHOULD be), then let's
+                    // just assume it's referenced.
+                    if (nameDecl.VariableField == null || nameDecl.VariableField.IsReferenced)
+                    {
+                        return true;
+                    }
+                }
+
+                // if we get here, none are referenced, so this parameter is not referenced
+                return false;
+            }
+        }
+
+        public ParameterDeclaration(Context context)
+            : base(context)
         {
         }
 
@@ -45,6 +103,34 @@ namespace Microsoft.Ajax.Utilities
             {
                 visitor.Visit(this);
             }
+        }
+
+        internal override string GetFunctionGuess(AstNode target)
+        {
+            return Binding.IfNotNull(b => b.GetFunctionGuess(target));
+        }
+
+        public override IEnumerable<AstNode> Children
+        {
+            get
+            {
+                return EnumerateNonNullNodes(Binding, Initializer);
+            }
+        }
+
+        public override bool ReplaceChild(AstNode oldNode, AstNode newNode)
+        {
+            if (Binding == oldNode)
+            {
+                Binding = newNode;
+                return true;
+            }
+            else if (Initializer == oldNode)
+            {
+                Initializer = newNode;
+                return true;
+            }
+            return false;
         }
     }
 }

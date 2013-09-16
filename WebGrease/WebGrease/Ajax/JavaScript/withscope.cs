@@ -20,8 +20,8 @@ namespace Microsoft.Ajax.Utilities
 {
     public sealed class WithScope : BlockScope
     {
-        public WithScope(ActivationObject parent, Context context, CodeSettings settings)
-            : base(parent, context, settings)
+        public WithScope(ActivationObject parent, CodeSettings settings)
+            : base(parent, settings, ScopeType.With)
         {
             IsInWithScope = true;
         }
