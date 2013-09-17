@@ -361,6 +361,12 @@ namespace WebGrease.Activities
                     {
                         var urlToHash = match.Groups["url"].Value;
                         var extraInfo = match.Groups["extra"].Value;
+
+                        if (ResourcesResolver.LocalizationResourceKeyRegex.IsMatch(urlToHash))
+                        {
+                            return match.Value;
+                        }
+
                         var normalizedHashUrl = urlToHash.NormalizeUrl();
 
                         var imageContentFile = sourceImages.TryGetValue(normalizedHashUrl);

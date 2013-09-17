@@ -12,17 +12,13 @@ namespace WebGrease.Tests
 {
     using System;
     using System.Collections.Generic;
-    using System.Collections.ObjectModel;
     using System.IO;
-    using System.Xml.Linq;
     using System.Linq;
+    using System.Xml.Linq;
     using Activities;
-    using Css.ImageAssemblyAnalysis;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WebGrease.Tests;
-
     using WebGrease.Configuration;
-    using WebGrease.Css;
     using WebGrease.Extensions;
 
     /// <summary>This is a test class for MinifyCssActivityTest and is intended
@@ -110,7 +106,6 @@ namespace WebGrease.Tests
             }
 
             // shouldn't assert, but should log the error and NOT create output file
-            Assert.IsNull(exception);
             Assert.IsFalse(File.Exists(minifyCssActivity.DestinationFile));
         }
 
@@ -426,6 +421,27 @@ namespace WebGrease.Tests
             var text = File.ReadAllText(outputFilePath);
             var expectedText = File.ReadAllText(Path.Combine(sourceDirectory, @"Input\Case10\FontFaceHashing-hashed.css"));
             Assert.IsTrue(text.Equals(expectedText, StringComparison.OrdinalIgnoreCase));
+        }
+        
+        [TestMethod]
+        [TestCategory(TestCategories.MinifyCssActivity)]
+        public void TokenUrlsShouldNotBeHashed()
+        {
+
+            var sourceDirectory = Path.Combine(TestDeploymentPaths.TestDirectory, @"WebGrease.Tests\MinifyCssActivityTest");
+            var minifyCssActivity = new MinifyCssActivity(new WebGreaseContext(new WebGreaseConfiguration { SourceDirectory = Path.Combine(sourceDirectory, @"Input\Case10") }));
+            minifyCssActivity.SourceFile = Path.Combine(sourceDirectory, @"Input\Case11\TokenImageIgnore.css");
+            minifyCssActivity.DestinationFile = Path.Combine(sourceDirectory, @"Output\Case11\TokenImageIgnore.css");
+
+            var fileHasherActivity = new FileHasherActivity(new WebGreaseContext(new WebGreaseConfiguration()));
+
+            minifyCssActivity.Execute(imageHasher: fileHasherActivity);
+
+            // Assertions
+            var outputFilePath = minifyCssActivity.DestinationFile;
+            Assert.IsTrue(File.Exists(outputFilePath));
+            var text = File.ReadAllText(outputFilePath);
+            Assert.IsTrue(text.Contains("%IMAGE:abcdefg%"));
         }
     }
 }

@@ -33,18 +33,18 @@ namespace WebGrease.Css.ImageAssemblyAnalysis.PropertyModel
     internal sealed class BackgroundImage
     {
         /// <summary>The url reg ex.</summary>
-        internal static readonly string UrlRegEx = @"url\((?<quote>[""']?)\s*((hash\(.*?\))|([-:/.\w]+\.[\w]+)|(%[-./\w_]+%))\s*\k<quote>\)";
+        internal static readonly string UrlRegEx = @"url\((?<quote>[""']?)\s*((hash\(.*?\))|(%?([-./\w_]+)(\:\w*)?%?))\s*\k<quote>\)";
 
         /// <summary>
         /// The compiled regular expression for identifying multiple urls
         /// </summary>
-        private static readonly Regex MultipleUrlsRegex = new Regex(UrlRegEx, RegexOptions.IgnoreCase);
+        private static readonly Regex MultipleUrlsRegex = new Regex(UrlRegEx, RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
         /// The compiled regular expression for identifying exact url
         /// We don't want to match the data uri based images for spriting.
         /// </summary>
-        private static readonly Regex UrlRegex = new Regex(string.Format(CultureInfo.InvariantCulture, "^{0}$", UrlRegEx), RegexOptions.IgnoreCase);
+        private static readonly Regex UrlRegex = new Regex(string.Format(CultureInfo.InvariantCulture, "^{0}$", UrlRegEx), RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
         /// Initializes a new instance of the BackgroundImage class

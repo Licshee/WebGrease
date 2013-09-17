@@ -1,0 +1,4 @@
+﻿div
+{
+    background-image: url("hash(%IMAGE:abcdefg%)");
+}

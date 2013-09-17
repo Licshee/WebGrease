@@ -161,6 +161,7 @@
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.svg" />
     <None Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.woff" />
     <None Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case10\fonts\font.eot" />
+    <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case11\TokenImageIgnore.css" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\bar.jpg" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\bullet-media.gif" />
     <Content Include="TestDeployment\WebGrease.Tests\MinifyCssActivityTest\Input\Case7\images\foo.jpg" />

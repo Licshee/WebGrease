@@ -623,9 +623,9 @@ namespace Microsoft.WebGrease.Tests
             Assert.AreNotEqual(cssResult.Css.Count(), 0);
             Assert.IsFalse(cssResult.Css.Any(c => c == null));
 
+            // this is because we no longer hash images if there is a token in url.
             Assert.IsNotNull(cssResult.HashedImages);
-            Assert.AreNotEqual(cssResult.HashedImages.Count(), 0);
-            Assert.IsFalse(cssResult.HashedImages.Any(c => c == null));
+            Assert.AreEqual(0, cssResult.HashedImages.Count());
 
             Assert.IsNotNull(cssResult.SpritedImages);
             Assert.AreNotEqual(cssResult.SpritedImages.Count(), 0);
