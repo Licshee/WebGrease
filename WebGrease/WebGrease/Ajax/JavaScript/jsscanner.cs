@@ -1907,8 +1907,8 @@ namespace Microsoft.Ajax.Utilities
             // the name portion should not START with a period
             if (ch != '.')
             {
-                // identifier parts and periods are allowed as the token name.
-                while (IsValidIdentifierPart(ch) || ch == '.')
+                // identifier parts, hyphens, and periods are allowed as the token name.
+                while (IsValidIdentifierPart(ch) || ch == '.' || ch == '-')
                 {
                     ch = GetChar(++m_currentPosition);
                 }

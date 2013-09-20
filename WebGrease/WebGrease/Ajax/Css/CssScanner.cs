@@ -238,58 +238,14 @@ namespace Microsoft.Ajax.Utilities
             return token;
         }
 
-        public CssToken ScanReplacementToken(CssToken token)
+        public CssToken ScanReplacementToken()
         {
-            var sb = new StringBuilder();
-            var name = GetName();
-            while (name != null)
+            // we'll return NULL if we don't find a token
+            CssToken token = null;
+            var replacementToken = GetReplacementToken(false);
+            if (!replacementToken.IsNullOrWhiteSpace())
             {
-                sb.Append(name);
-                if (m_currentChar == '.')
-                {
-                    // try getting another name, loop
-                    sb.Append('.');
-                    name = GetName();
-                }
-                else if (m_currentChar == ':')
-                {
-                    // possibly ending with a fallback class identifier
-                    NextChar();
-                    sb.Append(':');
-                    sb.Append(GetName());
-
-                    // and MUST be followed by the closing percent delimiter
-                    if (m_currentChar == '%')
-                    {
-                        // found a valid replacement
-                        // create a new token to encompass the entire replacement token
-                        NextChar();
-                        sb.Append('%');
-                        token = new CssToken(TokenType.ReplacementToken, '%' + sb.ToString(), m_context);
-                        break;
-                    }
-                    else
-                    {
-                        // NOPE
-                        PushString(sb.ToString());
-                        break;
-                    }
-                }
-                else if (m_currentChar == '%')
-                {
-                    // found a valid replacement
-                    // create a new token to encompass the entire replacement token
-                    NextChar();
-                    sb.Append('%');
-                    token = new CssToken(TokenType.ReplacementToken, '%' + sb.ToString(), m_context);
-                    break;
-                }
-                else
-                {
-                    // NOPE
-                    PushString(sb.ToString());
-                    break;
-                }
+                token = new CssToken(TokenType.ReplacementToken, replacementToken, m_context);
             }
 
             return token;
@@ -659,13 +615,20 @@ namespace Microsoft.Ajax.Utilities
 
         private CssToken ScanHash()
         {
+            // skip the hash character
             NextChar();
-            string name = GetName();
-            return (
-              name == null
-              ? new CssToken(TokenType.Character, '#', m_context)
-              : new CssToken(TokenType.Hash, '#' + name, m_context)
-              );
+
+            // if the next character is a %, then check to see if it's a replacement token.
+            // otherwise just do the normal syntax of a name
+            var name = m_currentChar == '%'
+                ? GetReplacementToken(true)
+                : GetName();
+
+            // if we found a name or a replacement token, then return a hash token.
+            // otherwise it's just a character token.
+            return name == null
+                ? new CssToken(TokenType.Character, '#', m_context)
+                : new CssToken(TokenType.Hash, '#' + name, m_context);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
@@ -1289,6 +1252,81 @@ namespace Microsoft.Ajax.Utilities
         #endregion
 
         #region Get... methods
+
+        /// <summary>
+        /// Given the current character is a %, see if it's followed by a syntax
+        /// that creates a valid replacement token. If so, return the token text.
+        /// </summary>
+        /// <param name="advancePastDelimiter">if true, the current char is the delimiter and needs to be advanced; 
+        /// false means we are already at the next character and shouldn't advance</param>
+        /// <returns>valid token text, or null</returns>
+        private string GetReplacementToken(bool advancePastDelimiter)
+        {
+            var foundToken = false;
+            var previousCurrent = m_currentChar;
+            var sb = new StringBuilder();
+            if (advancePastDelimiter)
+            {
+                NextChar();
+            }
+
+            var name = GetName();
+            while (name != null)
+            {
+                sb.Append(name);
+                if (m_currentChar == '.')
+                {
+                    // try getting another name, loop
+                    sb.Append('.');
+                    NextChar();
+                    name = GetName();
+                    if (name != null)
+                    {
+                        continue;
+                    }
+                }
+                else if (m_currentChar == ':')
+                {
+                    // possibly ending with a fallback class identifier
+                    NextChar();
+                    sb.Append(':');
+                    sb.Append(GetName());
+
+                    // and MUST be followed by the closing percent delimiter
+                    if (m_currentChar == '%')
+                    {
+                        // found a valid replacement
+                        // create a new token to encompass the entire replacement token
+                        NextChar();
+                        sb.Append('%');
+                        foundToken = true;
+                        break;
+                    }
+                }
+                else if (m_currentChar == '%')
+                {
+                    // found a valid replacement
+                    // create a new token to encompass the entire replacement token
+                    NextChar();
+                    sb.Append('%');
+                    foundToken = true;
+                    break;
+                }
+
+                // NOPE
+                PushString(sb.ToString());
+                break;
+            }
+
+            if (!foundToken)
+            {
+                // we didn't find anything; we need to make sure we set the current 
+                // token back to where we started
+                m_currentChar = previousCurrent;
+            }
+
+            return foundToken ? '%' + sb.ToString() : null;
+        }
 
         /// <summary>
         /// returns the VALUE of a unicode number, up to six hex digits

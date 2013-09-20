@@ -55,15 +55,12 @@ namespace Microsoft.Ajax.Utilities
         // (in-operator not directly allowed)
         private bool m_noIn;
 
+        // shortcut so we don't have to keep checking the count
+        private bool m_hasReplacementTokens;
+
         private CodeSettings m_settings;
 
         private RequiresSeparatorVisitor m_requiresSeparator;
-
-        // this is a regular expression that we'll use to minimize numeric values
-        // that don't employ the e-notation
-        private static Regex s_decimalFormat = new Regex(
-            @"^\s*\+?(?<neg>\-)?0*(?<mag>(?<sig>\d*[1-9])(?<zer>0*))?(\.(?<man>\d*[1-9])?0*)?(?<exp>E\+?(?<eng>\-?)0*(?<pow>[1-9]\d*))?$",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
         private OutputVisitor(TextWriter writer, CodeSettings settings)
         {
@@ -71,6 +68,7 @@ namespace Microsoft.Ajax.Utilities
             m_settings = settings ?? new CodeSettings();
             m_onNewLine = true;
             m_requiresSeparator = new RequiresSeparatorVisitor(m_settings);
+            m_hasReplacementTokens = settings.ReplacementTokens.Count > 0;
         }
 
         /// <summary>
@@ -1142,7 +1140,22 @@ namespace Microsoft.Ajax.Utilities
                         break;
 
                     case PrimitiveType.Other:
-                        Output(node.Value.ToString());
+                        // see if the value of this other "constant" is actually a replacement token.
+                        // the regex doesn't have ^ or $ so that it can be used to match tokens within a
+                        // string, so if there's a match, make sure the match is the whole string.
+                        Match match;
+                        if (m_hasReplacementTokens
+                            && (match = CommonData.ReplacementToken.Match(node.Value.ToString())).Success
+                            && match.Value.Equals(node.Value))
+                        {
+                            // this is a token value, and we are replacing tokens.
+                            Output(GetSyntacticReplacementToken(match));
+                        }
+                        else
+                        {
+                            // not replacing tokens; just output the value as-is
+                            Output(node.Value.ToString());
+                        }
                         break;
 
                     case PrimitiveType.String:
@@ -1150,23 +1163,24 @@ namespace Microsoft.Ajax.Utilities
                         {
                             // escape the string value because we don't have a raw context value
                             // to show anyways
-                            Output(InlineSafeString(EscapeString(node.Value.ToString())));
+                            Output(InlineSafeString(EscapeString(ReplaceTokens(node.Value.ToString()))));
                         }
                         else if (!m_settings.IsModificationAllowed(TreeModifications.MinifyStringLiterals))
                         {
                             // we don't want to modify the strings at all!
-                            Output(node.Context.Code);
+                            Output(ReplaceTokens(node.Context.Code));
                         }
                         else if (node.MayHaveIssues
                             || (m_settings.AllowEmbeddedAspNetBlocks && node.StringContainsAspNetReplacement))
                         {
                             // we'd rather show the raw string, but make sure it's safe for inlining
-                            Output(InlineSafeString(node.Context.Code));
+                            Output(InlineSafeString(ReplaceTokens(node.Context.Code)));
                         }
                         else
                         {
-                            // we'd rather show the escaped string
-                            Output(InlineSafeString(EscapeString(node.Value.ToString())));
+                            // under normal circumstances we would show a properly escaped and delimited
+                            // string that is safe for inlining.
+                            Output(InlineSafeString(EscapeString(ReplaceTokens(node.Value.ToString()))));
                         }
 
                         break;
@@ -1179,6 +1193,71 @@ namespace Microsoft.Ajax.Utilities
 
                 EndSymbol(symbol);
             }
+        }
+
+        private string ReplaceTokens(string text)
+        {
+            // if we have any replacement tokens that we are looking for,
+            // then do the replace operation on the string with the function that
+            // will look up the token and replace it with the appropriate string.
+            if (m_hasReplacementTokens)
+            {
+                text = CommonData.ReplacementToken.Replace(text, GetReplacementToken);
+            }
+
+            // no replacement; output as-is
+            return text;
+        }
+
+        private string GetReplacementToken(Match match)
+        {
+            // see if there's a match for the token
+            string replacement;
+            if (!m_settings.ReplacementTokens.TryGetValue(match.Result("${token}"), out replacement))
+            {
+                // no match. Check the fallback, if any.
+                var fallbackClass = match.Result("${fallback}");
+                if (!fallbackClass.IsNullOrWhiteSpace())
+                {
+                    m_settings.ReplacementFallbacks.TryGetValue(fallbackClass, out replacement);
+                }
+            }
+
+            return replacement ?? string.Empty;
+        }
+
+        private string GetSyntacticReplacementToken(Match match)
+        {
+            // see if there's a match for the token
+            string replacement;
+            if (m_settings.ReplacementTokens.TryGetValue(match.Result("${token}"), out replacement))
+            {
+                // we have a match.
+                // if the string is valid JSON, the just output it as-is (well, with a little minification)
+                var json = JSON.Validate(replacement);
+                if (!json.IsNullOrWhiteSpace())
+                {
+                    // use the minified JSON object
+                    replacement = json;
+                }
+                else
+                {
+                    // not JSON, so we need to treat the value as a string: wrap in quotes.
+                    replacement = InlineSafeString(EscapeString(replacement));
+                }
+            }
+            else
+            {
+                // no match. Check the fallback, if any. We're not going to do ANY processing
+                // on a fallback value, so it BETTER generate proper JS syntax!
+                var fallbackClass = match.Result("${fallback}");
+                if (!fallbackClass.IsNullOrWhiteSpace())
+                {
+                    m_settings.ReplacementFallbacks.TryGetValue(fallbackClass, out replacement);
+                }
+            }
+
+            return replacement ?? string.Empty;
         }
 
         public void Visit(ConstantWrapperPP node)
@@ -3961,7 +4040,7 @@ namespace Microsoft.Ajax.Utilities
 
         private static string GetSmallestRep(string number)
         {
-            Match match = s_decimalFormat.Match(number);
+            Match match = CommonData.DecimalFormat.Match(number);
             if (match.Success)
             {
                 string mantissa = match.Result("${man}");

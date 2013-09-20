@@ -186,12 +186,14 @@
     <Compile Include="Ajax\JavaScript\ImportNode.cs" />
     <Compile Include="Ajax\JavaScript\Initializer.cs" />
     <Compile Include="Ajax\JavaScript\IRenameable.cs" />
+    <Compile Include="Ajax\JavaScript\JSON.cs" />
     <Compile Include="Ajax\JavaScript\ModuleDeclaration.cs" />
     <Compile Include="Ajax\JavaScript\ModuleScope.cs" />
     <Compile Include="Ajax\JavaScript\RequiresSeparatorVisitor.cs" />
     <Compile Include="Ajax\JavaScript\StatementStartVisitor.cs" />
     <Compile Include="Ajax\JavaScript\TemplateLiteral.cs" />
     <Compile Include="Ajax\JavaScript\TemplateLiteralExpression.cs" />
+    <Compile Include="Ajax\Utilities\CommonData.cs" />
     <Compile Include="Ajax\Utilities\CommonStrings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

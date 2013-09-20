@@ -123,6 +123,16 @@ namespace Microsoft.Ajax.Utilities
             // add the resource strings (if any)
             newSettings.AddResourceStrings(this.ResourceStrings);
 
+            foreach (var item in this.ReplacementTokens)
+            {
+                newSettings.ReplacementTokens.Add(item);
+            }
+
+            foreach (var item in this.ReplacementFallbacks)
+            {
+                newSettings.ReplacementTokens.Add(item);
+            }
+
             return newSettings;
         }
 

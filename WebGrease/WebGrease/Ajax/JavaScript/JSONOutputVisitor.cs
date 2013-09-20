@@ -26,12 +26,6 @@ namespace Microsoft.Ajax.Utilities
     /// </summary>
     public class JSONOutputVisitor : IVisitor
     {
-        // this is a regular expression that we'll use to minimize numeric values
-        // that don't employ the e-notation
-        private static Regex s_decimalFormat = new Regex(
-            @"^\s*\+?(?<neg>\-)?0*(?<mag>(?<sig>\d*[1-9])(?<zer>0*))?(\.(?<man>\d*[1-9])?0*)?(?<exp>E\+?(?<eng>\-?)0*(?<pow>[1-9]\d*))?$",
-            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
         private TextWriter m_writer;
 
         public bool IsValid
@@ -648,7 +642,7 @@ namespace Microsoft.Ajax.Utilities
 
         private static string GetSmallestRep(string number)
         {
-            var match = s_decimalFormat.Match(number);
+            var match = CommonData.DecimalFormat.Match(number);
             if (match.Success)
             {
                 string mantissa = match.Result("${man}");

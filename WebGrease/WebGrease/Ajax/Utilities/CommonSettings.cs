@@ -93,6 +93,8 @@ namespace Microsoft.Ajax.Utilities
             IgnoreErrorCollection = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             PreprocessorValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             ResourceStrings = new List<ResourceStrings>();
+            ReplacementTokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            ReplacementFallbacks = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
         #region properties
@@ -427,6 +429,65 @@ namespace Microsoft.Ajax.Utilities
         {
             // remove it
             ResourceStrings.Remove(resourceStrings);
+        }
+
+        #endregion
+
+        #region ReplacementTokens
+
+        /// <summary>
+        /// Gets the mapping of replacement token to value
+        /// </summary>
+        public IDictionary<string, string> ReplacementTokens { get; private set; }
+
+        /// <summary>
+        /// Gets the mapping of replacement token fallback class to replacement value
+        /// </summary>
+        public IDictionary<string, string> ReplacementFallbacks { get; private set; }
+
+        /// <summary>
+        /// Only add items from the other set to the collection if the key doesn't already exist.
+        /// (Previous sets are more specific than subsequent sets)
+        /// </summary>
+        /// <param name="otherSet">less-specific set of name/value replacement token pairs</param>
+        public void ReplacementTokensApplyDefaults(IDictionary<string, string> otherSet)
+        {
+            if (otherSet != null)
+            {
+                foreach (var item in otherSet)
+                {
+                    if (!ReplacementTokens.ContainsKey(item.Key))
+                    {
+                        // add new value; ignore keys that already exist
+                        ReplacementTokens.Add(item);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Always add items from the other set, replacing any pre-existing items in the collection.
+        /// (Subsequent sets are more specific than previous sets)
+        /// </summary>
+        /// <param name="otherSet">more-specific set of name/value replacement token pairs</param>
+        public void ReplacementTokensApplyOverrides(IDictionary<string, string> otherSet)
+        {
+            if (otherSet != null)
+            {
+                foreach (var item in otherSet)
+                {
+                    if (!ReplacementTokens.ContainsKey(item.Key))
+                    {
+                        // add new value
+                        ReplacementTokens.Add(item);
+                    }
+                    else
+                    {
+                        // replace existing value
+                        ReplacementTokens[item.Key] = item.Value;
+                    }
+                }
+            }
         }
 
         #endregion

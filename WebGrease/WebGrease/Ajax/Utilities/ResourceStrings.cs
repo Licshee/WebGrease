@@ -14,7 +14,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
 using System.Collections.Generic;
 
 namespace Microsoft.Ajax.Utilities
@@ -48,22 +47,9 @@ namespace Microsoft.Ajax.Utilities
             get { return this.NameValuePairs.Count; }
         }
 
-        public ResourceStrings(IDictionaryEnumerator enumerator)
+        public ResourceStrings()
         {
             this.NameValuePairs = new Dictionary<string, string>();
-
-            if (enumerator != null)
-            {
-                // use the IDictionaryEnumerator to add properties to the collection
-                while (enumerator.MoveNext())
-                {
-                    // get the property name
-                    string propertyName = enumerator.Key.ToString();
-
-                    // set the name/value in the resource object
-                    this.NameValuePairs[propertyName] = enumerator.Value.ToString();
-                }
-            }
         }
     }
 }

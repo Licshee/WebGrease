@@ -492,7 +492,7 @@ namespace Microsoft.Ajax.Utilities
               || ParseFontFace() == Parsed.True
               || ParseKeyFrames() == Parsed.True
               || ParseAtKeyword() == Parsed.True
-			  || ParseAspNetBlock() == Parsed.True)
+              || ParseAspNetBlock() == Parsed.True)
             {
                 // any number of S, Comment, CDO or CDC elements
                 // (or semicolons possibly introduced via concatenation)
@@ -519,7 +519,7 @@ namespace Microsoft.Ajax.Utilities
                   || ParsePage() == Parsed.True
                   || ParseFontFace() == Parsed.True
                   || ParseAtKeyword() == Parsed.True
-				  || ParseAspNetBlock() == Parsed.True)
+                  || ParseAspNetBlock() == Parsed.True)
                 {
                     // any number of S, Comment, CDO or CDC elements
                     // (or semicolons possibly introduced via concatenation)
@@ -656,18 +656,18 @@ namespace Microsoft.Ajax.Utilities
             return parsed;
         }
 
-		private Parsed ParseAspNetBlock()
-		{
-			Parsed parsed = Parsed.False;
-			if (Settings.AllowEmbeddedAspNetBlocks &&
-				CurrentTokenType == TokenType.AspNetBlock)
-			{
-				AppendCurrent();
-				SkipSpace();
-				parsed = Parsed.True;
-			}
-			return parsed;
-		}
+        private Parsed ParseAspNetBlock()
+        {
+            Parsed parsed = Parsed.False;
+            if (Settings.AllowEmbeddedAspNetBlocks &&
+                CurrentTokenType == TokenType.AspNetBlock)
+            {
+                AppendCurrent();
+                SkipSpace();
+                parsed = Parsed.True;
+            }
+            return parsed;
+        }
 
         private Parsed ParseNamespace()
         {
@@ -951,6 +951,8 @@ namespace Microsoft.Ajax.Utilities
                 AppendCurrent();
                 SkipSpace();
 
+                var indented = false;
+
                 // might need a space because the last token was @media
                 if (ParseMediaQueryList(true) == Parsed.True)
                 {
@@ -968,6 +970,7 @@ namespace Microsoft.Ajax.Utilities
 
                         AppendCurrent();
                         Indent();
+                        indented = true;
                         SkipSpace();
 
                         // the main guts of stuff
@@ -992,12 +995,20 @@ namespace Microsoft.Ajax.Utilities
                         if (CurrentTokenText == ";")
                         {
                             AppendCurrent();
-                            Unindent();
+                            if (indented)
+                            {
+                                Unindent();
+                            }
+                            
                             NewLine();
                         }
                         else if (CurrentTokenText == "}")
                         {
-                            Unindent();
+                            if (indented)
+                            {
+                                Unindent();
+                            }
+
                             NewLine();
                             AppendCurrent();
                         }
@@ -1772,6 +1783,20 @@ namespace Microsoft.Ajax.Utilities
                     NextToken();
                     parsed = Parsed.True;
                 }
+                else if (CurrentTokenType == TokenType.Character && CurrentTokenText == "%")
+                {
+                    UpdateIfReplacementToken();
+                    if (CurrentTokenType == TokenType.ReplacementToken)
+                    {
+                        AppendCurrent();
+                        NextToken();
+                        parsed = Parsed.True;
+                    }
+                    else
+                    {
+                        ReportError(0, CssErrorCode.ExpectedIdentifier, CurrentTokenText);
+                    }
+                }
                 else
                 {
                     ReportError(0, CssErrorCode.ExpectedIdentifier, CurrentTokenText);
@@ -1825,7 +1850,7 @@ namespace Microsoft.Ajax.Utilities
             }
 
             if (CurrentTokenType == TokenType.Identifier
-              || (CurrentTokenType == TokenType.Character && CurrentTokenText == "*"))
+                || (CurrentTokenType == TokenType.Character && CurrentTokenText == "*"))
             {
                 // if we already found a namespace, then there was none specified and the
                 // element name started with |. Otherwise, save the current ident as a possible
@@ -1952,7 +1977,16 @@ namespace Microsoft.Ajax.Utilities
                     AppendCurrent();
                     SkipSpace();
 
-                    if (CurrentTokenType != TokenType.Identifier
+                    if (CurrentTokenType == TokenType.Character
+                        && CurrentTokenText == "%")
+                    {
+                        UpdateIfReplacementToken();
+                        if (CurrentTokenType != TokenType.ReplacementToken)
+                        {
+                            ReportError(0, CssErrorCode.ExpectedIdentifierOrString, CurrentTokenText);
+                        }
+                    }
+                    else if (CurrentTokenType != TokenType.Identifier
                       && CurrentTokenType != TokenType.String)
                     {
                         ReportError(0, CssErrorCode.ExpectedIdentifierOrString, CurrentTokenText);
@@ -2498,11 +2532,10 @@ namespace Microsoft.Ajax.Utilities
                             ReportError(0, CssErrorCode.ExpectedClosingParenthesis, CurrentTokenText);
                         }
                     }
-                    else if (CurrentTokenType == TokenType.Character
-                        && CurrentTokenText == "%")
+                    else if ( CurrentTokenText == "%")
                     {
                         // see if this is the start of a replacement token
-                        m_currentToken = m_scanner.ScanReplacementToken(m_currentToken);
+                        UpdateIfReplacementToken();
                         if (CurrentTokenType == TokenType.ReplacementToken)
                         {
                             // it was -- output it and move along
@@ -3393,6 +3426,11 @@ namespace Microsoft.Ajax.Utilities
             return (sb == null ? string.Empty : sb.ToString());
         }
 
+        private void UpdateIfReplacementToken()
+        {
+            m_currentToken = m_scanner.ScanReplacementToken() ?? m_currentToken;
+        }
+
         #endregion
 
         #region Skip... methods
@@ -3703,6 +3741,14 @@ namespace Microsoft.Ajax.Utilities
             if (!m_noOutput)
             {
                 string text = obj.ToString();
+
+                // first if there are replacement tokens in the settings, then we'll want to
+                // replace any tokens with the appropriate replacement values
+                if (Settings.ReplacementTokens.Count > 0)
+                {
+                    text = CommonData.ReplacementToken.Replace(text, GetReplacementValue);
+                }
+
                 if (tokenType == TokenType.Identifier || tokenType == TokenType.Dimension)
                 {
                     // need to make sure invalid identifier characters are properly escaped
@@ -4033,59 +4079,66 @@ namespace Microsoft.Ajax.Utilities
                     isImportant = text.StartsWith("/*!", StringComparison.Ordinal);
                 }
                 else if (m_parsingColorValue
-                    && tokenType == TokenType.Identifier
-                    && !text.StartsWith("#", StringComparison.Ordinal))
+                    && (tokenType == TokenType.Identifier || tokenType == TokenType.ReplacementToken))
                 {
-                    bool nameConvertedToHex = false;
-                    string lowerCaseText = text.ToLowerInvariant();
-                    string rgbString;
-
-                    switch (Settings.ColorNames)
+                    if (!text.StartsWith("#", StringComparison.Ordinal))
                     {
-                        case CssColor.Hex:
-                            // we don't want any color names in our code.
-                            // convert ALL known color names to hex, so see if there is a match on
-                            // the set containing all the name-to-hex values
-                            if (ColorSlice.AllColorNames.TryGetValue(lowerCaseText, out rgbString))
-                            {
-                                text = rgbString;
-                                nameConvertedToHex = true;
-                            }
-                            break;
+                        bool nameConvertedToHex = false;
+                        string lowerCaseText = text.ToLowerInvariant();
+                        string rgbString;
 
-                        case CssColor.Strict:
-                            // we only want strict names in our css.
-                            // convert all non-strict name to hex, AND any strict names to hex if the hex is
-                            // shorter than the name. So check the set that contains all non-strict name-to-hex
-                            // values and all the strict name-to-hex values where hex is shorter than name.
-                            if (ColorSlice.StrictHexShorterThanNameAndAllNonStrict.TryGetValue(lowerCaseText, out rgbString))
-                            {
-                                text = rgbString;
-                                nameConvertedToHex = true;
-                            }
-                            break;
+                        switch (Settings.ColorNames)
+                        {
+                            case CssColor.Hex:
+                                // we don't want any color names in our code.
+                                // convert ALL known color names to hex, so see if there is a match on
+                                // the set containing all the name-to-hex values
+                                if (ColorSlice.AllColorNames.TryGetValue(lowerCaseText, out rgbString))
+                                {
+                                    text = rgbString;
+                                    nameConvertedToHex = true;
+                                }
+                                break;
 
-                        case CssColor.Major:
-                            // we don't care if there are non-strict color name. So check the set that only
-                            // contains name-to-hex pairs where the hex is shorter than the name.
-                            if (ColorSlice.HexShorterThanName.TryGetValue(lowerCaseText, out rgbString))
-                            {
-                                text = rgbString;
-                                nameConvertedToHex = true;
-                            }
-                            break;
+                            case CssColor.Strict:
+                                // we only want strict names in our css.
+                                // convert all non-strict name to hex, AND any strict names to hex if the hex is
+                                // shorter than the name. So check the set that contains all non-strict name-to-hex
+                                // values and all the strict name-to-hex values where hex is shorter than name.
+                                if (ColorSlice.StrictHexShorterThanNameAndAllNonStrict.TryGetValue(lowerCaseText, out rgbString))
+                                {
+                                    text = rgbString;
+                                    nameConvertedToHex = true;
+                                }
+                                break;
+
+                            case CssColor.Major:
+                                // we don't care if there are non-strict color name. So check the set that only
+                                // contains name-to-hex pairs where the hex is shorter than the name.
+                                if (ColorSlice.HexShorterThanName.TryGetValue(lowerCaseText, out rgbString))
+                                {
+                                    text = rgbString;
+                                    nameConvertedToHex = true;
+                                }
+                                break;
+                        }
+
+                        // if we didn't convert the color name to hex, let's see if it is a color
+                        // name -- if so, we want to make it lower-case for readability. We don't need
+                        // to do this check if our color name setting is hex-only, because we would
+                        // have already converted the name if we know about it
+                        if (Settings.ColorNames != CssColor.Hex && !nameConvertedToHex
+                            && ColorSlice.AllColorNames.TryGetValue(lowerCaseText, out rgbString))
+                        {
+                            // the color exists in the table, so we're pretty sure this is a color.
+                            // make sure it's lower case
+                            text = lowerCaseText;
+                        }
                     }
-
-                    // if we didn't convert the color name to hex, let's see if it is a color
-                    // name -- if so, we want to make it lower-case for readability. We don't need
-                    // to do this check if our color name setting is hex-only, because we would
-                    // have already converted the name if we know about it
-                    if (Settings.ColorNames != CssColor.Hex && !nameConvertedToHex
-                        && ColorSlice.AllColorNames.TryGetValue(lowerCaseText, out rgbString))
+                    else if (CurrentTokenType == TokenType.ReplacementToken)
                     {
-                        // the color exists in the table, so we're pretty sure this is a color.
-                        // make sure it's lower case
-                        text = lowerCaseText;
+                        // a replacement token is a color hash -- make sure we trim it to #RGB if it matches #RRGGBB
+                        text = CrunchHexColor(text, Settings.ColorNames, m_noColorAbbreviation);
                     }
                 }
 
@@ -4174,6 +4227,27 @@ namespace Microsoft.Ajax.Utilities
             return outputText;
         }
 
+        private string GetReplacementValue(Match match)
+        {
+            string tokenValue = null;
+            var tokenName = match.Result("${token}");
+            if (!tokenName.IsNullOrWhiteSpace())
+            {
+                if (!Settings.ReplacementTokens.TryGetValue(tokenName, out tokenValue))
+                {
+                    // no match. Check for a fallback
+                    var fallbackClass = match.Result("${fallback}");
+                    if (!fallbackClass.IsNullOrWhiteSpace())
+                    {
+                        Settings.ReplacementFallbacks.TryGetValue(fallbackClass, out tokenValue);
+                    }
+                }
+            }
+
+            // if we found a replacement, use it. Otherwise use a blank string to remove the token
+            return tokenValue.IfNullOrWhiteSpace(string.Empty);
+        }
+
         private static bool EscapeCharacter(StringBuilder sb, char character)
         {
             // output the hex value of the escaped character. If it's less than seven digits
@@ -4251,24 +4325,7 @@ namespace Microsoft.Ajax.Utilities
         {
             if (!noAbbr)
             {
-                // see if this is a repeated color (#rrggbb) that we can collapse to #rgb
-                Match match = s_rrggbb.Match(hexColor);
-                if (match.Success)
-                {
-                    // yes -- collapse it and make sure it's lower-case so we don't 
-                    // have to do any case-insensitive comparisons
-                    hexColor = "#{0}{1}{2}".FormatInvariant(
-                      match.Result("${r}"),
-                      match.Result("${g}"),
-                      match.Result("${b}")
-                      ).ToLowerInvariant();
-                }
-                else
-                {
-                    // make sure it's lower-case so we don't have to do any
-                    // case-insensitive comparisons
-                    hexColor = hexColor.ToLowerInvariant();
-                }
+                hexColor = s_rrggbb.Replace(hexColor, "#${r}${g}${b}").ToLowerInvariant();
             }
 
             if (colorNames != CssColor.Hex)
