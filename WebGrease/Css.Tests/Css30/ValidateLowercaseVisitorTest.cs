@@ -53,6 +53,19 @@ namespace Css.Tests.Css30
         }
 
         /// <summary>
+        /// Unit test to verify lowercase verifier will skip it.
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.CssParser)]
+        public void LowercaseVistorShouldSkipTokens()
+        {
+            var inputFileName = Path.Combine(TestDeploymentPaths.TestDirectory, @"css.tests\css30\LowercaseVisitor\Tokens.css");
+            var astNode = CssParser.Parse(new FileInfo(inputFileName)).Accept(new ValidateLowercaseVisitor());
+
+            Assert.IsNotNull(astNode);
+        }
+
+        /// <summary>
         /// Visits the css with lower case validation visitor
         /// </summary>
         /// <param name="inputFileName">The file name</param>

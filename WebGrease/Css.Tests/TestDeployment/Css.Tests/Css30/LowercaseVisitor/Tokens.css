@@ -1,0 +1,20 @@
+﻿@charset '%Charset%';
+
+@import "%FileName%.css";
+
+@media (min-width: %Media.Query%)
+{
+}
+
+@media print
+{
+    %TokenSelector%
+    {
+        %Token.Property%: %Token.Color%;
+    }
+}
+
+%TokenSelector%
+{
+    %Token.Property%: 2px;
+}

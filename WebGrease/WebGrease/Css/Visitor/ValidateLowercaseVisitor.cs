@@ -15,6 +15,8 @@ namespace WebGrease.Css.Visitor
     using Ast.MediaQuery;
     using Extensions;
 
+    using WebGrease.Activities;
+
     /// <summary>Provides the implementation for validating the lower case in CSS.</summary>
     public sealed class ValidateLowercaseVisitor : NodeVisitor
     {
@@ -145,6 +147,9 @@ namespace WebGrease.Css.Visitor
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Globalization", "CA1308:NormalizeStringsToUppercase", Justification = "By design")]
         private static void ValidateForLowerCase(string textToValidate)
         {
+            textToValidate = ResourcesResolver.LocalizationResourceKeyRegex.Replace(textToValidate, string.Empty);
+
+            // remove all tokens before validate lowercase.
             if (string.IsNullOrWhiteSpace(textToValidate))
             {
                 return;

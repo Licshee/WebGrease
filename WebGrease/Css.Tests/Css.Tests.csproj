@@ -389,6 +389,7 @@
     <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadRulesetWithUppercaseDeclarationKey.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadRulesetWithUppercaseDeclarationValue.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\BadRulesetWithUppercaseSelector.css" />
+    <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitor\Tokens.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\LowercaseVisitorExceptions\Intl.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\Actual\border.css" />
     <Content Include="TestDeployment\Css.Tests\Css30\OptimizationVisitor\Actual\fontface.css" />
