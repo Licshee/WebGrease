@@ -26,12 +26,21 @@ namespace WebGrease.Preprocessing.Sass
     [Export(typeof(IPreprocessingEngine))]
     public class SassPreprocessingEngine : IPreprocessingEngine
     {
-        #region Constants
+        #region Public Constants
+
+        /// <summary>
+        /// The SassVersion.
+        /// </summary>
+        public const string SassVersion = "sass-3.3.0.rc.1";
 
         /// <summary>
         /// The name of the embedded resource archive containing the ruby and suss runtimes.
         /// </summary>
-        private const string EmbeddedResourceName = "WebGrease.Preprocessing.Sass.ruby193.zip";
+        public const string EmbeddedResourceName = "WebGrease.Preprocessing.Sass.ruby193.zip";
+
+        #endregion
+        
+        #region Constants
 
         /// <summary>
         /// The name of the .hash file to use
@@ -51,7 +60,7 @@ namespace WebGrease.Preprocessing.Sass
         /// <summary>
         /// The filename for the sass executable.
         /// </summary>
-        private const string SassFile = @"..\lib\ruby\gems\1.9.1\gems\sass-3.2.0.alpha.277\bin\sass";
+        private const string SassFile = @"..\lib\ruby\gems\1.9.1\gems\" + SassVersion + @"\bin\sass";
 
         /// <summary>
         /// The name of the temp folder.
@@ -367,7 +376,7 @@ namespace WebGrease.Preprocessing.Sass
                 rubyRootPath = Path.Combine(tempPath, TempFolderName);
 
                 var assembly = typeof(SassPreprocessingEngine).Assembly;
-                var hash = assembly.GetName().Version + RetrieveLinkerTimestamp().ToString(CultureInfo.InvariantCulture);
+                var hash = assembly.GetName().Version + "/" + RetrieveLinkerTimestamp().ToString(CultureInfo.InvariantCulture);
                 var hashFile = new FileInfo(Path.Combine(rubyRootPath, HashFilename));
                 if (hashFile.Exists)
                 {

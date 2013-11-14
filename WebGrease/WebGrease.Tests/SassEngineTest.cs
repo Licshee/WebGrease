@@ -1,8 +1,9 @@
 namespace Microsoft.WebGrease.Tests
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
+
+    using ICSharpCode.SharpZipLib.Zip;
 
     using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -18,6 +19,32 @@ namespace Microsoft.WebGrease.Tests
     [TestClass]
     public class SassEngineTest
     {
+        /// <summary>
+        /// Verifies whether embedded resource is actually containing the expected sass version.
+        /// </summary>
+        [TestMethod]
+        [TestCategory(TestCategories.Sass)]
+        public void VerifyEmbeddedSassVersion()
+        {
+            var result = false;
+            using (var zipStream = typeof(ZipLib).Assembly.GetManifestResourceStream(SassPreprocessingEngine.EmbeddedResourceName))
+            {
+                using (var zf = new ZipFile(zipStream))
+                {
+                    foreach (ZipEntry zipEntry in zf)
+                    {
+                        if (zipEntry.IsDirectory && zipEntry.Name.Contains("sass"))
+                        {
+                            result = zipEntry.Name.Contains(SassPreprocessingEngine.SassVersion);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Assert.IsTrue(result);
+        }
+
         [TestMethod]
         [TestCategory(TestCategories.Sass)]
         public void TestScssImports()
@@ -58,7 +85,7 @@ $margin: 16px;
 .content-navigation {
   border-color: $blue;
   color:
-	darken($blue, 9%);
+    darken($blue, 9%);
 }
 
 .border {
