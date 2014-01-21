@@ -17,11 +17,18 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.Ajax.Utilities
 {
     public sealed class GlobalScope : ActivationObject
     {
+        // rather than itemizing all the browser- and DOM-specific global API for all the browsers, we're just going to
+        // look for a few common prefixes, and the pattern: prefix + Pascal-case identifier.
+        // this will allow us to catch things like msRequestAutomationFrame, msmsGetWeakWinRTProperty, mozPaintCount, etc.
+        // and will also pick up the dozens of DOM element names like HTMLAnchorElement and HTMLTableColElement.
+        private static Regex s_blanketPrefixes = new Regex(@"^(?:ms|MS|o|webkit|moz|Gecko|HTML)(?:[A-Z][a-z0-9]*)+$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
         private HashSet<string> m_globalProperties;
         private HashSet<string> m_globalFunctions;
         private HashSet<string> m_assumedGlobals;
@@ -35,21 +42,64 @@ namespace Microsoft.Ajax.Utilities
             ScopeType = ScopeType.Global;
 
             // define the Global object's properties, and methods
-            m_globalProperties = new HashSet<string>(new[] { 
-                "DOMParser", "Image", "Infinity", "JSON", "Math", "NaN", "System", "XMLHttpRequest", 
-                "applicationCache", "clientInformation", "clipboardData", "closed", "console", "document", "event", 
-                "external", "frameElement", "frames", "history", "length", "localStorage", "location", "name", "navigator", 
-                "opener", "parent", "screen", "self", "sessionStorage", "status", "top", "undefined", "window"});
+            m_globalProperties = new HashSet<string> { 
+                "DOMParser", 
+                "Image", "Infinity", 
+                "JSON", 
+                "Math",
+                "NaN", 
+                "System", 
+                "Windows", "WinJS", 
+                "XMLHttpRequest", 
+                "applicationCache", 
+                "clientInformation", "clipboardData", "closed", "console", 
+                "defaultStatus", "devicePixelRatio", "document", 
+                "event", "external", 
+                "frameElement", "frames", 
+                "history", 
+                "indexedDB", "innerHeight", "innerWidth",
+                "length", "localStorage", "location", 
+                "name", "navigator", 
+                "offscreenBuffering", "opener", "outerHeight", "outerWidth",
+                "pageXOffset", "pageYOffset", "parent", 
+                "screen", "screenLeft", "screenTop", "screenX", "screenY", "self", "sessionStorage", "status", 
+                "top", 
+                "undefined", 
+                "window"};
 
-            m_globalFunctions = new HashSet<string>(new[] {
-                "ActiveXObject", "Array", "Boolean", "Date", "Error", "EvalError", "EventSource", "File", "FileList", "FileReader", "Function", 
-                "GeckoActiveXObject", "HTMLElement", "Iterator", "Map", "Number", "Object", "Proxy", "RangeError", "ReferenceError", "RegExp", 
-                "Set", "SharedWorker", "String", "SyntaxError", "TypeError", "URIError", "WeakMap", "WebSocket", "Worker",
-                "addEventListener", "alert", "attachEvent", "blur", "clearInterval", "clearTimeout", "close", "confirm", "createPopup", 
-                "decodeURI", "decodeURIComponent", "detachEvent", "dispatchEvent", "encodeURI", "encodeURIComponent", "escape", "eval", "execScript", 
-                "focus", "getComputedStyle", "getSelection", "importScripts", "isFinite", "isNaN", "moveBy", "moveTo", "navigate", "open", 
-                "parseFloat", "parseInt", "postMessage", "prompt", "removeEventListener", "resizeBy", "resizeTo", "scroll", "scrollBy", "scrollTo", 
-                "setActive", "setInterval", "setTimeout", "showModalDialog", "showModelessDialog",  "unescape"});
+            m_globalFunctions = new HashSet<string> {
+                "ActiveXObject", "Array", "ArrayBuffer", "ArrayBufferView", 
+                "Boolean", 
+                "DataView", "Date", "Debug", 
+                "Error", "EvalError", "EventSource", 
+                "File", "FileList", "FileReader", "Float32Array", "Float64Array", "Function", 
+                "Int16Array", "Int32Array", "Int8Array", "Iterator", 
+                "Map",
+                "Node", "NodeFilter", "NodeIterator", "NodeList", "NodeSelector", "Number", 
+                "Object", 
+                "Proxy", 
+                "RangeError", 
+                "ReferenceError", 
+                "RegExp", 
+                "Set", "SharedWorker", "String", "SyntaxError", 
+                "TypeError", 
+                "Uint8Array", "Uint8ClampedArray", "Uint16Array", "Uint32Array", "URIError", "URL",
+                "WeakMap", "WebSocket", "Worker",
+                "addEventListener", "alert", "attachEvent", 
+                "blur", 
+                "cancelAnimationFrame", "captureEvents", "clearImmediate", "clearInterval", "clearTimeout", "close", "confirm", "createPopup", 
+                "decodeURI", "decodeURIComponent", "detachEvent", "dispatchEvent", 
+                "encodeURI", "encodeURIComponent", "escape", "eval", "execScript", 
+                "focus", 
+                "getComputedStyle", "getSelection", 
+                "importScripts", "isFinite", "isNaN",
+                "matchMedia", "moveBy", "moveTo",
+                "navigate", 
+                "open", 
+                "parseFloat", "parseInt", "postMessage", "prompt", 
+                "releaseEvents", "removeEventListener", "requestAnimationFrame", "resizeBy", "resizeTo", 
+                "scroll", "scrollBy", "scrollTo", "setActive", "setImmediate", "setInterval", "setTimeout", "showModalDialog", "showModelessDialog", "styleMedia",
+                "unescape"};
         }
 
         public void AddUndefinedReference(UndefinedReference exception)
@@ -147,6 +197,16 @@ namespace Microsoft.Ajax.Utilities
                 if (variableField == null)
                 {
                     variableField = ResolveFromCollection(name, m_assumedGlobals, FieldType.Global, false);
+                }
+
+                // if it's not something explicitly defined so far, check to see if it
+                // matches the browser-specific pattern (prefixes followed by Pascal-cased identifiers).
+                // Plus, most browsers expose dozens of DOM elements prefixed by "HTML" 
+                // (eg: HTMLAnchorElement and HTMLTableColElement).
+                if (variableField == null && s_blanketPrefixes.IsMatch(name))
+                {
+                    variableField = new JSVariableField(FieldType.Predefined, name, 0, null);
+                    AddField(variableField);
                 }
 
                 return variableField;

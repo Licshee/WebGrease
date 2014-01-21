@@ -126,7 +126,7 @@ namespace Microsoft.Ajax.Utilities
                         {
                             // we're going to use a different output visitor -- one
                             // that specifically returns valid JSON.
-                            if (!JSONOutputVisitor.Apply(stringWriter, scriptBlock))
+                            if (!JSONOutputVisitor.Apply(stringWriter, scriptBlock, codeSettings))
                             {
                                 m_errorList.Add(new ContextError()
                                     {

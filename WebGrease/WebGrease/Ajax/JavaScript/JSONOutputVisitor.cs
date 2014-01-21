@@ -27,6 +27,7 @@ namespace Microsoft.Ajax.Utilities
     public class JSONOutputVisitor : IVisitor
     {
         private TextWriter m_writer;
+        private CodeSettings m_settings;
 
         public bool IsValid
         {
@@ -34,17 +35,18 @@ namespace Microsoft.Ajax.Utilities
             private set;
         }
 
-        private JSONOutputVisitor(TextWriter writer)
+        private JSONOutputVisitor(TextWriter writer, CodeSettings settings)
         {
             m_writer = writer;
+            m_settings = settings;
             IsValid = true;
         }
 
-        public static bool Apply(TextWriter writer, AstNode node)
+        public static bool Apply(TextWriter writer, AstNode node, CodeSettings settings)
         {
             if (node != null)
             {
-                var visitor = new JSONOutputVisitor(writer);
+                var visitor = new JSONOutputVisitor(writer, settings);
                 node.Accept(visitor);
                 return visitor.IsValid;
             }
@@ -58,10 +60,54 @@ namespace Microsoft.Ajax.Utilities
         {
             if (node != null)
             {
+                // if this is multi-line output, we're going to want to run some checks first
+                // to see if we want to put the array all on one line or put elements on separate lines.
+                var multiLine = false;
+                if (m_settings.OutputMode == OutputMode.MultipleLines)
+                {
+                    if (node.Elements.Count > 5 || NotJustPrimitives(node.Elements))
+                    {
+                        multiLine = true;
+                    }
+                }
+
                 m_writer.Write('[');
                 if (node.Elements != null)
                 {
-                    node.Elements.Accept(this);
+                    if (multiLine)
+                    {
+                        // multiline -- let's pretty it up a bit
+                        m_settings.Indent();
+                        try
+                        {
+                            var first = true;
+                            foreach (var element in node.Elements)
+                            {
+                                if (first)
+                                {
+                                    first = false;
+                                }
+                                else
+                                {
+                                    m_writer.Write(',');
+                                }
+
+                                NewLine();
+                                element.Accept(this);
+                            }
+                        }
+                        finally
+                        {
+                            m_settings.Unindent();
+                        }
+
+                        NewLine();
+                    }
+                    else
+                    {
+                        // not multiline, so just run through all the items
+                        node.Elements.Accept(this);
+                    }
                 }
 
                 m_writer.Write(']');
@@ -77,6 +123,10 @@ namespace Microsoft.Ajax.Utilities
                     if (ndx > 0)
                     {
                         m_writer.Write(',');
+                        if (m_settings.OutputMode == OutputMode.MultipleLines)
+                        {
+                            m_writer.Write(' ');
+                        }
                     }
 
                     if (node[ndx] != null)
@@ -162,7 +212,50 @@ namespace Microsoft.Ajax.Utilities
                 m_writer.Write('{');
                 if (node.Properties != null)
                 {
-                    node.Properties.Accept(this);
+                    // if this is multi-line output, we're going to want to run some checks first
+                    // to see if we want to put the array all on one line or put elements on separate lines.
+                    var multiLine = false;
+                    if (m_settings.OutputMode == OutputMode.MultipleLines)
+                    {
+                        if (node.Properties.Count > 5 || NotJustPrimitives(node.Properties))
+                        {
+                            multiLine = true;
+                        }
+                    }
+
+                    if (multiLine)
+                    {
+                        // multiline -- let's pretty it up a bit
+                        m_settings.Indent();
+                        try
+                        {
+                            var first = true;
+                            foreach (var property in node.Properties)
+                            {
+                                if (first)
+                                {
+                                    first = false;
+                                }
+                                else
+                                {
+                                    m_writer.Write(',');
+                                }
+
+                                NewLine();
+                                property.Accept(this);
+                            }
+                        }
+                        finally
+                        {
+                            m_settings.Unindent();
+                        }
+
+                        NewLine();
+                    }
+                    else
+                    {
+                        node.Properties.Accept(this);
+                    }
                 }
 
                 m_writer.Write('}');
@@ -707,6 +800,36 @@ namespace Microsoft.Ajax.Utilities
             }
 
             return number;
+        }
+
+        #endregion
+
+        #region other helper methods
+
+        private static bool NotJustPrimitives(AstNodeList nodeList)
+        {
+            // if any node in the list isn't a constant wrapper (boolean, number, string)
+            // or a unary (presumably a negative number), then we've got something other than
+            // a primitive in the list (array or object)
+            foreach (var child in nodeList)
+            {
+                if (!(child is ConstantWrapper) && !(child is UnaryOperator))
+                {
+                    return true;
+                }
+            }
+
+            // if we get here, then everything is a primitive
+            return false;
+        }
+
+        /// <summary>
+        ///  output a new line and setup the proper indent level
+        /// </summary>
+        private void NewLine()
+        {
+            m_writer.WriteLine();
+            m_writer.Write(m_settings.TabSpaces);
         }
 
         #endregion

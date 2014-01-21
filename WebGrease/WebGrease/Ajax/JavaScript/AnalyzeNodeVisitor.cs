@@ -528,6 +528,11 @@ namespace Microsoft.Ajax.Utilities
 
         private static void CombineWithPreviousVar(Block node, int ndx, Var previousVar)
         {
+            if (previousVar.Count == 0)
+            {
+                return;
+            }
+
             var binaryOp = node[ndx] as BinaryOperator;
             var varDecl = previousVar[previousVar.Count - 1];
             Lookup lookup;
@@ -3111,6 +3116,7 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public override void Visit(Member node)
         {
             if (node != null)
@@ -3180,7 +3186,7 @@ namespace Microsoft.Ajax.Utilities
                 if (m_stripDebug)
                 {
                     var parentIsMember = node.Parent is Member;
-                    if (node.Root.IsDebugOnly)
+                    if (node.Root.IfNotNull(r => r.IsDebugOnly))
                     {
                         // if the root is debug-only, WE are debug-only
                         node.IsDebugOnly = true;
@@ -3949,9 +3955,54 @@ namespace Microsoft.Ajax.Utilities
                             }
                         }
                     }
+                    else if (node.OperatorToken == JSToken.TypeOf)
+                    {
+                        if (m_parser.Settings.RemoveUnneededCode
+                            && m_parser.Settings.IsModificationAllowed(TreeModifications.RemoveWindowDotFromTypeOf))
+                        {
+                            // we want to see if the typeof operand is window.name -- which is getting the type string of 
+                            // a potential global variable. If "name" would otherwise resolve to the global namespace (either
+                            // defined or undefined), then we can really get rid of the "window." part because the typeof
+                            // operator will work just fine if the operand is undefined (it won't throw a reference error).
+                            var member = node.Operand as Member;
+                            if (member != null)
+                            {
+                                var lookup = member.Root as Lookup;
+                                if (lookup != null
+                                    && lookup.VariableField != null
+                                    && lookup.VariableField.FieldType == FieldType.Predefined
+                                    && lookup.Name == "window")
+                                {
+                                    // we have window.name
+                                    // now check to see if the name part of our member would resolve to something in
+                                    // the global namespace.
+                                    var name = member.Name;
+                                    var enclosingScope = member.EnclosingScope;
+                                    var existingField = enclosingScope.CanReference(name);
+                                    if (existingField == null
+                                        || existingField.FieldType == FieldType.Predefined
+                                        || existingField.FieldType == FieldType.Global
+                                        || existingField.FieldType == FieldType.UndefinedGlobal)
+                                    {
+                                        // replace the member with a lookup on the name.
+                                        // first, detach the reference to window
+                                        DetachReferences.Apply(lookup);
+
+                                        // (just reuse the lookup for "window" by changing the name and doing
+                                        // a formal reference lookup on it (which will generate fields if needed)
+                                        lookup.Name = name;
+                                        lookup.VariableField = enclosingScope.FindReference(name);
+                                        node.Operand = lookup;
+
+                                        // and make sure we increment the new reference
+                                        lookup.VariableField.AddReference(lookup);
+                                    }
+                                }
+                            }
+                        }
+                    }
                     else
                     {
-
                         // if the operand is a numeric literal
                         ConstantWrapper constantWrapper = node.Operand as ConstantWrapper;
                         if (constantWrapper != null && constantWrapper.IsNumericLiteral)

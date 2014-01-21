@@ -1109,8 +1109,16 @@ namespace Microsoft.Ajax.Utilities
                 // no media type -- straight to an expression
                 ParseMediaQueryExpression();
 
-                // the expression ends in a close paren, so we don't need the space
-                mightNeedSpace = false;
+                // The straight-up spec says the whitespace is optional, so at this point you'd
+                // THINK we wouldn't need whitespace between a close-paren and the word "and."
+                // However, there is an errata published:
+                // http://www.w3.org/Style/2012/REC-mediaqueries-20120619-errata.html
+                // that makes whitespace before the AND mandatory.
+                // The errata is completely correct with regards to making the whitespace AFTER
+                // the "and" mandatory -- we need to be disambiguous: is it "and" followed by a "(",
+                // or is it the FUNCTION "and("? Not sure the before is strictly mandatory, but
+                // let's roll with it.
+                mightNeedSpace = true;
 
                 // the next item should be either AND or the start of the block
                 parsed = Parsed.True;
@@ -1133,9 +1141,6 @@ namespace Microsoft.Ajax.Utilities
                 if (mightNeedSpace || Settings.OutputMode == OutputMode.MultipleLines)
                 {
                     Append(' ');
-
-                    // the media expression ends in a close-paren, so we never need another space
-                    mightNeedSpace = false;
                 }
 
                 // output the AND text.
@@ -2372,7 +2377,7 @@ namespace Microsoft.Ajax.Utilities
                         // we expected the hash token to be a proper color -- but it's not.
                         // we threw an error -- go ahead and output the token as-is and keep going.
                         AppendCurrent();
-                        NextToken();
+                        SkipSpace();
                     }
                     parsed = Parsed.True;
                     break;
@@ -3767,33 +3772,35 @@ namespace Microsoft.Ajax.Utilities
                         // for identifiers, if the first character is a hyphen or an underscore, then it's a prefix
                         // and we want to look at the next character for nmstart.
                         firstIndex = text[0] == '_' || text[0] == '-' ? 1 : 0;
-
-                        // the only valid non-escaped first characters are A-Z (and a-z)
-                        var firstChar = text[firstIndex];
-
-                        // anything at or above 0x80 is okay for identifiers
-                        if (firstChar < 0x80)
+                        if (firstIndex < text.Length)
                         {
-                            // if it's not an a-z or A-Z, we want to escape it
-                            // also leave literal back-slashes as-is, too. The identifier might start with an escape
-                            // sequence that we didn't decode to its Unicode character for whatever reason.
-                            if ((firstChar < 'A' || 'Z' < firstChar)
-                                && (firstChar < 'a' || 'z' < firstChar)
-                                && firstChar != '\\')
+                            // the only valid non-escaped first characters are A-Z (and a-z)
+                            var firstChar = text[firstIndex];
+
+                            // anything at or above 0x80 is okay for identifiers
+                            if (firstChar < 0x80)
                             {
-                                // invalid first character -- create the string builder
-                                escapedBuilder = new StringBuilder();
-
-                                // if we had a prefix, output it
-                                if (firstIndex > 0)
+                                // if it's not an a-z or A-Z, we want to escape it
+                                // also leave literal back-slashes as-is, too. The identifier might start with an escape
+                                // sequence that we didn't decode to its Unicode character for whatever reason.
+                                if ((firstChar < 'A' || 'Z' < firstChar)
+                                    && (firstChar < 'a' || 'z' < firstChar)
+                                    && firstChar != '\\')
                                 {
-                                    escapedBuilder.Append(text[0]);
-                                }
+                                    // invalid first character -- create the string builder
+                                    escapedBuilder = new StringBuilder();
 
-                                // output the escaped first character
-                                protectNextHexCharacter = EscapeCharacter(escapedBuilder, text[firstIndex]);
-                                textEndsInEscapeSequence = true;
-                                startIndex = firstIndex + 1;
+                                    // if we had a prefix, output it
+                                    if (firstIndex > 0)
+                                    {
+                                        escapedBuilder.Append(text[0]);
+                                    }
+
+                                    // output the escaped first character
+                                    protectNextHexCharacter = EscapeCharacter(escapedBuilder, text[firstIndex]);
+                                    textEndsInEscapeSequence = true;
+                                    startIndex = firstIndex + 1;
+                                }
                             }
                         }
                     }
@@ -3940,39 +3947,16 @@ namespace Microsoft.Ajax.Utilities
                                 sb.Append(text.Substring(startRaw, ndx - startRaw));
                             }
 
-                            // add the escaped control character
-                            switch (ch)
+                            // regular unicode escape
+                            sb.Append("\\{0:x}".FormatInvariant(char.ConvertToUtf32(text, ndx)));
+
+                            // if the NEXT character (if there is one) is a hex digit, 
+                            // we will need to append a space to signify the end of the escape sequence, since this
+                            // will never have more than two digits (0 - 1f).
+                            if (ndx + 1 < text.Length
+                                && CssScanner.IsH(text[ndx + 1]))
                             {
-                                case '\n':
-                                    sb.Append(@"\n");
-                                    break;
-
-                                case '\f':
-                                    sb.Append(@"\f");
-                                    break;
-
-                                case '\r':
-                                    sb.Append(@"\r");
-                                    break;
-
-                                case '\\':
-                                    sb.Append(@"\\");
-                                    break;
-
-                                default:
-                                    // regular unicode escape
-                                    sb.Append("\\{0:x}".FormatInvariant(char.ConvertToUtf32(text, ndx)));
-
-                                    // if the NEXT character (if there is one) is a hex digit, 
-                                    // we will need to append a space to signify the end of the escape sequence, since this
-                                    // will never have more than two digits (0 - 1f).
-                                    if (ndx + 1 < text.Length
-                                        && CssScanner.IsH(text[ndx + 1]))
-                                    {
-                                        sb.Append(' ');
-                                    }
-
-                                    break;
+                                sb.Append(' ');
                             }
 
                             // and update the raw pointer to the next character

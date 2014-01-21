@@ -138,6 +138,8 @@ namespace Microsoft.Ajax.Utilities
         NoSpecifierSet = 1335, // expected specifier set
         ExportNotAtModuleLevel = 1336, // export not at module level
         ArrowCannotBeConstructor = 1337, // arrow functions cannot be constructors
+        HighSurrogate = 1338, // high-surrogate pair value not followed by low-surrogate value
+        LowSurrogate = 1339, // low-surrogate pair value not preceeded by high-surrogate value
 
         // these errora means something bad happened in the application causing failure
         ApplicationError = 7000,

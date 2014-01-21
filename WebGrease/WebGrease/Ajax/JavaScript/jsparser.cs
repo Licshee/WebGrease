@@ -4820,18 +4820,21 @@ namespace Microsoft.Ajax.Utilities
 
                     case JSToken.AccessField:
                         ConstantWrapper id = null;
+
+                        string name = null;
+                        // we want the name context to start with the dot
                         Context nameContext = m_currentToken.Clone();
                         GetNextToken();
                         if (m_currentToken.IsNot(JSToken.Identifier))
                         {
-                            string identifier = JSKeyword.CanBeIdentifier(m_currentToken.Token);
-                            if (null != identifier)
+                            name = JSKeyword.CanBeIdentifier(m_currentToken.Token);
+                            if (null != name)
                             {
                                 // don't report an error here -- it's actually okay to have a property name
                                 // that is a keyword which is okay to be an identifier. For instance,
                                 // jQuery has a commonly-used method named "get" to make an ajax request
                                 //ForceReportInfo(JSError.KeywordUsedAsIdentifier);
-                                id = new ConstantWrapper(identifier, PrimitiveType.String, m_currentToken.Clone());
+                                id = new ConstantWrapper(name, PrimitiveType.String, m_currentToken.Clone());
                             }
                             else if (JSScanner.IsValidIdentifier(m_currentToken.Code))
                             {
@@ -4839,7 +4842,8 @@ namespace Microsoft.Ajax.Utilities
                                 // but it IS a valid identifier format. Throw a warning but still
                                 // create the constant wrapper so we can output it as-is
                                 ReportError(JSError.KeywordUsedAsIdentifier);
-                                id = new ConstantWrapper(m_currentToken.Code, PrimitiveType.String, m_currentToken.Clone());
+                                name = m_currentToken.Code;
+                                id = new ConstantWrapper(name, PrimitiveType.String, m_currentToken.Clone());
                             }
                             else
                             {
@@ -4848,15 +4852,21 @@ namespace Microsoft.Ajax.Utilities
                         }
                         else
                         {
-                            id = new ConstantWrapper(m_scanner.Identifier, PrimitiveType.String, m_currentToken.Clone());
+                            name = m_scanner.Identifier;
+                            id = new ConstantWrapper(name, PrimitiveType.String, m_currentToken.Clone());
+                        }
+
+                        if (id != null)
+                        {
+                            nameContext.UpdateWith(id.Context);
                         }
 
                         GetNextToken();
-                        expression = new Member(expression.Context.CombineWith(id.Context))
+                        expression = new Member(expression.IfNotNull(e => e.Context.CombineWith(nameContext), nameContext.Clone()))
                             {
                                 Root = expression,
-                                Name = id.Context.Code,
-                                NameContext = nameContext.CombineWith(id.Context)
+                                Name = name,
+                                NameContext = nameContext
                             };
                         break;
                     default:

@@ -1194,5 +1194,10 @@ namespace Microsoft.Ajax.Utilities
         /// and "123".length to 3 
         /// </summary>
         EvaluateLiteralLengths                      = 0x0008000000000000,
+
+        /// <summary>
+        /// Whether to remove the "window." portion of a typeof operand
+        /// </summary>
+        RemoveWindowDotFromTypeOf                   = 0x0010000000000000,
     }
 }

@@ -107,9 +107,9 @@ namespace Microsoft.Ajax.Utilities
             return false;
         }
 
-        internal void Append(AstNode elem)
+        public void Append(AstNode element)
         {
-            var decl = elem as VariableDeclaration;
+            var decl = element as VariableDeclaration;
             if (decl != null)
             {
                 // first check the list for existing instances of this name.
@@ -128,7 +128,7 @@ namespace Microsoft.Ajax.Utilities
             else
             {
                 // TODO: what should we do if we try to add a const to a var, or a var to a const???
-                var otherVar = elem as Declaration;
+                var otherVar = element as Declaration;
                 if (otherVar != null)
                 {
                     for (int ndx = 0; ndx < otherVar.m_list.Count; ++ndx)
@@ -139,9 +139,9 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
-        internal void InsertAt(int index, AstNode elem)
+        public void InsertAt(int index, AstNode element)
         {
-            VariableDeclaration decl = elem as VariableDeclaration;
+            VariableDeclaration decl = element as VariableDeclaration;
             if (decl != null)
             {
                 // first check the list for existing instances of this name.
@@ -159,7 +159,7 @@ namespace Microsoft.Ajax.Utilities
             else
             {
                 // TODO: what should we do if we try to add a const to a var, or a var to a const???
-                var otherVar = elem as Declaration;
+                var otherVar = element as Declaration;
                 if (otherVar != null)
                 {
                     // walk the source backwards so they end up in the right order

@@ -371,7 +371,7 @@ namespace Microsoft.Ajax.Utilities
         /// Return the default severity for a given JSError value
         /// guide: 0 == there will be a run-time error if this code executes
         ///        1 == the programmer probably did not intend to do this
-        ///        2 == this can lead to cross-browser of future problems.
+        ///        2 == this can lead to cross-browser or future problems.
         ///        3 == this can lead to performance problems
         ///        4 == this is just not right
         /// </summary>
@@ -392,7 +392,9 @@ namespace Microsoft.Ajax.Utilities
                 case JSError.DuplicateCatch:
                 case JSError.DuplicateConstantDeclaration:
                 case JSError.DuplicateLexicalDeclaration:
+                case JSError.HighSurrogate:
                 case JSError.KeywordUsedAsIdentifier:
+                case JSError.LowSurrogate:
                 case JSError.MisplacedFunctionDeclaration:
                 case JSError.ObjectLiteralKeyword:
                     return 2;

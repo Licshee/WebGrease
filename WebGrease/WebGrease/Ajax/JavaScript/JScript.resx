@@ -471,4 +471,10 @@
   <data name="ArrowCannotBeConstructor" xml:space="preserve">
     <value>Arrow functions cannot be constructors</value>
   </data>
+  <data name="HighSurrogate" xml:space="preserve">
+    <value>High-surrogate pair value not followed by low-surrogate value</value>
+  </data>
+  <data name="LowSurrogate" xml:space="preserve">
+    <value>Low-surrogate pair value not following a high-surrogate value</value>
+  </data>
 </root>

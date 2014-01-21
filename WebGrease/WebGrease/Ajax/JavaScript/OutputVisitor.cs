@@ -3352,7 +3352,8 @@ namespace Microsoft.Ajax.Utilities
                     OutputSpaceOrLineBreak();
                 }
             }
-            else if ((m_lastCharacter == '@' || JSScanner.IsValidIdentifierPart(m_lastCharacter)) && JSScanner.StartsWithValidIdentifierPart(text))
+            else if ((m_lastCharacter == '@' || JSScanner.IsValidIdentifierPart(m_lastCharacter)) 
+                && (text[0] == '\\' || JSScanner.StartsWithValidIdentifierPart(text)))
             {
                 // either the last character is a valid part of an identifier and the current character is, too;
                 // OR the last part was numeric and the current character is a .

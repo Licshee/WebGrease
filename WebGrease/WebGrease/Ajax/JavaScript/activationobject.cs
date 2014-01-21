@@ -995,6 +995,38 @@ namespace Microsoft.Ajax.Utilities
             }
         }
 
+        /// <summary>
+        /// See if the given name will resolve to a field; do not create any inner fields
+        /// or unknown global fields along the way.
+        /// </summary>
+        /// <param name="name">name to resolve</param>
+        /// <returns>an existing resolved field, or null if nothing exists</returns>
+        public JSVariableField CanReference(string name)
+        {
+            // check for this scope.
+            var variableField = this[name];
+
+            // if we didn't find anything, go up the chain until we find something.
+            if (variableField == null)
+            {
+                var parentScope = this.Parent;
+                while (parentScope != null && variableField == null)
+                {
+                    variableField = parentScope[name];
+                    parentScope = parentScope.Parent;
+                }
+            }
+
+            return variableField;
+        }
+
+        /// <summary>
+        /// Resolve the name in this scope, or go up the chain adding inner fields
+        /// along the way until the final reference is found, creating an unknown global
+        /// field if necessary.
+        /// </summary>
+        /// <param name="name">name to resolve</param>
+        /// <returns>resolved variable field (should never be null)</returns>
         public JSVariableField FindReference(string name)
         {
             // see if we have it

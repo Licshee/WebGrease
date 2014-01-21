@@ -244,12 +244,19 @@ namespace Microsoft.Ajax.Utilities
                 // make relative to output, don't just output the mapfile path as-is.
                 // and it's supposed to be a URL anyway
                 writer.Write(newLine);
-                writer.Write("/*");
+
+                // the original spec called for //@ but that gets confused with IE's conditional-compilation
+                // syntax. So wrap it in multi-line comments so it works everywhere.
+                //writer.Write("/*");
+                //writer.Write(newLine);
+                //writer.Write("//@ sourceMappingURL={0}", MakeRelative(m_mapPath, m_minifiedPath));
+                //writer.Write(newLine);
+                //writer.Write("*/");
+
+                // eventually, though, the spec changed to //# -- the tools appear to have caught up, so
+                // let's use that syntax now.
+                writer.Write("//# sourceMappingURL={0}", MakeRelative(m_mapPath, m_minifiedPath));
                 writer.Write(newLine);
-                //writer.Write("//# sourceMappingURL={0}", MakeRelative(m_mapPath, m_minifiedPath));
-                writer.Write("//@ sourceMappingURL={0}", MakeRelative(m_mapPath, m_minifiedPath));
-                writer.Write(newLine);
-                writer.Write("*/");
             }
         }
 

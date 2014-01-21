@@ -34,6 +34,7 @@ namespace Microsoft.Ajax.Utilities.Configuration
 
         private const string PathAttributeName = "path";
         private const string EncodingAttributeName = "encoding";
+        private const string EncodingAttributeShortName = "enc";
         private const string TypeAttributeName = "type";
         private const string OriginAttributeName = "origin";
         private const string MapPathAttributeName = "mappath";
@@ -92,6 +93,7 @@ namespace Microsoft.Ajax.Utilities.Configuration
 
         #region private read methods
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private static OutputGroup ReadOutputElement(XmlReader reader)
         {
             var outputNode = new OutputGroup();
@@ -109,6 +111,7 @@ namespace Microsoft.Ajax.Utilities.Configuration
                                 break;
 
                             case EncodingAttributeName:
+                            case EncodingAttributeShortName:
                                 outputNode.EncodingName = reader.Value;
                                 break;
 
@@ -338,6 +341,7 @@ namespace Microsoft.Ajax.Utilities.Configuration
                                 break;
 
                             case EncodingAttributeName:
+                            case EncodingAttributeShortName:
                                 inputNode.EncodingName = reader.Value;
                                 break;
 

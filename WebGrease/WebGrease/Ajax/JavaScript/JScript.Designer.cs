@@ -376,6 +376,15 @@ namespace Microsoft.Ajax.Utilities {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to High-surrogate pair value not followed by low-surrogate value.
+        /// </summary>
+        internal static string HighSurrogate {
+            get {
+                return ResourceManager.GetString("HighSurrogate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Illegal assignment.
         /// </summary>
         internal static string IllegalAssignment {
@@ -435,6 +444,15 @@ namespace Microsoft.Ajax.Utilities {
         internal static string KeywordUsedAsIdentifier {
             get {
                 return ResourceManager.GetString("KeywordUsedAsIdentifier", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Low-surrogate pair value not following a high-surrogate value.
+        /// </summary>
+        internal static string LowSurrogate {
+            get {
+                return ResourceManager.GetString("LowSurrogate", resourceCulture);
             }
         }
         

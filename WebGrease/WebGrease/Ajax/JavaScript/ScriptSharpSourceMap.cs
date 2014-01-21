@@ -90,6 +90,7 @@ namespace Microsoft.Ajax.Utilities
             m_writer.WriteAttributeString("path", MakeRelative(sourcePath, m_mapPath) ?? string.Empty);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security.Cryptography", "CA5350:MD5CannotBeUsed", Justification="not using for encryption, just a checksum")]
         public void EndPackage()
         {
             if (m_currentPackagePath.IsNullOrWhiteSpace())
